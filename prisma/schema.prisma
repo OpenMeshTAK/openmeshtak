@@ -26,6 +26,8 @@ model Event {
   updatedAt            DateTime                        @updatedAt
   permissionGrants     PermissionGrant[]
   serviceAccountGrants ServiceAccountPermissionGrant[]
+  roles                EventRole[]
+  groups               EventGroup[]
 }
 
 model User {
@@ -230,4 +232,36 @@ model AuditEvent {
 
   @@index([occurredAt, id])
   @@index([targetType, targetId])
+}
+
+/// Event-owned participant role such as `participant`. Never an authorization group.
+model EventRole {
+  id          String   @id
+  eventId     String
+  name        String
+  slug        String
+  description String?
+  version     Int      @default(1)
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([eventId, slug])
+  @@index([eventId, createdAt, id])
+}
+
+/// Event-owned tactical/provisioning group such as `bravo`. Never grants permissions.
+model EventGroup {
+  id          String   @id
+  eventId     String
+  name        String
+  slug        String
+  description String?
+  version     Int      @default(1)
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([eventId, slug])
+  @@index([eventId, createdAt, id])
 }
