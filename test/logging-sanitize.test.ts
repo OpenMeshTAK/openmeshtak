@@ -15,6 +15,7 @@ void describe("log metadata sanitization", () => {
       nested: [
         { pSk: "radio-secret" },
         { note: "leaked omtk_sa_key_randomSecret in text" },
+        { note: "leaked omtk_bootstrap_randomSecret in text" },
       ],
       privateMaterial:
         "-----BEGIN PRIVATE KEY-----\nsecret\n-----END PRIVATE KEY-----",
@@ -27,6 +28,7 @@ void describe("log metadata sanitization", () => {
       },
       nested: [
         { pSk: "[REDACTED]" },
+        { note: "leaked [REDACTED] in text" },
         { note: "leaked [REDACTED] in text" },
       ],
       privateMaterial: "[REDACTED]",

@@ -1,4 +1,4 @@
-import { Controller, Get, Route, SuccessResponse, Tags } from "tsoa";
+import { Controller, Get, NoSecurity, Route, SuccessResponse, Tags } from "tsoa";
 
 export interface HealthResponse {
   status: "ok";
@@ -8,6 +8,7 @@ export interface HealthResponse {
 
 @Route("health")
 @Tags("Operations")
+@NoSecurity()
 export class HealthController extends Controller {
   /** Reports that the API process completed startup, including its database connection. */
   @Get()

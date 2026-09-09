@@ -1,7 +1,7 @@
 const REDACTED = "[REDACTED]";
 
 const sensitiveKeyPattern = /(?:authorization|proxy-?authorization|cookie|set-?cookie|x-?api-?key|password|api-?key|credential|secret|token|session-?id|csrf|psk|private-?key|pkcs12|signing-?key)/i;
-const serviceAccountKeyPattern = /omtk_sa_[A-Za-z0-9_-]+_[A-Za-z0-9_-]+/g;
+const openMeshTakSecretPattern = /omtk_(?:sa_[A-Za-z0-9_-]+_|bootstrap_)[A-Za-z0-9_-]+/g;
 const privateKeyPattern = /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g;
 
 type SeenValues = WeakSet<object>;
@@ -11,7 +11,7 @@ export type LogMetadata = Record<string, unknown>;
 function sanitizeString(value: string): string {
   return value
     .replace(privateKeyPattern, REDACTED)
-    .replace(serviceAccountKeyPattern, REDACTED);
+    .replace(openMeshTakSecretPattern, REDACTED);
 }
 
 function sanitizeValue(value: unknown, seen: SeenValues): unknown {

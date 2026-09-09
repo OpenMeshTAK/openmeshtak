@@ -9,3 +9,4 @@ coverage/
 
 # Prisma generates this client from the reviewed schema.
 src/generated/prisma/
+DEPENDENCY_LICENSE_EXCEPTIONS.md

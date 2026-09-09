@@ -10,9 +10,18 @@
     "outputDirectory": "openapi",
     "specFileBaseName": "openapi",
     "specVersion": 3,
+    "securityDefinitions": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "openmeshtak.session_token"
+      }
+    },
+    "rootSecurity": [{ "sessionCookie": [] }],
     "version": "0.1.0"
   },
   "routes": {
+    "authenticationModule": "src/shared/auth/authorization.ts",
     "basePath": "/api/v1",
     "esm": true,
     "middleware": "express",

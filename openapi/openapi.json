@@ -7,6 +7,65 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
+			"SetupResponse": {
+				"properties": {
+					"user": {
+						"properties": {
+							"email": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"email",
+							"name",
+							"id"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"user"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SetupRequest": {
+				"properties": {
+					"email": {
+						"type": "string",
+						"format": "email"
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"password": {
+						"type": "string",
+						"minLength": 12,
+						"maxLength": 128
+					},
+					"token": {
+						"type": "string",
+						"minLength": 48,
+						"maxLength": 128
+					}
+				},
+				"required": [
+					"email",
+					"name",
+					"password",
+					"token"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"HealthResponse": {
 				"properties": {
 					"status": {
@@ -36,7 +95,13 @@
 				"additionalProperties": false
 			}
 		},
-		"securitySchemes": {}
+		"securitySchemes": {
+			"sessionCookie": {
+				"type": "apiKey",
+				"in": "cookie",
+				"name": "openmeshtak.session_token"
+			}
+		}
 	},
 	"info": {
 		"title": "OpenMeshTak Core API",
@@ -48,6 +113,39 @@
 		"contact": {}
 	},
 	"paths": {
+		"/setup": {
+			"post": {
+				"operationId": "CreateAdministrator",
+				"responses": {
+					"201": {
+						"description": "Administrator created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SetupResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates the first password-backed administrator using the one-time operator token.",
+				"tags": [
+					"Setup"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SetupRequest"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/health": {
 			"get": {
 				"operationId": "GetHealth",

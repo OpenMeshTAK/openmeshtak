@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { ValidateError } from "tsoa";
+import { ProblemError } from "./problem-error.js";
 import { logger } from "../logging/logger.js";
 import { getTraceId } from "../logging/request-logging.js";
 
@@ -17,7 +18,7 @@ export interface ProblemDetails {
   }>;
 }
 
-function sendProblem(response: Response, problem: ProblemDetails): void {
+export function sendProblem(response: Response, problem: ProblemDetails): void {
   response.status(problem.status).type("application/problem+json").send(problem);
 }
 
@@ -60,6 +61,18 @@ export function errorHandler(
       code: "VALIDATION_FAILED",
       traceId,
       errors,
+    });
+    return;
+  }
+
+  if (error instanceof ProblemError) {
+    sendProblem(response, {
+      type: error.type,
+      title: error.title,
+      status: error.status,
+      detail: error.message,
+      code: error.code,
+      traceId,
     });
     return;
   }

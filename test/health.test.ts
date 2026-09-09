@@ -23,12 +23,25 @@ void describe("GET /api/v1/health", () => {
   void it("is represented in the generated OpenAPI contract", async () => {
     const response = await request(createApp()).get("/api/openapi.json").expect(200);
     const body = response.body as {
+      components?: {
+        securitySchemes?: Record<string, unknown>;
+      };
       openapi?: unknown;
-      paths?: Record<string, unknown>;
+      paths?: {
+        "/health"?: {
+          get?: { security?: unknown[] };
+        };
+        "/setup"?: {
+          post?: { security?: unknown[] };
+        };
+      };
     };
 
     assert.equal(body.openapi, "3.0.0");
     assert.ok(body.paths?.["/health"]);
+    assert.deepEqual(body.paths?.["/health"]?.get?.security, []);
+    assert.deepEqual(body.paths?.["/setup"]?.post?.security, []);
+    assert.ok(body.components?.securitySchemes?.sessionCookie);
   });
 
   void it("returns RFC 9457-style details for unknown routes", async () => {

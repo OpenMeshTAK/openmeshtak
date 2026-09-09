@@ -11,7 +11,7 @@ const prismaCli = join(dirname(prismaPackage), "build", "index.js");
 const result = spawnSync(process.execPath, [prismaCli, ...process.argv.slice(2)], {
   env: {
     ...process.env,
-    RUST_LOG: process.env.RUST_LOG?.trim() || "info",
+    RUST_LOG: "info",
   },
   stdio: "inherit",
 });

@@ -14,14 +14,134 @@ enum EventStatus {
 }
 
 model Event {
-  id        String      @id
-  name      String
-  slug      String      @unique
-  timeZone  String
-  status    EventStatus @default(draft)
-  version   Int         @default(1)
-  startsAt  DateTime?
-  endsAt    DateTime?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id               String            @id
+  name             String
+  slug             String            @unique
+  timeZone         String
+  status           EventStatus       @default(draft)
+  version          Int               @default(1)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  permissionGrants PermissionGrant[]
+}
+
+model User {
+  id            String      @id
+  name          String
+  email         String      @unique
+  emailVerified Boolean     @default(false)
+  image         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  domainUser    DomainUser?
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model DomainUser {
+  id            String                @id
+  displayName   String
+  authSubjectId String?               @unique
+  authSubject   User?                 @relation(fields: [authSubjectId], references: [id], onDelete: SetNull)
+  memberships   UserGroupMembership[]
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+}
+
+model UserGroup {
+  id               String                @id
+  name             String
+  slug             String                @unique
+  version          Int                   @default(1)
+  memberships      UserGroupMembership[]
+  permissionGrants PermissionGrant[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+}
+
+model UserGroupMembership {
+  userId      String
+  userGroupId String
+  user        DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userGroup   UserGroup  @relation(fields: [userGroupId], references: [id], onDelete: Cascade)
+  assignedAt  DateTime   @default(now())
+
+  @@id([userId, userGroupId])
+  @@index([userGroupId])
+}
+
+model PermissionGrant {
+  id          String    @id
+  userGroupId String
+  permission  String
+  scopeKey    String
+  eventId     String?
+  userGroup   UserGroup @relation(fields: [userGroupId], references: [id], onDelete: Cascade)
+  event       Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([userGroupId, permission, scopeKey])
+  @@index([eventId])
+}
+
+model BootstrapChallenge {
+  id         String    @id
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([expiresAt])
 }
