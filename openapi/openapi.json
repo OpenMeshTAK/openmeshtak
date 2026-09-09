@@ -1,0 +1,80 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"HealthResponse": {
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"ok"
+						],
+						"nullable": false
+					},
+					"service": {
+						"type": "string",
+						"enum": [
+							"openmeshtak"
+						],
+						"nullable": false
+					},
+					"timestamp": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"status",
+					"service",
+					"timestamp"
+				],
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {}
+	},
+	"info": {
+		"title": "OpenMeshTak Core API",
+		"version": "0.1.0",
+		"description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
+		"license": {
+			"name": "AGPL-3.0-only"
+		},
+		"contact": {}
+	},
+	"paths": {
+		"/health": {
+			"get": {
+				"operationId": "GetHealth",
+				"responses": {
+					"200": {
+						"description": "Healthy",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HealthResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Reports that the API process completed startup, including its database connection.",
+				"tags": [
+					"Operations"
+				],
+				"security": [],
+				"parameters": []
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "/api/v1"
+		}
+	]
+}

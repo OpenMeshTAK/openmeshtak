@@ -1,0 +1,21 @@
+{
+  "entryFile": "src/app.ts",
+  "noImplicitAdditionalProperties": "throw-on-extras",
+  "controllerPathGlobs": ["src/modules/**/*.controller.ts"],
+  "spec": {
+    "basePath": "/api/v1",
+    "name": "OpenMeshTak Core API",
+    "description": "Authoritative API for OpenMeshTak provisioning and mission distribution.",
+    "license": "AGPL-3.0-only",
+    "outputDirectory": "openapi",
+    "specFileBaseName": "openapi",
+    "specVersion": 3,
+    "version": "0.1.0"
+  },
+  "routes": {
+    "basePath": "/api/v1",
+    "esm": true,
+    "middleware": "express",
+    "routesDir": "src/generated"
+  }
+}

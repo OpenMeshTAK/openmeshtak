@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+server/data/
+coverage/
+*.log
+
+# Prisma generates this client from the reviewed schema.
+src/generated/prisma/

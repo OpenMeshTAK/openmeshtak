@@ -1,0 +1,67 @@
+{
+  "name": "openmeshtak",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenMeshTak Core API server",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.12.0"
+  },
+  "packageManager": "pnpm@10.12.4",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "better-sqlite3",
+      "esbuild",
+      "prisma"
+    ],
+    "overrides": {
+      "deepmerge-ts": "8.0.0",
+      "mysql2": "3.23.1",
+      "ts-deepmerge": "8.0.0"
+    }
+  },
+  "scripts": {
+    "build": "pnpm generate && tsc -p tsconfig.build.json",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm license:check",
+    "db:deploy": "tsx scripts/prepare-data.ts && tsx scripts/run-prisma.ts migrate deploy",
+    "db:generate": "prisma generate",
+    "db:migrate": "tsx scripts/prepare-data.ts && tsx scripts/run-prisma.ts migrate dev",
+    "db:status": "tsx scripts/run-prisma.ts migrate status",
+    "dev": "pnpm generate && tsx watch src/server.ts",
+    "generate": "prisma generate && tsoa spec-and-routes",
+    "license:check": "tsx scripts/check-licenses.ts",
+    "lint": "eslint . --max-warnings 0",
+    "start": "node dist/server.js",
+    "test": "pnpm generate && tsx --test test/**/*.test.ts",
+    "typecheck": "pnpm generate && tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "@tsoa/runtime": "6.6.0",
+    "dotenv": "18.0.5",
+    "express": "4.22.3",
+    "helmet": "8.3.0",
+    "pino": "10.4.0",
+    "swagger-ui-express": "5.0.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/better-sqlite3": "9.6.0",
+    "@types/express": "4.17.25",
+    "@types/node": "24.10.1",
+    "@types/supertest": "7.2.1",
+    "@types/swagger-ui-express": "4.1.8",
+    "eslint": "10.12.0",
+    "prisma": "7.10.0",
+    "supertest": "7.3.1",
+    "tsoa": "6.6.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.0"
+  }
+}
