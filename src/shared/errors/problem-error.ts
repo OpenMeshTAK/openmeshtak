@@ -66,3 +66,13 @@ export function versionConflictProblem(currentVersion: number): ProblemError {
     currentVersion,
   });
 }
+
+export function slugConflictProblem(detail: string): ProblemError {
+  return new ProblemError({
+    type: "urn:openmeshtak:problem:slug-conflict",
+    title: "Slug already in use",
+    status: 409,
+    detail,
+    code: "SLUG_CONFLICT",
+  });
+}

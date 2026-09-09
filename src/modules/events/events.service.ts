@@ -1,16 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { recordAudit } from "../../shared/audit/audit.js";
-import {
-  eventAccessFor,
-  hasPermission,
-  requirePermission,
-} from "../../shared/auth/permission-check.js";
+import { eventAccessFor, requirePermission } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import {
-  notFoundProblem,
-  ProblemError,
+  slugConflictProblem,
   validationProblem,
   versionConflictProblem,
   type ProblemFieldError,
@@ -30,6 +25,11 @@ import type {
   EventStatus,
   UpdateEventRequest,
 } from "./event.dto.js";
+import {
+  eventArchivedProblem,
+  requireMutableEvent,
+  requireReadableEvent,
+} from "./event-access.js";
 
 interface EventRow {
   id: string;
@@ -67,26 +67,6 @@ function toDto(row: EventRow): EventDto {
   };
 }
 
-function slugConflict(): ProblemError {
-  return new ProblemError({
-    type: "urn:openmeshtak:problem:slug-conflict",
-    title: "Slug already in use",
-    status: 409,
-    detail: "Another event already uses this slug.",
-    code: "SLUG_CONFLICT",
-  });
-}
-
-function eventArchived(): ProblemError {
-  return new ProblemError({
-    type: "urn:openmeshtak:problem:event-archived",
-    title: "Event is archived",
-    status: 409,
-    detail: "Archived events are read-only. Reactivate the event before changing it.",
-    code: "EVENT_ARCHIVED",
-  });
-}
-
 function validateSettings(input: {
   name: string;
   slug: string;
@@ -116,22 +96,6 @@ function validateSettings(input: {
   return { name: input.name, slug: input.slug, timeZone, startsAt, endsAt };
 }
 
-/**
- * Callers without read access receive the same `404` as for a missing event, so event IDs
- * outside their scope cannot be discovered.
- */
-async function findReadableEvent(principal: Principal, id: string): Promise<EventRow> {
-  if (!(await hasPermission(principal, "events.read", id))) {
-    throw notFoundProblem();
-  }
-
-  const row = await database.event.findUnique({ where: { id } });
-  if (row === null) {
-    throw notFoundProblem();
-  }
-  return row;
-}
-
 export async function listEvents(
   principal: Principal,
   options: { limit?: number | undefined; cursor?: string | undefined; status?: EventStatus | undefined },
@@ -159,7 +123,7 @@ export async function listEvents(
 }
 
 export async function getEvent(principal: Principal, id: string): Promise<EventDto> {
-  return toDto(await findReadableEvent(principal, id));
+  return toDto(await requireReadableEvent(principal, id));
 }
 
 /** New events always start as `draft`; the lifecycle changes only through explicit transitions. */
@@ -187,7 +151,7 @@ export async function createEvent(actor: ActorContext, input: CreateEventRequest
     });
     return toDto(row);
   } catch (error: unknown) {
-    throw isUniqueConstraintError(error) ? slugConflict() : error;
+    throw isUniqueConstraintError(error) ? slugConflictProblem("Another event already uses this slug.") : error;
   }
 }
 
@@ -196,12 +160,7 @@ export async function updateEvent(
   id: string,
   input: UpdateEventRequest,
 ): Promise<EventDto> {
-  const current = await findReadableEvent(actor.principal, id);
-  await requirePermission(actor.principal, "events.manage", id);
-
-  if (current.status === "archived") {
-    throw eventArchived();
-  }
+  const current = await requireMutableEvent(actor.principal, id);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
   }
@@ -219,7 +178,7 @@ export async function updateEvent(
           where: { id },
           select: { status: true, version: true },
         });
-        throw latest.status === "archived" ? eventArchived() : versionConflictProblem(latest.version);
+        throw latest.status === "archived" ? eventArchivedProblem() : versionConflictProblem(latest.version);
       }
 
       await recordAudit(
@@ -240,7 +199,7 @@ export async function updateEvent(
       );
     });
   } catch (error: unknown) {
-    throw isUniqueConstraintError(error) ? slugConflict() : error;
+    throw isUniqueConstraintError(error) ? slugConflictProblem("Another event already uses this slug.") : error;
   }
 
   return toDto(await database.event.findUniqueOrThrow({ where: { id } }));
