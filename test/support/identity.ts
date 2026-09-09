@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { auth } from "../../src/modules/auth/auth.js";
+import { generateApiKey } from "../../src/modules/service-accounts/api-key-secret.js";
 import { scopeKeyFor, type Permission } from "../../src/shared/auth/permissions.js";
 import { database } from "../../src/shared/database/database.js";
 
@@ -83,4 +84,35 @@ export async function createEvent(): Promise<string> {
     data: { id, name: "Test event", slug: `event-${id}`, timeZone: "Europe/Berlin" },
   });
   return id;
+}
+
+/** Creates an active service account with one API key and returns the bearer value. */
+export async function createServiceAccountKey(grants: TestGrant[]): Promise<string> {
+  const serviceAccountId = randomUUID();
+  const key = generateApiKey();
+
+  await database.serviceAccount.create({
+    data: {
+      id: serviceAccountId,
+      name: "Test integration",
+      permissionGrants: {
+        create: grants.map(({ permission, eventId = null }) => ({
+          id: randomUUID(),
+          permission,
+          scopeKey: scopeKeyFor(eventId),
+          eventId,
+        })),
+      },
+      apiKeys: {
+        create: {
+          id: randomUUID(),
+          name: "test",
+          publicKeyId: key.publicKeyId,
+          secretHash: key.secretHash,
+        },
+      },
+    },
+  });
+
+  return key.plaintext;
 }

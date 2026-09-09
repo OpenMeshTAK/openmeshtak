@@ -7,7 +7,7 @@ import {
   validatePermissionGrants,
 } from "../../shared/auth/permission-grants.js";
 import type { Permission } from "../../shared/auth/permissions.js";
-import type { Principal } from "../../shared/auth/principal.js";
+import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
 import {
@@ -25,11 +25,6 @@ import type {
 } from "./service-account.dto.js";
 
 const LIST_CONTEXT = "service-accounts";
-
-export interface ActorContext {
-  principal: Principal;
-  traceId: string;
-}
 
 const serviceAccountSelection = {
   id: true,

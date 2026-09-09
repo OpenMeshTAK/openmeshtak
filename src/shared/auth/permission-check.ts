@@ -48,6 +48,33 @@ export async function hasPermission(
   return grant !== null;
 }
 
+/** Event visibility for list queries: every event, or only the explicitly granted ones. */
+export type EventAccess = { all: true } | { all: false; eventIds: string[] };
+
+export async function eventAccessFor(
+  principal: Principal,
+  permission: Permission,
+): Promise<EventAccess> {
+  const grants =
+    principal.type === "user"
+      ? await database.permissionGrant.findMany({
+          where: { permission, userGroup: { memberships: { some: { userId: principal.id } } } },
+          select: { scopeKey: true, eventId: true },
+        })
+      : await database.serviceAccountPermissionGrant.findMany({
+          where: { permission, serviceAccount: { id: principal.id, status: "active" } },
+          select: { scopeKey: true, eventId: true },
+        });
+
+  if (grants.some(({ scopeKey }) => scopeKey === INSTANCE_SCOPE_KEY)) {
+    return { all: true };
+  }
+  return {
+    all: false,
+    eventIds: grants.flatMap(({ eventId }) => (eventId === null ? [] : [eventId])),
+  };
+}
+
 export function forbidden(): ProblemError {
   return new ProblemError({
     type: "urn:openmeshtak:problem:forbidden",

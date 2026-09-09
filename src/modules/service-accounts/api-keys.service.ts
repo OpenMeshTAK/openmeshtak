@@ -4,7 +4,7 @@ import {
   requirePermission,
   requireRecentAuthentication,
 } from "../../shared/auth/permission-check.js";
-import type { UserPrincipal } from "../../shared/auth/principal.js";
+import type { ActorContext, UserPrincipal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, validationProblem } from "../../shared/errors/problem-error.js";
 import {
@@ -22,7 +22,6 @@ import type {
   CreateApiKeyRequest,
   CreatedApiKeyResponse,
 } from "./service-account.dto.js";
-import type { ActorContext } from "./service-accounts.service.js";
 
 const apiKeySelection = {
   id: true,

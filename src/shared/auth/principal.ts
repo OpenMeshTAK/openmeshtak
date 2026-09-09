@@ -13,3 +13,9 @@ export interface ServiceAccountPrincipal {
 }
 
 export type Principal = UserPrincipal | ServiceAccountPrincipal;
+
+/** The authenticated caller plus request correlation, as passed from controllers to services. */
+export interface ActorContext {
+  principal: Principal;
+  traceId: string;
+}

@@ -518,6 +518,177 @@
 				],
 				"type": "object",
 				"additionalProperties": false
+			},
+			"EventStatus": {
+				"type": "string",
+				"enum": [
+					"draft",
+					"active",
+					"archived"
+				]
+			},
+			"EventDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"timeZone": {
+						"type": "string",
+						"description": "IANA time-zone identifier used for event-local schedules, e.g. `Europe/Berlin`."
+					},
+					"status": {
+						"$ref": "#/components/schemas/EventStatus"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"startsAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"endsAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"slug",
+					"timeZone",
+					"status",
+					"version",
+					"startsAt",
+					"endsAt",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EventPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/EventDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Slug": {
+				"type": "string",
+				"description": "Lowercase ASCII letters and digits separated by single hyphens.",
+				"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+				"minLength": 1,
+				"maxLength": 64
+			},
+			"CreateEventRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"slug": {
+						"$ref": "#/components/schemas/Slug"
+					},
+					"timeZone": {
+						"type": "string",
+						"description": "IANA time-zone identifier. Fixed offsets such as `+01:00` are rejected.",
+						"minLength": 1,
+						"maxLength": 64
+					},
+					"startsAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "Descriptive start instant; it never changes the lifecycle state.",
+						"format": "date-time"
+					},
+					"endsAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "Descriptive end instant; it never changes the lifecycle state.",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"name",
+					"slug",
+					"timeZone"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateEventRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"slug": {
+						"$ref": "#/components/schemas/Slug"
+					},
+					"timeZone": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 64
+					},
+					"startsAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"endsAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"slug",
+					"timeZone",
+					"startsAt",
+					"endsAt"
+				],
+				"type": "object",
+				"additionalProperties": false
 			}
 		},
 		"securitySchemes": {
@@ -1192,6 +1363,328 @@
 				],
 				"security": [],
 				"parameters": []
+			}
+		},
+		"/events": {
+			"get": {
+				"operationId": "ListEvents",
+				"responses": {
+					"200": {
+						"description": "Events",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the events the caller may read, ordered by creation time, oldest first.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "Only return events in this lifecycle state.",
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/EventStatus"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateEvent",
+				"responses": {
+					"201": {
+						"description": "Event created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Slug already in use",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a new event in the `draft` state. Requires instance-wide `events.manage`.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateEventRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}": {
+			"get": {
+				"operationId": "GetEvent",
+				"responses": {
+					"200": {
+						"description": "Event",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateEvent",
+				"responses": {
+					"200": {
+						"description": "Event updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, slug conflict or archived event",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the editable event settings. Requires the current `version`. The lifecycle state is\nchanged only through dedicated transitions, and archived events are read-only.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateEventRequest"
+							}
+						}
+					}
+				}
 			}
 		}
 	},
