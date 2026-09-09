@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { ValidateError } from "tsoa";
-import { ProblemError } from "./problem-error.js";
+import { ProblemError, type ProblemFieldError } from "./problem-error.js";
 import { logger } from "../logging/logger.js";
 import { getTraceId } from "../logging/request-logging.js";
 
@@ -11,11 +11,8 @@ export interface ProblemDetails {
   detail: string;
   code: string;
   traceId: string;
-  errors?: Array<{
-    field: string;
-    code: string;
-    message: string;
-  }>;
+  errors?: ProblemFieldError[];
+  currentVersion?: number;
 }
 
 export function sendProblem(response: Response, problem: ProblemDetails): void {
@@ -73,6 +70,8 @@ export function errorHandler(
       detail: error.message,
       code: error.code,
       traceId,
+      ...(error.errors === undefined ? {} : { errors: error.errors }),
+      ...(error.currentVersion === undefined ? {} : { currentVersion: error.currentVersion }),
     });
     return;
   }

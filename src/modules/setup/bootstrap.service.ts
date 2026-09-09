@@ -5,13 +5,13 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { auth } from "../auth/auth.js";
-import { PERMISSIONS } from "../../shared/auth/permissions.js";
+import { INSTANCE_SCOPE_KEY, PERMISSIONS } from "../../shared/auth/permissions.js";
 import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
 import { ProblemError } from "../../shared/errors/problem-error.js";
 
 const ADMIN_GROUP_SLUG = "admin";
-const INSTANCE_SCOPE = "instance";
+
 const BOOTSTRAP_TOKEN_PREFIX = "omtk_bootstrap_";
 
 let setupInProgress = false;
@@ -241,7 +241,7 @@ export async function createInitialAdministrator(
             create: PERMISSIONS.map((permission) => ({
               id: randomUUID(),
               permission,
-              scopeKey: INSTANCE_SCOPE,
+              scopeKey: INSTANCE_SCOPE_KEY,
             })),
           },
         },

@@ -1,13 +1,13 @@
 import type { Request } from "express";
 import { auth } from "../../modules/auth/auth.js";
+import { authenticateApiKey } from "../../modules/service-accounts/api-key-authentication.js";
 import { database } from "../database/database.js";
 import { ProblemError } from "../errors/problem-error.js";
+import { getTraceId } from "../logging/request-logging.js";
+import type { Principal, ServiceAccountPrincipal, UserPrincipal } from "./principal.js";
 
-export interface InteractivePrincipal {
-  type: "user";
-  id: string;
-  authSubjectId: string;
-}
+export const SESSION_SECURITY = "sessionCookie";
+export const SERVICE_ACCOUNT_SECURITY = "serviceAccountBearer";
 
 function requestHeaders(request: Request): Headers {
   const headers = new Headers();
@@ -25,6 +25,7 @@ function requestHeaders(request: Request): Headers {
   return headers;
 }
 
+/** Every authentication failure uses this one response so callers cannot probe why it failed. */
 function authenticationRequired(): ProblemError {
   return new ProblemError({
     type: "urn:openmeshtak:problem:authentication-required",
@@ -35,14 +36,7 @@ function authenticationRequired(): ProblemError {
   });
 }
 
-export async function expressAuthentication(
-  request: Request,
-  securityName: string,
-): Promise<InteractivePrincipal> {
-  if (securityName !== "sessionCookie") {
-    throw authenticationRequired();
-  }
-
+async function authenticateSession(request: Request): Promise<UserPrincipal> {
   const session = await auth.api.getSession({
     headers: requestHeaders(request),
   });
@@ -68,5 +62,34 @@ export async function expressAuthentication(
     type: "user",
     id: domainUser.id,
     authSubjectId: session.user.id,
+    sessionCreatedAt: new Date(session.session.createdAt),
   };
+}
+
+async function authenticateServiceAccount(request: Request): Promise<ServiceAccountPrincipal> {
+  const principal = await authenticateApiKey(request.headers.authorization, getTraceId(request));
+
+  if (principal === null) {
+    throw authenticationRequired();
+  }
+
+  return principal;
+}
+
+/**
+ * tsoa authentication module. Each operation declares its accepted schemes explicitly; a route
+ * documented for sessions never silently accepts an API key and vice versa.
+ */
+export async function expressAuthentication(
+  request: Request,
+  securityName: string,
+): Promise<Principal> {
+  switch (securityName) {
+    case SESSION_SECURITY:
+      return authenticateSession(request);
+    case SERVICE_ACCOUNT_SECURITY:
+      return authenticateServiceAccount(request);
+    default:
+      throw authenticationRequired();
+  }
 }

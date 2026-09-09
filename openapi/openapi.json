@@ -7,6 +7,69 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
+			"ProblemFieldError": {
+				"properties": {
+					"field": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"field",
+					"code",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ProblemDetails": {
+				"properties": {
+					"type": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"status": {
+						"type": "number",
+						"format": "double"
+					},
+					"detail": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"traceId": {
+						"type": "string"
+					},
+					"errors": {
+						"items": {
+							"$ref": "#/components/schemas/ProblemFieldError"
+						},
+						"type": "array"
+					},
+					"currentVersion": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"type",
+					"title",
+					"status",
+					"detail",
+					"code",
+					"traceId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SetupResponse": {
 				"properties": {
 					"user": {
@@ -66,6 +129,368 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ServiceAccountStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"disabled"
+				]
+			},
+			"Permission": {
+				"type": "string",
+				"enum": [
+					"users.read",
+					"users.manage",
+					"user-groups.read",
+					"user-groups.manage",
+					"events.read",
+					"events.manage",
+					"events.reactivate",
+					"members.read",
+					"members.manage",
+					"members.sync",
+					"member-claims.create",
+					"missions.read",
+					"missions.edit",
+					"missions.publish",
+					"artifacts.generate",
+					"artifacts.download",
+					"service-accounts.manage",
+					"audit.read"
+				]
+			},
+			"Uuid": {
+				"type": "string",
+				"format": "uuid",
+				"description": "Opaque resource identifier. The pattern makes tsoa reject malformed IDs before they reach a\ndatabase query.",
+				"pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+			},
+			"PermissionGrantDto": {
+				"properties": {
+					"permission": {
+						"$ref": "#/components/schemas/Permission"
+					},
+					"eventId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "Event the grant is limited to, or `null` for an instance-wide grant."
+					}
+				},
+				"required": [
+					"permission",
+					"eventId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ServiceAccountDto": {
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"status": {
+						"$ref": "#/components/schemas/ServiceAccountStatus"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"description",
+					"status",
+					"version",
+					"permissions",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PageInfo": {
+				"properties": {
+					"nextCursor": {
+						"type": "string",
+						"nullable": true
+					},
+					"hasMore": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"nextCursor",
+					"hasMore"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ServiceAccountPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ServiceAccountDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateServiceAccountRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 500
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array",
+						"maxItems": 100
+					}
+				},
+				"required": [
+					"name",
+					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateServiceAccountRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 500
+					},
+					"status": {
+						"$ref": "#/components/schemas/ServiceAccountStatus",
+						"description": "Disabling an account immediately invalidates all of its API keys."
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array",
+						"description": "Complete replacement of the account's grants.",
+						"maxItems": 100
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"description",
+					"status",
+					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"expired",
+					"revoked"
+				]
+			},
+			"ApiKeyDto": {
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"serviceAccountId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"displayPrefix": {
+						"type": "string",
+						"description": "Recognizable, non-secret beginning of the key."
+					},
+					"status": {
+						"$ref": "#/components/schemas/ApiKeyStatus"
+					},
+					"expiresAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"lastUsedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"revokedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"serviceAccountId",
+					"name",
+					"displayPrefix",
+					"status",
+					"expiresAt",
+					"lastUsedAt",
+					"revokedAt",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ApiKeyDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatedApiKeyResponse": {
+				"properties": {
+					"apiKey": {
+						"$ref": "#/components/schemas/ApiKeyDto"
+					},
+					"key": {
+						"type": "string",
+						"description": "Complete bearer value. It is returned exactly once and cannot be retrieved again."
+					}
+				},
+				"required": [
+					"apiKey",
+					"key"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateApiKeyRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"expiresAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "Optional expiry instant; must lie in the future.",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PrincipalDto": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"user",
+							"service-account"
+						]
+					},
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array",
+						"description": "Effective grants, deduplicated across all sources."
+					}
+				},
+				"required": [
+					"type",
+					"id",
+					"name",
+					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"HealthResponse": {
 				"properties": {
 					"status": {
@@ -100,6 +525,12 @@
 				"type": "apiKey",
 				"in": "cookie",
 				"name": "openmeshtak.session_token"
+			},
+			"serviceAccountBearer": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "omtk_sa_<publicKeyId>_<secret>",
+				"description": "Service-account API key. Never send it in a URL."
 			}
 		}
 	},
@@ -144,6 +575,600 @@
 						}
 					}
 				}
+			}
+		},
+		"/service-accounts": {
+			"get": {
+				"operationId": "ListServiceAccounts",
+				"responses": {
+					"200": {
+						"description": "Service accounts",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ServiceAccountPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists service accounts ordered by creation time, oldest first.",
+				"tags": [
+					"Service accounts"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateServiceAccount",
+				"responses": {
+					"201": {
+						"description": "Service account created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ServiceAccountDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a service account with explicit permission grants.",
+				"tags": [
+					"Service accounts"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateServiceAccountRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/service-accounts/{serviceAccountId}": {
+			"get": {
+				"operationId": "GetServiceAccount",
+				"responses": {
+					"200": {
+						"description": "Service account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ServiceAccountDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Service accounts"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "serviceAccountId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateServiceAccount",
+				"responses": {
+					"200": {
+						"description": "Service account updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ServiceAccountDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces name, description, status and grants. Requires the current `version`.",
+				"tags": [
+					"Service accounts"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "serviceAccountId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateServiceAccountRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/service-accounts/{serviceAccountId}/api-keys": {
+			"get": {
+				"operationId": "ListApiKeys",
+				"responses": {
+					"200": {
+						"description": "API keys",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiKeyPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists safe API-key metadata. Key secrets are never returned after creation.",
+				"tags": [
+					"Service accounts"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "serviceAccountId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateApiKey",
+				"responses": {
+					"201": {
+						"description": "API key created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreatedApiKeyResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates an API key and returns its complete value exactly once. Creating a key while another\nis active is a rotation. Requires a recent sign-in.",
+				"tags": [
+					"Service accounts"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "serviceAccountId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateApiKeyRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/service-accounts/{serviceAccountId}/api-keys/{apiKeyId}/revoke": {
+			"post": {
+				"operationId": "RevokeApiKey",
+				"responses": {
+					"200": {
+						"description": "API key revoked",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiKeyDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Revokes an API key immediately. Repeating the request is harmless.",
+				"tags": [
+					"Service accounts"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "serviceAccountId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "apiKeyId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/principal": {
+			"get": {
+				"operationId": "GetPrincipal",
+				"responses": {
+					"200": {
+						"description": "Authenticated principal",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PrincipalDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Describes the authenticated caller and its effective grants. Integrations use it to verify\nan API key; the Web application uses it to adapt navigation. It never replaces server-side\nauthorization.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": []
 			}
 		},
 		"/health": {

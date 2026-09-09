@@ -1,7 +1,9 @@
 {
   "entryFile": "src/app.ts",
   "noImplicitAdditionalProperties": "throw-on-extras",
-  "controllerPathGlobs": ["src/modules/**/*.controller.ts"],
+  "controllerPathGlobs": [
+    "src/modules/**/*.controller.ts"
+  ],
   "spec": {
     "basePath": "/api/v1",
     "name": "OpenMeshTak Core API",
@@ -15,9 +17,19 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "openmeshtak.session_token"
+      },
+      "serviceAccountBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "omtk_sa_<publicKeyId>_<secret>",
+        "description": "Service-account API key. Never send it in a URL."
       }
     },
-    "rootSecurity": [{ "sessionCookie": [] }],
+    "rootSecurity": [
+      {
+        "sessionCookie": []
+      }
+    ],
     "version": "0.1.0"
   },
   "routes": {

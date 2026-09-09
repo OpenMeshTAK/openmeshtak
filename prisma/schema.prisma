@@ -14,17 +14,18 @@ enum EventStatus {
 }
 
 model Event {
-  id               String            @id
-  name             String
-  slug             String            @unique
-  timeZone         String
-  status           EventStatus       @default(draft)
-  version          Int               @default(1)
-  startsAt         DateTime?
-  endsAt           DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  permissionGrants PermissionGrant[]
+  id                   String                          @id
+  name                 String
+  slug                 String                          @unique
+  timeZone             String
+  status               EventStatus                     @default(draft)
+  version              Int                             @default(1)
+  startsAt             DateTime?
+  endsAt               DateTime?
+  createdAt            DateTime                        @default(now())
+  updatedAt            DateTime                        @updatedAt
+  permissionGrants     PermissionGrant[]
+  serviceAccountGrants ServiceAccountPermissionGrant[]
 }
 
 model User {
@@ -90,13 +91,15 @@ model Verification {
 }
 
 model DomainUser {
-  id            String                @id
-  displayName   String
-  authSubjectId String?               @unique
-  authSubject   User?                 @relation(fields: [authSubjectId], references: [id], onDelete: SetNull)
-  memberships   UserGroupMembership[]
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  id                     String                @id
+  displayName            String
+  authSubjectId          String?               @unique
+  authSubject            User?                 @relation(fields: [authSubjectId], references: [id], onDelete: SetNull)
+  memberships            UserGroupMembership[]
+  createdServiceAccounts ServiceAccount[]
+  createdApiKeys         ApiKey[]
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
 }
 
 model UserGroup {
@@ -144,4 +147,87 @@ model BootstrapChallenge {
   createdAt  DateTime  @default(now())
 
   @@index([expiresAt])
+}
+
+enum ServiceAccountStatus {
+  active
+  disabled
+}
+
+/// A non-human machine principal. It is intentionally not a User and cannot join user groups.
+model ServiceAccount {
+  id               String                          @id
+  name             String
+  description      String?
+  status           ServiceAccountStatus            @default(active)
+  version          Int                             @default(1)
+  createdByUserId  String?
+  createdBy        DomainUser?                     @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  permissionGrants ServiceAccountPermissionGrant[]
+  apiKeys          ApiKey[]
+  createdAt        DateTime                        @default(now())
+  updatedAt        DateTime                        @updatedAt
+
+  @@index([createdAt, id])
+}
+
+model ServiceAccountPermissionGrant {
+  id               String         @id
+  serviceAccountId String
+  permission       String
+  scopeKey         String
+  eventId          String?
+  serviceAccount   ServiceAccount @relation(fields: [serviceAccountId], references: [id], onDelete: Cascade)
+  event            Event?         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([serviceAccountId, permission, scopeKey])
+  @@index([eventId])
+}
+
+/// Stores only safe metadata and a SHA-256 digest of the random key secret, never the bearer value.
+model ApiKey {
+  id               String         @id
+  serviceAccountId String
+  name             String
+  publicKeyId      String         @unique
+  secretHash       String
+  expiresAt        DateTime?
+  lastUsedAt       DateTime?
+  revokedAt        DateTime?
+  createdByUserId  String?
+  serviceAccount   ServiceAccount @relation(fields: [serviceAccountId], references: [id], onDelete: Cascade)
+  createdBy        DomainUser?    @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime       @default(now())
+
+  @@index([serviceAccountId, createdAt, id])
+}
+
+enum AuditActorType {
+  user
+  service_account
+  anonymous
+  system
+}
+
+enum AuditResult {
+  success
+  failure
+}
+
+/// Append-only record of security-relevant actions. Never store secrets or their hashes here.
+model AuditEvent {
+  id         String         @id
+  occurredAt DateTime       @default(now())
+  actorType  AuditActorType
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String?
+  result     AuditResult
+  traceId    String?
+  metadata   Json?
+
+  @@index([occurredAt, id])
+  @@index([targetType, targetId])
 }
