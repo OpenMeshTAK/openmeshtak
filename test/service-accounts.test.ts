@@ -257,6 +257,29 @@ void describe("service accounts and API keys", () => {
     );
   });
 
+  void it("rate-limits failed key attempts before they reach the audit log", async () => {
+    const account = await createServiceAccount(admin);
+    const { key } = await createKey(account.id);
+    const wrongSecret = `${key.slice(0, -43)}${"x".repeat(43)}`;
+
+    // Successful requests never consume the failure budget.
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      await principalWithKey(key).expect(200);
+    }
+
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      statuses.push((await principalWithKey(wrongSecret)).status);
+    }
+
+    assert.deepEqual(statuses.slice(0, 20), Array<number>(20).fill(401));
+    assert.deepEqual(statuses.slice(20), Array<number>(5).fill(429));
+    assert.equal(
+      await database.auditEvent.count({ where: { action: "api-key.authentication-failed" } }),
+      20,
+    );
+  });
+
   void it("disables every key when the service account is disabled", async () => {
     const account = await createServiceAccount(admin);
     const { key } = await createKey(account.id);
