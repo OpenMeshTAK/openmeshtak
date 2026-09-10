@@ -52,7 +52,7 @@ interface EventSettings {
   endsAt: Date | null;
 }
 
-function toDto(row: EventRow): EventDto {
+export function toEventDto(row: EventRow): EventDto {
   return {
     id: row.id,
     name: row.name,
@@ -119,11 +119,11 @@ export async function listEvents(
     take: limit + 1,
   });
 
-  return toPage(context, rows, limit, toDto);
+  return toPage(context, rows, limit, toEventDto);
 }
 
 export async function getEvent(principal: Principal, id: string): Promise<EventDto> {
-  return toDto(await requireReadableEvent(principal, id));
+  return toEventDto(await requireReadableEvent(principal, id));
 }
 
 /** New events always start as `draft`; the lifecycle changes only through explicit transitions. */
@@ -149,7 +149,7 @@ export async function createEvent(actor: ActorContext, input: CreateEventRequest
       );
       return created;
     });
-    return toDto(row);
+    return toEventDto(row);
   } catch (error: unknown) {
     throw isUniqueConstraintError(error) ? slugConflictProblem("Another event already uses this slug.") : error;
   }
@@ -202,5 +202,5 @@ export async function updateEvent(
     throw isUniqueConstraintError(error) ? slugConflictProblem("Another event already uses this slug.") : error;
   }
 
-  return toDto(await database.event.findUniqueOrThrow({ where: { id } }));
+  return toEventDto(await database.event.findUniqueOrThrow({ where: { id } }));
 }

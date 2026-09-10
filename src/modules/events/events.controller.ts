@@ -23,8 +23,10 @@ import type {
   EventDto,
   EventPage,
   EventStatus,
+  EventTransitionRequest,
   UpdateEventRequest,
 } from "./event.dto.js";
+import { transitionEvent } from "./event-lifecycle.service.js";
 import { createEvent, getEvent, listEvents, updateEvent } from "./events.service.js";
 
 /**
@@ -96,5 +98,54 @@ export class EventsController extends Controller {
     @Body() body: UpdateEventRequest,
   ): Promise<EventDto> {
     return updateEvent(requestContext(request), eventId, body);
+  }
+
+  /**
+   * Moves a draft event to `active`. Requires `events.manage` and at least one event role and
+   * one event group; unmet requirements are listed in the problem's `errors`.
+   */
+  @Post("{eventId}/activate")
+  @SuccessResponse(200, "Event activated")
+  @Response<ProblemDetails>(403, "Access denied")
+  @Response<ProblemDetails>(404, "Not found")
+  @Response<ProblemDetails>(409, "Version conflict, invalid transition or event not ready")
+  public async activateEvent(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Body() body: EventTransitionRequest,
+  ): Promise<EventDto> {
+    return transitionEvent(requestContext(request), eventId, "activate", body.version);
+  }
+
+  /** Moves an active event to the read-only `archived` state. Requires `events.manage`. */
+  @Post("{eventId}/archive")
+  @SuccessResponse(200, "Event archived")
+  @Response<ProblemDetails>(403, "Access denied")
+  @Response<ProblemDetails>(404, "Not found")
+  @Response<ProblemDetails>(409, "Version conflict or invalid transition")
+  public async archiveEvent(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Body() body: EventTransitionRequest,
+  ): Promise<EventDto> {
+    return transitionEvent(requestContext(request), eventId, "archive", body.version);
+  }
+
+  /**
+   * Returns an archived event to `active` after repeating activation validation. Requires
+   * `events.reactivate`. Revoked or expired credentials, artifacts and download grants stay
+   * invalid; clients regenerate what they need.
+   */
+  @Post("{eventId}/reactivate")
+  @SuccessResponse(200, "Event reactivated")
+  @Response<ProblemDetails>(403, "Access denied")
+  @Response<ProblemDetails>(404, "Not found")
+  @Response<ProblemDetails>(409, "Version conflict, invalid transition or event not ready")
+  public async reactivateEvent(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Body() body: EventTransitionRequest,
+  ): Promise<EventDto> {
+    return transitionEvent(requestContext(request), eventId, "reactivate", body.version);
   }
 }

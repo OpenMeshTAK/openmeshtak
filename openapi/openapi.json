@@ -690,6 +690,21 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"EventTransitionRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					}
+				},
+				"required": [
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"EventRoleDto": {
 				"properties": {
 					"id": {
@@ -1919,6 +1934,273 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/UpdateEventRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/activate": {
+			"post": {
+				"operationId": "ActivateEvent",
+				"responses": {
+					"200": {
+						"description": "Event activated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, invalid transition or event not ready",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Moves a draft event to `active`. Requires `events.manage` and at least one event role and\none event group; unmet requirements are listed in the problem's `errors`.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/EventTransitionRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/archive": {
+			"post": {
+				"operationId": "ArchiveEvent",
+				"responses": {
+					"200": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or invalid transition",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Moves an active event to the read-only `archived` state. Requires `events.manage`.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/EventTransitionRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/reactivate": {
+			"post": {
+				"operationId": "ReactivateEvent",
+				"responses": {
+					"200": {
+						"description": "Event reactivated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, invalid transition or event not ready",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns an archived event to `active` after repeating activation validation. Requires\n`events.reactivate`. Revoked or expired credentials, artifacts and download grants stay\ninvalid; clients regenerate what they need.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/EventTransitionRequest"
 							}
 						}
 					}

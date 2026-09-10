@@ -83,3 +83,12 @@ export interface UpdateEventRequest {
   /** @format date-time */
   endsAt: string | null;
 }
+
+export interface EventTransitionRequest {
+  /**
+   * Version the client last read.
+   * @isInt
+   * @minimum 1
+   */
+  version: number;
+}
