@@ -19,6 +19,11 @@ export interface TestUser {
 export async function clearDatabase(): Promise<void> {
   await database.$transaction([
     database.auditEvent.deleteMany(),
+    database.syncIssue.deleteMany(),
+    database.eventMember.deleteMany(),
+    database.externalIdentity.deleteMany(),
+    database.eventRole.deleteMany(),
+    database.eventGroup.deleteMany(),
     database.apiKey.deleteMany(),
     database.serviceAccountPermissionGrant.deleteMany(),
     database.serviceAccount.deleteMany(),

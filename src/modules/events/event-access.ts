@@ -1,5 +1,6 @@
 import type { Event } from "../../generated/prisma/client.js";
-import { hasPermission, requirePermission } from "../../shared/auth/permission-check.js";
+import { forbidden, hasPermission, requirePermission } from "../../shared/auth/permission-check.js";
+import type { Permission } from "../../shared/auth/permissions.js";
 import type { Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
@@ -20,6 +21,30 @@ export function eventArchivedProblem(): ProblemError {
  */
 export async function requireReadableEvent(principal: Principal, eventId: string): Promise<Event> {
   if (!(await hasPermission(principal, "events.read", eventId))) {
+    throw notFoundProblem();
+  }
+
+  const event = await database.event.findUnique({ where: { id: eventId } });
+  if (event === null) {
+    throw notFoundProblem();
+  }
+  return event;
+}
+
+/**
+ * Loads an event for an action guarded by an event-scoped permission other than `events.read`,
+ * such as `members.sync`. Callers that can neither perform the action nor read the event get a
+ * concealed `404`; callers that can read it but lack the permission get `403`.
+ */
+export async function requireEventPermission(
+  principal: Principal,
+  eventId: string,
+  permission: Permission,
+): Promise<Event> {
+  if (!(await hasPermission(principal, permission, eventId))) {
+    if (await hasPermission(principal, "events.read", eventId)) {
+      throw forbidden();
+    }
     throw notFoundProblem();
   }
 

@@ -20,6 +20,10 @@ import { EventsController } from './../modules/events/events.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EventRolesController } from './../modules/event-roles/event-roles.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { SyncIssuesController } from './../modules/event-members/sync-issues.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { ExternalMembersController } from './../modules/event-members/external-members.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EventGroupsController } from './../modules/event-groups/event-groups.controller.js';
 import { expressAuthentication } from './../shared/auth/authorization.js';
 // @ts-ignore - no great way to install types from subpackage
@@ -399,6 +403,120 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "slug": {"ref":"Slug","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":500}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SyncIssueStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["open"]},{"dataType":"enum","enums":["resolved"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SyncIssueReason": {
+        "dataType": "refObject",
+        "properties": {
+            "field": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["eventRole"]},{"dataType":"enum","enums":["group"]}],"required":true},
+            "code": {"dataType":"enum","enums":["NOT_FOUND"],"required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SyncIssueDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "provider": {"dataType":"string","required":true},
+            "externalId": {"dataType":"string","required":true},
+            "status": {"ref":"SyncIssueStatus","required":true},
+            "username": {"dataType":"string","required":true},
+            "requestedRole": {"dataType":"string","required":true},
+            "requestedGroup": {"dataType":"string","required":true},
+            "reasons": {"dataType":"array","array":{"dataType":"refObject","ref":"SyncIssueReason"},"required":true},
+            "occurrences": {"dataType":"double","required":true},
+            "resolvedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SyncIssuePage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"SyncIssueDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "EventAssignmentSummary": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "slug": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "EventMemberDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "userId": {"ref":"Uuid","required":true},
+            "displayName": {"dataType":"string","required":true},
+            "eventRole": {"ref":"EventAssignmentSummary","required":true},
+            "eventGroup": {"ref":"EventAssignmentSummary","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MemberSyncOutcome": {
+        "dataType": "refObject",
+        "properties": {
+            "outcome": {"dataType":"enum","enums":["member"],"required":true},
+            "change": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["created"]},{"dataType":"enum","enums":["updated"]},{"dataType":"enum","enums":["unchanged"]}],"required":true},
+            "member": {"ref":"EventMemberDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SyncIssueOutcome": {
+        "dataType": "refObject",
+        "properties": {
+            "outcome": {"dataType":"enum","enums":["sync-issue"],"required":true},
+            "syncIssue": {"ref":"SyncIssueDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ExternalMemberSyncResult": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"ref":"MemberSyncOutcome"},{"ref":"SyncIssueOutcome"}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ExternalProvider": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{"pattern":{"value":"^[a-z0-9][a-z0-9-]{0,31}$"}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ExternalId": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{"pattern":{"value":"^[A-Za-z0-9._:@-]{1,128}$"}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ExternalMemberSyncRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "username": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "eventRole": {"ref":"Slug","required":true},
+            "group": {"ref":"Slug","required":true},
         },
         "additionalProperties": false,
     },
@@ -1504,6 +1622,109 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSyncIssuesController_listSyncIssues: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+                status: {"in":"query","name":"status","ref":"SyncIssueStatus"},
+        };
+        app.get('/api/v1/events/:eventId/sync-issues',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(SyncIssuesController)),
+            ...(fetchMiddlewares<RequestHandler>(SyncIssuesController.prototype.listSyncIssues)),
+
+            async function SyncIssuesController_listSyncIssues(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSyncIssuesController_listSyncIssues, request, response });
+
+                const controller = new SyncIssuesController();
+
+              await templateService.apiHandler({
+                methodName: 'listSyncIssues',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSyncIssuesController_retrySyncIssue: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                syncIssueId: {"in":"path","name":"syncIssueId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/sync-issues/:syncIssueId/retry',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(SyncIssuesController)),
+            ...(fetchMiddlewares<RequestHandler>(SyncIssuesController.prototype.retrySyncIssue)),
+
+            async function SyncIssuesController_retrySyncIssue(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSyncIssuesController_retrySyncIssue, request, response });
+
+                const controller = new SyncIssuesController();
+
+              await templateService.apiHandler({
+                methodName: 'retrySyncIssue',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsExternalMembersController_syncExternalMember: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                provider: {"in":"path","name":"provider","required":true,"ref":"ExternalProvider"},
+                externalId: {"in":"path","name":"externalId","required":true,"ref":"ExternalId"},
+                body: {"in":"body","name":"body","required":true,"ref":"ExternalMemberSyncRequest"},
+        };
+        app.put('/api/v1/events/:eventId/external-members/:provider/:externalId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ExternalMembersController)),
+            ...(fetchMiddlewares<RequestHandler>(ExternalMembersController.prototype.syncExternalMember)),
+
+            async function ExternalMembersController_syncExternalMember(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsExternalMembersController_syncExternalMember, request, response });
+
+                const controller = new ExternalMembersController();
+
+              await templateService.apiHandler({
+                methodName: 'syncExternalMember',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

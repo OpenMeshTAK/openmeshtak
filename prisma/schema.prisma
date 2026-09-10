@@ -28,6 +28,8 @@ model Event {
   serviceAccountGrants ServiceAccountPermissionGrant[]
   roles                EventRole[]
   groups               EventGroup[]
+  members              EventMember[]
+  syncIssues           SyncIssue[]
 }
 
 model User {
@@ -100,6 +102,8 @@ model DomainUser {
   memberships            UserGroupMembership[]
   createdServiceAccounts ServiceAccount[]
   createdApiKeys         ApiKey[]
+  externalIdentities     ExternalIdentity[]
+  eventMemberships       EventMember[]
   createdAt              DateTime              @default(now())
   updatedAt              DateTime              @updatedAt
 }
@@ -238,15 +242,16 @@ model AuditEvent {
 
 /// Event-owned participant role such as `participant`. Never an authorization group.
 model EventRole {
-  id          String   @id
+  id          String        @id
   eventId     String
   name        String
   slug        String
   description String?
-  version     Int      @default(1)
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  version     Int           @default(1)
+  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  members     EventMember[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@unique([eventId, slug])
   @@index([eventId, createdAt, id])
@@ -254,16 +259,82 @@ model EventRole {
 
 /// Event-owned tactical/provisioning group such as `bravo`. Never grants permissions.
 model EventGroup {
-  id          String   @id
+  id          String        @id
   eventId     String
   name        String
   slug        String
   description String?
-  version     Int      @default(1)
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  version     Int           @default(1)
+  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  members     EventMember[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@unique([eventId, slug])
+  @@index([eventId, createdAt, id])
+}
+
+/// Provider-neutral external identifier such as a Discord user ID. Never a login method.
+model ExternalIdentity {
+  id         String     @id
+  provider   String
+  externalId String
+  /// Username last reported by the integration; untrusted display data.
+  username   String
+  userId     String
+  user       DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([provider, externalId])
+  @@index([userId])
+}
+
+/// Participation of one user in one event with exactly one event role and one event group.
+model EventMember {
+  id           String     @id
+  eventId      String
+  userId       String
+  eventRoleId  String
+  eventGroupId String
+  version      Int        @default(1)
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Restrict: assigned roles and groups cannot be deleted until members are reassigned.
+  eventRole    EventRole  @relation(fields: [eventRoleId], references: [id], onDelete: Restrict)
+  eventGroup   EventGroup @relation(fields: [eventGroupId], references: [id], onDelete: Restrict)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([eventId, userId])
+  @@index([eventId, createdAt, id])
+  @@index([eventRoleId])
+  @@index([eventGroupId])
+}
+
+enum SyncIssueStatus {
+  open
+  resolved
+}
+
+/// A synchronization that could not resolve exactly one event role and group. It carries no secrets.
+model SyncIssue {
+  id             String          @id
+  eventId        String
+  provider       String
+  externalId     String
+  status         SyncIssueStatus @default(open)
+  username       String
+  requestedRole  String
+  requestedGroup String
+  /// Validated list of { field, code, message } explaining why resolution failed.
+  reasons        Json
+  occurrences    Int             @default(1)
+  resolvedAt     DateTime?
+  event          Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([eventId, provider, externalId])
   @@index([eventId, createdAt, id])
 }

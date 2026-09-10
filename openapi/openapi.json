@@ -1002,6 +1002,291 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"SyncIssueStatus": {
+				"type": "string",
+				"enum": [
+					"open",
+					"resolved"
+				]
+			},
+			"SyncIssueReason": {
+				"properties": {
+					"field": {
+						"type": "string",
+						"enum": [
+							"eventRole",
+							"group"
+						]
+					},
+					"code": {
+						"type": "string",
+						"enum": [
+							"NOT_FOUND"
+						],
+						"nullable": false
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"field",
+					"code",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SyncIssueDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"provider": {
+						"type": "string"
+					},
+					"externalId": {
+						"type": "string"
+					},
+					"status": {
+						"$ref": "#/components/schemas/SyncIssueStatus"
+					},
+					"username": {
+						"type": "string"
+					},
+					"requestedRole": {
+						"type": "string"
+					},
+					"requestedGroup": {
+						"type": "string"
+					},
+					"reasons": {
+						"items": {
+							"$ref": "#/components/schemas/SyncIssueReason"
+						},
+						"type": "array"
+					},
+					"occurrences": {
+						"type": "number",
+						"format": "double",
+						"description": "How often the integration reported this unresolved member."
+					},
+					"resolvedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"provider",
+					"externalId",
+					"status",
+					"username",
+					"requestedRole",
+					"requestedGroup",
+					"reasons",
+					"occurrences",
+					"resolvedAt",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SyncIssuePage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/SyncIssueDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EventAssignmentSummary": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"slug",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EventMemberDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"displayName": {
+						"type": "string"
+					},
+					"eventRole": {
+						"$ref": "#/components/schemas/EventAssignmentSummary"
+					},
+					"eventGroup": {
+						"$ref": "#/components/schemas/EventAssignmentSummary"
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"userId",
+					"displayName",
+					"eventRole",
+					"eventGroup",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MemberSyncOutcome": {
+				"properties": {
+					"outcome": {
+						"type": "string",
+						"enum": [
+							"member"
+						],
+						"nullable": false
+					},
+					"change": {
+						"type": "string",
+						"enum": [
+							"created",
+							"updated",
+							"unchanged"
+						]
+					},
+					"member": {
+						"$ref": "#/components/schemas/EventMemberDto"
+					}
+				},
+				"required": [
+					"outcome",
+					"change",
+					"member"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SyncIssueOutcome": {
+				"properties": {
+					"outcome": {
+						"type": "string",
+						"enum": [
+							"sync-issue"
+						],
+						"nullable": false
+					},
+					"syncIssue": {
+						"$ref": "#/components/schemas/SyncIssueDto"
+					}
+				},
+				"required": [
+					"outcome",
+					"syncIssue"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ExternalMemberSyncResult": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/MemberSyncOutcome"
+					},
+					{
+						"$ref": "#/components/schemas/SyncIssueOutcome"
+					}
+				],
+				"description": "Either the resolved membership or the recorded sync issue; never a credential or session."
+			},
+			"ExternalProvider": {
+				"type": "string",
+				"description": "Opaque lowercase namespace of the external system, e.g. `discord`. It is not a login provider.",
+				"pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+			},
+			"ExternalId": {
+				"type": "string",
+				"description": "Identifier of the person inside the external system, e.g. a Discord user ID.",
+				"pattern": "^[A-Za-z0-9._:@-]{1,128}$"
+			},
+			"ExternalMemberSyncRequest": {
+				"properties": {
+					"username": {
+						"type": "string",
+						"description": "Name reported by the external system; used for display and callsigns.",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"eventRole": {
+						"$ref": "#/components/schemas/Slug",
+						"description": "Slug of an existing event role."
+					},
+					"group": {
+						"$ref": "#/components/schemas/Slug",
+						"description": "Slug of an existing event group."
+					}
+				},
+				"required": [
+					"username",
+					"eventRole",
+					"group"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"EventGroupDto": {
 				"properties": {
 					"id": {
@@ -3577,6 +3862,315 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/sync-issues": {
+			"get": {
+				"operationId": "ListSyncIssues",
+				"responses": {
+					"200": {
+						"description": "Sync issues",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SyncIssuePage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists synchronizations that could not be resolved, oldest first. Requires `members.read`.",
+				"tags": [
+					"Event members"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "Only return issues in this state.",
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/SyncIssueStatus"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/sync-issues/{syncIssueId}/retry": {
+			"post": {
+				"operationId": "RetrySyncIssue",
+				"responses": {
+					"200": {
+						"description": "Membership resolved or issue still open",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ExternalMemberSyncResult"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Issue not open or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Re-evaluates an open issue against the event's current roles and groups. Requires\n`members.manage`.",
+				"tags": [
+					"Event members"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "syncIssueId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/external-members/{provider}/{externalId}": {
+			"put": {
+				"operationId": "SyncExternalMember",
+				"responses": {
+					"200": {
+						"description": "Membership resolved or sync issue recorded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ExternalMemberSyncResult"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Idempotently creates or updates the event membership of an external identity. Requires\n`members.sync` for the event. When the role or group slug does not exist, the response\ncontains a sync issue instead and nothing else changes. Synchronization never creates a\npassword, login, email address or session.",
+				"tags": [
+					"Event members"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "provider",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/ExternalProvider"
+						}
+					},
+					{
+						"in": "path",
+						"name": "externalId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/ExternalId"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ExternalMemberSyncRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/groups": {
