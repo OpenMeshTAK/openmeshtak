@@ -19,6 +19,12 @@ import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
+import type { UserPage } from "../users/user.dto.js";
+import {
+  addUserGroupMember,
+  listUserGroupMembers,
+  removeUserGroupMember,
+} from "./user-group-members.service.js";
 import type {
   CreateUserGroupRequest,
   UpdateUserGroupRequest,
@@ -108,6 +114,56 @@ export class UserGroupsController extends Controller {
     @Path() userGroupId: Uuid,
   ): Promise<void> {
     await deleteUserGroup(requestContext(request), userGroupId);
+    this.setStatus(204);
+  }
+
+  /**
+   * Lists the group's members ordered by user creation time, oldest first.
+   * @isInt limit
+   * @minimum limit 1
+   * @maximum limit 100
+   */
+  @Get("{userGroupId}/members")
+  @SuccessResponse(200, "Group members")
+  @Middlewares(allowQueryParameters("limit", "cursor"))
+  @Response<ProblemDetails>(400, "Invalid cursor")
+  @Response<ProblemDetails>(404, "Not found")
+  public async listUserGroupMembers(
+    @Request() request: unknown,
+    @Path() userGroupId: Uuid,
+    @Query() limit?: number,
+    @Query() cursor?: string,
+  ): Promise<UserPage> {
+    return listUserGroupMembers(requestContext(request).principal, userGroupId, limit, cursor);
+  }
+
+  /**
+   * Adds a user to the group. Idempotent. The caller must hold every grant of the group, because
+   * membership passes those grants on.
+   */
+  @Put("{userGroupId}/members/{userId}")
+  @SuccessResponse(204, "Member added")
+  @Response<ProblemDetails>(404, "Not found")
+  public async addUserGroupMember(
+    @Request() request: unknown,
+    @Path() userGroupId: Uuid,
+    @Path() userId: Uuid,
+  ): Promise<void> {
+    await addUserGroupMember(requestContext(request), userGroupId, userId);
+    this.setStatus(204);
+  }
+
+  /** Removes a user from the group. A system group always keeps at least one member. */
+  @Delete("{userGroupId}/members/{userId}")
+  @SuccessResponse(204, "Member removed")
+  @Response<ProblemDetails>(404, "Not found")
+  @Response<ProblemDetails>(409, "Last member of a system group")
+  public async removeUserGroupMember(
+    @Request() request: unknown,
+    @Path() userGroupId: Uuid,
+    @Path() userId: Uuid,
+  ): Promise<void> {
+    await removeUserGroupMember(requestContext(request), userGroupId, userId);
     this.setStatus(204);
   }
 }
