@@ -43,3 +43,8 @@ jobs:
 
       - name: Verify project
         run: pnpm check
+
+      - name: Verify generated contract is committed
+        # pnpm check regenerates the OpenAPI document and tsoa routes. A difference means a
+        # controller or DTO changed without committing the generated contract.
+        run: git diff --exit-code -- openapi/openapi.json src/generated/routes.ts
