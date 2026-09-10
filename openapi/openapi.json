@@ -70,6 +70,75 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"Uuid": {
+				"type": "string",
+				"format": "uuid",
+				"description": "Opaque resource identifier. The pattern makes tsoa reject malformed IDs before they reach a\ndatabase query.",
+				"pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+			},
+			"UserDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"displayName": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string",
+						"nullable": true,
+						"description": "Email of the linked local login, or `null` when the user has no local login yet."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"displayName",
+					"email",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PageInfo": {
+				"properties": {
+					"nextCursor": {
+						"type": "string",
+						"nullable": true
+					},
+					"hasMore": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"nextCursor",
+					"hasMore"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UserPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/UserDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SetupResponse": {
 				"properties": {
 					"user": {
@@ -159,12 +228,6 @@
 					"audit.read"
 				]
 			},
-			"Uuid": {
-				"type": "string",
-				"format": "uuid",
-				"description": "Opaque resource identifier. The pattern makes tsoa reject malformed IDs before they reach a\ndatabase query.",
-				"pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-			},
 			"PermissionGrantDto": {
 				"properties": {
 					"permission": {
@@ -232,23 +295,6 @@
 					"permissions",
 					"createdAt",
 					"updatedAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PageInfo": {
-				"properties": {
-					"nextCursor": {
-						"type": "string",
-						"nullable": true
-					},
-					"hasMore": {
-						"type": "boolean"
-					}
-				},
-				"required": [
-					"nextCursor",
-					"hasMore"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -968,6 +1014,154 @@
 		"contact": {}
 	},
 	"paths": {
+		"/users": {
+			"get": {
+				"operationId": "ListUsers",
+				"responses": {
+					"200": {
+						"description": "Users",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists users ordered by creation time, oldest first. Requires instance-wide `users.read`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/users/{userId}": {
+			"get": {
+				"operationId": "GetUser",
+				"responses": {
+					"200": {
+						"description": "User",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "userId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
 		"/setup": {
 			"post": {
 				"operationId": "CreateAdministrator",
