@@ -6,6 +6,7 @@ import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import {
   notFoundProblem,
+  ProblemError,
   slugConflictProblem,
   versionConflictProblem,
 } from "../../shared/errors/problem-error.js";
@@ -154,7 +155,7 @@ export async function updateEventRole(
   return toDto(await findRole(eventId, roleId));
 }
 
-/** Members will block deletion once memberships exist; until then a role can always be removed. */
+/** A role that is still assigned to members cannot be deleted. */
 export async function deleteEventRole(
   actor: ActorContext,
   eventId: string,
@@ -164,6 +165,16 @@ export async function deleteEventRole(
   const current = await findRole(eventId, roleId);
 
   await database.$transaction(async (transaction) => {
+    // Counted inside the transaction; the restrictive foreign key is the final safeguard.
+    if ((await transaction.eventMember.count({ where: { eventRoleId: current.id } })) > 0) {
+      throw new ProblemError({
+        type: "urn:openmeshtak:problem:role-in-use",
+        title: "Role is still assigned",
+        status: 409,
+        detail: "Reassign the members of this role before deleting it.",
+        code: "ROLE_IN_USE",
+      });
+    }
     await transaction.eventRole.delete({ where: { id: current.id } });
     await recordAudit(audit(actor, "event-role.deleted", current), transaction);
   });

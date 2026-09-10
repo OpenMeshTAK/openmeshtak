@@ -1,5 +1,10 @@
 import type { Event } from "../../generated/prisma/client.js";
-import { forbidden, hasPermission, requirePermission } from "../../shared/auth/permission-check.js";
+import {
+  forbidden,
+  hasAnyGrantForEvent,
+  hasPermission,
+  requirePermission,
+} from "../../shared/auth/permission-check.js";
 import type { Permission } from "../../shared/auth/permissions.js";
 import type { Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
@@ -33,8 +38,8 @@ export async function requireReadableEvent(principal: Principal, eventId: string
 
 /**
  * Loads an event for an action guarded by an event-scoped permission other than `events.read`,
- * such as `members.sync`. Callers that can neither perform the action nor read the event get a
- * concealed `404`; callers that can read it but lack the permission get `403`.
+ * such as `members.sync`. Callers without any grant covering the event get a concealed `404`;
+ * callers that know the event through another grant but lack this permission get `403`.
  */
 export async function requireEventPermission(
   principal: Principal,
@@ -42,7 +47,7 @@ export async function requireEventPermission(
   permission: Permission,
 ): Promise<Event> {
   if (!(await hasPermission(principal, permission, eventId))) {
-    if (await hasPermission(principal, "events.read", eventId)) {
+    if (await hasAnyGrantForEvent(principal, eventId)) {
       throw forbidden();
     }
     throw notFoundProblem();

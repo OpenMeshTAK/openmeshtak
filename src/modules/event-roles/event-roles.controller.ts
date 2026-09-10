@@ -106,7 +106,7 @@ export class EventRolesController extends Controller {
   @Delete("{roleId}")
   @SuccessResponse(204, "Event role deleted")
   @Response<ProblemDetails>(403, "Access denied")
-  @Response<ProblemDetails>(409, "Event archived")
+  @Response<ProblemDetails>(409, "Event archived or role still assigned to members")
   public async deleteEventRole(
     @Request() request: unknown,
     @Path() eventId: Uuid,

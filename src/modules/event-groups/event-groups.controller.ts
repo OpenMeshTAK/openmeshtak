@@ -107,7 +107,7 @@ export class EventGroupsController extends Controller {
   @Delete("{groupId}")
   @SuccessResponse(204, "Event group deleted")
   @Response<ProblemDetails>(403, "Access denied")
-  @Response<ProblemDetails>(409, "Event archived")
+  @Response<ProblemDetails>(409, "Event archived or group still assigned to members")
   public async deleteEventGroup(
     @Request() request: unknown,
     @Path() eventId: Uuid,

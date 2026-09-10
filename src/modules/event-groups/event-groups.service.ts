@@ -6,6 +6,7 @@ import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import {
   notFoundProblem,
+  ProblemError,
   slugConflictProblem,
   versionConflictProblem,
 } from "../../shared/errors/problem-error.js";
@@ -154,7 +155,7 @@ export async function updateEventGroup(
   return toDto(await findGroup(eventId, groupId));
 }
 
-/** Members will block deletion once memberships exist; until then a group can always be removed. */
+/** A group that is still assigned to members cannot be deleted. */
 export async function deleteEventGroup(
   actor: ActorContext,
   eventId: string,
@@ -164,6 +165,16 @@ export async function deleteEventGroup(
   const current = await findGroup(eventId, groupId);
 
   await database.$transaction(async (transaction) => {
+    // Counted inside the transaction; the restrictive foreign key is the final safeguard.
+    if ((await transaction.eventMember.count({ where: { eventGroupId: current.id } })) > 0) {
+      throw new ProblemError({
+        type: "urn:openmeshtak:problem:group-in-use",
+        title: "Group is still assigned",
+        status: 409,
+        detail: "Reassign the members of this group before deleting it.",
+        code: "GROUP_IN_USE",
+      });
+    }
     await transaction.eventGroup.delete({ where: { id: current.id } });
     await recordAudit(audit(actor, "event-group.deleted", current), transaction);
   });

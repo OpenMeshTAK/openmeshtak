@@ -48,6 +48,26 @@ export async function hasPermission(
   return grant !== null;
 }
 
+/**
+ * Whether the caller holds any grant that covers the event. Such callers already know the event
+ * exists, so a missing specific permission is reported as `403` instead of a concealing `404`.
+ */
+export async function hasAnyGrantForEvent(principal: Principal, eventId: string): Promise<boolean> {
+  const scopeKey = { in: acceptedScopeKeys(eventId) };
+
+  const grant =
+    principal.type === "user"
+      ? await database.permissionGrant.findFirst({
+          where: { scopeKey, userGroup: { memberships: { some: { userId: principal.id } } } },
+          select: { id: true },
+        })
+      : await database.serviceAccountPermissionGrant.findFirst({
+          where: { scopeKey, serviceAccount: { id: principal.id, status: "active" } },
+          select: { id: true },
+        });
+  return grant !== null;
+}
+
 /** Event visibility for list queries: every event, or only the explicitly granted ones. */
 export type EventAccess = { all: true } | { all: false; eventIds: string[] };
 
