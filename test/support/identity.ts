@@ -39,7 +39,11 @@ export async function clearDatabase(): Promise<void> {
  * Creates a signed-in user through Better Auth's server API. Server-side calls bypass the HTTP
  * sign-in rate limit, which keeps tests independent of each other.
  */
-export async function createUser(name: string, grants: TestGrant[]): Promise<TestUser> {
+export async function createUser(
+  name: string,
+  grants: TestGrant[],
+  options: { systemKey?: string } = {},
+): Promise<TestUser> {
   const signUp = await auth.api.signUpEmail({
     body: {
       email: `${randomUUID()}@example.test`,
@@ -58,6 +62,7 @@ export async function createUser(name: string, grants: TestGrant[]): Promise<Tes
       id: randomUUID(),
       name: `${name} group`,
       slug: `group-${id}`,
+      systemKey: options.systemKey ?? null,
       memberships: { create: { userId: id } },
       permissionGrants: {
         create: grants.map(({ permission, eventId = null }) => ({

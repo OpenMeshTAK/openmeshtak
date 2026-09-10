@@ -5,6 +5,7 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { auth } from "../auth/auth.js";
+import { ADMINISTRATORS_SYSTEM_KEY } from "../user-groups/system-groups.js";
 import { INSTANCE_SCOPE_KEY, PERMISSIONS } from "../../shared/auth/permissions.js";
 import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
@@ -50,7 +51,7 @@ async function isConfigured(): Promise<boolean> {
   const administrator = await database.userGroupMembership.findFirst({
     where: {
       userGroup: {
-        slug: ADMIN_GROUP_SLUG,
+        systemKey: ADMINISTRATORS_SYSTEM_KEY,
       },
     },
     select: {
@@ -232,6 +233,7 @@ export async function createInitialAdministrator(
           id: adminGroupId,
           name: "Admin",
           slug: ADMIN_GROUP_SLUG,
+          systemKey: ADMINISTRATORS_SYSTEM_KEY,
           memberships: {
             create: {
               userId: domainUserId,

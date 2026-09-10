@@ -1,7 +1,7 @@
 import type { Permission } from "../../shared/auth/permissions.js";
 import type { Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
-import type { PermissionGrantDto } from "../service-accounts/service-account.dto.js";
+import type { PermissionGrantDto } from "../../shared/auth/permission-grant.dto.js";
 
 export interface PrincipalDto {
   type: "user" | "service-account";

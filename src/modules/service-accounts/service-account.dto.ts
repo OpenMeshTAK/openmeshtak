@@ -1,12 +1,5 @@
-import type { Permission } from "../../shared/auth/permissions.js";
-import type { Uuid } from "../../shared/http/uuid.js";
+import type { PermissionGrantDto } from "../../shared/auth/permission-grant.dto.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
-
-export interface PermissionGrantDto {
-  permission: Permission;
-  /** Event the grant is limited to, or `null` for an instance-wide grant. */
-  eventId: Uuid | null;
-}
 
 export type ServiceAccountStatus = "active" | "disabled";
 

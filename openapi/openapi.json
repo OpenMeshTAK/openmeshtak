@@ -139,6 +139,190 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"Permission": {
+				"type": "string",
+				"enum": [
+					"users.read",
+					"users.manage",
+					"user-groups.read",
+					"user-groups.manage",
+					"events.read",
+					"events.manage",
+					"events.reactivate",
+					"members.read",
+					"members.manage",
+					"members.sync",
+					"member-claims.create",
+					"missions.read",
+					"missions.edit",
+					"missions.publish",
+					"artifacts.generate",
+					"artifacts.download",
+					"service-accounts.manage",
+					"audit.read"
+				]
+			},
+			"PermissionGrantDto": {
+				"properties": {
+					"permission": {
+						"$ref": "#/components/schemas/Permission"
+					},
+					"eventId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "Event the grant is limited to, or `null` for an instance-wide grant."
+					}
+				},
+				"required": [
+					"permission",
+					"eventId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UserGroupDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"system": {
+						"type": "boolean",
+						"description": "Protected group managed by the server, such as the setup Admin group. It cannot be deleted,\nits permissions cannot change and it always keeps at least one member."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"memberCount": {
+						"type": "number",
+						"format": "double"
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"slug",
+					"system",
+					"version",
+					"memberCount",
+					"permissions",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UserGroupPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/UserGroupDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Slug": {
+				"type": "string",
+				"description": "Lowercase ASCII letters and digits separated by single hyphens.",
+				"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+				"minLength": 1,
+				"maxLength": 64
+			},
+			"CreateUserGroupRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"slug": {
+						"$ref": "#/components/schemas/Slug"
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array",
+						"maxItems": 200
+					}
+				},
+				"required": [
+					"name",
+					"slug",
+					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateUserGroupRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"slug": {
+						"$ref": "#/components/schemas/Slug"
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array",
+						"description": "Complete replacement of the group's grants.",
+						"maxItems": 200
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"slug",
+					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SetupResponse": {
 				"properties": {
 					"user": {
@@ -204,51 +388,6 @@
 					"active",
 					"disabled"
 				]
-			},
-			"Permission": {
-				"type": "string",
-				"enum": [
-					"users.read",
-					"users.manage",
-					"user-groups.read",
-					"user-groups.manage",
-					"events.read",
-					"events.manage",
-					"events.reactivate",
-					"members.read",
-					"members.manage",
-					"members.sync",
-					"member-claims.create",
-					"missions.read",
-					"missions.edit",
-					"missions.publish",
-					"artifacts.generate",
-					"artifacts.download",
-					"service-accounts.manage",
-					"audit.read"
-				]
-			},
-			"PermissionGrantDto": {
-				"properties": {
-					"permission": {
-						"$ref": "#/components/schemas/Permission"
-					},
-					"eventId": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/Uuid"
-							}
-						],
-						"nullable": true,
-						"description": "Event the grant is limited to, or `null` for an instance-wide grant."
-					}
-				},
-				"required": [
-					"permission",
-					"eventId"
-				],
-				"type": "object",
-				"additionalProperties": false
 			},
 			"ServiceAccountDto": {
 				"properties": {
@@ -648,13 +787,6 @@
 				],
 				"type": "object",
 				"additionalProperties": false
-			},
-			"Slug": {
-				"type": "string",
-				"description": "Lowercase ASCII letters and digits separated by single hyphens.",
-				"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-				"minLength": 1,
-				"maxLength": 64
 			},
 			"CreateEventRequest": {
 				"properties": {
@@ -1154,6 +1286,383 @@
 					{
 						"in": "path",
 						"name": "userId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/user-groups": {
+			"get": {
+				"operationId": "ListUserGroups",
+				"responses": {
+					"200": {
+						"description": "User groups",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserGroupPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists user groups ordered by creation time, oldest first. Requires `user-groups.read`.",
+				"tags": [
+					"User groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateUserGroup",
+				"responses": {
+					"201": {
+						"description": "User group created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Slug already in use",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a group. Callers can only grant permissions they hold themselves.",
+				"tags": [
+					"User groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateUserGroupRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/user-groups/{userGroupId}": {
+			"get": {
+				"operationId": "GetUserGroup",
+				"responses": {
+					"200": {
+						"description": "User group",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"User groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "userGroupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateUserGroup",
+				"responses": {
+					"200": {
+						"description": "User group updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, slug conflict or protected system group",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces name, slug and grants. Requires the current `version`.",
+				"tags": [
+					"User groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "userGroupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateUserGroupRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteUserGroup",
+				"responses": {
+					"204": {
+						"description": "User group deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Protected system group",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"User groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "userGroupId",
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"

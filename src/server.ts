@@ -1,5 +1,6 @@
 import { createApp } from "./app.js";
 import { rotateBootstrapChallenge } from "./modules/setup/bootstrap.service.js";
+import { ensureAdministratorGrants } from "./modules/user-groups/system-groups.js";
 import { config } from "./shared/config/config.js";
 import { connectDatabase, disconnectDatabase } from "./shared/database/database.js";
 import { logger } from "./shared/logging/logger.js";
@@ -7,6 +8,7 @@ import { writeBootstrapOperatorNotice } from "./shared/logging/operator-output.j
 
 async function startServer(): Promise<void> {
   await connectDatabase();
+  await ensureAdministratorGrants();
 
   const bootstrapChallenge = await rotateBootstrapChallenge();
   if (bootstrapChallenge !== null) {

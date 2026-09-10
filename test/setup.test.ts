@@ -140,6 +140,7 @@ void describe("first-administrator setup", () => {
       "A-secure-test-password-123!",
     );
     assert.equal(domainUser.memberships[0]?.userGroup.slug, "admin");
+    assert.equal(domainUser.memberships[0]?.userGroup.systemKey, "administrators");
     assert.deepEqual(
       domainUser.memberships[0]?.userGroup.permissionGrants
         .map(({ permission }) => permission)

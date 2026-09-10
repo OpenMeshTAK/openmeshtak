@@ -104,10 +104,12 @@ model DomainUser {
   updatedAt              DateTime              @updatedAt
 }
 
+/// Authorization group. `systemKey` marks groups the server protects, such as the setup Admin group.
 model UserGroup {
   id               String                @id
   name             String
   slug             String                @unique
+  systemKey        String?               @unique
   version          Int                   @default(1)
   memberships      UserGroupMembership[]
   permissionGrants PermissionGrant[]
