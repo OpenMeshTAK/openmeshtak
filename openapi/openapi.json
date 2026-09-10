@@ -676,6 +676,124 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"MemberClaimStatus": {
+				"type": "string",
+				"enum": [
+					"open",
+					"consumed",
+					"revoked",
+					"expired"
+				]
+			},
+			"MemberClaimDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"status": {
+						"$ref": "#/components/schemas/MemberClaimStatus"
+					},
+					"expiresAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"consumedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"revokedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"memberId",
+					"status",
+					"expiresAt",
+					"consumedAt",
+					"revokedAt",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatedMemberClaimResponse": {
+				"properties": {
+					"claim": {
+						"$ref": "#/components/schemas/MemberClaimDto"
+					},
+					"token": {
+						"type": "string",
+						"description": "Single-use bearer value. Returned exactly once and never retrievable again."
+					},
+					"claimUrl": {
+						"type": "string",
+						"description": "Link for the participant. The token travels in the URL fragment, which browsers never send\nto the server; the Web application removes it from history before exchanging it."
+					}
+				},
+				"required": [
+					"claim",
+					"token",
+					"claimUrl"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ClaimExchangeResponse": {
+				"properties": {
+					"user": {
+						"properties": {
+							"displayName": {
+								"type": "string"
+							},
+							"id": {
+								"$ref": "#/components/schemas/Uuid"
+							}
+						},
+						"required": [
+							"displayName",
+							"id"
+						],
+						"type": "object"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					}
+				},
+				"required": [
+					"user",
+					"eventId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ClaimExchangeRequest": {
+				"properties": {
+					"token": {
+						"type": "string",
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"token"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"HealthResponse": {
 				"properties": {
 					"status": {
@@ -2837,6 +2955,309 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/events/{eventId}/members/{memberId}/claims": {
+			"get": {
+				"operationId": "ListMemberClaims",
+				"responses": {
+					"200": {
+						"description": "Claims",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/MemberClaimDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the member's 20 most recent claims without their tokens. Requires `members.read`.",
+				"tags": [
+					"Event members"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "memberId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateMemberClaim",
+				"responses": {
+					"201": {
+						"description": "Claim created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreatedMemberClaimResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Issues a 24-hour single-use claim and returns its token exactly once. Earlier open claims of\nthe member are revoked. Requires `member-claims.create` and an active event.",
+				"tags": [
+					"Event members"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "memberId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/members/{memberId}/claims/{claimId}/revoke": {
+			"post": {
+				"operationId": "RevokeMemberClaim",
+				"responses": {
+					"200": {
+						"description": "Claim revoked",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MemberClaimDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Revokes an open claim immediately. Repeating the request is harmless.",
+				"tags": [
+					"Event members"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "memberId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/auth/claims/exchange": {
+			"post": {
+				"operationId": "ExchangeClaim",
+				"responses": {
+					"200": {
+						"description": "Session established",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ClaimExchangeResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Claim not usable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many attempts",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Exchanges a single-use participant claim for a normal browser session. The token is sent in\nthe body, never in the URL. Every unusable claim returns the same `401`.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ClaimExchangeRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/health": {

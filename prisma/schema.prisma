@@ -30,6 +30,7 @@ model Event {
   groups               EventGroup[]
   members              EventMember[]
   syncIssues           SyncIssue[]
+  memberClaims         MemberClaim[]
 }
 
 model User {
@@ -292,19 +293,20 @@ model ExternalIdentity {
 
 /// Participation of one user in one event with exactly one event role and one event group.
 model EventMember {
-  id           String     @id
+  id           String        @id
   eventId      String
   userId       String
   eventRoleId  String
   eventGroupId String
-  version      Int        @default(1)
-  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user         DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version      Int           @default(1)
+  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         DomainUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Restrict: assigned roles and groups cannot be deleted until members are reassigned.
-  eventRole    EventRole  @relation(fields: [eventRoleId], references: [id], onDelete: Restrict)
-  eventGroup   EventGroup @relation(fields: [eventGroupId], references: [id], onDelete: Restrict)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  eventRole    EventRole     @relation(fields: [eventRoleId], references: [id], onDelete: Restrict)
+  eventGroup   EventGroup    @relation(fields: [eventGroupId], references: [id], onDelete: Restrict)
+  claims       MemberClaim[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@unique([eventId, userId])
   @@index([eventId, createdAt, id])
@@ -337,4 +339,25 @@ model SyncIssue {
 
   @@unique([eventId, provider, externalId])
   @@index([eventId, createdAt, id])
+}
+
+/// Short-lived, single-use claim that lets a member establish a browser session. Only the SHA-256
+/// digest of the random token is stored.
+model MemberClaim {
+  id           String      @id
+  eventId      String
+  memberId     String
+  tokenHash    String      @unique
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  revokedAt    DateTime?
+  /// Safe actor reference ("user" or "service-account") of whoever issued the claim.
+  issuedByType String
+  issuedById   String
+  event        Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member       EventMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+
+  @@index([memberId])
+  @@index([eventId])
 }

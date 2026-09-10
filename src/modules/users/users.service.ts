@@ -1,3 +1,4 @@
+import { isPlaceholderEmail } from "../auth/claim-session.plugin.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
@@ -31,7 +32,11 @@ export function toUserDto(row: UserRow): UserDto {
   return {
     id: row.id,
     displayName: row.displayName,
-    email: row.authSubject?.email ?? null,
+    // Claim placeholders are internal Better Auth requirements, not real addresses.
+    email:
+      row.authSubject === null || isPlaceholderEmail(row.authSubject.email)
+        ? null
+        : row.authSubject.email,
     createdAt: row.createdAt.toISOString(),
   };
 }

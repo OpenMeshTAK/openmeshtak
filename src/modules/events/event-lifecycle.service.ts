@@ -129,6 +129,17 @@ export async function transitionEvent(
         : invalidTransition(latest.status, transition);
     }
 
+    // Archiving invalidates outstanding participant claims. Reactivation never revives them.
+    const revokedClaims =
+      transition.to === "archived"
+        ? (
+            await transaction.memberClaim.updateMany({
+              where: { eventId, consumedAt: null, revokedAt: null },
+              data: { revokedAt: new Date() },
+            })
+          ).count
+        : 0;
+
     await recordAudit(
       {
         actor: actor.principal,
@@ -137,7 +148,11 @@ export async function transitionEvent(
         targetId: eventId,
         result: "success",
         traceId: actor.traceId,
-        metadata: { previousStatus: transition.from, status: transition.to },
+        metadata: {
+          previousStatus: transition.from,
+          status: transition.to,
+          ...(revokedClaims > 0 ? { revokedClaims } : {}),
+        },
       },
       transaction,
     );

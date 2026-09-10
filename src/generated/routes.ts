@@ -14,6 +14,10 @@ import { ServiceAccountsController } from './../modules/service-accounts/service
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PrincipalController } from './../modules/principal/principal.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { ClaimExchangeController } from './../modules/member-claims/claim-exchange.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { HealthController } from './../modules/health/health.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EventsController } from './../modules/events/events.controller.js';
@@ -286,6 +290,53 @@ const models: TsoaRoute.Models = {
             "id": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MemberClaimStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["open"]},{"dataType":"enum","enums":["consumed"]},{"dataType":"enum","enums":["revoked"]},{"dataType":"enum","enums":["expired"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MemberClaimDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "memberId": {"ref":"Uuid","required":true},
+            "status": {"ref":"MemberClaimStatus","required":true},
+            "expiresAt": {"dataType":"string","required":true},
+            "consumedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "revokedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "createdAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreatedMemberClaimResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "claim": {"ref":"MemberClaimDto","required":true},
+            "token": {"dataType":"string","required":true},
+            "claimUrl": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ClaimExchangeResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "user": {"dataType":"nestedObjectLiteral","nestedProperties":{"displayName":{"dataType":"string","required":true},"id":{"ref":"Uuid","required":true}},"required":true},
+            "eventId": {"ref":"Uuid","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ClaimExchangeRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "token": {"dataType":"string","required":true,"validators":{"maxLength":{"value":200}}},
         },
         "additionalProperties": false,
     },
@@ -1202,6 +1253,137 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getPrincipal',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMemberClaimsController_listMemberClaims: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/members/:memberId/claims',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MemberClaimsController)),
+            ...(fetchMiddlewares<RequestHandler>(MemberClaimsController.prototype.listMemberClaims)),
+
+            async function MemberClaimsController_listMemberClaims(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMemberClaimsController_listMemberClaims, request, response });
+
+                const controller = new MemberClaimsController();
+
+              await templateService.apiHandler({
+                methodName: 'listMemberClaims',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMemberClaimsController_createMemberClaim: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/members/:memberId/claims',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MemberClaimsController)),
+            ...(fetchMiddlewares<RequestHandler>(MemberClaimsController.prototype.createMemberClaim)),
+
+            async function MemberClaimsController_createMemberClaim(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMemberClaimsController_createMemberClaim, request, response });
+
+                const controller = new MemberClaimsController();
+
+              await templateService.apiHandler({
+                methodName: 'createMemberClaim',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMemberClaimsController_revokeMemberClaim: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+                claimId: {"in":"path","name":"claimId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/members/:memberId/claims/:claimId/revoke',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MemberClaimsController)),
+            ...(fetchMiddlewares<RequestHandler>(MemberClaimsController.prototype.revokeMemberClaim)),
+
+            async function MemberClaimsController_revokeMemberClaim(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMemberClaimsController_revokeMemberClaim, request, response });
+
+                const controller = new MemberClaimsController();
+
+              await templateService.apiHandler({
+                methodName: 'revokeMemberClaim',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsClaimExchangeController_exchangeClaim: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"ClaimExchangeRequest"},
+        };
+        app.post('/api/v1/auth/claims/exchange',
+            ...(fetchMiddlewares<RequestHandler>(ClaimExchangeController)),
+            ...(fetchMiddlewares<RequestHandler>(ClaimExchangeController.prototype.exchangeClaim)),
+
+            async function ClaimExchangeController_exchangeClaim(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsClaimExchangeController_exchangeClaim, request, response });
+
+                const controller = new ClaimExchangeController();
+
+              await templateService.apiHandler({
+                methodName: 'exchangeClaim',
                 controller,
                 response,
                 next,
