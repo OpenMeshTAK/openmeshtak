@@ -323,6 +323,19 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"SetupStatusResponse": {
+				"properties": {
+					"configured": {
+						"type": "boolean",
+						"description": "`false` until the first administrator exists; the Web app then opens the setup flow."
+					}
+				},
+				"required": [
+					"configured"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SetupResponse": {
 				"properties": {
 					"user": {
@@ -2880,6 +2893,27 @@
 			}
 		},
 		"/setup": {
+			"get": {
+				"operationId": "GetSetupStatus",
+				"responses": {
+					"200": {
+						"description": "Setup status",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SetupStatusResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Reports whether first-administrator setup has been completed. Reveals nothing else.",
+				"tags": [
+					"Setup"
+				],
+				"security": [],
+				"parameters": []
+			},
 			"post": {
 				"operationId": "CreateAdministrator",
 				"responses": {

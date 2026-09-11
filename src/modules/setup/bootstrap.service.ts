@@ -47,7 +47,7 @@ function tokenMatches(token: string, expectedHash: string): boolean {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-async function isConfigured(): Promise<boolean> {
+export async function isConfigured(): Promise<boolean> {
   const administrator = await database.userGroupMembership.findFirst({
     where: {
       userGroup: {

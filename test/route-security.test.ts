@@ -16,6 +16,7 @@ interface OpenApiDocument {
 /** Every intentionally public operation. Adding one here must be a deliberate security decision. */
 const PUBLIC_OPERATIONS = new Set([
   "GET /health",
+  "GET /setup",
   "POST /setup",
   "POST /auth/claims/exchange",
 ]);

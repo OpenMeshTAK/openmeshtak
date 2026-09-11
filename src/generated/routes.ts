@@ -171,6 +171,14 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SetupStatusResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "configured": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SetupResponse": {
         "dataType": "refObject",
         "properties": {
@@ -1144,6 +1152,35 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSetupController_getSetupStatus: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/v1/setup',
+            ...(fetchMiddlewares<RequestHandler>(SetupController)),
+            ...(fetchMiddlewares<RequestHandler>(SetupController.prototype.getSetupStatus)),
+
+            async function SetupController_getSetupStatus(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSetupController_getSetupStatus, request, response });
+
+                const controller = new SetupController();
+
+              await templateService.apiHandler({
+                methodName: 'getSetupStatus',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

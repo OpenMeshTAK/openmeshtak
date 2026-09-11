@@ -167,6 +167,26 @@ void describe("first-administrator setup", () => {
     assert.equal(await database.user.count(), 1);
   });
 
+  void it("reports whether setup is complete", async () => {
+    const before = await request(createApp()).get("/api/v1/setup").expect(200);
+    assert.deepEqual(before.body, { configured: false });
+
+    await createBootstrapChallenge();
+    const agent = request.agent(createApp());
+    await agent
+      .post("/api/v1/setup")
+      .send({
+        email: "admin@example.test",
+        name: "Initial Admin",
+        password: "A-secure-test-password-123!",
+        token: bootstrapToken,
+      })
+      .expect(201);
+
+    const after = await agent.get("/api/v1/setup").expect(200);
+    assert.deepEqual(after.body, { configured: true });
+  });
+
   void it("rate-limits repeated setup attempts", async () => {
     await createBootstrapChallenge();
     const app = createApp();

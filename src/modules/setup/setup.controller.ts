@@ -2,6 +2,7 @@ import type { Response } from "express";
 import {
   Body,
   Controller,
+  Get,
   Middlewares,
   NoSecurity,
   Post,
@@ -10,7 +11,7 @@ import {
   SuccessResponse,
   Tags,
 } from "tsoa";
-import { createInitialAdministrator } from "./bootstrap.service.js";
+import { createInitialAdministrator, isConfigured } from "./bootstrap.service.js";
 import { setupRateLimit } from "./setup-rate-limit.js";
 
 export interface SetupRequest {
@@ -22,6 +23,11 @@ export interface SetupRequest {
   password: string;
   /** @minLength 48 @maxLength 128 */
   token: string;
+}
+
+export interface SetupStatusResponse {
+  /** `false` until the first administrator exists; the Web app then opens the setup flow. */
+  configured: boolean;
 }
 
 export interface SetupResponse {
@@ -36,6 +42,13 @@ export interface SetupResponse {
 @Tags("Setup")
 @NoSecurity()
 export class SetupController extends Controller {
+  /** Reports whether first-administrator setup has been completed. Reveals nothing else. */
+  @Get()
+  @SuccessResponse(200, "Setup status")
+  public async getSetupStatus(): Promise<SetupStatusResponse> {
+    return { configured: await isConfigured() };
+  }
+
   /** Creates the first password-backed administrator using the one-time operator token. */
   @Post()
   @Middlewares(setupRateLimit)
