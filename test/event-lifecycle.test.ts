@@ -142,6 +142,16 @@ void describe("event lifecycle", () => {
     assert.deepEqual((response.body as ProblemBody).errors?.map(({ field }) => field), ["roles"]);
   });
 
+  void it("requires a short-name prefix for every group before activation", async () => {
+    await addRoleAndGroup();
+    await database.eventGroup.updateMany({ where: { eventId }, data: { shortNamePrefix: null } });
+
+    const response = await transition("activate", 1).expect(409);
+    assert.deepEqual((response.body as ProblemBody).errors?.map(({ field }) => field), [
+      "groups.default.provisioning.shortNamePrefix",
+    ]);
+  });
+
   void it("conceals events outside the caller's scope", async () => {
     const outsider = await createUser("Outsider", [{ permission: "events.manage", eventId: await createEvent() }]);
     await transition("activate", 1, outsider).expect(404);

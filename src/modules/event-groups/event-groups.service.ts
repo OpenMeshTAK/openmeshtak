@@ -8,6 +8,7 @@ import {
   notFoundProblem,
   ProblemError,
   slugConflictProblem,
+  validationProblem,
   versionConflictProblem,
 } from "../../shared/errors/problem-error.js";
 import {
@@ -24,6 +25,13 @@ import type {
   EventGroupPage,
   UpdateEventGroupRequest,
 } from "./event-group.dto.js";
+import {
+  defaultProvisioning,
+  provisioningProblems,
+  toGroupProvisioning,
+  toProvisioningColumns,
+  type GroupProvisioning,
+} from "./group-provisioning.js";
 
 function toDto(row: EventGroup): EventGroupDto {
   return {
@@ -32,10 +40,61 @@ function toDto(row: EventGroup): EventGroupDto {
     name: row.name,
     slug: row.slug,
     description: row.description,
+    provisioning: toGroupProvisioning(row),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+function prefixConflict(): ProblemError {
+  return new ProblemError({
+    type: "urn:openmeshtak:problem:short-name-prefix-conflict",
+    title: "Short-name prefix already in use",
+    status: 409,
+    detail: "Another group in this event already uses this Meshtastic short-name prefix.",
+    code: "SHORT_NAME_PREFIX_CONFLICT",
+  });
+}
+
+async function prefixTaken(eventId: string, prefix: string, exceptGroupId?: string): Promise<boolean> {
+  const other = await database.eventGroup.findFirst({
+    where: { eventId, shortNamePrefix: prefix, ...(exceptGroupId === undefined ? {} : { NOT: { id: exceptGroupId } }) },
+    select: { id: true },
+  });
+  return other !== null;
+}
+
+function validateProvisioning(provisioning: GroupProvisioning): void {
+  const problems = provisioningProblems(provisioning);
+  if (problems.length > 0) {
+    throw validationProblem(problems);
+  }
+}
+
+/**
+ * Without explicit settings a group gets defaults. The default prefix is the first slug letter;
+ * when another group already uses it (Bravo and Blue) the prefix stays unset for the
+ * administrator to choose instead of failing the creation.
+ */
+async function provisioningForCreate(
+  eventId: string,
+  input: CreateEventGroupRequest,
+): Promise<GroupProvisioning> {
+  if (input.provisioning !== undefined) {
+    validateProvisioning(input.provisioning);
+    const prefix = input.provisioning.shortNamePrefix;
+    if (prefix !== null && (await prefixTaken(eventId, prefix))) {
+      throw prefixConflict();
+    }
+    return input.provisioning;
+  }
+
+  const defaults = defaultProvisioning(input.slug);
+  const prefix = defaults.shortNamePrefix;
+  return prefix !== null && (await prefixTaken(eventId, prefix))
+    ? { ...defaults, shortNamePrefix: null }
+    : defaults;
 }
 
 function slugConflict(error: unknown): unknown {
@@ -97,6 +156,7 @@ export async function createEventGroup(
   input: CreateEventGroupRequest,
 ): Promise<EventGroupDto> {
   await requireMutableEvent(actor.principal, eventId);
+  const provisioning = await provisioningForCreate(eventId, input);
 
   try {
     return toDto(
@@ -108,6 +168,7 @@ export async function createEventGroup(
             name: input.name,
             slug: input.slug,
             description: input.description ?? null,
+            ...toProvisioningColumns(provisioning),
           },
         });
         await recordAudit(audit(actor, "event-group.created", row), transaction);
@@ -130,6 +191,11 @@ export async function updateEventGroup(
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
   }
+  validateProvisioning(input.provisioning);
+  const prefix = input.provisioning.shortNamePrefix;
+  if (prefix !== null && (await prefixTaken(eventId, prefix, groupId))) {
+    throw prefixConflict();
+  }
 
   try {
     await database.$transaction(async (transaction) => {
@@ -139,6 +205,7 @@ export async function updateEventGroup(
           name: input.name,
           slug: input.slug,
           description: input.description,
+          ...toProvisioningColumns(input.provisioning),
           version: { increment: 1 },
         },
       });

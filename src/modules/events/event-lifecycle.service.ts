@@ -76,6 +76,19 @@ async function activationProblems(event: Event): Promise<ProblemFieldError[]> {
   if (groups === 0) {
     problems.push({ field: "groups", code: "REQUIRED", message: "Add at least one event group." });
   }
+
+  const groupsWithoutPrefix = await database.eventGroup.findMany({
+    where: { eventId: event.id, shortNamePrefix: null },
+    select: { slug: true },
+    orderBy: { slug: "asc" },
+  });
+  for (const { slug } of groupsWithoutPrefix) {
+    problems.push({
+      field: `groups.${slug}.provisioning.shortNamePrefix`,
+      code: "REQUIRED",
+      message: "Choose a Meshtastic short-name prefix for this group.",
+    });
+  }
   return problems;
 }
 

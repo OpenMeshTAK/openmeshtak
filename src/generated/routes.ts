@@ -583,6 +583,43 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTeam": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["White"]},{"dataType":"enum","enums":["Yellow"]},{"dataType":"enum","enums":["Orange"]},{"dataType":"enum","enums":["Magenta"]},{"dataType":"enum","enums":["Red"]},{"dataType":"enum","enums":["Maroon"]},{"dataType":"enum","enums":["Purple"]},{"dataType":"enum","enums":["Dark Blue"]},{"dataType":"enum","enums":["Blue"]},{"dataType":"enum","enums":["Cyan"]},{"dataType":"enum","enums":["Teal"]},{"dataType":"enum","enums":["Green"]},{"dataType":"enum","enums":["Dark Green"]},{"dataType":"enum","enums":["Brown"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakRole": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["Team Member"]},{"dataType":"enum","enums":["Team Lead"]},{"dataType":"enum","enums":["HQ"]},{"dataType":"enum","enums":["Sniper"]},{"dataType":"enum","enums":["Medic"]},{"dataType":"enum","enums":["Forward Observer"]},{"dataType":"enum","enums":["RTO"]},{"dataType":"enum","enums":["K9"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ProvisioningName": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{"pattern":{"value":"^[A-Za-z0-9_-]+$"},"minLength":{"value":1},"maxLength":{"value":64}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticDeviceRole": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["CLIENT"]},{"dataType":"enum","enums":["CLIENT_MUTE"]},{"dataType":"enum","enums":["CLIENT_HIDDEN"]},{"dataType":"enum","enums":["CLIENT_BASE"]},{"dataType":"enum","enums":["ROUTER"]},{"dataType":"enum","enums":["ROUTER_LATE"]},{"dataType":"enum","enums":["TRACKER"]},{"dataType":"enum","enums":["SENSOR"]},{"dataType":"enum","enums":["TAK"]},{"dataType":"enum","enums":["TAK_TRACKER"]},{"dataType":"enum","enums":["LOST_AND_FOUND"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticChannelName": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{"pattern":{"value":"^[A-Za-z0-9_-]{1,11}$"}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GroupProvisioning": {
+        "dataType": "refObject",
+        "properties": {
+            "callsignFormat": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":64}}},
+            "shortNamePrefix": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"pattern":{"value":"^[A-Z0-9]{1,3}$"}}},
+            "tak": {"dataType":"nestedObjectLiteral","nestedProperties":{"serverGroups":{"dataType":"array","array":{"dataType":"refAlias","ref":"ProvisioningName"},"required":true,"validators":{"maxItems":{"value":20}}},"role":{"ref":"TakRole","required":true},"team":{"ref":"TakTeam","required":true}},"required":true},
+            "meshtastic": {"dataType":"nestedObjectLiteral","nestedProperties":{"channels":{"dataType":"array","array":{"dataType":"refAlias","ref":"MeshtasticChannelName"},"required":true,"validators":{"maxItems":{"value":8}}},"deviceRole":{"ref":"MeshtasticDeviceRole","required":true}},"required":true},
+            "missionGroups": {"dataType":"array","array":{"dataType":"refAlias","ref":"ProvisioningName"},"required":true,"validators":{"maxItems":{"value":20}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "EventGroupDto": {
         "dataType": "refObject",
         "properties": {
@@ -591,6 +628,7 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true},
             "slug": {"dataType":"string","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "provisioning": {"ref":"GroupProvisioning","required":true},
             "version": {"dataType":"double","required":true},
             "createdAt": {"dataType":"string","required":true},
             "updatedAt": {"dataType":"string","required":true},
@@ -613,6 +651,7 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "slug": {"ref":"Slug","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":500}}},
+            "provisioning": {"ref":"GroupProvisioning"},
         },
         "additionalProperties": false,
     },
@@ -624,6 +663,7 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "slug": {"ref":"Slug","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":500}}},
+            "provisioning": {"ref":"GroupProvisioning","required":true},
         },
         "additionalProperties": false,
     },

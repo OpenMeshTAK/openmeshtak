@@ -260,18 +260,30 @@ model EventRole {
 
 /// Event-owned tactical/provisioning group such as `bravo`. Never grants permissions.
 model EventGroup {
-  id          String        @id
-  eventId     String
-  name        String
-  slug        String
-  description String?
-  version     Int           @default(1)
-  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  members     EventMember[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                   String        @id
+  eventId              String
+  name                 String
+  slug                 String
+  description          String?
+  version              Int           @default(1)
+  /// Template such as `{username} [Bravo]`; validated against an allowlist of placeholders.
+  callsignFormat       String        @default("{username}")
+  /// Meshtastic short-name prefix such as `B`; null until an administrator chooses a free one.
+  shortNamePrefix      String?
+  takTeam              String        @default("Cyan")
+  takRole              String        @default("Team Member")
+  /// Validated JSON string arrays.
+  takServerGroups      Json          @default("[]")
+  meshtasticDeviceRole String        @default("CLIENT")
+  meshtasticChannels   Json          @default("[]")
+  missionGroups        Json          @default("[]")
+  event                Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  members              EventMember[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   @@unique([eventId, slug])
+  @@unique([eventId, shortNamePrefix])
   @@index([eventId, createdAt, id])
 }
 

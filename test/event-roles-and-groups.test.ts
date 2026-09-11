@@ -38,6 +38,19 @@ after(async () => {
 
 for (const kind of ["roles", "groups"] as const) {
   const auditPrefix = kind === "roles" ? "event-role" : "event-group";
+  // Groups additionally carry provisioning settings that updates must replace completely.
+  const extra =
+    kind === "groups"
+      ? {
+          provisioning: {
+            callsignFormat: "{username} [Bravo]",
+            shortNamePrefix: "B",
+            tak: { team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
+            meshtastic: { deviceRole: "CLIENT", channels: ["global", "bravo"] },
+            missionGroups: ["global", "bravo"],
+          },
+        }
+      : {};
 
   void describe(`event ${kind}`, () => {
     let eventId: string;
@@ -66,14 +79,14 @@ for (const kind of ["roles", "groups"] as const) {
       const updated = await request(app)
         .put(`${base}/${created.id}`)
         .set("Cookie", admin.cookie)
-        .send({ version: 1, name: "Bravo", slug: "bravo-team", description: "Second squad" })
+        .send({ version: 1, name: "Bravo", slug: "bravo-team", description: "Second squad", ...extra })
         .expect(200);
       assert.equal((updated.body as ItemBody).version, 2);
 
       const stale = await request(app)
         .put(`${base}/${created.id}`)
         .set("Cookie", admin.cookie)
-        .send({ version: 1, name: "Stale", slug: "bravo", description: null })
+        .send({ version: 1, name: "Stale", slug: "bravo", description: null, ...extra })
         .expect(409);
       assert.equal((stale.body as ProblemBody).code, "VERSION_CONFLICT");
 

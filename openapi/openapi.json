@@ -1424,6 +1424,143 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakTeam": {
+				"type": "string",
+				"enum": [
+					"White",
+					"Yellow",
+					"Orange",
+					"Magenta",
+					"Red",
+					"Maroon",
+					"Purple",
+					"Dark Blue",
+					"Blue",
+					"Cyan",
+					"Teal",
+					"Green",
+					"Dark Green",
+					"Brown"
+				],
+				"description": "ATAK team colors as listed by the upstream Meshtastic `atak.proto` `Team` enum, using the\ndisplay names ATAK writes into CoT `__group` elements. Verified 2026-10-04."
+			},
+			"TakRole": {
+				"type": "string",
+				"enum": [
+					"Team Member",
+					"Team Lead",
+					"HQ",
+					"Sniper",
+					"Medic",
+					"Forward Observer",
+					"RTO",
+					"K9"
+				],
+				"description": "ATAK member roles from the upstream Meshtastic `atak.proto` `MemberRole` enum."
+			},
+			"ProvisioningName": {
+				"type": "string",
+				"description": "Identifier used for TAK server groups, Meshtastic channel names and mission groups.",
+				"pattern": "^[A-Za-z0-9_-]+$",
+				"minLength": 1,
+				"maxLength": 64
+			},
+			"MeshtasticDeviceRole": {
+				"type": "string",
+				"enum": [
+					"CLIENT",
+					"CLIENT_MUTE",
+					"CLIENT_HIDDEN",
+					"CLIENT_BASE",
+					"ROUTER",
+					"ROUTER_LATE",
+					"TRACKER",
+					"SENSOR",
+					"TAK",
+					"TAK_TRACKER",
+					"LOST_AND_FOUND"
+				],
+				"description": "Non-deprecated Meshtastic `Config.DeviceConfig.Role` values from upstream `config.proto`.\n`ROUTER_CLIENT` and `REPEATER` are deprecated upstream and intentionally excluded."
+			},
+			"MeshtasticChannelName": {
+				"type": "string",
+				"description": "Meshtastic channel name; ASCII so the upstream 11-byte limit equals the character count.",
+				"pattern": "^[A-Za-z0-9_-]{1,11}$"
+			},
+			"GroupProvisioning": {
+				"properties": {
+					"callsignFormat": {
+						"type": "string",
+						"description": "Callsign template. Allowed placeholders: `{username}` (required) and `{group}`.\nExample: `{username} [Bravo]`.",
+						"minLength": 1,
+						"maxLength": 64
+					},
+					"shortNamePrefix": {
+						"type": "string",
+						"nullable": true,
+						"description": "Meshtastic short-name prefix, e.g. `B` for `B1`, `B2`. Unique within the event.\n`null` until chosen; activation requires it.",
+						"pattern": "^[A-Z0-9]{1,3}$"
+					},
+					"tak": {
+						"properties": {
+							"serverGroups": {
+								"items": {
+									"$ref": "#/components/schemas/ProvisioningName"
+								},
+								"type": "array",
+								"maxItems": 20
+							},
+							"role": {
+								"$ref": "#/components/schemas/TakRole"
+							},
+							"team": {
+								"$ref": "#/components/schemas/TakTeam"
+							}
+						},
+						"required": [
+							"serverGroups",
+							"role",
+							"team"
+						],
+						"type": "object"
+					},
+					"meshtastic": {
+						"properties": {
+							"channels": {
+								"items": {
+									"$ref": "#/components/schemas/MeshtasticChannelName"
+								},
+								"type": "array",
+								"maxItems": 8
+							},
+							"deviceRole": {
+								"$ref": "#/components/schemas/MeshtasticDeviceRole"
+							}
+						},
+						"required": [
+							"channels",
+							"deviceRole"
+						],
+						"type": "object"
+					},
+					"missionGroups": {
+						"items": {
+							"$ref": "#/components/schemas/ProvisioningName"
+						},
+						"type": "array",
+						"maxItems": 20
+					}
+				},
+				"required": [
+					"callsignFormat",
+					"shortNamePrefix",
+					"tak",
+					"meshtastic",
+					"missionGroups"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"EventGroupDto": {
 				"properties": {
 					"id": {
@@ -1442,6 +1579,10 @@
 					"description": {
 						"type": "string",
 						"nullable": true
+					},
+					"provisioning": {
+						"$ref": "#/components/schemas/GroupProvisioning",
+						"description": "Callsign, TAK and Meshtastic settings shared by every member of the group."
 					},
 					"version": {
 						"type": "number",
@@ -1463,6 +1604,7 @@
 					"name",
 					"slug",
 					"description",
+					"provisioning",
 					"version",
 					"createdAt",
 					"updatedAt"
@@ -1503,6 +1645,10 @@
 						"type": "string",
 						"nullable": true,
 						"maxLength": 500
+					},
+					"provisioning": {
+						"$ref": "#/components/schemas/GroupProvisioning",
+						"description": "Optional; defaults to the plain username, Cyan, Team Member and the first slug letter."
 					}
 				},
 				"required": [
@@ -1532,13 +1678,18 @@
 						"type": "string",
 						"nullable": true,
 						"maxLength": 500
+					},
+					"provisioning": {
+						"$ref": "#/components/schemas/GroupProvisioning",
+						"description": "Complete replacement of the provisioning settings."
 					}
 				},
 				"required": [
 					"version",
 					"name",
 					"slug",
-					"description"
+					"description",
+					"provisioning"
 				],
 				"type": "object",
 				"additionalProperties": false
