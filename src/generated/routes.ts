@@ -12,6 +12,10 @@ import { SetupController } from './../modules/setup/setup.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ServiceAccountsController } from './../modules/service-accounts/service-accounts.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MemberProfileController } from './../modules/profiles/profiles.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MyEventMembershipsController } from './../modules/profiles/profiles.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PrincipalController } from './../modules/principal/principal.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
@@ -281,6 +285,62 @@ const models: TsoaRoute.Models = {
         "properties": {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "expiresAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ProfileAssignment": {
+        "dataType": "refObject",
+        "properties": {
+            "slug": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTeam": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["White"]},{"dataType":"enum","enums":["Yellow"]},{"dataType":"enum","enums":["Orange"]},{"dataType":"enum","enums":["Magenta"]},{"dataType":"enum","enums":["Red"]},{"dataType":"enum","enums":["Maroon"]},{"dataType":"enum","enums":["Purple"]},{"dataType":"enum","enums":["Dark Blue"]},{"dataType":"enum","enums":["Blue"]},{"dataType":"enum","enums":["Cyan"]},{"dataType":"enum","enums":["Teal"]},{"dataType":"enum","enums":["Green"]},{"dataType":"enum","enums":["Dark Green"]},{"dataType":"enum","enums":["Brown"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakRole": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["Team Member"]},{"dataType":"enum","enums":["Team Lead"]},{"dataType":"enum","enums":["HQ"]},{"dataType":"enum","enums":["Sniper"]},{"dataType":"enum","enums":["Medic"]},{"dataType":"enum","enums":["Forward Observer"]},{"dataType":"enum","enums":["RTO"]},{"dataType":"enum","enums":["K9"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticDeviceRole": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["CLIENT"]},{"dataType":"enum","enums":["CLIENT_MUTE"]},{"dataType":"enum","enums":["CLIENT_HIDDEN"]},{"dataType":"enum","enums":["CLIENT_BASE"]},{"dataType":"enum","enums":["ROUTER"]},{"dataType":"enum","enums":["ROUTER_LATE"]},{"dataType":"enum","enums":["TRACKER"]},{"dataType":"enum","enums":["SENSOR"]},{"dataType":"enum","enums":["TAK"]},{"dataType":"enum","enums":["TAK_TRACKER"]},{"dataType":"enum","enums":["LOST_AND_FOUND"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ResolvedProfileDto": {
+        "dataType": "refObject",
+        "properties": {
+            "eventId": {"ref":"Uuid","required":true},
+            "memberId": {"ref":"Uuid","required":true},
+            "userId": {"ref":"Uuid","required":true},
+            "source": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["published"]},{"dataType":"enum","enums":["preview"]}],"required":true},
+            "configurationRevision": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"number":{"dataType":"double","required":true},"id":{"ref":"Uuid","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
+            "username": {"dataType":"string","required":true},
+            "callsign": {"dataType":"string","required":true},
+            "eventRole": {"ref":"ProfileAssignment","required":true},
+            "group": {"ref":"ProfileAssignment","required":true},
+            "tak": {"dataType":"nestedObjectLiteral","nestedProperties":{"serverGroups":{"dataType":"array","array":{"dataType":"string"},"required":true},"role":{"ref":"TakRole","required":true},"team":{"ref":"TakTeam","required":true},"callsign":{"dataType":"string","required":true}},"required":true},
+            "meshtastic": {"dataType":"nestedObjectLiteral","nestedProperties":{"channels":{"dataType":"array","array":{"dataType":"string"},"required":true},"deviceRole":{"ref":"MeshtasticDeviceRole","required":true},"shortName":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"longName":{"dataType":"string","required":true}},"required":true},
+            "missionGroups": {"dataType":"array","array":{"dataType":"string"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MyEventMembershipDto": {
+        "dataType": "refObject",
+        "properties": {
+            "eventId": {"ref":"Uuid","required":true},
+            "eventName": {"dataType":"string","required":true},
+            "eventSlug": {"dataType":"string","required":true},
+            "timeZone": {"dataType":"string","required":true},
+            "memberId": {"ref":"Uuid","required":true},
+            "callsign": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -597,24 +657,9 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "TakTeam": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["White"]},{"dataType":"enum","enums":["Yellow"]},{"dataType":"enum","enums":["Orange"]},{"dataType":"enum","enums":["Magenta"]},{"dataType":"enum","enums":["Red"]},{"dataType":"enum","enums":["Maroon"]},{"dataType":"enum","enums":["Purple"]},{"dataType":"enum","enums":["Dark Blue"]},{"dataType":"enum","enums":["Blue"]},{"dataType":"enum","enums":["Cyan"]},{"dataType":"enum","enums":["Teal"]},{"dataType":"enum","enums":["Green"]},{"dataType":"enum","enums":["Dark Green"]},{"dataType":"enum","enums":["Brown"]}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "TakRole": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["Team Member"]},{"dataType":"enum","enums":["Team Lead"]},{"dataType":"enum","enums":["HQ"]},{"dataType":"enum","enums":["Sniper"]},{"dataType":"enum","enums":["Medic"]},{"dataType":"enum","enums":["Forward Observer"]},{"dataType":"enum","enums":["RTO"]},{"dataType":"enum","enums":["K9"]}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ProvisioningName": {
         "dataType": "refAlias",
         "type": {"dataType":"string","validators":{"pattern":{"value":"^[A-Za-z0-9_-]+$"},"minLength":{"value":1},"maxLength":{"value":64}}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MeshtasticDeviceRole": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["CLIENT"]},{"dataType":"enum","enums":["CLIENT_MUTE"]},{"dataType":"enum","enums":["CLIENT_HIDDEN"]},{"dataType":"enum","enums":["CLIENT_BASE"]},{"dataType":"enum","enums":["ROUTER"]},{"dataType":"enum","enums":["ROUTER_LATE"]},{"dataType":"enum","enums":["TRACKER"]},{"dataType":"enum","enums":["SENSOR"]},{"dataType":"enum","enums":["TAK"]},{"dataType":"enum","enums":["TAK_TRACKER"]},{"dataType":"enum","enums":["LOST_AND_FOUND"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MeshtasticChannelName": {
@@ -1355,6 +1400,70 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'revokeApiKey',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMemberProfileController_getMemberProfile: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/members/:memberId/profile',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MemberProfileController)),
+            ...(fetchMiddlewares<RequestHandler>(MemberProfileController.prototype.getMemberProfile)),
+
+            async function MemberProfileController_getMemberProfile(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMemberProfileController_getMemberProfile, request, response });
+
+                const controller = new MemberProfileController();
+
+              await templateService.apiHandler({
+                methodName: 'getMemberProfile',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMyEventMembershipsController_listMyEventMemberships: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/me/event-memberships',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MyEventMembershipsController)),
+            ...(fetchMiddlewares<RequestHandler>(MyEventMembershipsController.prototype.listMyEventMemberships)),
+
+            async function MyEventMembershipsController_listMyEventMemberships(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMyEventMembershipsController_listMyEventMemberships, request, response });
+
+                const controller = new MyEventMembershipsController();
+
+              await templateService.apiHandler({
+                methodName: 'listMyEventMemberships',
                 controller,
                 response,
                 next,

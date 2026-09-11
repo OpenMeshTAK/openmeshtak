@@ -643,6 +643,232 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ProfileAssignment": {
+				"properties": {
+					"slug": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"slug",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakTeam": {
+				"type": "string",
+				"enum": [
+					"White",
+					"Yellow",
+					"Orange",
+					"Magenta",
+					"Red",
+					"Maroon",
+					"Purple",
+					"Dark Blue",
+					"Blue",
+					"Cyan",
+					"Teal",
+					"Green",
+					"Dark Green",
+					"Brown"
+				],
+				"description": "ATAK team colors as listed by the upstream Meshtastic `atak.proto` `Team` enum, using the\ndisplay names ATAK writes into CoT `__group` elements. Verified 2026-10-04."
+			},
+			"TakRole": {
+				"type": "string",
+				"enum": [
+					"Team Member",
+					"Team Lead",
+					"HQ",
+					"Sniper",
+					"Medic",
+					"Forward Observer",
+					"RTO",
+					"K9"
+				],
+				"description": "ATAK member roles from the upstream Meshtastic `atak.proto` `MemberRole` enum."
+			},
+			"MeshtasticDeviceRole": {
+				"type": "string",
+				"enum": [
+					"CLIENT",
+					"CLIENT_MUTE",
+					"CLIENT_HIDDEN",
+					"CLIENT_BASE",
+					"ROUTER",
+					"ROUTER_LATE",
+					"TRACKER",
+					"SENSOR",
+					"TAK",
+					"TAK_TRACKER",
+					"LOST_AND_FOUND"
+				],
+				"description": "Non-deprecated Meshtastic `Config.DeviceConfig.Role` values from upstream `config.proto`.\n`ROUTER_CLIENT` and `REPEATER` are deprecated upstream and intentionally excluded."
+			},
+			"ResolvedProfileDto": {
+				"description": "The single resolved provisioning identity of one member in one event. Every TAK, Meshtastic and\nmission output is derived from this shape.",
+				"properties": {
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"source": {
+						"type": "string",
+						"enum": [
+							"published",
+							"preview"
+						],
+						"description": "`published` profiles use the event's latest configuration revision. `preview` profiles of\ndraft events use the current, unpublished configuration and are visible to administrators only."
+					},
+					"configurationRevision": {
+						"properties": {
+							"number": {
+								"type": "number",
+								"format": "double"
+							},
+							"id": {
+								"$ref": "#/components/schemas/Uuid"
+							}
+						},
+						"required": [
+							"number",
+							"id"
+						],
+						"type": "object",
+						"nullable": true
+					},
+					"username": {
+						"type": "string"
+					},
+					"callsign": {
+						"type": "string"
+					},
+					"eventRole": {
+						"$ref": "#/components/schemas/ProfileAssignment"
+					},
+					"group": {
+						"$ref": "#/components/schemas/ProfileAssignment"
+					},
+					"tak": {
+						"properties": {
+							"serverGroups": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"role": {
+								"$ref": "#/components/schemas/TakRole"
+							},
+							"team": {
+								"$ref": "#/components/schemas/TakTeam"
+							},
+							"callsign": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"serverGroups",
+							"role",
+							"team",
+							"callsign"
+						],
+						"type": "object"
+					},
+					"meshtastic": {
+						"properties": {
+							"channels": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							},
+							"deviceRole": {
+								"$ref": "#/components/schemas/MeshtasticDeviceRole"
+							},
+							"shortName": {
+								"type": "string",
+								"nullable": true,
+								"description": "`null` only in previews while the group has no short-name prefix."
+							},
+							"longName": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"channels",
+							"deviceRole",
+							"shortName",
+							"longName"
+						],
+						"type": "object"
+					},
+					"missionGroups": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"eventId",
+					"memberId",
+					"userId",
+					"source",
+					"configurationRevision",
+					"username",
+					"callsign",
+					"eventRole",
+					"group",
+					"tak",
+					"meshtastic",
+					"missionGroups"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MyEventMembershipDto": {
+				"properties": {
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventName": {
+						"type": "string"
+					},
+					"eventSlug": {
+						"type": "string"
+					},
+					"timeZone": {
+						"type": "string"
+					},
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"callsign": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"eventId",
+					"eventName",
+					"eventSlug",
+					"timeZone",
+					"memberId",
+					"callsign"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PrincipalDto": {
 				"properties": {
 					"type": {
@@ -1462,63 +1688,12 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"TakTeam": {
-				"type": "string",
-				"enum": [
-					"White",
-					"Yellow",
-					"Orange",
-					"Magenta",
-					"Red",
-					"Maroon",
-					"Purple",
-					"Dark Blue",
-					"Blue",
-					"Cyan",
-					"Teal",
-					"Green",
-					"Dark Green",
-					"Brown"
-				],
-				"description": "ATAK team colors as listed by the upstream Meshtastic `atak.proto` `Team` enum, using the\ndisplay names ATAK writes into CoT `__group` elements. Verified 2026-10-04."
-			},
-			"TakRole": {
-				"type": "string",
-				"enum": [
-					"Team Member",
-					"Team Lead",
-					"HQ",
-					"Sniper",
-					"Medic",
-					"Forward Observer",
-					"RTO",
-					"K9"
-				],
-				"description": "ATAK member roles from the upstream Meshtastic `atak.proto` `MemberRole` enum."
-			},
 			"ProvisioningName": {
 				"type": "string",
 				"description": "Identifier used for TAK server groups, Meshtastic channel names and mission groups.",
 				"pattern": "^[A-Za-z0-9_-]+$",
 				"minLength": 1,
 				"maxLength": 64
-			},
-			"MeshtasticDeviceRole": {
-				"type": "string",
-				"enum": [
-					"CLIENT",
-					"CLIENT_MUTE",
-					"CLIENT_HIDDEN",
-					"CLIENT_BASE",
-					"ROUTER",
-					"ROUTER_LATE",
-					"TRACKER",
-					"SENSOR",
-					"TAK",
-					"TAK_TRACKER",
-					"LOST_AND_FOUND"
-				],
-				"description": "Non-deprecated Meshtastic `Config.DeviceConfig.Role` values from upstream `config.proto`.\n`ROUTER_CLIENT` and `REPEATER` are deprecated upstream and intentionally excluded."
 			},
 			"MeshtasticChannelName": {
 				"type": "string",
@@ -3289,6 +3464,133 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/members/{memberId}/profile": {
+			"get": {
+				"operationId": "GetMemberProfile",
+				"responses": {
+					"200": {
+						"description": "Resolved profile",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ResolvedProfileDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Configuration not published",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Resolves the member's callsign, TAK and Meshtastic identity and mission groups. Requires\n`members.read`, or being that member in an active event. Draft events return an\nadministrator preview of the unpublished configuration.",
+				"tags": [
+					"Profiles"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "memberId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/me/event-memberships": {
+			"get": {
+				"operationId": "ListMyEventMemberships",
+				"responses": {
+					"200": {
+						"description": "Active event memberships",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/MyEventMembershipDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the signed-in user's memberships in active events.",
+				"tags": [
+					"Profiles"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
 			}
 		},
 		"/principal": {
