@@ -18,6 +18,7 @@ import {
   decodeCursor,
   toPage,
 } from "../../shared/pagination/cursor.js";
+import { refreshGroupMemberIdentities } from "../event-members/group-identity-refresh.js";
 import { requireMutableEvent, requireReadableEvent } from "../events/event-access.js";
 import type {
   CreateEventGroupRequest,
@@ -213,6 +214,13 @@ export async function updateEventGroup(
         const latest = await transaction.eventGroup.findUnique({ where: { id: groupId } });
         throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
       }
+      await refreshGroupMemberIdentities(transaction, {
+        id: groupId,
+        eventId,
+        name: input.name,
+        callsignFormat: input.provisioning.callsignFormat,
+        shortNamePrefix: input.provisioning.shortNamePrefix,
+      });
       await recordAudit(audit(actor, "event-group.updated", { ...current, slug: input.slug }), transaction);
     });
   } catch (error: unknown) {

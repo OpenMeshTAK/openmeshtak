@@ -25,6 +25,14 @@ export interface EventMemberDto {
   eventId: Uuid;
   userId: Uuid;
   displayName: string;
+  /** Name reported by the integration for this event. */
+  username: string;
+  /** Effective callsign, unique within the event; also the Meshtastic long name. */
+  callsign: string;
+  /** Administrator override replacing the group's callsign format for this member. */
+  callsignOverride: string | null;
+  /** Meshtastic short name such as `B1`; `null` while the group has no short-name prefix. */
+  shortName: string | null;
   eventRole: EventAssignmentSummary;
   eventGroup: EventAssignmentSummary;
   version: number;
@@ -40,8 +48,8 @@ export interface EventMemberPage {
 }
 
 export interface SyncIssueReason {
-  field: "eventRole" | "group";
-  code: "NOT_FOUND";
+  field: "eventRole" | "group" | "callsign" | "shortName";
+  code: "NOT_FOUND" | "CONFLICT" | "TOO_LONG" | "EXHAUSTED";
   message: string;
 }
 
@@ -83,6 +91,15 @@ export interface ExternalMemberSyncRequest {
   eventRole: Slug;
   /** Slug of an existing event group. */
   group: Slug;
+}
+
+export interface RetrySyncIssueRequest {
+  /**
+   * Callsign to use instead of the group format, e.g. to resolve a callsign conflict.
+   * @minLength 1
+   * @maxLength 39
+   */
+  callsignOverride?: string;
 }
 
 export interface MemberSyncOutcome {

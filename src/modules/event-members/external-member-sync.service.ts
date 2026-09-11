@@ -16,6 +16,12 @@ import {
   toEventMemberDto,
   toSyncIssueDto,
 } from "./event-member.mapper.js";
+import {
+  callsignFits,
+  nextShortNameNumber,
+  renderCallsign,
+  shortNameFits,
+} from "./member-identity.js";
 
 type Transaction = Prisma.TransactionClient;
 
@@ -24,20 +30,65 @@ export interface ExternalMemberKey {
   externalId: string;
 }
 
-interface Assignment {
+interface ExistingMember {
+  id: string;
+  userId: string;
   eventRoleId: string;
   eventGroupId: string;
+  username: string;
+  callsign: string;
+  callsignOverride: string | null;
+  shortNameNumber: number;
+}
+
+/** Everything needed to write the membership, computed before any write happens. */
+interface Resolution {
+  eventRoleId: string;
+  eventGroupId: string;
+  callsign: string;
+  callsignOverride: string | null;
+  shortNameNumber: number;
+}
+
+async function findExistingMember(
+  transaction: Transaction,
+  eventId: string,
+  key: ExternalMemberKey,
+): Promise<ExistingMember | null> {
+  const identity = await transaction.externalIdentity.findUnique({
+    where: { provider_externalId: key },
+    select: { userId: true },
+  });
+  if (identity === null) {
+    return null;
+  }
+
+  return transaction.eventMember.findUnique({
+    where: { eventId_userId: { eventId, userId: identity.userId } },
+    select: {
+      id: true,
+      userId: true,
+      eventRoleId: true,
+      eventGroupId: true,
+      username: true,
+      callsign: true,
+      callsignOverride: true,
+      shortNameNumber: true,
+    },
+  });
 }
 
 /**
- * Integrations send OpenMeshTak slugs. A slug that does not exist in the event is reported as a
- * sync issue instead of guessing or falling back to an "unassigned" group.
+ * Integrations send OpenMeshTak slugs. Unknown slugs, colliding or oversized callsigns and full
+ * short-name ranges are reported as sync-issue reasons instead of being guessed or truncated.
  */
-async function resolveAssignment(
+async function resolve(
   transaction: Transaction,
   eventId: string,
   request: ExternalMemberSyncRequest,
-): Promise<Assignment | SyncIssueReason[]> {
+  existing: ExistingMember | null,
+  requestedOverride: string | undefined,
+): Promise<Resolution | SyncIssueReason[]> {
   const [role, group] = await Promise.all([
     transaction.eventRole.findUnique({
       where: { eventId_slug: { eventId, slug: request.eventRole } },
@@ -45,13 +96,9 @@ async function resolveAssignment(
     }),
     transaction.eventGroup.findUnique({
       where: { eventId_slug: { eventId, slug: request.group } },
-      select: { id: true },
+      select: { id: true, name: true, callsignFormat: true, shortNamePrefix: true },
     }),
   ]);
-
-  if (role !== null && group !== null) {
-    return { eventRoleId: role.id, eventGroupId: group.id };
-  }
 
   const reasons: SyncIssueReason[] = [];
   if (role === null) {
@@ -60,7 +107,52 @@ async function resolveAssignment(
   if (group === null) {
     reasons.push({ field: "group", code: "NOT_FOUND", message: "No event group uses this slug." });
   }
-  return reasons;
+  if (role === null || group === null) {
+    return reasons;
+  }
+
+  const callsignOverride = requestedOverride ?? existing?.callsignOverride ?? null;
+  const callsign =
+    callsignOverride ?? renderCallsign(group.callsignFormat, request.username, group.name);
+
+  if (!callsignFits(callsign)) {
+    reasons.push({
+      field: "callsign",
+      code: "TOO_LONG",
+      message: "The callsign exceeds the 39-byte Meshtastic long-name limit.",
+    });
+  }
+  const holder = await transaction.eventMember.findUnique({
+    where: { eventId_callsign: { eventId, callsign } },
+    select: { id: true },
+  });
+  if (holder !== null && holder.id !== existing?.id) {
+    reasons.push({
+      field: "callsign",
+      code: "CONFLICT",
+      message: "Another member of this event already uses this callsign.",
+    });
+  }
+
+  let shortNameNumber = existing?.shortNameNumber ?? 0;
+  if (existing?.eventGroupId !== group.id) {
+    const used = await transaction.eventMember.findMany({
+      where: { eventGroupId: group.id },
+      select: { shortNameNumber: true },
+    });
+    shortNameNumber = nextShortNameNumber(used.map((member) => member.shortNameNumber));
+  }
+  if (!shortNameFits(group.shortNamePrefix, shortNameNumber)) {
+    reasons.push({
+      field: "shortName",
+      code: "EXHAUSTED",
+      message: "The group's short-name prefix leaves no free 4-byte short name.",
+    });
+  }
+
+  return reasons.length > 0
+    ? reasons
+    : { eventRoleId: role.id, eventGroupId: group.id, callsign, callsignOverride, shortNameNumber };
 }
 
 async function recordSyncIssue(
@@ -93,7 +185,7 @@ async function recordSyncIssue(
       targetId: issue.id,
       result: "failure",
       traceId: actor.traceId,
-      metadata: { eventId, provider: key.provider, reasons: reasons.map(({ field }) => field) },
+      metadata: { eventId, provider: key.provider, reasons: reasons.map(({ field, code }) => `${field}:${code}`) },
     },
     transaction,
   );
@@ -131,34 +223,40 @@ async function findOrCreateUser(
   return userId;
 }
 
+function memberChanged(existing: ExistingMember, username: string, resolution: Resolution): boolean {
+  return (
+    existing.eventRoleId !== resolution.eventRoleId ||
+    existing.eventGroupId !== resolution.eventGroupId ||
+    existing.username !== username ||
+    existing.callsign !== resolution.callsign ||
+    existing.callsignOverride !== resolution.callsignOverride ||
+    existing.shortNameNumber !== resolution.shortNameNumber
+  );
+}
+
 async function upsertMember(
   transaction: Transaction,
   actor: ActorContext,
   eventId: string,
   key: ExternalMemberKey,
   request: ExternalMemberSyncRequest,
-  assignment: Assignment,
+  existing: ExistingMember | null,
+  resolution: Resolution,
 ): Promise<ExternalMemberSyncResult> {
   const userId = await findOrCreateUser(transaction, key, request.username);
-  const existing = await transaction.eventMember.findUnique({
-    where: { eventId_userId: { eventId, userId } },
-    select: { id: true, eventRoleId: true, eventGroupId: true },
-  });
+  const data = { username: request.username, ...resolution };
 
   let change: "created" | "updated" | "unchanged";
   let memberId: string;
   if (existing === null) {
     memberId = randomUUID();
-    await transaction.eventMember.create({ data: { id: memberId, eventId, userId, ...assignment } });
+    await transaction.eventMember.create({ data: { id: memberId, eventId, userId, ...data } });
     change = "created";
-  } else if (
-    existing.eventRoleId !== assignment.eventRoleId ||
-    existing.eventGroupId !== assignment.eventGroupId
-  ) {
+  } else if (memberChanged(existing, request.username, resolution)) {
     memberId = existing.id;
     await transaction.eventMember.update({
       where: { id: memberId },
-      data: { ...assignment, version: { increment: 1 } },
+      data: { ...data, version: { increment: 1 } },
     });
     change = "updated";
   } else {
@@ -204,20 +302,22 @@ async function applySync(
   eventId: string,
   key: ExternalMemberKey,
   request: ExternalMemberSyncRequest,
+  callsignOverride?: string,
 ): Promise<ExternalMemberSyncResult> {
   const run = (): Promise<ExternalMemberSyncResult> =>
     database.$transaction(async (transaction) => {
-      const resolution = await resolveAssignment(transaction, eventId, request);
+      const existing = await findExistingMember(transaction, eventId, key);
+      const resolution = await resolve(transaction, eventId, request, existing, callsignOverride);
       return Array.isArray(resolution)
         ? recordSyncIssue(transaction, actor, eventId, key, request, resolution)
-        : upsertMember(transaction, actor, eventId, key, request, resolution);
+        : upsertMember(transaction, actor, eventId, key, request, existing, resolution);
     });
 
   try {
     return await run();
   } catch (error: unknown) {
-    // Two concurrent first syncs of the same identity race on the unique keys. The loser's
-    // transaction rolled back completely; running it again finds the winner's records.
+    // Concurrent syncs race on unique keys (identity, callsign, short-name number). The loser's
+    // transaction rolled back completely; running it again sees the winner's records.
     if (isUniqueConstraintError(error)) {
       return run();
     }
@@ -240,13 +340,14 @@ export async function syncExternalMember(
 }
 
 /**
- * Re-evaluates the stored request of an open issue against the event's current roles and
- * groups, after an administrator fixed the mapping or created the missing slug.
+ * Re-evaluates the stored request of an open issue against the event's current roles and groups.
+ * An administrator may pass a callsign override to resolve a callsign conflict.
  */
 export async function retrySyncIssue(
   actor: ActorContext,
   eventId: string,
   syncIssueId: string,
+  callsignOverride?: string,
 ): Promise<ExternalMemberSyncResult> {
   const event = await requireEventPermission(actor.principal, eventId, "members.manage");
   if (event.status === "archived") {
@@ -272,5 +373,6 @@ export async function retrySyncIssue(
     eventId,
     { provider: issue.provider, externalId: issue.externalId },
     { username: issue.username, eventRole: issue.requestedRole, group: issue.requestedGroup },
+    callsignOverride,
   );
 }

@@ -159,12 +159,12 @@ void describe("external member synchronization", () => {
     const issueId = issue.syncIssue?.id ?? "";
     const retryUrl = `/api/v1/events/${eventId}/sync-issues/${issueId}/retry`;
 
-    const stillOpen = (await request(app).post(retryUrl).set("Cookie", admin.cookie).expect(200))
+    const stillOpen = (await request(app).post(retryUrl).set("Cookie", admin.cookie).send({}).expect(200))
       .body as SyncBody;
     assert.equal(stillOpen.outcome, "sync-issue");
 
     await addSlugs("groups", "charlie");
-    const resolved = (await request(app).post(retryUrl).set("Cookie", admin.cookie).expect(200))
+    const resolved = (await request(app).post(retryUrl).set("Cookie", admin.cookie).send({}).expect(200))
       .body as SyncBody;
     assert.equal(resolved.outcome, "member");
     assert.equal(resolved.member?.eventGroup.slug, "charlie");
@@ -173,7 +173,7 @@ void describe("external member synchronization", () => {
     assert.equal(stored.status, "resolved");
     assert.ok(stored.resolvedAt);
 
-    const again = await request(app).post(retryUrl).set("Cookie", admin.cookie).expect(409);
+    const again = await request(app).post(retryUrl).set("Cookie", admin.cookie).send({}).expect(409);
     assert.equal((again.body as ProblemBody).code, "SYNC_ISSUE_NOT_OPEN");
   });
 

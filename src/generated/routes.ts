@@ -468,8 +468,8 @@ const models: TsoaRoute.Models = {
     "SyncIssueReason": {
         "dataType": "refObject",
         "properties": {
-            "field": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["eventRole"]},{"dataType":"enum","enums":["group"]}],"required":true},
-            "code": {"dataType":"enum","enums":["NOT_FOUND"],"required":true},
+            "field": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["eventRole"]},{"dataType":"enum","enums":["group"]},{"dataType":"enum","enums":["callsign"]},{"dataType":"enum","enums":["shortName"]}],"required":true},
+            "code": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["NOT_FOUND"]},{"dataType":"enum","enums":["CONFLICT"]},{"dataType":"enum","enums":["TOO_LONG"]},{"dataType":"enum","enums":["EXHAUSTED"]}],"required":true},
             "message": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
@@ -521,6 +521,10 @@ const models: TsoaRoute.Models = {
             "eventId": {"ref":"Uuid","required":true},
             "userId": {"ref":"Uuid","required":true},
             "displayName": {"dataType":"string","required":true},
+            "username": {"dataType":"string","required":true},
+            "callsign": {"dataType":"string","required":true},
+            "callsignOverride": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "shortName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "eventRole": {"ref":"EventAssignmentSummary","required":true},
             "eventGroup": {"ref":"EventAssignmentSummary","required":true},
             "version": {"dataType":"double","required":true},
@@ -552,6 +556,14 @@ const models: TsoaRoute.Models = {
     "ExternalMemberSyncResult": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"ref":"MemberSyncOutcome"},{"ref":"SyncIssueOutcome"}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RetrySyncIssueRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "callsignOverride": {"dataType":"string","validators":{"minLength":{"value":1},"maxLength":{"value":39}}},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ExternalProvider": {
@@ -1900,6 +1912,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 syncIssueId: {"in":"path","name":"syncIssueId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"RetrySyncIssueRequest"},
         };
         app.post('/api/v1/events/:eventId/sync-issues/:syncIssueId/retry',
             authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),

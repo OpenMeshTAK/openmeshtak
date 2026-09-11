@@ -1133,15 +1133,19 @@
 						"type": "string",
 						"enum": [
 							"eventRole",
-							"group"
+							"group",
+							"callsign",
+							"shortName"
 						]
 					},
 					"code": {
 						"type": "string",
 						"enum": [
-							"NOT_FOUND"
-						],
-						"nullable": false
+							"NOT_FOUND",
+							"CONFLICT",
+							"TOO_LONG",
+							"EXHAUSTED"
+						]
 					},
 					"message": {
 						"type": "string"
@@ -1277,6 +1281,24 @@
 					"displayName": {
 						"type": "string"
 					},
+					"username": {
+						"type": "string",
+						"description": "Name reported by the integration for this event."
+					},
+					"callsign": {
+						"type": "string",
+						"description": "Effective callsign, unique within the event; also the Meshtastic long name."
+					},
+					"callsignOverride": {
+						"type": "string",
+						"nullable": true,
+						"description": "Administrator override replacing the group's callsign format for this member."
+					},
+					"shortName": {
+						"type": "string",
+						"nullable": true,
+						"description": "Meshtastic short name such as `B1`; `null` while the group has no short-name prefix."
+					},
 					"eventRole": {
 						"$ref": "#/components/schemas/EventAssignmentSummary"
 					},
@@ -1301,6 +1323,10 @@
 					"eventId",
 					"userId",
 					"displayName",
+					"username",
+					"callsign",
+					"callsignOverride",
+					"shortName",
 					"eventRole",
 					"eventGroup",
 					"version",
@@ -1369,6 +1395,18 @@
 					}
 				],
 				"description": "Either the resolved membership or the recorded sync issue; never a credential or session."
+			},
+			"RetrySyncIssueRequest": {
+				"properties": {
+					"callsignOverride": {
+						"type": "string",
+						"description": "Callsign to use instead of the group format, e.g. to resolve a callsign conflict.",
+						"minLength": 1,
+						"maxLength": 39
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
 			},
 			"ExternalProvider": {
 				"type": "string",
@@ -4617,7 +4655,7 @@
 						}
 					}
 				},
-				"description": "Re-evaluates an open issue against the event's current roles and groups. Requires\n`members.manage`.",
+				"description": "Re-evaluates an open issue against the event's current roles and groups. Requires\n`members.manage`. A callsign override resolves a callsign conflict for this member.",
 				"tags": [
 					"Event members"
 				],
@@ -4646,7 +4684,17 @@
 							"$ref": "#/components/schemas/Uuid"
 						}
 					}
-				]
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RetrySyncIssueRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/external-members/{provider}/{externalId}": {

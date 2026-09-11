@@ -305,25 +305,33 @@ model ExternalIdentity {
 
 /// Participation of one user in one event with exactly one event role and one event group.
 model EventMember {
-  id           String        @id
-  eventId      String
-  userId       String
-  eventRoleId  String
-  eventGroupId String
-  version      Int           @default(1)
-  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user         DomainUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String        @id
+  eventId          String
+  userId           String
+  eventRoleId      String
+  eventGroupId     String
+  version          Int           @default(1)
+  /// Name reported for this event by the integration; untrusted display data used in callsigns.
+  username         String
+  /// Effective callsign (override or rendered group format), unique within the event.
+  callsign         String
+  callsignOverride String?
+  /// Stable per-group number behind Meshtastic short names such as `B1`.
+  shortNameNumber  Int
+  event            Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user             DomainUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Restrict: assigned roles and groups cannot be deleted until members are reassigned.
-  eventRole    EventRole     @relation(fields: [eventRoleId], references: [id], onDelete: Restrict)
-  eventGroup   EventGroup    @relation(fields: [eventGroupId], references: [id], onDelete: Restrict)
-  claims       MemberClaim[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  eventRole        EventRole     @relation(fields: [eventRoleId], references: [id], onDelete: Restrict)
+  eventGroup       EventGroup    @relation(fields: [eventGroupId], references: [id], onDelete: Restrict)
+  claims           MemberClaim[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   @@unique([eventId, userId])
+  @@unique([eventId, callsign])
+  @@unique([eventGroupId, shortNameNumber])
   @@index([eventId, createdAt, id])
   @@index([eventRoleId])
-  @@index([eventGroupId])
 }
 
 enum SyncIssueStatus {

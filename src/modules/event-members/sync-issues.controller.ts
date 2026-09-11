@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Middlewares,
@@ -18,6 +19,7 @@ import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type {
   ExternalMemberSyncResult,
+  RetrySyncIssueRequest,
   SyncIssuePage,
   SyncIssueStatus,
 } from "./event-member.dto.js";
@@ -55,7 +57,7 @@ export class SyncIssuesController extends Controller {
 
   /**
    * Re-evaluates an open issue against the event's current roles and groups. Requires
-   * `members.manage`.
+   * `members.manage`. A callsign override resolves a callsign conflict for this member.
    */
   @Post("{syncIssueId}/retry")
   @SuccessResponse(200, "Membership resolved or issue still open")
@@ -64,7 +66,8 @@ export class SyncIssuesController extends Controller {
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Path() syncIssueId: Uuid,
+    @Body() body: RetrySyncIssueRequest,
   ): Promise<ExternalMemberSyncResult> {
-    return retrySyncIssue(requestContext(request), eventId, syncIssueId);
+    return retrySyncIssue(requestContext(request), eventId, syncIssueId, body.callsignOverride);
   }
 }
