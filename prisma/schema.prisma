@@ -14,23 +14,24 @@ enum EventStatus {
 }
 
 model Event {
-  id                   String                          @id
-  name                 String
-  slug                 String                          @unique
-  timeZone             String
-  status               EventStatus                     @default(draft)
-  version              Int                             @default(1)
-  startsAt             DateTime?
-  endsAt               DateTime?
-  createdAt            DateTime                        @default(now())
-  updatedAt            DateTime                        @updatedAt
-  permissionGrants     PermissionGrant[]
-  serviceAccountGrants ServiceAccountPermissionGrant[]
-  roles                EventRole[]
-  groups               EventGroup[]
-  members              EventMember[]
-  syncIssues           SyncIssue[]
-  memberClaims         MemberClaim[]
+  id                     String                          @id
+  name                   String
+  slug                   String                          @unique
+  timeZone               String
+  status                 EventStatus                     @default(draft)
+  version                Int                             @default(1)
+  startsAt               DateTime?
+  endsAt                 DateTime?
+  createdAt              DateTime                        @default(now())
+  updatedAt              DateTime                        @updatedAt
+  permissionGrants       PermissionGrant[]
+  serviceAccountGrants   ServiceAccountPermissionGrant[]
+  roles                  EventRole[]
+  groups                 EventGroup[]
+  members                EventMember[]
+  syncIssues             SyncIssue[]
+  memberClaims           MemberClaim[]
+  configurationRevisions EventConfigurationRevision[]
 }
 
 model User {
@@ -380,4 +381,25 @@ model MemberClaim {
 
   @@index([memberId])
   @@index([eventId])
+}
+
+/// Immutable snapshot of an event's roles and group provisioning settings. Profiles and generated
+/// artifacts of active events refer to a revision so their inputs stay reproducible.
+model EventConfigurationRevision {
+  id            String   @id
+  eventId       String
+  number        Int
+  /// "activation", "reactivation" or "publish".
+  reason        String
+  /// Versioned snapshot document; never edited after creation.
+  snapshot      Json
+  /// SHA-256 of the canonical snapshot, used to skip publishing an unchanged configuration.
+  snapshotHash  String
+  createdByType String
+  createdById   String
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([eventId, number])
+  @@index([eventId, createdAt, id])
 }

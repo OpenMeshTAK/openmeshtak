@@ -1731,6 +1731,191 @@
 				],
 				"type": "object",
 				"additionalProperties": false
+			},
+			"ConfigurationRevisionReason": {
+				"type": "string",
+				"enum": [
+					"activation",
+					"reactivation",
+					"publish"
+				]
+			},
+			"ConfigurationRevisionSummaryDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"number": {
+						"type": "number",
+						"format": "double",
+						"description": "Increments per event, starting at 1."
+					},
+					"reason": {
+						"$ref": "#/components/schemas/ConfigurationRevisionReason"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"number",
+					"reason",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ConfigurationRevisionPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ConfigurationRevisionSummaryDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SnapshotRole": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"slug",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SnapshotGroup": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"provisioning": {
+						"$ref": "#/components/schemas/GroupProvisioning"
+					}
+				},
+				"required": [
+					"id",
+					"slug",
+					"name",
+					"provisioning"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ConfigurationSnapshot": {
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.",
+				"properties": {
+					"schemaVersion": {
+						"type": "number",
+						"enum": [
+							1
+						],
+						"nullable": false
+					},
+					"roles": {
+						"items": {
+							"$ref": "#/components/schemas/SnapshotRole"
+						},
+						"type": "array"
+					},
+					"groups": {
+						"items": {
+							"$ref": "#/components/schemas/SnapshotGroup"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"schemaVersion",
+					"roles",
+					"groups"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ConfigurationRevisionDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"number": {
+						"type": "number",
+						"format": "double",
+						"description": "Increments per event, starting at 1."
+					},
+					"reason": {
+						"$ref": "#/components/schemas/ConfigurationRevisionReason"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"snapshot": {
+						"$ref": "#/components/schemas/ConfigurationSnapshot"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"number",
+					"reason",
+					"createdAt",
+					"snapshot"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PublishConfigurationResponse": {
+				"properties": {
+					"created": {
+						"type": "boolean",
+						"description": "`false` when the configuration was unchanged and the latest revision is returned instead."
+					},
+					"revision": {
+						"$ref": "#/components/schemas/ConfigurationRevisionDto"
+					}
+				},
+				"required": [
+					"created",
+					"revision"
+				],
+				"type": "object",
+				"additionalProperties": false
 			}
 		},
 		"securitySchemes": {
@@ -5488,6 +5673,237 @@
 					{
 						"in": "path",
 						"name": "groupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/configuration-revisions": {
+			"get": {
+				"operationId": "ListConfigurationRevisions",
+				"responses": {
+					"200": {
+						"description": "Configuration revisions",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ConfigurationRevisionPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists revisions oldest first. Requires `events.read`.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "PublishConfiguration",
+				"responses": {
+					"200": {
+						"description": "Configuration published or unchanged",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PublishConfigurationResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Publishes the current configuration of an active event. Returns the latest revision with\n`created: false` when nothing changed. Requires `events.manage`.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/configuration-revisions/{revisionId}": {
+			"get": {
+				"operationId": "GetConfigurationRevision",
+				"responses": {
+					"200": {
+						"description": "Configuration revision",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ConfigurationRevisionDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "revisionId",
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"

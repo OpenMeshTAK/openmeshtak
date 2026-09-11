@@ -12,6 +12,7 @@ import {
 import type { EventDto, EventStatus } from "./event.dto.js";
 import { requireReadableEvent } from "./event-access.js";
 import { toEventDto } from "./events.service.js";
+import { createConfigurationRevision } from "../event-configuration/configuration-revisions.service.js";
 
 interface Transition {
   from: EventStatus;
@@ -140,6 +141,16 @@ export async function transitionEvent(
       throw latest.version !== expectedVersion
         ? versionConflictProblem(latest.version)
         : invalidTransition(latest.status, transition);
+    }
+
+    // Activation and reactivation freeze the validated configuration for profiles and artifacts.
+    if (transition.to === "active") {
+      await createConfigurationRevision(
+        transaction,
+        actor,
+        eventId,
+        name === "activate" ? "activation" : "reactivation",
+      );
     }
 
     // Archiving invalidates outstanding participant claims. Reactivation never revives them.

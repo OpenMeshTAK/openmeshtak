@@ -31,6 +31,8 @@ import { ExternalMembersController } from './../modules/event-members/external-m
 import { EventMembersController } from './../modules/event-members/event-members.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EventGroupsController } from './../modules/event-groups/event-groups.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { ConfigurationRevisionsController } from './../modules/event-configuration/configuration-revisions.controller.js';
 import { expressAuthentication } from './../shared/auth/authorization.js';
 // @ts-ignore - no great way to install types from subpackage
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
@@ -676,6 +678,85 @@ const models: TsoaRoute.Models = {
             "slug": {"ref":"Slug","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":500}}},
             "provisioning": {"ref":"GroupProvisioning","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationRevisionReason": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["activation"]},{"dataType":"enum","enums":["reactivation"]},{"dataType":"enum","enums":["publish"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationRevisionSummaryDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "number": {"dataType":"double","required":true},
+            "reason": {"ref":"ConfigurationRevisionReason","required":true},
+            "createdAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationRevisionPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"ConfigurationRevisionSummaryDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SnapshotRole": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "slug": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SnapshotGroup": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "slug": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+            "provisioning": {"ref":"GroupProvisioning","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationSnapshot": {
+        "dataType": "refObject",
+        "properties": {
+            "schemaVersion": {"dataType":"enum","enums":[1],"required":true},
+            "roles": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotRole"},"required":true},
+            "groups": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotGroup"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationRevisionDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "number": {"dataType":"double","required":true},
+            "reason": {"ref":"ConfigurationRevisionReason","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "snapshot": {"ref":"ConfigurationSnapshot","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PublishConfigurationResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "created": {"dataType":"boolean","required":true},
+            "revision": {"ref":"ConfigurationRevisionDto","required":true},
         },
         "additionalProperties": false,
     },
@@ -2238,6 +2319,105 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsConfigurationRevisionsController_listConfigurationRevisions: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/events/:eventId/configuration-revisions',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController)),
+            ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController.prototype.listConfigurationRevisions)),
+
+            async function ConfigurationRevisionsController_listConfigurationRevisions(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsConfigurationRevisionsController_listConfigurationRevisions, request, response });
+
+                const controller = new ConfigurationRevisionsController();
+
+              await templateService.apiHandler({
+                methodName: 'listConfigurationRevisions',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsConfigurationRevisionsController_publishConfiguration: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/configuration-revisions',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController)),
+            ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController.prototype.publishConfiguration)),
+
+            async function ConfigurationRevisionsController_publishConfiguration(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsConfigurationRevisionsController_publishConfiguration, request, response });
+
+                const controller = new ConfigurationRevisionsController();
+
+              await templateService.apiHandler({
+                methodName: 'publishConfiguration',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsConfigurationRevisionsController_getConfigurationRevision: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                revisionId: {"in":"path","name":"revisionId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/configuration-revisions/:revisionId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController)),
+            ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController.prototype.getConfigurationRevision)),
+
+            async function ConfigurationRevisionsController_getConfigurationRevision(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsConfigurationRevisionsController_getConfigurationRevision, request, response });
+
+                const controller = new ConfigurationRevisionsController();
+
+              await templateService.apiHandler({
+                methodName: 'getConfigurationRevision',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);
