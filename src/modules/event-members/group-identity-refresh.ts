@@ -1,6 +1,11 @@
 import type { Prisma } from "../../generated/prisma/client.js";
-import { ProblemError, type ProblemFieldError } from "../../shared/errors/problem-error.js";
-import { callsignFits, renderCallsign, shortNameFits } from "./member-identity.js";
+import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
+import {
+  callsignFits,
+  memberIdentityConflictProblem,
+  renderCallsign,
+  shortNameFits,
+} from "./member-identity.js";
 
 interface GroupIdentitySettings {
   id: string;
@@ -8,17 +13,6 @@ interface GroupIdentitySettings {
   name: string;
   callsignFormat: string;
   shortNamePrefix: string | null;
-}
-
-function identityConflict(errors: ProblemFieldError[]): ProblemError {
-  return new ProblemError({
-    type: "urn:openmeshtak:problem:member-identity-conflict",
-    title: "Member callsigns or short names would be invalid",
-    status: 409,
-    detail: "The change would give members duplicate, oversized or impossible names.",
-    code: "MEMBER_IDENTITY_CONFLICT",
-    errors,
-  });
 }
 
 /**
@@ -63,7 +57,7 @@ export async function refreshGroupMemberIdentities(
   }
 
   if (errors.length > 0) {
-    throw identityConflict(errors);
+    throw memberIdentityConflictProblem(errors);
   }
 
   // Free the old values first so renames that swap callsigns inside the group never collide.

@@ -665,6 +665,17 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateEventMemberRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "eventRoleId": {"ref":"Uuid","required":true},
+            "eventGroupId": {"ref":"Uuid","required":true},
+            "callsignOverride": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":39}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ProvisioningName": {
         "dataType": "refAlias",
         "type": {"dataType":"string","validators":{"pattern":{"value":"^[A-Za-z0-9_-]+$"},"minLength":{"value":1},"maxLength":{"value":64}}},
@@ -2260,6 +2271,40 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getEventMember',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEventMembersController_updateEventMember: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateEventMemberRequest"},
+        };
+        app.put('/api/v1/events/:eventId/members/:memberId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(EventMembersController)),
+            ...(fetchMiddlewares<RequestHandler>(EventMembersController.prototype.updateEventMember)),
+
+            async function EventMembersController_updateEventMember(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEventMembersController_updateEventMember, request, response });
+
+                const controller = new EventMembersController();
+
+              await templateService.apiHandler({
+                methodName: 'updateEventMember',
                 controller,
                 response,
                 next,

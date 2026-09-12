@@ -47,6 +47,23 @@ export interface EventMemberPage {
   page: PageInfo;
 }
 
+export interface UpdateEventMemberRequest {
+  /**
+   * Version the client last read.
+   * @isInt
+   * @minimum 1
+   */
+  version: number;
+  eventRoleId: Uuid;
+  eventGroupId: Uuid;
+  /**
+   * Callsign to use instead of the group format; `null` returns to the group format.
+   * @minLength 1
+   * @maxLength 39
+   */
+  callsignOverride: string | null;
+}
+
 export interface SyncIssueReason {
   field: "eventRole" | "group" | "callsign" | "shortName";
   code: "NOT_FOUND" | "CONFLICT" | "TOO_LONG" | "EXHAUSTED";

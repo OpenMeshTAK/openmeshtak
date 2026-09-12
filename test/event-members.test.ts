@@ -126,6 +126,73 @@ void describe("event members", () => {
       .expect(204);
   });
 
+  void it("reassigns the group, renumbers the short name and keeps a callsign override", async () => {
+    await request(app)
+      .post(`/api/v1/events/${eventId}/groups`)
+      .set("Cookie", admin.cookie)
+      .send({ name: "Charlie", slug: "charlie" })
+      .expect(201);
+    const groups = await database.eventGroup.findMany({ where: { eventId }, select: { id: true, slug: true } });
+    const charlie = groups.find(({ slug }) => slug === "charlie");
+    assert.ok(charlie);
+
+    const response = await request(app)
+      .put(`/api/v1/events/${eventId}/members/${member.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ version: 1, eventRoleId: member.eventRole.id, eventGroupId: charlie.id, callsignOverride: "  Pete  " })
+      .expect(200);
+    const updated = response.body as MemberBody & { callsign: string; callsignOverride: string; shortName: string; version: number };
+    assert.equal(updated.eventGroup.id, charlie.id);
+    assert.equal(updated.callsign, "Pete");
+    assert.equal(updated.callsignOverride, "Pete");
+    assert.equal(updated.shortName, "C1");
+    assert.equal(updated.version, 2);
+    assert.equal(await database.auditEvent.count({ where: { action: "event-member.updated" } }), 1);
+
+    const cleared = await request(app)
+      .put(`/api/v1/events/${eventId}/members/${member.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ version: 2, eventRoleId: member.eventRole.id, eventGroupId: charlie.id, callsignOverride: null })
+      .expect(200);
+    assert.equal((cleared.body as { callsign: string }).callsign, "Peter");
+  });
+
+  void it("rejects stale versions, foreign assignments and taken callsigns", async () => {
+    const base = { eventRoleId: member.eventRole.id, eventGroupId: member.eventGroup.id, callsignOverride: null };
+    const stale = await request(app)
+      .put(`/api/v1/events/${eventId}/members/${member.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ ...base, version: 7 })
+      .expect(409);
+    assert.equal((stale.body as ProblemBody).code, "VERSION_CONFLICT");
+
+    const otherEvent = await createEvent();
+    const foreign = await request(app)
+      .post(`/api/v1/events/${otherEvent}/groups`)
+      .set("Cookie", admin.cookie)
+      .send({ name: "Bravo", slug: "bravo" })
+      .expect(201);
+    const invalid = await request(app)
+      .put(`/api/v1/events/${eventId}/members/${member.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ ...base, version: 1, eventGroupId: (foreign.body as { id: string }).id })
+      .expect(422);
+    assert.equal((invalid.body as ProblemBody).code, "VALIDATION_FAILED");
+
+    const key = await createServiceAccountKey([{ permission: "members.sync", eventId }]);
+    await request(app)
+      .put(`/api/v1/events/${eventId}/external-members/discord/987654321`)
+      .set("Authorization", `Bearer ${key}`)
+      .send({ username: "Anna", eventRole: "participant", group: "bravo" })
+      .expect(200);
+    const taken = await request(app)
+      .put(`/api/v1/events/${eventId}/members/${member.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ ...base, version: 1, callsignOverride: "Anna" })
+      .expect(409);
+    assert.equal((taken.body as ProblemBody).code, "MEMBER_IDENTITY_CONFLICT");
+  });
+
   void it("requires members.manage to remove members and rejects archived events", async () => {
     const reader = await createUser("Reader", [{ permission: "members.read", eventId }]);
     await request(app)

@@ -1,3 +1,4 @@
+import { ProblemError, type ProblemFieldError } from "../../shared/errors/problem-error.js";
 import {
   MESHTASTIC_LONG_NAME_MAX_BYTES,
   MESHTASTIC_SHORT_NAME_MAX_BYTES,
@@ -37,4 +38,15 @@ export function shortNameFor(prefix: string | null, number: number): string | nu
 export function shortNameFits(prefix: string | null, number: number): boolean {
   const shortName = shortNameFor(prefix ?? "", number) ?? "";
   return utf8Length(shortName) <= MESHTASTIC_SHORT_NAME_MAX_BYTES;
+}
+
+export function memberIdentityConflictProblem(errors: ProblemFieldError[]): ProblemError {
+  return new ProblemError({
+    type: "urn:openmeshtak:problem:member-identity-conflict",
+    title: "Member callsigns or short names would be invalid",
+    status: 409,
+    detail: "The change would give members duplicate, oversized or impossible names.",
+    code: "MEMBER_IDENTITY_CONFLICT",
+    errors,
+  });
 }

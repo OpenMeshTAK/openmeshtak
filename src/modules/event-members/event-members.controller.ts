@@ -1,9 +1,11 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
   Middlewares,
   Path,
+  Put,
   Query,
   Request,
   Response,
@@ -16,8 +18,13 @@ import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import type { EventMemberDto, EventMemberPage } from "./event-member.dto.js";
-import { deleteEventMember, getEventMember, listEventMembers } from "./event-members.service.js";
+import type { EventMemberDto, EventMemberPage, UpdateEventMemberRequest } from "./event-member.dto.js";
+import {
+  deleteEventMember,
+  getEventMember,
+  listEventMembers,
+  updateEventMember,
+} from "./event-members.service.js";
 
 @Route("events/{eventId}/members")
 @Tags("Event members")
@@ -54,6 +61,23 @@ export class EventMembersController extends Controller {
     @Path() memberId: Uuid,
   ): Promise<EventMemberDto> {
     return getEventMember(requestContext(request).principal, eventId, memberId);
+  }
+
+  /**
+   * Replaces the member's event role, event group and callsign override. Requires the current
+   * `version` and `members.manage`. An integration sync may later set role and group again.
+   */
+  @Put("{memberId}")
+  @SuccessResponse(200, "Event member updated")
+  @Response<ProblemDetails>(409, "Version conflict, callsign or short-name conflict, or event archived")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async updateEventMember(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Path() memberId: Uuid,
+    @Body() body: UpdateEventMemberRequest,
+  ): Promise<EventMemberDto> {
+    return updateEventMember(requestContext(request), eventId, memberId, body);
   }
 
   /**
