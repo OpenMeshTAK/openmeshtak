@@ -30,6 +30,7 @@ const reviewedExceptions = new Map<string, Set<string>>([
     ]),
   ],
   ["CC-BY-4.0", new Set(["caniuse-lite@1.0.30001814"])],
+  ["0BSD", new Set(["tslib@1.14.1", "tslib@2.8.1"])],
   ["EPL-2.0", new Set(["elkjs@0.11.1"])],
   ["Unlicense", new Set(["postgres@3.4.7", "robust-predicates@3.0.3"])],
 ]);
