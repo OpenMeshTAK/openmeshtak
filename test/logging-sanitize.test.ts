@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { Writable } from "node:stream";
+import { createLogger } from "../src/shared/logging/logger.js";
 import {
   sanitizeLogMetadata,
   sanitizeLogMetadataOrFallback,
@@ -41,5 +43,31 @@ void describe("log metadata sanitization", () => {
     });
 
     assert.deepEqual(sanitized, { event: "log_sanitization_failed" });
+  });
+
+  void it("redacts secrets in the written log line, including the message", () => {
+    const lines: string[] = [];
+    const destination = new Writable({
+      write(chunk: Buffer, _encoding, callback) {
+        lines.push(chunk.toString("utf8"));
+        callback();
+      },
+    });
+    const log = createLogger(destination, "info");
+
+    log.error(
+      {
+        event: "test",
+        request: { headers: { "x-api-key": "plain" }, body: { password: "hunter2hunter2" } },
+        details: [new Error("bad key omtk_sa_abc_secretPart")],
+      },
+      "Rejected omtk_claim_SecretClaimToken",
+    );
+
+    const written = lines.join("");
+    for (const secret of ["plain", "hunter2hunter2", "secretPart", "SecretClaimToken"]) {
+      assert.equal(written.includes(secret), false, `${secret} leaked into the log`);
+    }
+    assert.match(written, /Rejected \[REDACTED\]/);
   });
 });

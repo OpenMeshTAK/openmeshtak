@@ -49,6 +49,11 @@ function sanitizeValue(value: unknown, seen: SeenValues): unknown {
   );
 }
 
+/** Messages are meant to be static, but a careless interpolation must still not leak a secret. */
+export function sanitizeLogMessage(message: string): string {
+  return sanitizeString(message);
+}
+
 export function sanitizeLogMetadata(metadata: LogMetadata): LogMetadata {
   return sanitizeValue(metadata, new WeakSet<object>()) as LogMetadata;
 }

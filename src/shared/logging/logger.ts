@@ -1,44 +1,48 @@
-import pino from "pino";
+import pino, { type DestinationStream } from "pino";
 import { config } from "../config/config.js";
 import {
+  sanitizeLogMessage,
   sanitizeLogMetadataOrFallback,
   type LogMetadata,
 } from "./sanitize.js";
 
-const rawLogger = pino({
-  base: null,
-  level: config.logLevel,
-  redact: {
-    censor: "[REDACTED]",
-    paths: [
-      "authorization",
-      "req.headers.authorization",
-      "req.headers.cookie",
-      "req.headers.x-api-key",
-      "res.headers.set-cookie",
-    ],
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-});
+type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
+export type Logger = Readonly<Record<LogLevel, (metadata: LogMetadata, message: string) => void>>;
 
-function safe(metadata: LogMetadata): LogMetadata {
-  return sanitizeLogMetadataOrFallback(metadata);
+/** Every log line passes the sanitizer; destination and level are replaceable only for tests. */
+export function createLogger(destination?: DestinationStream, level: string = config.logLevel): Logger {
+  const rawLogger = pino(
+    {
+      base: null,
+      level,
+      redact: {
+        censor: "[REDACTED]",
+        paths: [
+          "authorization",
+          "req.headers.authorization",
+          "req.headers.cookie",
+          "req.headers.x-api-key",
+          "res.headers.set-cookie",
+        ],
+      },
+      timestamp: pino.stdTimeFunctions.isoTime,
+    },
+    destination,
+  );
+
+  const write =
+    (level: LogLevel) =>
+    (metadata: LogMetadata, message: string): void => {
+      rawLogger[level](sanitizeLogMetadataOrFallback(metadata), sanitizeLogMessage(message));
+    };
+
+  return Object.freeze({
+    debug: write("debug"),
+    info: write("info"),
+    warn: write("warn"),
+    error: write("error"),
+    fatal: write("fatal"),
+  });
 }
 
-export const logger = Object.freeze({
-  debug(metadata: LogMetadata, message: string): void {
-    rawLogger.debug(safe(metadata), message);
-  },
-  error(metadata: LogMetadata, message: string): void {
-    rawLogger.error(safe(metadata), message);
-  },
-  fatal(metadata: LogMetadata, message: string): void {
-    rawLogger.fatal(safe(metadata), message);
-  },
-  info(metadata: LogMetadata, message: string): void {
-    rawLogger.info(safe(metadata), message);
-  },
-  warn(metadata: LogMetadata, message: string): void {
-    rawLogger.warn(safe(metadata), message);
-  },
-});
+export const logger = createLogger();
