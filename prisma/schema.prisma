@@ -32,6 +32,7 @@ model Event {
   syncIssues             SyncIssue[]
   memberClaims           MemberClaim[]
   configurationRevisions EventConfigurationRevision[]
+  missions               MissionProject[]
 }
 
 model User {
@@ -423,4 +424,75 @@ model EventConfigurationRevision {
 
   @@unique([eventId, number])
   @@index([eventId, createdAt, id])
+}
+
+/// Editable, format-neutral mission content of one event. ATAK packages are generated from it.
+model MissionProject {
+  id          String            @id
+  eventId     String
+  name        String
+  description String?
+  version     Int               @default(1)
+  event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  layers      MissionLayer[]
+  objects     MissionObject[]
+  revisions   MissionRevision[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([eventId, createdAt, id])
+}
+
+model MissionLayer {
+  id        String          @id
+  missionId String
+  name      String
+  /// Drawing and export order; lower values are drawn first.
+  sortOrder Int
+  visible   Boolean         @default(true)
+  locked    Boolean         @default(false)
+  version   Int             @default(1)
+  mission   MissionProject  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  objects   MissionObject[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([missionId, sortOrder])
+}
+
+/// One point, line or polygon. Geometry is validated RFC 7946 GeoJSON in WGS84.
+model MissionObject {
+  id          String         @id
+  missionId   String
+  layerId     String
+  /// "point", "line" or "polygon"; mirrors the geometry type for filtering.
+  kind        String
+  geometry    Json
+  name        String
+  description String?
+  style       Json
+  version     Int            @default(1)
+  mission     MissionProject @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  layer       MissionLayer   @relation(fields: [layerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([missionId, createdAt, id])
+  @@index([layerId])
+}
+
+/// Immutable published state of a mission; packages reference a revision, never the draft.
+model MissionRevision {
+  id            String         @id
+  missionId     String
+  number        Int
+  snapshot      Json
+  snapshotHash  String
+  createdByType String
+  createdById   String
+  mission       MissionProject @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+
+  @@unique([missionId, number])
+  @@index([missionId, createdAt, id])
 }
