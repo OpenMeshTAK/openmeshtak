@@ -4000,6 +4000,16 @@
 							}
 						}
 					},
+					"403": {
+						"description": "The account has its own sign-in",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
 					"429": {
 						"description": "Too many attempts",
 						"content": {

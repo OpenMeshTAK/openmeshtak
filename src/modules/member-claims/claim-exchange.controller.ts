@@ -29,6 +29,7 @@ export class ClaimExchangeController extends Controller {
   @Middlewares(claimExchangeRateLimit)
   @SuccessResponse(200, "Session established")
   @Response<ProblemDetails>(401, "Claim not usable")
+  @Response<ProblemDetails>(403, "The account has its own sign-in")
   @Response<ProblemDetails>(429, "Too many attempts")
   public async exchangeClaim(
     @Request() request: unknown,

@@ -91,6 +91,47 @@ void describe("participant claims", () => {
     await disconnectDatabase();
   });
 
+  void it("refuses a session for accounts that can already sign in", async () => {
+    // The administrator joins the event; a link for them must not become an admin session.
+    const role = await database.eventRole.findFirstOrThrow({ where: { eventId } });
+    const group = await database.eventGroup.findFirstOrThrow({ where: { eventId } });
+    const joined = await request(app)
+      .post(`/api/v1/events/${eventId}/members`)
+      .set("Cookie", admin.cookie)
+      .send({ userId: admin.id, eventRoleId: role.id, eventGroupId: group.id })
+      .expect(201);
+    memberId = (joined.body as { id: string }).id;
+
+    const created = await issueClaim();
+    const response = await exchange(created.token).expect(403);
+    assert.equal((response.body as ProblemBody).code, "SIGN_IN_REQUIRED");
+    assert.equal(response.headers["set-cookie"], undefined);
+
+    const stored = await database.memberClaim.findUniqueOrThrow({ where: { id: created.claim.id } });
+    assert.equal(stored.consumedAt, null);
+    assert.equal(await database.auditEvent.count({ where: { action: "member-claim.sign-in-required" } }), 1);
+  });
+
+  void it("requires sign-in once a claimed participant registered a passkey", async () => {
+    await exchange((await issueClaim()).token).expect(200);
+    const peter = await database.domainUser.findUniqueOrThrow({ where: { id: peterUserId } });
+    assert.ok(peter.authSubjectId);
+    await database.passkey.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: peter.authSubjectId,
+        publicKey: "test-public-key",
+        credentialID: "credential-peter",
+        counter: 0,
+        deviceType: "multiDevice",
+        backedUp: true,
+      },
+    });
+
+    const response = await exchange((await issueClaim()).token).expect(403);
+    assert.equal((response.body as ProblemBody).code, "SIGN_IN_REQUIRED");
+  });
+
   void it("issues a one-time token that is stored only as a hash", async () => {
     const created = await issueClaim();
 

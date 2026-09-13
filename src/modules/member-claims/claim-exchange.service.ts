@@ -1,3 +1,4 @@
+import type { Prisma } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { database } from "../../shared/database/database.js";
 import { ProblemError } from "../../shared/errors/problem-error.js";
@@ -22,6 +23,35 @@ function invalidClaim(): ProblemError {
     detail: "The claim link is invalid or no longer usable. Ask an organizer for a new one.",
     code: "INVALID_CLAIM",
   });
+}
+
+/**
+ * A claim may only bootstrap accounts that cannot sign in yet. When the member already has a
+ * password or passkey, a leaked or mis-sent link must not become a session of that account, which
+ * could hold administrative rights.
+ */
+function signInRequired(): ProblemError {
+  return new ProblemError({
+    type: "urn:openmeshtak:problem:sign-in-required",
+    title: "Sign-in required",
+    status: 403,
+    detail: "This account has its own sign-in. Sign in with your password or passkey instead.",
+    code: "SIGN_IN_REQUIRED",
+  });
+}
+
+async function hasOwnSignIn(transaction: Prisma.TransactionClient, authSubjectId: string | null): Promise<boolean> {
+  if (authSubjectId === null) {
+    return false;
+  }
+  const [password, passkey] = await Promise.all([
+    transaction.account.findFirst({
+      where: { userId: authSubjectId, providerId: "credential", password: { not: null } },
+      select: { id: true },
+    }),
+    transaction.passkey.findFirst({ where: { userId: authSubjectId }, select: { id: true } }),
+  ]);
+  return password !== null || passkey !== null;
 }
 
 interface ConsumedClaim {
@@ -55,6 +85,10 @@ async function consumeClaim(token: string, traceId: string): Promise<ConsumedCla
     if (claim === null) {
       return null;
     }
+    // Checked before consuming, so the claim stays unused and grants nothing.
+    if (await hasOwnSignIn(transaction, claim.member.user.authSubjectId)) {
+      return { claim, consumed: false, signInRequired: true };
+    }
 
     const usable =
       claim.consumedAt === null &&
@@ -70,7 +104,7 @@ async function consumeClaim(token: string, traceId: string): Promise<ConsumedCla
         })
       ).count === 1;
 
-    return { claim, consumed };
+    return { claim, consumed, signInRequired: false };
   });
 
   if (outcome === null) {
@@ -79,13 +113,13 @@ async function consumeClaim(token: string, traceId: string): Promise<ConsumedCla
   if (!outcome.consumed) {
     await recordAudit({
       actor: { type: "anonymous" },
-      action: "member-claim.exchange-failed",
+      action: outcome.signInRequired ? "member-claim.sign-in-required" : "member-claim.exchange-failed",
       targetType: "member-claim",
       targetId: outcome.claim.id,
       result: "failure",
       traceId,
     });
-    throw invalidClaim();
+    throw outcome.signInRequired ? signInRequired() : invalidClaim();
   }
 
   const { user } = outcome.claim.member;
@@ -101,7 +135,8 @@ async function consumeClaim(token: string, traceId: string): Promise<ConsumedCla
 /**
  * Exchanges a claim for a normal Better Auth browser session of the bound user. The claim never
  * changes user groups or event membership, and the session carries none of the issuer's rights.
- * A synchronized participant without local login receives an authentication subject here.
+ * A synchronized participant without local login receives an authentication subject here; members
+ * who can already sign in must do so (SIGN_IN_REQUIRED).
  */
 export async function exchangeClaim(token: string, traceId: string): Promise<ClaimExchangeResult> {
   if (!token.startsWith(CLAIM_TOKEN_PREFIX) || !claimTokenPattern.test(token)) {
