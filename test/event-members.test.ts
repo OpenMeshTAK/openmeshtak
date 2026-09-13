@@ -193,6 +193,58 @@ void describe("event members", () => {
     assert.equal((taken.body as ProblemBody).code, "MEMBER_IDENTITY_CONFLICT");
   });
 
+  void it("adds an existing user without an external identity", async () => {
+    const local = await createUser("Anna", []);
+    const response = await request(app)
+      .post(`/api/v1/events/${eventId}/members`)
+      .set("Cookie", admin.cookie)
+      .send({ userId: local.id, eventRoleId: member.eventRole.id, eventGroupId: member.eventGroup.id })
+      .expect(201);
+    const created = response.body as MemberBody & { callsign: string; shortName: string };
+    assert.equal(created.userId, local.id);
+    assert.equal(created.callsign, "Anna");
+    assert.equal(created.shortName, "B2");
+    assert.equal(await database.externalIdentity.count(), 1);
+    assert.equal(await database.auditEvent.count({ where: { action: "event-member.created", targetId: created.id } }), 1);
+
+    const again = await request(app)
+      .post(`/api/v1/events/${eventId}/members`)
+      .set("Cookie", admin.cookie)
+      .send({ userId: local.id, eventRoleId: member.eventRole.id, eventGroupId: member.eventGroup.id })
+      .expect(409);
+    assert.equal((again.body as ProblemBody).code, "MEMBER_EXISTS");
+  });
+
+  void it("rejects unknown users, taken callsigns and callers without members.manage", async () => {
+    const assignment = { eventRoleId: member.eventRole.id, eventGroupId: member.eventGroup.id };
+    const unknown = await request(app)
+      .post(`/api/v1/events/${eventId}/members`)
+      .set("Cookie", admin.cookie)
+      .send({ ...assignment, userId: "00000000-0000-4000-8000-000000000000" })
+      .expect(422);
+    assert.equal((unknown.body as ProblemBody).code, "VALIDATION_FAILED");
+
+    const namesake = await createUser("Peter", []);
+    const taken = await request(app)
+      .post(`/api/v1/events/${eventId}/members`)
+      .set("Cookie", admin.cookie)
+      .send({ ...assignment, userId: namesake.id })
+      .expect(409);
+    assert.equal((taken.body as ProblemBody).code, "MEMBER_IDENTITY_CONFLICT");
+    await request(app)
+      .post(`/api/v1/events/${eventId}/members`)
+      .set("Cookie", admin.cookie)
+      .send({ ...assignment, userId: namesake.id, callsignOverride: "Peter 2" })
+      .expect(201);
+
+    const reader = await createUser("Reader", [{ permission: "members.read", eventId }]);
+    await request(app)
+      .post(`/api/v1/events/${eventId}/members`)
+      .set("Cookie", reader.cookie)
+      .send({ ...assignment, userId: reader.id })
+      .expect(403);
+  });
+
   void it("requires members.manage to remove members and rejects archived events", async () => {
     const reader = await createUser("Reader", [{ permission: "members.read", eventId }]);
     await request(app)

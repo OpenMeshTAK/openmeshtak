@@ -47,6 +47,19 @@ export interface EventMemberPage {
   page: PageInfo;
 }
 
+export interface CreateEventMemberRequest {
+  /** Existing OpenMeshTak user; their display name feeds the group's callsign format. */
+  userId: Uuid;
+  eventRoleId: Uuid;
+  eventGroupId: Uuid;
+  /**
+   * Callsign to use instead of the group format.
+   * @minLength 1
+   * @maxLength 39
+   */
+  callsignOverride?: string | null;
+}
+
 export interface UpdateEventMemberRequest {
   /**
    * Version the client last read.

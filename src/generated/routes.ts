@@ -665,6 +665,17 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateEventMemberRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "userId": {"ref":"Uuid","required":true},
+            "eventRoleId": {"ref":"Uuid","required":true},
+            "eventGroupId": {"ref":"Uuid","required":true},
+            "callsignOverride": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"minLength":{"value":1},"maxLength":{"value":39}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateEventMemberRequest": {
         "dataType": "refObject",
         "properties": {
@@ -2243,6 +2254,39 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEventMembersController_createEventMember: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateEventMemberRequest"},
+        };
+        app.post('/api/v1/events/:eventId/members',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(EventMembersController)),
+            ...(fetchMiddlewares<RequestHandler>(EventMembersController.prototype.createEventMember)),
+
+            async function EventMembersController_createEventMember(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEventMembersController_createEventMember, request, response });
+
+                const controller = new EventMembersController();
+
+              await templateService.apiHandler({
+                methodName: 'createEventMember',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
               });
             } catch (err) {
                 return next(err);

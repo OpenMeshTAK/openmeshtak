@@ -1701,6 +1701,34 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"CreateEventMemberRequest": {
+				"properties": {
+					"userId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Existing OpenMeshTak user; their display name feeds the group's callsign format."
+					},
+					"eventRoleId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventGroupId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"callsignOverride": {
+						"type": "string",
+						"nullable": true,
+						"description": "Callsign to use instead of the group format.",
+						"minLength": 1,
+						"maxLength": 39
+					}
+				},
+				"required": [
+					"userId",
+					"eventRoleId",
+					"eventGroupId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"UpdateEventMemberRequest": {
 				"properties": {
 					"version": {
@@ -5460,6 +5488,103 @@
 						}
 					}
 				]
+			},
+			"post": {
+				"operationId": "CreateEventMember",
+				"responses": {
+					"201": {
+						"description": "Event member created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EventMemberDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Already a member, callsign or short-name conflict, or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Adds an existing OpenMeshTak user to the event. Members from external systems use the\nexternal-member upsert instead. Requires `members.manage`.",
+				"tags": [
+					"Event members"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateEventMemberRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/members/{memberId}": {

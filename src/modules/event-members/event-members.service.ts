@@ -1,10 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
-import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import {
   notFoundProblem,
-  type ProblemFieldError,
+  ProblemError,
   validationProblem,
   versionConflictProblem,
 } from "../../shared/errors/problem-error.js";
@@ -16,15 +16,18 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import { eventArchivedProblem, requireEventPermission } from "../events/event-access.js";
-import type { EventMemberDto, EventMemberPage, UpdateEventMemberRequest } from "./event-member.dto.js";
+import type {
+  CreateEventMemberRequest,
+  EventMemberDto,
+  EventMemberPage,
+  UpdateEventMemberRequest,
+} from "./event-member.dto.js";
 import { eventMemberSelection, toEventMemberDto } from "./event-member.mapper.js";
 import {
-  callsignFits,
-  memberIdentityConflictProblem,
-  nextShortNameNumber,
-  renderCallsign,
-  shortNameFits,
-} from "./member-identity.js";
+  concurrentAssignmentProblem,
+  resolveAssignment,
+  type ResolvedAssignment,
+} from "./member-assignment.js";
 
 export async function listEventMembers(
   principal: Principal,
@@ -62,18 +65,83 @@ export async function getEventMember(
   return toEventMemberDto(row);
 }
 
-function assignmentProblems(
-  role: { id: string } | null,
-  group: { id: string } | null,
-): ProblemFieldError[] {
-  const errors: ProblemFieldError[] = [];
-  if (role === null) {
-    errors.push({ field: "eventRoleId", code: "NOT_FOUND", message: "No role with this ID exists in this event." });
+function auditMember(actor: ActorContext, action: string, memberId: string, eventId: string, assignment: ResolvedAssignment) {
+  return {
+    actor: actor.principal,
+    action,
+    targetType: "event-member",
+    targetId: memberId,
+    result: "success" as const,
+    traceId: actor.traceId,
+    metadata: {
+      eventId,
+      eventRoleId: assignment.eventRoleId,
+      eventGroupId: assignment.eventGroupId,
+      callsignOverride: assignment.callsignOverride !== null,
+    },
+  };
+}
+
+function memberExistsProblem(): ProblemError {
+  return new ProblemError({
+    type: "urn:openmeshtak:problem:member-exists",
+    title: "Already a member",
+    status: 409,
+    detail: "This user is already a member of this event.",
+    code: "MEMBER_EXISTS",
+  });
+}
+
+/**
+ * Adds an existing OpenMeshTak user, for example a local administrator, without an external
+ * identity. The user's display name feeds the group's callsign format. Nothing about the user's
+ * credentials, sessions or user groups changes.
+ */
+export async function createEventMember(
+  actor: ActorContext,
+  eventId: string,
+  input: CreateEventMemberRequest,
+): Promise<EventMemberDto> {
+  const event = await requireEventPermission(actor.principal, eventId, "members.manage");
+  if (event.status === "archived") {
+    throw eventArchivedProblem();
   }
-  if (group === null) {
-    errors.push({ field: "eventGroupId", code: "NOT_FOUND", message: "No group with this ID exists in this event." });
+
+  try {
+    return await database.$transaction(async (transaction) => {
+      const user = await transaction.domainUser.findUnique({
+        where: { id: input.userId },
+        select: { id: true, displayName: true },
+      });
+      if (user === null) {
+        throw validationProblem([{ field: "userId", code: "NOT_FOUND", message: "No user with this ID exists." }]);
+      }
+      const existing = await transaction.eventMember.findUnique({
+        where: { eventId_userId: { eventId, userId: user.id } },
+        select: { id: true },
+      });
+      if (existing !== null) {
+        throw memberExistsProblem();
+      }
+
+      const assignment = await resolveAssignment(
+        transaction,
+        eventId,
+        { ...input, callsignOverride: input.callsignOverride?.trim() || null, username: user.displayName },
+        null,
+      );
+      const memberId = randomUUID();
+      await transaction.eventMember.create({
+        data: { id: memberId, eventId, userId: user.id, username: user.displayName, ...assignment },
+      });
+      await recordAudit(auditMember(actor, "event-member.created", memberId, eventId, assignment), transaction);
+      return toEventMemberDto(
+        await transaction.eventMember.findUniqueOrThrow({ where: { id: memberId }, select: eventMemberSelection }),
+      );
+    });
+  } catch (error: unknown) {
+    throw concurrentAssignmentProblem(error);
   }
-  return errors;
 }
 
 /**
@@ -91,7 +159,6 @@ export async function updateEventMember(
   if (event.status === "archived") {
     throw eventArchivedProblem();
   }
-  const callsignOverride = input.callsignOverride?.trim() || null;
 
   try {
     return await database.$transaction(async (transaction) => {
@@ -103,88 +170,27 @@ export async function updateEventMember(
         throw versionConflictProblem(current.version);
       }
 
-      const [role, group] = await Promise.all([
-        transaction.eventRole.findFirst({ where: { id: input.eventRoleId, eventId }, select: { id: true } }),
-        transaction.eventGroup.findFirst({
-          where: { id: input.eventGroupId, eventId },
-          select: { id: true, name: true, callsignFormat: true, shortNamePrefix: true },
-        }),
-      ]);
-      if (role === null || group === null) {
-        throw validationProblem(assignmentProblems(role, group));
-      }
-
-      const callsign = callsignOverride ?? renderCallsign(group.callsignFormat, current.username, group.name);
-      let shortNameNumber = current.shortNameNumber;
-      if (group.id !== current.eventGroupId) {
-        const used = await transaction.eventMember.findMany({
-          where: { eventGroupId: group.id },
-          select: { shortNameNumber: true },
-        });
-        shortNameNumber = nextShortNameNumber(used.map((member) => member.shortNameNumber));
-      }
-
-      const identityErrors: ProblemFieldError[] = [];
-      if (!callsignFits(callsign)) {
-        identityErrors.push({ field: "callsignOverride", code: "TOO_LONG", message: "Callsign exceeds 39 bytes." });
-      }
-      const holder = await transaction.eventMember.findUnique({
-        where: { eventId_callsign: { eventId, callsign } },
-        select: { id: true },
-      });
-      if (holder !== null && holder.id !== memberId) {
-        identityErrors.push({
-          field: "callsignOverride",
-          code: "CONFLICT",
-          message: "Another member of this event already uses this callsign.",
-        });
-      }
-      if (!shortNameFits(group.shortNamePrefix, shortNameNumber)) {
-        identityErrors.push({ field: "eventGroupId", code: "EXHAUSTED", message: "The group has no free short name." });
-      }
-      if (identityErrors.length > 0) {
-        throw memberIdentityConflictProblem(identityErrors);
-      }
-
+      const assignment = await resolveAssignment(
+        transaction,
+        eventId,
+        { ...input, callsignOverride: input.callsignOverride?.trim() || null, username: current.username },
+        { memberId, eventGroupId: current.eventGroupId, shortNameNumber: current.shortNameNumber },
+      );
       const updated = await transaction.eventMember.updateMany({
         where: { id: memberId, eventId, version: input.version },
-        data: {
-          eventRoleId: role.id,
-          eventGroupId: group.id,
-          callsign,
-          callsignOverride,
-          shortNameNumber,
-          version: { increment: 1 },
-        },
+        data: { ...assignment, version: { increment: 1 } },
       });
       if (updated.count !== 1) {
         const latest = await transaction.eventMember.findUnique({ where: { id: memberId }, select: { version: true } });
         throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
       }
-      await recordAudit(
-        {
-          actor: actor.principal,
-          action: "event-member.updated",
-          targetType: "event-member",
-          targetId: memberId,
-          result: "success",
-          traceId: actor.traceId,
-          metadata: { eventId, eventRoleId: role.id, eventGroupId: group.id, callsignOverride: callsignOverride !== null },
-        },
-        transaction,
-      );
+      await recordAudit(auditMember(actor, "event-member.updated", memberId, eventId, assignment), transaction);
       return toEventMemberDto(
         await transaction.eventMember.findUniqueOrThrow({ where: { id: memberId }, select: eventMemberSelection }),
       );
     });
   } catch (error: unknown) {
-    // A concurrent change took the callsign or short-name number after our checks.
-    if (isUniqueConstraintError(error)) {
-      throw memberIdentityConflictProblem([
-        { field: "callsignOverride", code: "CONFLICT", message: "Another member took this name concurrently." },
-      ]);
-    }
-    throw error;
+    throw concurrentAssignmentProblem(error);
   }
 }
 
