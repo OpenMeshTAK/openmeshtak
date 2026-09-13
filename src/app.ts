@@ -7,6 +7,7 @@ import { createApiKeyFailureRateLimit } from "./modules/service-accounts/api-key
 import { RegisterRoutes } from "./generated/routes.js";
 import { config } from "./shared/config/config.js";
 import { errorHandler, notFoundHandler } from "./shared/errors/problem.js";
+import { apiResponseHeaders, rejectCrossSiteRequests } from "./shared/http/browser-security.js";
 import { requestLogging } from "./shared/logging/request-logging.js";
 
 function loadOpenApiDocument(): Record<string, unknown> {
@@ -21,9 +22,12 @@ export function createApp(): Express {
   app.set("trust proxy", config.trustProxy);
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(requestLogging);
+  // Swagger UI under /api/docs keeps Helmet's defaults; it needs scripts and styles.
+  app.use(["/api/v1", "/api/auth"], apiResponseHeaders);
   mountAuthRoutes(app);
   app.use(express.json({ limit: "1mb", type: ["application/json", "application/*+json"] }));
 
+  app.use("/api/v1", rejectCrossSiteRequests);
   app.use("/api/v1", createApiKeyFailureRateLimit());
   RegisterRoutes(app);
 
