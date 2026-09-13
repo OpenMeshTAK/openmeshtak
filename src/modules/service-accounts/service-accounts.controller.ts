@@ -21,6 +21,7 @@ import {
   requestContext,
   requireUserPrincipal,
 } from "../../shared/http/request-context.js";
+import { issuanceRateLimit } from "../../shared/http/issuance-rate-limit.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import { createApiKey, listApiKeys, revokeApiKey } from "./api-keys.service.js";
 import type {
@@ -39,6 +40,8 @@ import {
   listServiceAccounts,
   updateServiceAccount,
 } from "./service-accounts.service.js";
+
+const apiKeyIssuanceRateLimit = issuanceRateLimit(20, "API keys");
 
 /**
  * Service accounts are managed by humans only. Machine principals cannot create or rotate
@@ -131,7 +134,9 @@ export class ServiceAccountsController extends Controller {
    * is active is a rotation. Requires a recent sign-in.
    */
   @Post("{serviceAccountId}/api-keys")
+  @Middlewares(apiKeyIssuanceRateLimit)
   @SuccessResponse(201, "API key created")
+  @Response<ProblemDetails>(429, "Too many new API keys")
   @Response<ProblemDetails>(404, "Not found")
   @Response<ProblemDetails>(422, "Validation failed")
   public async createApiKey(

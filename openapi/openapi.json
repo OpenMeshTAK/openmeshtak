@@ -3452,6 +3452,16 @@
 								}
 							}
 						}
+					},
+					"429": {
+						"description": "Too many new API keys",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
 					}
 				},
 				"description": "Creates an API key and returns its complete value exactly once. Creating a key while another\nis active is a rotation. Requires a recent sign-in.",
@@ -3850,6 +3860,16 @@
 					},
 					"409": {
 						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many new access links",
 						"content": {
 							"application/json": {
 								"schema": {

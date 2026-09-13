@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Middlewares,
   Path,
   Post,
   Request,
@@ -12,9 +13,12 @@ import {
 } from "tsoa";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { preventCaching, requestContext } from "../../shared/http/request-context.js";
+import { issuanceRateLimit } from "../../shared/http/issuance-rate-limit.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { CreatedMemberClaimResponse, MemberClaimDto } from "./member-claim.dto.js";
 import { createMemberClaim, listMemberClaims, revokeMemberClaim } from "./member-claims.service.js";
+
+const claimIssuanceRateLimit = issuanceRateLimit(200, "access links");
 
 @Route("events/{eventId}/members/{memberId}/claims")
 @Tags("Event members")
@@ -40,8 +44,10 @@ export class MemberClaimsController extends Controller {
    * the member are revoked. Requires `member-claims.create` and an active event.
    */
   @Post()
+  @Middlewares(claimIssuanceRateLimit)
   @SuccessResponse(201, "Claim created")
   @Response<ProblemDetails>(409, "Event not active")
+  @Response<ProblemDetails>(429, "Too many new access links")
   public async createMemberClaim(
     @Request() request: unknown,
     @Path() eventId: Uuid,
