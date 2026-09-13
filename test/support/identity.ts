@@ -33,6 +33,7 @@ export async function clearDatabase(): Promise<void> {
     database.userGroupMembership.deleteMany(),
     database.userGroup.deleteMany(),
     database.domainUser.deleteMany(),
+    database.passkey.deleteMany(),
     database.session.deleteMany(),
     database.account.deleteMany(),
     database.user.deleteMany(),

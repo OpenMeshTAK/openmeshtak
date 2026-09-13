@@ -44,6 +44,7 @@ model User {
   updatedAt     DateTime    @updatedAt
   sessions      Session[]
   accounts      Account[]
+  passkeys      Passkey[]
   domainUser    DomainUser?
 
   @@map("user")
@@ -62,6 +63,26 @@ model Session {
 
   @@index([userId])
   @@map("session")
+}
+
+/// WebAuthn credential owned by Better Auth's passkey plugin. Holds only the public key.
+model Passkey {
+  id           String    @id
+  name         String?
+  publicKey    String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  aaguid       String?
+  createdAt    DateTime? @default(now())
+
+  @@index([userId])
+  @@index([credentialID])
+  @@map("passkey")
 }
 
 model Account {
