@@ -19,7 +19,7 @@ function positionProblem(position: number[]): string | null {
   if (position.length !== 2 && position.length !== 3) {
     return "Positions are [longitude, latitude] or [longitude, latitude, altitude].";
   }
-  if (!position.every((value) => Number.isFinite(value))) {
+  if (!position.every((value) => typeof value === "number" && Number.isFinite(value))) {
     return "Coordinates must be finite numbers.";
   }
   const [longitude = 0, latitude = 0] = position;
@@ -45,6 +45,24 @@ function crossesAntimeridian(positions: number[][]): boolean {
 
 function samePlace(a: number[] | undefined, b: number[] | undefined): boolean {
   return a !== undefined && b !== undefined && a[0] === b[0] && a[1] === b[1];
+}
+
+function isPositionList(value: unknown): value is number[][] {
+  return Array.isArray(value) && value.every((position) => Array.isArray(position));
+}
+
+/** Imported JSON may nest arrays wrongly; check the shape before reading positions. */
+function hasValidNesting(geometry: MissionGeometry): boolean {
+  switch (geometry.type) {
+    case "Point":
+      return Array.isArray(geometry.coordinates);
+    case "LineString":
+      return isPositionList(geometry.coordinates);
+    case "Polygon":
+      return Array.isArray(geometry.coordinates) && geometry.coordinates.every(isPositionList);
+    default:
+      return false;
+  }
 }
 
 function ringsOf(geometry: MissionGeometry): number[][][] {
@@ -84,6 +102,9 @@ function shapeProblem(geometry: MissionGeometry): string | null {
  */
 export function geometryProblems(geometry: MissionGeometry): ProblemFieldError[] {
   const problem = (code: string, message: string): ProblemFieldError[] => [{ field: "geometry", code, message }];
+  if (!hasValidNesting(geometry)) {
+    return problem("INVALID_STRUCTURE", "Coordinates are not nested as RFC 7946 requires for this geometry type.");
+  }
   const rings = ringsOf(geometry);
 
   if (rings.reduce((total, ring) => total + ring.length, 0) > MAX_POSITIONS_PER_OBJECT) {

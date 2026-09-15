@@ -1631,6 +1631,96 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ImportReportEntry": {
+				"properties": {
+					"feature": {
+						"type": "string",
+						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"feature",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GeoJsonImportReport": {
+				"properties": {
+					"accepted": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of objects created."
+					},
+					"changed": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Imported, but adjusted: split multi-geometries, clamped styles."
+					},
+					"skipped": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Not imported because the content type is not supported, e.g. GeometryCollection."
+					},
+					"rejected": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Not imported because the content is invalid, e.g. a self-intersecting polygon."
+					}
+				},
+				"required": [
+					"accepted",
+					"changed",
+					"skipped",
+					"rejected"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GeoJsonDocument": {
+				"description": "Untrusted GeoJSON document: a FeatureCollection, a Feature or a bare geometry.",
+				"properties": {
+					"type": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"type"
+				],
+				"type": "object",
+				"additionalProperties": {}
+			},
+			"GeoJsonFeatureCollection": {
+				"description": "GeoJSON FeatureCollection exported from a mission draft or revision.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"FeatureCollection"
+						],
+						"nullable": false
+					},
+					"features": {
+						"items": {},
+						"type": "array"
+					}
+				},
+				"required": [
+					"type",
+					"features"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"MemberClaimStatus": {
 				"type": "string",
 				"enum": [
@@ -6091,6 +6181,275 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/missions/{missionId}/layers/{layerId}/import": {
+			"post": {
+				"operationId": "ImportMissionGeoJson",
+				"responses": {
+					"200": {
+						"description": "Import report",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GeoJsonImportReport"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Layer locked, too many objects or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Imports a GeoJSON FeatureCollection, Feature or geometry into the layer. Points, lines and\npolygons are supported; multi-geometries are split. The report lists every adjustment, every\nskipped and every rejected feature. Request bodies are limited to 1 MB.",
+				"tags": [
+					"Missions"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "missionId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "layerId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GeoJsonDocument"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/missions/{missionId}/geojson": {
+			"get": {
+				"operationId": "ExportMissionDraftGeoJson",
+				"responses": {
+					"200": {
+						"description": "GeoJSON of the draft",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GeoJsonFeatureCollection"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties.",
+				"tags": [
+					"Missions"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "missionId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/missions/{missionId}/revisions/{number}/geojson": {
+			"get": {
+				"operationId": "ExportMissionRevisionGeoJson",
+				"responses": {
+					"200": {
+						"description": "GeoJSON of the revision",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GeoJsonFeatureCollection"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Exports a published revision as a GeoJSON FeatureCollection.",
+				"tags": [
+					"Missions"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "missionId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "number",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
 						}
 					}
 				]

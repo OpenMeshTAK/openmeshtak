@@ -26,6 +26,8 @@ import { MissionObjectsController } from './../modules/missions/mission-objects.
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MissionLayersController } from './../modules/missions/mission-layers.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MissionGeoJsonController } from './../modules/missions/mission-geojson.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ClaimExchangeController } from './../modules/member-claims/claim-exchange.controller.js';
@@ -645,6 +647,43 @@ const models: TsoaRoute.Models = {
             "sortOrder": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":10000}}},
             "visible": {"dataType":"boolean","required":true},
             "locked": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ImportReportEntry": {
+        "dataType": "refObject",
+        "properties": {
+            "feature": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GeoJsonImportReport": {
+        "dataType": "refObject",
+        "properties": {
+            "accepted": {"dataType":"double","required":true},
+            "changed": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
+            "skipped": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
+            "rejected": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GeoJsonDocument": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"string","required":true},
+        },
+        "additionalProperties": {"dataType":"any"},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GeoJsonFeatureCollection": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["FeatureCollection"],"required":true},
+            "features": {"dataType":"array","array":{"dataType":"any"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -2424,6 +2463,108 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMissionGeoJsonController_importMissionGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
+                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"GeoJsonDocument"},
+        };
+        app.post('/api/v1/events/:eventId/missions/:missionId/layers/:layerId/import',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController)),
+            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController.prototype.importMissionGeoJson)),
+
+            async function MissionGeoJsonController_importMissionGeoJson(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMissionGeoJsonController_importMissionGeoJson, request, response });
+
+                const controller = new MissionGeoJsonController();
+
+              await templateService.apiHandler({
+                methodName: 'importMissionGeoJson',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMissionGeoJsonController_exportMissionDraftGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/missions/:missionId/geojson',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController)),
+            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController.prototype.exportMissionDraftGeoJson)),
+
+            async function MissionGeoJsonController_exportMissionDraftGeoJson(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMissionGeoJsonController_exportMissionDraftGeoJson, request, response });
+
+                const controller = new MissionGeoJsonController();
+
+              await templateService.apiHandler({
+                methodName: 'exportMissionDraftGeoJson',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMissionGeoJsonController_exportMissionRevisionGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
+                number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
+        };
+        app.get('/api/v1/events/:eventId/missions/:missionId/revisions/:number/geojson',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController)),
+            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController.prototype.exportMissionRevisionGeoJson)),
+
+            async function MissionGeoJsonController_exportMissionRevisionGeoJson(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMissionGeoJsonController_exportMissionRevisionGeoJson, request, response });
+
+                const controller = new MissionGeoJsonController();
+
+              await templateService.apiHandler({
+                methodName: 'exportMissionRevisionGeoJson',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);
