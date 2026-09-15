@@ -87,6 +87,29 @@ void describe("mission GeoJSON import and export", () => {
     assert.deepEqual(report.rejected.map(({ feature }) => feature), ["Feature 4 (Bowtie)"]);
   });
 
+  void it("keeps circles through a GeoJSON round trip", async () => {
+    await request(app)
+      .post(`${missionUrl}/objects`)
+      .set("Cookie", editor.cookie)
+      .send({ layerId, name: "NACHTWACHE", geometry: { type: "Circle", coordinates: [11.8144873, 52.383763], radius: 46.38 } })
+      .expect(201);
+    const exported = await request(app).get(`${missionUrl}/geojson`).set("Cookie", editor.cookie).expect(200);
+    const feature = (exported.body as CollectionBody).features[0];
+    assert.equal(feature?.geometry.type, "Point");
+    assert.equal(feature?.properties.shape, "circle");
+    assert.equal(feature?.properties.radius, 46.38);
+
+    const report = await request(app)
+      .post(`${missionUrl}/layers/${layerId}/import`)
+      .set("Cookie", editor.cookie)
+      .send(exported.body)
+      .expect(200);
+    assert.equal((report.body as ReportBody).accepted, 1);
+    const objects = await request(app).get(`${missionUrl}/objects`).set("Cookie", editor.cookie).expect(200);
+    const kinds = (objects.body as { items: Array<{ kind: string }> }).items.map(({ kind }) => kind);
+    assert.deepEqual(kinds, ["circle", "circle"]);
+  });
+
   void it("rejects documents that are not GeoJSON without creating anything", async () => {
     const response = await request(app)
       .post(`${missionUrl}/layers/${layerId}/import`)

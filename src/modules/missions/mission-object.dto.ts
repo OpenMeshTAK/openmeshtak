@@ -24,10 +24,26 @@ export interface PolygonGeometry {
   coordinates: Position[][];
 }
 
-/** RFC 7946 geometry in WGS84. */
-export type MissionGeometry = PointGeometry | LineStringGeometry | PolygonGeometry;
+/**
+ * A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as
+ * an approximated polygon (EDITOR.md) and maps to ATAK `u-d-c-c` circles.
+ */
+export interface CircleGeometry {
+  type: "Circle";
+  /** Centre position. */
+  coordinates: Position;
+  /**
+   * Radius in metres.
+   * @minimum 0.1
+   * @maximum 100000
+   */
+  radius: number;
+}
 
-export type MissionObjectKind = "point" | "line" | "polygon";
+/** RFC 7946 geometry in WGS84, plus circles as an explicit domain extension. */
+export type MissionGeometry = PointGeometry | LineStringGeometry | PolygonGeometry | CircleGeometry;
+
+export type MissionObjectKind = "point" | "line" | "polygon" | "circle";
 
 /**
  * Colour as `#RRGGBB`.

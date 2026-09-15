@@ -48,6 +48,13 @@ void describe("mission geometry validation", () => {
     assert.equal(codeFor(bowtie), "SELF_INTERSECTION");
   });
 
+  void it("accepts circles with a radius in metres and rejects impossible radii", () => {
+    assert.equal(codeFor({ type: "Circle", coordinates: [11.8144873, 52.3837630], radius: 46.38 }), undefined);
+    assert.equal(codeFor({ type: "Circle", coordinates: [11.8, 52.3], radius: 0 }), "INVALID_SHAPE");
+    assert.equal(codeFor({ type: "Circle", coordinates: [11.8, 52.3], radius: 250_000 }), "INVALID_SHAPE");
+    assert.equal(codeFor({ type: "Circle", coordinates: [179.99, 0], radius: 5_000 }), "CROSSES_ANTIMERIDIAN");
+  });
+
   void it("rejects geometry crossing the antimeridian", () => {
     assert.equal(codeFor({ type: "LineString", coordinates: [[179.5, 10], [-179.5, 10]] }), "CROSSES_ANTIMERIDIAN");
   });

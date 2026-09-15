@@ -1,6 +1,6 @@
 import kinks from "@turf/kinks";
 import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
-import type { MissionGeometry, MissionObjectKind } from "./mission-object.dto.js";
+import type { CircleGeometry, MissionGeometry, MissionObjectKind } from "./mission-object.dto.js";
 
 /** Bounds one object so drawing, storage and export stay fast. */
 export const MAX_POSITIONS_PER_OBJECT = 10_000;
@@ -9,7 +9,12 @@ const KIND_BY_TYPE: Record<MissionGeometry["type"], MissionObjectKind> = {
   Point: "point",
   LineString: "line",
   Polygon: "polygon",
+  Circle: "circle",
 };
+
+/** Largest circle radius in metres; larger areas belong in a polygon. */
+export const MAX_CIRCLE_RADIUS_METRES = 100_000;
+const METRES_PER_DEGREE = 111_320;
 
 export function kindOf(geometry: MissionGeometry): MissionObjectKind {
   return KIND_BY_TYPE[geometry.type];
@@ -55,6 +60,7 @@ function isPositionList(value: unknown): value is number[][] {
 function hasValidNesting(geometry: MissionGeometry): boolean {
   switch (geometry.type) {
     case "Point":
+    case "Circle":
       return Array.isArray(geometry.coordinates);
     case "LineString":
       return isPositionList(geometry.coordinates);
@@ -68,6 +74,7 @@ function hasValidNesting(geometry: MissionGeometry): boolean {
 function ringsOf(geometry: MissionGeometry): number[][][] {
   switch (geometry.type) {
     case "Point":
+    case "Circle":
       return [[geometry.coordinates]];
     case "LineString":
       return [geometry.coordinates];
@@ -76,7 +83,20 @@ function ringsOf(geometry: MissionGeometry): number[][][] {
   }
 }
 
+/** Whether the circle reaches over the 180th meridian (east-west extent at its latitude). */
+function circleCrossesAntimeridian(geometry: CircleGeometry): boolean {
+  const [longitude = 0, latitude = 0] = geometry.coordinates;
+  const metresPerDegree = METRES_PER_DEGREE * Math.cos((latitude * Math.PI) / 180);
+  return metresPerDegree <= 0 || Math.abs(longitude) + geometry.radius / metresPerDegree > 180;
+}
+
 function shapeProblem(geometry: MissionGeometry): string | null {
+  if (geometry.type === "Circle") {
+    const radius: unknown = geometry.radius;
+    if (typeof radius !== "number" || !Number.isFinite(radius) || radius < 0.1 || radius > MAX_CIRCLE_RADIUS_METRES) {
+      return `A circle radius must be between 0.1 and ${String(MAX_CIRCLE_RADIUS_METRES)} metres.`;
+    }
+  }
   if (geometry.type === "LineString" && geometry.coordinates.length < 2) {
     return "A line needs at least two positions.";
   }
@@ -120,7 +140,7 @@ export function geometryProblems(geometry: MissionGeometry): ProblemFieldError[]
   if (shape !== null) {
     return problem("INVALID_SHAPE", shape);
   }
-  if (rings.some(crossesAntimeridian)) {
+  if (rings.some(crossesAntimeridian) || (geometry.type === "Circle" && circleCrossesAntimeridian(geometry))) {
     return problem("CROSSES_ANTIMERIDIAN", "Geometry crossing the 180th meridian is not supported yet.");
   }
   // Lines may cross themselves (a patrol loop); polygon rings may not.

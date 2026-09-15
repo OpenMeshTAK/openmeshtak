@@ -1109,7 +1109,8 @@
 				"enum": [
 					"point",
 					"line",
-					"polygon"
+					"polygon",
+					"circle"
 				]
 			},
 			"Position": {
@@ -1192,6 +1193,36 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"CircleGeometry": {
+				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\nan approximated polygon (EDITOR.md) and maps to ATAK `u-d-c-c` circles.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Circle"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position",
+						"description": "Centre position."
+					},
+					"radius": {
+						"type": "number",
+						"format": "double",
+						"description": "Radius in metres.",
+						"minimum": 0.1,
+						"maximum": 100000
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"radius"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"MissionGeometry": {
 				"anyOf": [
 					{
@@ -1202,9 +1233,12 @@
 					},
 					{
 						"$ref": "#/components/schemas/PolygonGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/CircleGeometry"
 					}
 				],
-				"description": "RFC 7946 geometry in WGS84."
+				"description": "RFC 7946 geometry in WGS84, plus circles as an explicit domain extension."
 			},
 			"HexColor": {
 				"type": "string",

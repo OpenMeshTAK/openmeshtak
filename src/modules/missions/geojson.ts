@@ -64,6 +64,24 @@ function styleFrom(properties: JsonObject, fallback: MissionObjectStyle, changes
   return { color, strokeWidth, fillOpacity };
 }
 
+const IMPORTED_NAMES: Record<MissionGeometry["type"], string> = {
+  Point: "point",
+  LineString: "line",
+  Polygon: "area",
+  Circle: "circle",
+};
+
+/**
+ * GeoJSON has no circles. OpenMeshTak exports them as points with `shape: "circle"` and a
+ * `radius` in metres, and reads that convention back so a round trip keeps the circle.
+ */
+function asCircle(part: JsonObject, properties: JsonObject): MissionGeometry | null {
+  if (part.type !== "Point" || properties.shape !== "circle" || typeof properties.radius !== "number") {
+    return null;
+  }
+  return { type: "Circle", coordinates: part.coordinates as number[], radius: properties.radius };
+}
+
 /** Accepts a FeatureCollection, a single Feature or a bare geometry. */
 function featuresOf(document: unknown): JsonObject[] | null {
   if (!isObject(document)) {
@@ -126,13 +144,13 @@ export function convertGeoJson(document: unknown, fallbackStyle: MissionObjectSt
     const description = text(properties.description, 2000);
 
     parts.forEach((part, partIndex) => {
-      const geometry = part as unknown as MissionGeometry;
+      const geometry = asCircle(part, properties) ?? (part as unknown as MissionGeometry);
       const problem = Array.isArray(part.coordinates) ? geometryProblems(geometry)[0] : undefined;
       if (!Array.isArray(part.coordinates) || problem !== undefined) {
         report.rejected.push({ feature: where, message: problem?.message ?? "The geometry has no coordinates." });
         return;
       }
-      const baseName = name ?? `Imported ${geometry.type === "Point" ? "point" : geometry.type === "LineString" ? "line" : "area"} ${String(index + 1)}`;
+      const baseName = name ?? `Imported ${IMPORTED_NAMES[geometry.type]} ${String(index + 1)}`;
       candidates.push({
         name: parts.length > 1 ? `${baseName} ${String(partIndex + 1)}`.slice(0, 100) : baseName,
         description,
@@ -155,14 +173,16 @@ export function snapshotToGeoJson(snapshot: MissionSnapshot): JsonObject {
     features: snapshot.objects.map((object) => ({
       type: "Feature",
       id: object.id,
-      geometry: object.geometry,
+      geometry:
+        object.geometry.type === "Circle" ? { type: "Point", coordinates: object.geometry.coordinates } : object.geometry,
       properties: {
         name: object.name,
+        ...(object.geometry.type === "Circle" ? { shape: "circle", radius: object.geometry.radius } : {}),
         description: object.description,
         layer: layerNames.get(object.layerId) ?? null,
         ...(object.kind === "point" ? { "marker-color": object.style.color } : { stroke: object.style.color }),
         "stroke-width": object.style.strokeWidth,
-        ...(object.kind === "polygon" ? { fill: object.style.color, "fill-opacity": object.style.fillOpacity } : {}),
+        ...(object.kind === "polygon" || object.kind === "circle" ? { fill: object.style.color, "fill-opacity": object.style.fillOpacity } : {}),
       },
     })),
   };

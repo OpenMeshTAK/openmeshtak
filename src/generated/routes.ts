@@ -451,7 +451,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MissionObjectKind": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["point"]},{"dataType":"enum","enums":["line"]},{"dataType":"enum","enums":["polygon"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["point"]},{"dataType":"enum","enums":["line"]},{"dataType":"enum","enums":["polygon"]},{"dataType":"enum","enums":["circle"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Position": {
@@ -486,9 +486,19 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CircleGeometry": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["Circle"],"required":true},
+            "coordinates": {"ref":"Position","required":true},
+            "radius": {"dataType":"double","required":true,"validators":{"minimum":{"value":0.1},"maximum":{"value":100000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MissionGeometry": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"ref":"PointGeometry"},{"ref":"LineStringGeometry"},{"ref":"PolygonGeometry"}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"ref":"PointGeometry"},{"ref":"LineStringGeometry"},{"ref":"PolygonGeometry"},{"ref":"CircleGeometry"}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "HexColor": {
