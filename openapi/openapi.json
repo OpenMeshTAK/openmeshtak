@@ -1028,6 +1028,82 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"MissionRevisionSummaryDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"missionId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"number": {
+						"type": "number",
+						"format": "double",
+						"description": "Increments per mission, starting at 1."
+					},
+					"snapshotHash": {
+						"type": "string",
+						"description": "SHA-256 of the canonical snapshot, for provenance."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"missionId",
+					"number",
+					"snapshotHash",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MissionRevisionPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/MissionRevisionSummaryDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MissionSnapshotLayer": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"sortOrder": {
+						"type": "number",
+						"format": "double"
+					},
+					"visible": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"sortOrder",
+					"visible"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"MissionObjectKind": {
 				"type": "string",
 				"enum": [
@@ -1160,6 +1236,133 @@
 					"color",
 					"strokeWidth",
 					"fillOpacity"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MissionSnapshotObject": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"layerId": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/MissionObjectKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/MissionGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/MissionObjectStyle"
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"description",
+					"geometry",
+					"style"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MissionSnapshot": {
+				"description": "Everything a package generator needs; timestamps and versions are left out on purpose.",
+				"properties": {
+					"schema": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"layers": {
+						"items": {
+							"$ref": "#/components/schemas/MissionSnapshotLayer"
+						},
+						"type": "array"
+					},
+					"objects": {
+						"items": {
+							"$ref": "#/components/schemas/MissionSnapshotObject"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"schema",
+					"name",
+					"description",
+					"layers",
+					"objects"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MissionRevisionDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"missionId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"number": {
+						"type": "number",
+						"format": "double",
+						"description": "Increments per mission, starting at 1."
+					},
+					"snapshotHash": {
+						"type": "string",
+						"description": "SHA-256 of the canonical snapshot, for provenance."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"snapshot": {
+						"$ref": "#/components/schemas/MissionSnapshot"
+					}
+				},
+				"required": [
+					"id",
+					"missionId",
+					"number",
+					"snapshotHash",
+					"createdAt",
+					"snapshot"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PublishMissionResponse": {
+				"properties": {
+					"created": {
+						"type": "boolean",
+						"description": "`false` when the draft equals the latest revision, which is returned instead."
+					},
+					"revision": {
+						"$ref": "#/components/schemas/MissionRevisionDto"
+					}
+				},
+				"required": [
+					"created",
+					"revision"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -4698,6 +4901,284 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/missions/{missionId}/revisions": {
+			"get": {
+				"operationId": "ListMissionRevisions",
+				"responses": {
+					"200": {
+						"description": "Mission revisions",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MissionRevisionPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists published revisions, oldest first, without their snapshots.",
+				"tags": [
+					"Missions"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "missionId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "PublishMission",
+				"responses": {
+					"200": {
+						"description": "Published, or the unchanged latest revision",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PublishMissionResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Publishes the current draft. Requires `missions.publish`.",
+				"tags": [
+					"Missions"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "missionId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/missions/{missionId}/revisions/{number}": {
+			"get": {
+				"operationId": "GetMissionRevision",
+				"responses": {
+					"200": {
+						"description": "Mission revision",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MissionRevisionDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns one revision with its snapshot.",
+				"tags": [
+					"Missions"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "missionId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "number",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
 						}
 					}
 				]
