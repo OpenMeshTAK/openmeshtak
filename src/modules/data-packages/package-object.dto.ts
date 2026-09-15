@@ -41,9 +41,9 @@ export interface CircleGeometry {
 }
 
 /** RFC 7946 geometry in WGS84, plus circles as an explicit domain extension. */
-export type MissionGeometry = PointGeometry | LineStringGeometry | PolygonGeometry | CircleGeometry;
+export type PackageGeometry = PointGeometry | LineStringGeometry | PolygonGeometry | CircleGeometry;
 
-export type MissionObjectKind = "point" | "line" | "polygon" | "circle";
+export type PackageObjectKind = "point" | "line" | "polygon" | "circle";
 
 /**
  * Colour as `#RRGGBB`.
@@ -51,7 +51,7 @@ export type MissionObjectKind = "point" | "line" | "polygon" | "circle";
  */
 export type HexColor = string;
 
-export interface MissionObjectStyle {
+export interface PackageObjectStyle {
   /** Marker, line and polygon outline colour. */
   color: HexColor;
   /**
@@ -69,15 +69,15 @@ export interface MissionObjectStyle {
   fillOpacity: number;
 }
 
-export interface MissionObjectDto {
+export interface PackageObjectDto {
   id: Uuid;
-  missionId: Uuid;
+  packageId: Uuid;
   layerId: Uuid;
-  kind: MissionObjectKind;
+  kind: PackageObjectKind;
   name: string;
   description: string | null;
-  geometry: MissionGeometry;
-  style: MissionObjectStyle;
+  geometry: PackageGeometry;
+  style: PackageObjectStyle;
   version: number;
   /** @format date-time */
   createdAt: string;
@@ -85,12 +85,12 @@ export interface MissionObjectDto {
   updatedAt: string;
 }
 
-export interface MissionObjectPage {
-  items: MissionObjectDto[];
+export interface PackageObjectPage {
+  items: PackageObjectDto[];
   page: PageInfo;
 }
 
-export interface CreateMissionObjectRequest {
+export interface CreatePackageObjectRequest {
   layerId: Uuid;
   /**
    * @minLength 1
@@ -99,18 +99,18 @@ export interface CreateMissionObjectRequest {
   name: string;
   /** @maxLength 2000 */
   description?: string | null;
-  geometry: MissionGeometry;
+  geometry: PackageGeometry;
   /** Defaults to a blue outline with a light fill. */
-  style?: MissionObjectStyle;
+  style?: PackageObjectStyle;
 }
 
-export interface UpdateMissionObjectRequest {
+export interface UpdatePackageObjectRequest {
   /**
    * @isInt
    * @minimum 1
    */
   version: number;
-  /** Moving an object to another layer of the same mission is allowed. */
+  /** Moving an object to another layer of the same data package is allowed. */
   layerId: Uuid;
   /**
    * @minLength 1
@@ -119,6 +119,6 @@ export interface UpdateMissionObjectRequest {
   name: string;
   /** @maxLength 2000 */
   description: string | null;
-  geometry: MissionGeometry;
-  style: MissionObjectStyle;
+  geometry: PackageGeometry;
+  style: PackageObjectStyle;
 }

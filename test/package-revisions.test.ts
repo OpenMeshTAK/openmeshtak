@@ -13,12 +13,12 @@ interface PublishBody {
 
 let app: Express;
 let editor: TestUser;
-let missionUrl: string;
+let packageUrl: string;
 let layerId: string;
 
 async function addPoint(name: string): Promise<{ id: string }> {
   const response = await request(app)
-    .post(`${missionUrl}/objects`)
+    .post(`${packageUrl}/objects`)
     .set("Cookie", editor.cookie)
     .send({ layerId, name, geometry: { type: "Point", coordinates: [8, 50] } })
     .expect(201);
@@ -26,27 +26,27 @@ async function addPoint(name: string): Promise<{ id: string }> {
 }
 
 async function publish(user = editor): Promise<PublishBody> {
-  const response = await request(app).post(`${missionUrl}/revisions`).set("Cookie", user.cookie).expect(200);
+  const response = await request(app).post(`${packageUrl}/revisions`).set("Cookie", user.cookie).expect(200);
   return response.body as PublishBody;
 }
 
-void describe("mission revisions", () => {
+void describe("data package revisions", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
     const eventId = await createEvent();
     editor = await createUser("Editor", [
-      { permission: "missions.read", eventId },
-      { permission: "missions.edit", eventId },
-      { permission: "missions.publish", eventId },
+      { permission: "data-packages.read", eventId },
+      { permission: "data-packages.edit", eventId },
+      { permission: "data-packages.publish", eventId },
     ]);
-    const mission = await request(app)
-      .post(`/api/v1/events/${eventId}/missions`)
+    const dataPackage = await request(app)
+      .post(`/api/v1/events/${eventId}/data-packages`)
       .set("Cookie", editor.cookie)
       .send({ name: "Phoenix" })
       .expect(201);
-    missionUrl = `/api/v1/events/${eventId}/missions/${(mission.body as { id: string }).id}`;
-    const layers = await request(app).get(`${missionUrl}/layers`).set("Cookie", editor.cookie).expect(200);
+    packageUrl = `/api/v1/events/${eventId}/data-packages/${(dataPackage.body as { id: string }).id}`;
+    const layers = await request(app).get(`${packageUrl}/layers`).set("Cookie", editor.cookie).expect(200);
     layerId = (layers.body as { items: Array<{ id: string }> }).items[0]?.id ?? "";
   });
 
@@ -70,29 +70,29 @@ void describe("mission revisions", () => {
     assert.equal(second.revision.number, 2);
     assert.notEqual(second.revision.snapshotHash, first.revision.snapshotHash);
 
-    const mission = await request(app).get(missionUrl).set("Cookie", editor.cookie).expect(200);
-    assert.equal((mission.body as { latestRevision: number }).latestRevision, 2);
+    const dataPackage = await request(app).get(packageUrl).set("Cookie", editor.cookie).expect(200);
+    assert.equal((dataPackage.body as { latestRevision: number }).latestRevision, 2);
   });
 
   void it("keeps published revisions unchanged when the draft changes later", async () => {
     const point = await addPoint("Rally point");
     await publish();
-    await request(app).delete(`${missionUrl}/objects/${point.id}`).set("Cookie", editor.cookie).expect(204);
+    await request(app).delete(`${packageUrl}/objects/${point.id}`).set("Cookie", editor.cookie).expect(204);
 
-    const revision = await request(app).get(`${missionUrl}/revisions/1`).set("Cookie", editor.cookie).expect(200);
+    const revision = await request(app).get(`${packageUrl}/revisions/1`).set("Cookie", editor.cookie).expect(200);
     assert.deepEqual(
       (revision.body as PublishBody["revision"]).snapshot.objects.map(({ name }) => name),
       ["Rally point"],
     );
-    assert.equal(await database.auditEvent.count({ where: { action: "mission.published" } }), 1);
+    assert.equal(await database.auditEvent.count({ where: { action: "data-package.published" } }), 1);
   });
 
-  void it("requires missions.publish", async () => {
-    const eventId = missionUrl.split("/")[4] ?? "";
+  void it("requires data-packages.publish", async () => {
+    const eventId = packageUrl.split("/")[4] ?? "";
     const writer = await createUser("Writer", [
-      { permission: "missions.read", eventId },
-      { permission: "missions.edit", eventId },
+      { permission: "data-packages.read", eventId },
+      { permission: "data-packages.edit", eventId },
     ]);
-    await request(app).post(`${missionUrl}/revisions`).set("Cookie", writer.cookie).expect(403);
+    await request(app).post(`${packageUrl}/revisions`).set("Cookie", writer.cookie).expect(403);
   });
 });

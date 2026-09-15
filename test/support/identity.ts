@@ -20,7 +20,7 @@ export async function clearDatabase(): Promise<void> {
   await database.$transaction([
     database.auditEvent.deleteMany(),
     database.memberClaim.deleteMany(),
-    database.missionProject.deleteMany(),
+    database.dataPackage.deleteMany(),
     database.eventConfigurationRevision.deleteMany(),
     database.syncIssue.deleteMany(),
     database.eventMember.deleteMany(),

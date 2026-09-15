@@ -18,16 +18,6 @@ import { MyEventMembershipsController } from './../modules/profiles/profiles.con
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PrincipalController } from './../modules/principal/principal.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { MissionsController } from './../modules/missions/missions.controller.js';
-// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { MissionRevisionsController } from './../modules/missions/mission-revisions.controller.js';
-// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { MissionObjectsController } from './../modules/missions/mission-objects.controller.js';
-// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { MissionLayersController } from './../modules/missions/mission-layers.controller.js';
-// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { MissionGeoJsonController } from './../modules/missions/mission-geojson.controller.js';
-// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ClaimExchangeController } from './../modules/member-claims/claim-exchange.controller.js';
@@ -47,6 +37,16 @@ import { EventMembersController } from './../modules/event-members/event-members
 import { EventGroupsController } from './../modules/event-groups/event-groups.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ConfigurationRevisionsController } from './../modules/event-configuration/configuration-revisions.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PackageRevisionsController } from './../modules/data-packages/package-revisions.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PackageObjectsController } from './../modules/data-packages/package-objects.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PackageLayersController } from './../modules/data-packages/package-layers.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PackageGeoJsonController } from './../modules/data-packages/package-geojson.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { DataPackagesController } from './../modules/data-packages/data-packages.controller.js';
 import { expressAuthentication } from './../shared/auth/authorization.js';
 // @ts-ignore - no great way to install types from subpackage
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
@@ -118,7 +118,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Permission": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["missions.read"]},{"dataType":"enum","enums":["missions.edit"]},{"dataType":"enum","enums":["missions.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PermissionGrantDto": {
@@ -370,330 +370,6 @@ const models: TsoaRoute.Models = {
             "id": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"ref":"Uuid","required":true},
-            "eventId": {"ref":"Uuid","required":true},
-            "name": {"dataType":"string","required":true},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "latestRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "version": {"dataType":"double","required":true},
-            "createdAt": {"dataType":"string","required":true},
-            "updatedAt": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionPage": {
-        "dataType": "refObject",
-        "properties": {
-            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"MissionDto"},"required":true},
-            "page": {"ref":"PageInfo","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateMissionRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":1000}}},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateMissionRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":1000}}},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionRevisionSummaryDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"ref":"Uuid","required":true},
-            "missionId": {"ref":"Uuid","required":true},
-            "number": {"dataType":"double","required":true},
-            "snapshotHash": {"dataType":"string","required":true},
-            "createdAt": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionRevisionPage": {
-        "dataType": "refObject",
-        "properties": {
-            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"MissionRevisionSummaryDto"},"required":true},
-            "page": {"ref":"PageInfo","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionSnapshotLayer": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"dataType":"string","required":true},
-            "name": {"dataType":"string","required":true},
-            "sortOrder": {"dataType":"double","required":true},
-            "visible": {"dataType":"boolean","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionObjectKind": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["point"]},{"dataType":"enum","enums":["line"]},{"dataType":"enum","enums":["polygon"]},{"dataType":"enum","enums":["circle"]}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Position": {
-        "dataType": "refAlias",
-        "type": {"dataType":"array","array":{"dataType":"double"},"validators":{"minItems":{"value":2},"maxItems":{"value":3}}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PointGeometry": {
-        "dataType": "refObject",
-        "properties": {
-            "type": {"dataType":"enum","enums":["Point"],"required":true},
-            "coordinates": {"ref":"Position","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "LineStringGeometry": {
-        "dataType": "refObject",
-        "properties": {
-            "type": {"dataType":"enum","enums":["LineString"],"required":true},
-            "coordinates": {"dataType":"array","array":{"dataType":"refAlias","ref":"Position"},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PolygonGeometry": {
-        "dataType": "refObject",
-        "properties": {
-            "type": {"dataType":"enum","enums":["Polygon"],"required":true},
-            "coordinates": {"dataType":"array","array":{"dataType":"array","array":{"dataType":"refAlias","ref":"Position"}},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CircleGeometry": {
-        "dataType": "refObject",
-        "properties": {
-            "type": {"dataType":"enum","enums":["Circle"],"required":true},
-            "coordinates": {"ref":"Position","required":true},
-            "radius": {"dataType":"double","required":true,"validators":{"minimum":{"value":0.1},"maximum":{"value":100000}}},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionGeometry": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"ref":"PointGeometry"},{"ref":"LineStringGeometry"},{"ref":"PolygonGeometry"},{"ref":"CircleGeometry"}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "HexColor": {
-        "dataType": "refAlias",
-        "type": {"dataType":"string","validators":{"pattern":{"value":"^#[0-9A-Fa-f]{6}$"}}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionObjectStyle": {
-        "dataType": "refObject",
-        "properties": {
-            "color": {"ref":"HexColor","required":true},
-            "strokeWidth": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":20}}},
-            "fillOpacity": {"dataType":"double","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":1}}},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionSnapshotObject": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"dataType":"string","required":true},
-            "layerId": {"dataType":"string","required":true},
-            "kind": {"ref":"MissionObjectKind","required":true},
-            "name": {"dataType":"string","required":true},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "geometry": {"ref":"MissionGeometry","required":true},
-            "style": {"ref":"MissionObjectStyle","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionSnapshot": {
-        "dataType": "refObject",
-        "properties": {
-            "schema": {"dataType":"double","required":true},
-            "name": {"dataType":"string","required":true},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "layers": {"dataType":"array","array":{"dataType":"refObject","ref":"MissionSnapshotLayer"},"required":true},
-            "objects": {"dataType":"array","array":{"dataType":"refObject","ref":"MissionSnapshotObject"},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionRevisionDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"ref":"Uuid","required":true},
-            "missionId": {"ref":"Uuid","required":true},
-            "number": {"dataType":"double","required":true},
-            "snapshotHash": {"dataType":"string","required":true},
-            "createdAt": {"dataType":"string","required":true},
-            "snapshot": {"ref":"MissionSnapshot","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PublishMissionResponse": {
-        "dataType": "refObject",
-        "properties": {
-            "created": {"dataType":"boolean","required":true},
-            "revision": {"ref":"MissionRevisionDto","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionObjectDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"ref":"Uuid","required":true},
-            "missionId": {"ref":"Uuid","required":true},
-            "layerId": {"ref":"Uuid","required":true},
-            "kind": {"ref":"MissionObjectKind","required":true},
-            "name": {"dataType":"string","required":true},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "geometry": {"ref":"MissionGeometry","required":true},
-            "style": {"ref":"MissionObjectStyle","required":true},
-            "version": {"dataType":"double","required":true},
-            "createdAt": {"dataType":"string","required":true},
-            "updatedAt": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionObjectPage": {
-        "dataType": "refObject",
-        "properties": {
-            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"MissionObjectDto"},"required":true},
-            "page": {"ref":"PageInfo","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateMissionObjectRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "layerId": {"ref":"Uuid","required":true},
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":2000}}},
-            "geometry": {"ref":"MissionGeometry","required":true},
-            "style": {"ref":"MissionObjectStyle"},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateMissionObjectRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
-            "layerId": {"ref":"Uuid","required":true},
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":2000}}},
-            "geometry": {"ref":"MissionGeometry","required":true},
-            "style": {"ref":"MissionObjectStyle","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionLayerDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"ref":"Uuid","required":true},
-            "missionId": {"ref":"Uuid","required":true},
-            "name": {"dataType":"string","required":true},
-            "sortOrder": {"dataType":"double","required":true},
-            "visible": {"dataType":"boolean","required":true},
-            "locked": {"dataType":"boolean","required":true},
-            "version": {"dataType":"double","required":true},
-            "createdAt": {"dataType":"string","required":true},
-            "updatedAt": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MissionLayerPage": {
-        "dataType": "refObject",
-        "properties": {
-            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"MissionLayerDto"},"required":true},
-            "page": {"ref":"PageInfo","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateMissionLayerRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateMissionLayerRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-            "sortOrder": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":10000}}},
-            "visible": {"dataType":"boolean","required":true},
-            "locked": {"dataType":"boolean","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ImportReportEntry": {
-        "dataType": "refObject",
-        "properties": {
-            "feature": {"dataType":"string","required":true},
-            "message": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "GeoJsonImportReport": {
-        "dataType": "refObject",
-        "properties": {
-            "accepted": {"dataType":"double","required":true},
-            "changed": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
-            "skipped": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
-            "rejected": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "GeoJsonDocument": {
-        "dataType": "refObject",
-        "properties": {
-            "type": {"dataType":"string","required":true},
-        },
-        "additionalProperties": {"dataType":"any"},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "GeoJsonFeatureCollection": {
-        "dataType": "refObject",
-        "properties": {
-            "type": {"dataType":"enum","enums":["FeatureCollection"],"required":true},
-            "features": {"dataType":"array","array":{"dataType":"any"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -1166,6 +842,330 @@ const models: TsoaRoute.Models = {
         "properties": {
             "created": {"dataType":"boolean","required":true},
             "revision": {"ref":"ConfigurationRevisionDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageRevisionSummaryDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "packageId": {"ref":"Uuid","required":true},
+            "number": {"dataType":"double","required":true},
+            "snapshotHash": {"dataType":"string","required":true},
+            "createdAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageRevisionPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageRevisionSummaryDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageSnapshotLayer": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+            "sortOrder": {"dataType":"double","required":true},
+            "visible": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageObjectKind": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["point"]},{"dataType":"enum","enums":["line"]},{"dataType":"enum","enums":["polygon"]},{"dataType":"enum","enums":["circle"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Position": {
+        "dataType": "refAlias",
+        "type": {"dataType":"array","array":{"dataType":"double"},"validators":{"minItems":{"value":2},"maxItems":{"value":3}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PointGeometry": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["Point"],"required":true},
+            "coordinates": {"ref":"Position","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LineStringGeometry": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["LineString"],"required":true},
+            "coordinates": {"dataType":"array","array":{"dataType":"refAlias","ref":"Position"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PolygonGeometry": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["Polygon"],"required":true},
+            "coordinates": {"dataType":"array","array":{"dataType":"array","array":{"dataType":"refAlias","ref":"Position"}},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CircleGeometry": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["Circle"],"required":true},
+            "coordinates": {"ref":"Position","required":true},
+            "radius": {"dataType":"double","required":true,"validators":{"minimum":{"value":0.1},"maximum":{"value":100000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageGeometry": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"ref":"PointGeometry"},{"ref":"LineStringGeometry"},{"ref":"PolygonGeometry"},{"ref":"CircleGeometry"}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "HexColor": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{"pattern":{"value":"^#[0-9A-Fa-f]{6}$"}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageObjectStyle": {
+        "dataType": "refObject",
+        "properties": {
+            "color": {"ref":"HexColor","required":true},
+            "strokeWidth": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":20}}},
+            "fillOpacity": {"dataType":"double","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":1}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageSnapshotObject": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "layerId": {"dataType":"string","required":true},
+            "kind": {"ref":"PackageObjectKind","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "geometry": {"ref":"PackageGeometry","required":true},
+            "style": {"ref":"PackageObjectStyle","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageSnapshot": {
+        "dataType": "refObject",
+        "properties": {
+            "schema": {"dataType":"double","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "layers": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageSnapshotLayer"},"required":true},
+            "objects": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageSnapshotObject"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageRevisionDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "packageId": {"ref":"Uuid","required":true},
+            "number": {"dataType":"double","required":true},
+            "snapshotHash": {"dataType":"string","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "snapshot": {"ref":"PackageSnapshot","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PublishDataPackageResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "created": {"dataType":"boolean","required":true},
+            "revision": {"ref":"PackageRevisionDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageObjectDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "packageId": {"ref":"Uuid","required":true},
+            "layerId": {"ref":"Uuid","required":true},
+            "kind": {"ref":"PackageObjectKind","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "geometry": {"ref":"PackageGeometry","required":true},
+            "style": {"ref":"PackageObjectStyle","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageObjectPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageObjectDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreatePackageObjectRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "layerId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":2000}}},
+            "geometry": {"ref":"PackageGeometry","required":true},
+            "style": {"ref":"PackageObjectStyle"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdatePackageObjectRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "layerId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":2000}}},
+            "geometry": {"ref":"PackageGeometry","required":true},
+            "style": {"ref":"PackageObjectStyle","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageLayerDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "packageId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "sortOrder": {"dataType":"double","required":true},
+            "visible": {"dataType":"boolean","required":true},
+            "locked": {"dataType":"boolean","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageLayerPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageLayerDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreatePackageLayerRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdatePackageLayerRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "sortOrder": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":10000}}},
+            "visible": {"dataType":"boolean","required":true},
+            "locked": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ImportReportEntry": {
+        "dataType": "refObject",
+        "properties": {
+            "feature": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GeoJsonImportReport": {
+        "dataType": "refObject",
+        "properties": {
+            "accepted": {"dataType":"double","required":true},
+            "changed": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
+            "skipped": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
+            "rejected": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GeoJsonDocument": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"string","required":true},
+        },
+        "additionalProperties": {"dataType":"any"},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "GeoJsonFeatureCollection": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["FeatureCollection"],"required":true},
+            "features": {"dataType":"array","array":{"dataType":"any"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DataPackageDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "latestRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DataPackagePage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"DataPackageDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateDataPackageRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":1000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateDataPackageRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":1000}}},
         },
         "additionalProperties": false,
     },
@@ -1888,688 +1888,6 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getPrincipal',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionsController_listMissions: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
-                cursor: {"in":"query","name":"cursor","dataType":"string"},
-        };
-        app.get('/api/v1/events/:eventId/missions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController.prototype.listMissions)),
-
-            async function MissionsController_listMissions(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionsController_listMissions, request, response });
-
-                const controller = new MissionsController();
-
-              await templateService.apiHandler({
-                methodName: 'listMissions',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionsController_createMission: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"CreateMissionRequest"},
-        };
-        app.post('/api/v1/events/:eventId/missions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController.prototype.createMission)),
-
-            async function MissionsController_createMission(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionsController_createMission, request, response });
-
-                const controller = new MissionsController();
-
-              await templateService.apiHandler({
-                methodName: 'createMission',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 201,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionsController_getMission: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-        };
-        app.get('/api/v1/events/:eventId/missions/:missionId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController.prototype.getMission)),
-
-            async function MissionsController_getMission(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionsController_getMission, request, response });
-
-                const controller = new MissionsController();
-
-              await templateService.apiHandler({
-                methodName: 'getMission',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionsController_updateMission: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"UpdateMissionRequest"},
-        };
-        app.put('/api/v1/events/:eventId/missions/:missionId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController.prototype.updateMission)),
-
-            async function MissionsController_updateMission(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionsController_updateMission, request, response });
-
-                const controller = new MissionsController();
-
-              await templateService.apiHandler({
-                methodName: 'updateMission',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionsController_deleteMission: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-        };
-        app.delete('/api/v1/events/:eventId/missions/:missionId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionsController.prototype.deleteMission)),
-
-            async function MissionsController_deleteMission(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionsController_deleteMission, request, response });
-
-                const controller = new MissionsController();
-
-              await templateService.apiHandler({
-                methodName: 'deleteMission',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 204,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionRevisionsController_listMissionRevisions: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
-                cursor: {"in":"query","name":"cursor","dataType":"string"},
-        };
-        app.get('/api/v1/events/:eventId/missions/:missionId/revisions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionRevisionsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionRevisionsController.prototype.listMissionRevisions)),
-
-            async function MissionRevisionsController_listMissionRevisions(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionRevisionsController_listMissionRevisions, request, response });
-
-                const controller = new MissionRevisionsController();
-
-              await templateService.apiHandler({
-                methodName: 'listMissionRevisions',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionRevisionsController_publishMission: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-        };
-        app.post('/api/v1/events/:eventId/missions/:missionId/revisions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionRevisionsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionRevisionsController.prototype.publishMission)),
-
-            async function MissionRevisionsController_publishMission(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionRevisionsController_publishMission, request, response });
-
-                const controller = new MissionRevisionsController();
-
-              await templateService.apiHandler({
-                methodName: 'publishMission',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionRevisionsController_getMissionRevision: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
-        };
-        app.get('/api/v1/events/:eventId/missions/:missionId/revisions/:number',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionRevisionsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionRevisionsController.prototype.getMissionRevision)),
-
-            async function MissionRevisionsController_getMissionRevision(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionRevisionsController_getMissionRevision, request, response });
-
-                const controller = new MissionRevisionsController();
-
-              await templateService.apiHandler({
-                methodName: 'getMissionRevision',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionObjectsController_listMissionObjects: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                layerId: {"in":"query","name":"layerId","ref":"Uuid"},
-                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
-                cursor: {"in":"query","name":"cursor","dataType":"string"},
-        };
-        app.get('/api/v1/events/:eventId/missions/:missionId/objects',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController.prototype.listMissionObjects)),
-
-            async function MissionObjectsController_listMissionObjects(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionObjectsController_listMissionObjects, request, response });
-
-                const controller = new MissionObjectsController();
-
-              await templateService.apiHandler({
-                methodName: 'listMissionObjects',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionObjectsController_createMissionObject: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"CreateMissionObjectRequest"},
-        };
-        app.post('/api/v1/events/:eventId/missions/:missionId/objects',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController.prototype.createMissionObject)),
-
-            async function MissionObjectsController_createMissionObject(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionObjectsController_createMissionObject, request, response });
-
-                const controller = new MissionObjectsController();
-
-              await templateService.apiHandler({
-                methodName: 'createMissionObject',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 201,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionObjectsController_getMissionObject: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                objectId: {"in":"path","name":"objectId","required":true,"ref":"Uuid"},
-        };
-        app.get('/api/v1/events/:eventId/missions/:missionId/objects/:objectId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController.prototype.getMissionObject)),
-
-            async function MissionObjectsController_getMissionObject(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionObjectsController_getMissionObject, request, response });
-
-                const controller = new MissionObjectsController();
-
-              await templateService.apiHandler({
-                methodName: 'getMissionObject',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionObjectsController_updateMissionObject: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                objectId: {"in":"path","name":"objectId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"UpdateMissionObjectRequest"},
-        };
-        app.put('/api/v1/events/:eventId/missions/:missionId/objects/:objectId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController.prototype.updateMissionObject)),
-
-            async function MissionObjectsController_updateMissionObject(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionObjectsController_updateMissionObject, request, response });
-
-                const controller = new MissionObjectsController();
-
-              await templateService.apiHandler({
-                methodName: 'updateMissionObject',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionObjectsController_deleteMissionObject: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                objectId: {"in":"path","name":"objectId","required":true,"ref":"Uuid"},
-        };
-        app.delete('/api/v1/events/:eventId/missions/:missionId/objects/:objectId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionObjectsController.prototype.deleteMissionObject)),
-
-            async function MissionObjectsController_deleteMissionObject(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionObjectsController_deleteMissionObject, request, response });
-
-                const controller = new MissionObjectsController();
-
-              await templateService.apiHandler({
-                methodName: 'deleteMissionObject',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 204,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionLayersController_listMissionLayers: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
-                cursor: {"in":"query","name":"cursor","dataType":"string"},
-        };
-        app.get('/api/v1/events/:eventId/missions/:missionId/layers',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionLayersController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionLayersController.prototype.listMissionLayers)),
-
-            async function MissionLayersController_listMissionLayers(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionLayersController_listMissionLayers, request, response });
-
-                const controller = new MissionLayersController();
-
-              await templateService.apiHandler({
-                methodName: 'listMissionLayers',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionLayersController_createMissionLayer: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"CreateMissionLayerRequest"},
-        };
-        app.post('/api/v1/events/:eventId/missions/:missionId/layers',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionLayersController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionLayersController.prototype.createMissionLayer)),
-
-            async function MissionLayersController_createMissionLayer(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionLayersController_createMissionLayer, request, response });
-
-                const controller = new MissionLayersController();
-
-              await templateService.apiHandler({
-                methodName: 'createMissionLayer',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 201,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionLayersController_updateMissionLayer: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"UpdateMissionLayerRequest"},
-        };
-        app.put('/api/v1/events/:eventId/missions/:missionId/layers/:layerId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionLayersController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionLayersController.prototype.updateMissionLayer)),
-
-            async function MissionLayersController_updateMissionLayer(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionLayersController_updateMissionLayer, request, response });
-
-                const controller = new MissionLayersController();
-
-              await templateService.apiHandler({
-                methodName: 'updateMissionLayer',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionLayersController_deleteMissionLayer: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
-        };
-        app.delete('/api/v1/events/:eventId/missions/:missionId/layers/:layerId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionLayersController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionLayersController.prototype.deleteMissionLayer)),
-
-            async function MissionLayersController_deleteMissionLayer(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionLayersController_deleteMissionLayer, request, response });
-
-                const controller = new MissionLayersController();
-
-              await templateService.apiHandler({
-                methodName: 'deleteMissionLayer',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 204,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionGeoJsonController_importMissionGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"GeoJsonDocument"},
-        };
-        app.post('/api/v1/events/:eventId/missions/:missionId/layers/:layerId/import',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController.prototype.importMissionGeoJson)),
-
-            async function MissionGeoJsonController_importMissionGeoJson(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionGeoJsonController_importMissionGeoJson, request, response });
-
-                const controller = new MissionGeoJsonController();
-
-              await templateService.apiHandler({
-                methodName: 'importMissionGeoJson',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionGeoJsonController_exportMissionDraftGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-        };
-        app.get('/api/v1/events/:eventId/missions/:missionId/geojson',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController.prototype.exportMissionDraftGeoJson)),
-
-            async function MissionGeoJsonController_exportMissionDraftGeoJson(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionGeoJsonController_exportMissionDraftGeoJson, request, response });
-
-                const controller = new MissionGeoJsonController();
-
-              await templateService.apiHandler({
-                methodName: 'exportMissionDraftGeoJson',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsMissionGeoJsonController_exportMissionRevisionGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                missionId: {"in":"path","name":"missionId","required":true,"ref":"Uuid"},
-                number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
-        };
-        app.get('/api/v1/events/:eventId/missions/:missionId/revisions/:number/geojson',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController)),
-            ...(fetchMiddlewares<RequestHandler>(MissionGeoJsonController.prototype.exportMissionRevisionGeoJson)),
-
-            async function MissionGeoJsonController_exportMissionRevisionGeoJson(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsMissionGeoJsonController_exportMissionRevisionGeoJson, request, response });
-
-                const controller = new MissionGeoJsonController();
-
-              await templateService.apiHandler({
-                methodName: 'exportMissionRevisionGeoJson',
                 controller,
                 response,
                 next,
@@ -3669,6 +2987,688 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageRevisionsController_listPackageRevisions: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController.prototype.listPackageRevisions)),
+
+            async function PackageRevisionsController_listPackageRevisions(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageRevisionsController_listPackageRevisions, request, response });
+
+                const controller = new PackageRevisionsController();
+
+              await templateService.apiHandler({
+                methodName: 'listPackageRevisions',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageRevisionsController_publishDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/data-packages/:packageId/revisions',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController.prototype.publishDataPackage)),
+
+            async function PackageRevisionsController_publishDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageRevisionsController_publishDataPackage, request, response });
+
+                const controller = new PackageRevisionsController();
+
+              await templateService.apiHandler({
+                methodName: 'publishDataPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageRevisionsController_getPackageRevision: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController.prototype.getPackageRevision)),
+
+            async function PackageRevisionsController_getPackageRevision(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageRevisionsController_getPackageRevision, request, response });
+
+                const controller = new PackageRevisionsController();
+
+              await templateService.apiHandler({
+                methodName: 'getPackageRevision',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageObjectsController_listPackageObjects: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                layerId: {"in":"query","name":"layerId","ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/objects',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.listPackageObjects)),
+
+            async function PackageObjectsController_listPackageObjects(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageObjectsController_listPackageObjects, request, response });
+
+                const controller = new PackageObjectsController();
+
+              await templateService.apiHandler({
+                methodName: 'listPackageObjects',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageObjectsController_createPackageObject: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreatePackageObjectRequest"},
+        };
+        app.post('/api/v1/events/:eventId/data-packages/:packageId/objects',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.createPackageObject)),
+
+            async function PackageObjectsController_createPackageObject(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageObjectsController_createPackageObject, request, response });
+
+                const controller = new PackageObjectsController();
+
+              await templateService.apiHandler({
+                methodName: 'createPackageObject',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageObjectsController_getPackageObject: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                objectId: {"in":"path","name":"objectId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/objects/:objectId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.getPackageObject)),
+
+            async function PackageObjectsController_getPackageObject(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageObjectsController_getPackageObject, request, response });
+
+                const controller = new PackageObjectsController();
+
+              await templateService.apiHandler({
+                methodName: 'getPackageObject',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageObjectsController_updatePackageObject: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                objectId: {"in":"path","name":"objectId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageObjectRequest"},
+        };
+        app.put('/api/v1/events/:eventId/data-packages/:packageId/objects/:objectId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.updatePackageObject)),
+
+            async function PackageObjectsController_updatePackageObject(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageObjectsController_updatePackageObject, request, response });
+
+                const controller = new PackageObjectsController();
+
+              await templateService.apiHandler({
+                methodName: 'updatePackageObject',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageObjectsController_deletePackageObject: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                objectId: {"in":"path","name":"objectId","required":true,"ref":"Uuid"},
+        };
+        app.delete('/api/v1/events/:eventId/data-packages/:packageId/objects/:objectId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.deletePackageObject)),
+
+            async function PackageObjectsController_deletePackageObject(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageObjectsController_deletePackageObject, request, response });
+
+                const controller = new PackageObjectsController();
+
+              await templateService.apiHandler({
+                methodName: 'deletePackageObject',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageLayersController_listPackageLayers: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/layers',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageLayersController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageLayersController.prototype.listPackageLayers)),
+
+            async function PackageLayersController_listPackageLayers(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageLayersController_listPackageLayers, request, response });
+
+                const controller = new PackageLayersController();
+
+              await templateService.apiHandler({
+                methodName: 'listPackageLayers',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageLayersController_createPackageLayer: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreatePackageLayerRequest"},
+        };
+        app.post('/api/v1/events/:eventId/data-packages/:packageId/layers',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageLayersController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageLayersController.prototype.createPackageLayer)),
+
+            async function PackageLayersController_createPackageLayer(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageLayersController_createPackageLayer, request, response });
+
+                const controller = new PackageLayersController();
+
+              await templateService.apiHandler({
+                methodName: 'createPackageLayer',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageLayersController_updatePackageLayer: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageLayerRequest"},
+        };
+        app.put('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageLayersController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageLayersController.prototype.updatePackageLayer)),
+
+            async function PackageLayersController_updatePackageLayer(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageLayersController_updatePackageLayer, request, response });
+
+                const controller = new PackageLayersController();
+
+              await templateService.apiHandler({
+                methodName: 'updatePackageLayer',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageLayersController_deletePackageLayer: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
+        };
+        app.delete('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageLayersController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageLayersController.prototype.deletePackageLayer)),
+
+            async function PackageLayersController_deletePackageLayer(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageLayersController_deletePackageLayer, request, response });
+
+                const controller = new PackageLayersController();
+
+              await templateService.apiHandler({
+                methodName: 'deletePackageLayer',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageGeoJsonController_importPackageGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"GeoJsonDocument"},
+        };
+        app.post('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId/import',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController.prototype.importPackageGeoJson)),
+
+            async function PackageGeoJsonController_importPackageGeoJson(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageGeoJsonController_importPackageGeoJson, request, response });
+
+                const controller = new PackageGeoJsonController();
+
+              await templateService.apiHandler({
+                methodName: 'importPackageGeoJson',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageGeoJsonController_exportPackageDraftGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/geojson',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController.prototype.exportPackageDraftGeoJson)),
+
+            async function PackageGeoJsonController_exportPackageDraftGeoJson(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageGeoJsonController_exportPackageDraftGeoJson, request, response });
+
+                const controller = new PackageGeoJsonController();
+
+              await templateService.apiHandler({
+                methodName: 'exportPackageDraftGeoJson',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageGeoJsonController_exportPackageRevisionGeoJson: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number/geojson',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController.prototype.exportPackageRevisionGeoJson)),
+
+            async function PackageGeoJsonController_exportPackageRevisionGeoJson(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageGeoJsonController_exportPackageRevisionGeoJson, request, response });
+
+                const controller = new PackageGeoJsonController();
+
+              await templateService.apiHandler({
+                methodName: 'exportPackageRevisionGeoJson',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDataPackagesController_listDataPackages: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.listDataPackages)),
+
+            async function DataPackagesController_listDataPackages(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDataPackagesController_listDataPackages, request, response });
+
+                const controller = new DataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'listDataPackages',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDataPackagesController_createDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateDataPackageRequest"},
+        };
+        app.post('/api/v1/events/:eventId/data-packages',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.createDataPackage)),
+
+            async function DataPackagesController_createDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDataPackagesController_createDataPackage, request, response });
+
+                const controller = new DataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'createDataPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDataPackagesController_getDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.getDataPackage)),
+
+            async function DataPackagesController_getDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDataPackagesController_getDataPackage, request, response });
+
+                const controller = new DataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'getDataPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDataPackagesController_updateDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateDataPackageRequest"},
+        };
+        app.put('/api/v1/events/:eventId/data-packages/:packageId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.updateDataPackage)),
+
+            async function DataPackagesController_updateDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDataPackagesController_updateDataPackage, request, response });
+
+                const controller = new DataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'updateDataPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDataPackagesController_deleteDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+        };
+        app.delete('/api/v1/events/:eventId/data-packages/:packageId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.deleteDataPackage)),
+
+            async function DataPackagesController_deleteDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDataPackagesController_deleteDataPackage, request, response });
+
+                const controller = new DataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'deleteDataPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
               });
             } catch (err) {
                 return next(err);

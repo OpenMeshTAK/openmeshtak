@@ -14,18 +14,18 @@ import {
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import type { GeoJsonDocument, GeoJsonFeatureCollection, GeoJsonImportReport } from "./mission-import.dto.js";
-import { exportDraftGeoJson, exportRevisionGeoJson, importGeoJson } from "./mission-import.service.js";
+import type { GeoJsonDocument, GeoJsonFeatureCollection, GeoJsonImportReport } from "./package-import.dto.js";
+import { exportDraftGeoJson, exportRevisionGeoJson, importGeoJson } from "./package-import.service.js";
 
 /** GeoJSON import into a draft layer and export of drafts or published revisions. */
-@Route("events/{eventId}/missions/{missionId}")
-@Tags("Missions")
+@Route("events/{eventId}/data-packages/{packageId}")
+@Tags("Data packages")
 @Security("sessionCookie")
 @Security("serviceAccountBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 @Response<ProblemDetails>(404, "Not found")
-export class MissionGeoJsonController extends Controller {
+export class PackageGeoJsonController extends Controller {
   /**
    * Imports a GeoJSON FeatureCollection, Feature or geometry into the layer. Points, lines and
    * polygons are supported; multi-geometries are split. The report lists every adjustment, every
@@ -34,25 +34,25 @@ export class MissionGeoJsonController extends Controller {
   @Post("layers/{layerId}/import")
   @SuccessResponse(200, "Import report")
   @Response<ProblemDetails>(409, "Layer locked, too many objects or event archived")
-  public async importMissionGeoJson(
+  public async importPackageGeoJson(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
     @Path() layerId: Uuid,
     @Body() body: GeoJsonDocument,
   ): Promise<GeoJsonImportReport> {
-    return importGeoJson(requestContext(request), eventId, missionId, layerId, body);
+    return importGeoJson(requestContext(request), eventId, packageId, layerId, body);
   }
 
   /** Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties. */
   @Get("geojson")
   @SuccessResponse(200, "GeoJSON of the draft")
-  public async exportMissionDraftGeoJson(
+  public async exportPackageDraftGeoJson(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
   ): Promise<GeoJsonFeatureCollection> {
-    return exportDraftGeoJson(requestContext(request).principal, eventId, missionId);
+    return exportDraftGeoJson(requestContext(request).principal, eventId, packageId);
   }
 
   /**
@@ -62,12 +62,12 @@ export class MissionGeoJsonController extends Controller {
    */
   @Get("revisions/{number}/geojson")
   @SuccessResponse(200, "GeoJSON of the revision")
-  public async exportMissionRevisionGeoJson(
+  public async exportPackageRevisionGeoJson(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
     @Path() number: number,
   ): Promise<GeoJsonFeatureCollection> {
-    return exportRevisionGeoJson(requestContext(request).principal, eventId, missionId, number);
+    return exportRevisionGeoJson(requestContext(request).principal, eventId, packageId, number);
   }
 }

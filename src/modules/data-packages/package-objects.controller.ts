@@ -20,94 +20,94 @@ import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type {
-  CreateMissionObjectRequest,
-  MissionObjectDto,
-  MissionObjectPage,
-  UpdateMissionObjectRequest,
-} from "./mission-object.dto.js";
-import { createObject, deleteObject, getObject, listObjects, updateObject } from "./mission-objects.service.js";
+  CreatePackageObjectRequest,
+  PackageObjectDto,
+  PackageObjectPage,
+  UpdatePackageObjectRequest,
+} from "./package-object.dto.js";
+import { createObject, deleteObject, getObject, listObjects, updateObject } from "./package-objects.service.js";
 
-/** Points, lines and polygons of a mission draft. Objects in locked layers cannot change. */
-@Route("events/{eventId}/missions/{missionId}/objects")
-@Tags("Missions")
+/** Points, lines, polygons and circles of a data package draft. Objects in locked layers cannot change. */
+@Route("events/{eventId}/data-packages/{packageId}/objects")
+@Tags("Data packages")
 @Security("sessionCookie")
 @Security("serviceAccountBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 @Response<ProblemDetails>(404, "Not found")
-export class MissionObjectsController extends Controller {
+export class PackageObjectsController extends Controller {
   /**
-   * Lists the mission's objects in creation order, optionally only those of one layer.
+   * Lists the data package's objects in creation order, optionally only those of one layer.
    * @isInt limit
    * @minimum limit 1
    * @maximum limit 100
    */
   @Get()
-  @SuccessResponse(200, "Mission objects")
+  @SuccessResponse(200, "Package objects")
   @Middlewares(allowQueryParameters("limit", "cursor", "layerId"))
   @Response<ProblemDetails>(400, "Invalid cursor")
-  public async listMissionObjects(
+  public async listPackageObjects(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
     @Query() layerId?: Uuid,
     @Query() limit?: number,
     @Query() cursor?: string,
-  ): Promise<MissionObjectPage> {
-    return listObjects(requestContext(request).principal, eventId, missionId, layerId, limit, cursor);
+  ): Promise<PackageObjectPage> {
+    return listObjects(requestContext(request).principal, eventId, packageId, layerId, limit, cursor);
   }
 
   @Post()
-  @SuccessResponse(201, "Mission object created")
+  @SuccessResponse(201, "Package object created")
   @Response<ProblemDetails>(409, "Layer locked, too many objects or event archived")
   @Response<ProblemDetails>(422, "Invalid geometry or other validation failure")
-  public async createMissionObject(
+  public async createPackageObject(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
-    @Body() body: CreateMissionObjectRequest,
-  ): Promise<MissionObjectDto> {
-    const created = await createObject(requestContext(request), eventId, missionId, body);
+    @Path() packageId: Uuid,
+    @Body() body: CreatePackageObjectRequest,
+  ): Promise<PackageObjectDto> {
+    const created = await createObject(requestContext(request), eventId, packageId, body);
     this.setStatus(201);
     return created;
   }
 
   @Get("{objectId}")
-  @SuccessResponse(200, "Mission object")
-  public async getMissionObject(
+  @SuccessResponse(200, "Package object")
+  public async getPackageObject(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
     @Path() objectId: Uuid,
-  ): Promise<MissionObjectDto> {
-    return getObject(requestContext(request).principal, eventId, missionId, objectId);
+  ): Promise<PackageObjectDto> {
+    return getObject(requestContext(request).principal, eventId, packageId, objectId);
   }
 
   /** Replaces the object. Requires the current `version`. */
   @Put("{objectId}")
-  @SuccessResponse(200, "Mission object updated")
+  @SuccessResponse(200, "Package object updated")
   @Response<ProblemDetails>(409, "Version conflict, layer locked or event archived")
   @Response<ProblemDetails>(422, "Invalid geometry or other validation failure")
-  public async updateMissionObject(
+  public async updatePackageObject(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
     @Path() objectId: Uuid,
-    @Body() body: UpdateMissionObjectRequest,
-  ): Promise<MissionObjectDto> {
-    return updateObject(requestContext(request), eventId, missionId, objectId, body);
+    @Body() body: UpdatePackageObjectRequest,
+  ): Promise<PackageObjectDto> {
+    return updateObject(requestContext(request), eventId, packageId, objectId, body);
   }
 
   @Delete("{objectId}")
-  @SuccessResponse(204, "Mission object deleted")
+  @SuccessResponse(204, "Package object deleted")
   @Response<ProblemDetails>(409, "Layer locked or event archived")
-  public async deleteMissionObject(
+  public async deletePackageObject(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
     @Path() objectId: Uuid,
   ): Promise<void> {
-    await deleteObject(requestContext(request), eventId, missionId, objectId);
+    await deleteObject(requestContext(request), eventId, packageId, objectId);
     this.setStatus(204);
   }
 }

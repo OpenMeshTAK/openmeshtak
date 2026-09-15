@@ -20,7 +20,7 @@ interface CollectionBody {
 
 let app: Express;
 let editor: TestUser;
-let missionUrl: string;
+let packageUrl: string;
 let layerId: string;
 
 const upload = {
@@ -46,23 +46,23 @@ const upload = {
   ],
 };
 
-void describe("mission GeoJSON import and export", () => {
+void describe("data package GeoJSON import and export", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
     const eventId = await createEvent();
     editor = await createUser("Editor", [
-      { permission: "missions.read", eventId },
-      { permission: "missions.edit", eventId },
-      { permission: "missions.publish", eventId },
+      { permission: "data-packages.read", eventId },
+      { permission: "data-packages.edit", eventId },
+      { permission: "data-packages.publish", eventId },
     ]);
-    const mission = await request(app)
-      .post(`/api/v1/events/${eventId}/missions`)
+    const dataPackage = await request(app)
+      .post(`/api/v1/events/${eventId}/data-packages`)
       .set("Cookie", editor.cookie)
       .send({ name: "Phoenix" })
       .expect(201);
-    missionUrl = `/api/v1/events/${eventId}/missions/${(mission.body as { id: string }).id}`;
-    const layers = await request(app).get(`${missionUrl}/layers`).set("Cookie", editor.cookie).expect(200);
+    packageUrl = `/api/v1/events/${eventId}/data-packages/${(dataPackage.body as { id: string }).id}`;
+    const layers = await request(app).get(`${packageUrl}/layers`).set("Cookie", editor.cookie).expect(200);
     layerId = (layers.body as { items: Array<{ id: string }> }).items[0]?.id ?? "";
   });
 
@@ -73,7 +73,7 @@ void describe("mission GeoJSON import and export", () => {
 
   void it("imports supported features and reports everything else", async () => {
     const response = await request(app)
-      .post(`${missionUrl}/layers/${layerId}/import`)
+      .post(`${packageUrl}/layers/${layerId}/import`)
       .set("Cookie", editor.cookie)
       .send(upload)
       .expect(200);
@@ -89,30 +89,30 @@ void describe("mission GeoJSON import and export", () => {
 
   void it("keeps circles through a GeoJSON round trip", async () => {
     await request(app)
-      .post(`${missionUrl}/objects`)
+      .post(`${packageUrl}/objects`)
       .set("Cookie", editor.cookie)
       .send({ layerId, name: "NACHTWACHE", geometry: { type: "Circle", coordinates: [11.8144873, 52.383763], radius: 46.38 } })
       .expect(201);
-    const exported = await request(app).get(`${missionUrl}/geojson`).set("Cookie", editor.cookie).expect(200);
+    const exported = await request(app).get(`${packageUrl}/geojson`).set("Cookie", editor.cookie).expect(200);
     const feature = (exported.body as CollectionBody).features[0];
     assert.equal(feature?.geometry.type, "Point");
     assert.equal(feature?.properties.shape, "circle");
     assert.equal(feature?.properties.radius, 46.38);
 
     const report = await request(app)
-      .post(`${missionUrl}/layers/${layerId}/import`)
+      .post(`${packageUrl}/layers/${layerId}/import`)
       .set("Cookie", editor.cookie)
       .send(exported.body)
       .expect(200);
     assert.equal((report.body as ReportBody).accepted, 1);
-    const objects = await request(app).get(`${missionUrl}/objects`).set("Cookie", editor.cookie).expect(200);
+    const objects = await request(app).get(`${packageUrl}/objects`).set("Cookie", editor.cookie).expect(200);
     const kinds = (objects.body as { items: Array<{ kind: string }> }).items.map(({ kind }) => kind);
     assert.deepEqual(kinds, ["circle", "circle"]);
   });
 
   void it("rejects documents that are not GeoJSON without creating anything", async () => {
     const response = await request(app)
-      .post(`${missionUrl}/layers/${layerId}/import`)
+      .post(`${packageUrl}/layers/${layerId}/import`)
       .set("Cookie", editor.cookie)
       .send({ type: "Topology", objects: {} })
       .expect(200);
@@ -122,9 +122,9 @@ void describe("mission GeoJSON import and export", () => {
   });
 
   void it("exports drafts and revisions with exact coordinates and style properties", async () => {
-    await request(app).post(`${missionUrl}/layers/${layerId}/import`).set("Cookie", editor.cookie).send(upload).expect(200);
+    await request(app).post(`${packageUrl}/layers/${layerId}/import`).set("Cookie", editor.cookie).send(upload).expect(200);
 
-    const draft = await request(app).get(`${missionUrl}/geojson`).set("Cookie", editor.cookie).expect(200);
+    const draft = await request(app).get(`${packageUrl}/geojson`).set("Cookie", editor.cookie).expect(200);
     const collection = draft.body as CollectionBody;
     assert.equal(collection.type, "FeatureCollection");
     assert.equal(collection.features.length, 3);
@@ -132,8 +132,8 @@ void describe("mission GeoJSON import and export", () => {
     assert.equal(collection.features[0]?.properties["marker-color"], "#E53935");
     assert.equal(collection.features[0]?.properties.layer, "Layer 1");
 
-    await request(app).post(`${missionUrl}/revisions`).set("Cookie", editor.cookie).expect(200);
-    const revision = await request(app).get(`${missionUrl}/revisions/1/geojson`).set("Cookie", editor.cookie).expect(200);
+    await request(app).post(`${packageUrl}/revisions`).set("Cookie", editor.cookie).expect(200);
+    const revision = await request(app).get(`${packageUrl}/revisions/1/geojson`).set("Cookie", editor.cookie).expect(200);
     assert.deepEqual(revision.body, draft.body);
   });
 });

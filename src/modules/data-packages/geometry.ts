@@ -1,11 +1,11 @@
 import kinks from "@turf/kinks";
 import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
-import type { CircleGeometry, MissionGeometry, MissionObjectKind } from "./mission-object.dto.js";
+import type { CircleGeometry, PackageGeometry, PackageObjectKind } from "./package-object.dto.js";
 
 /** Bounds one object so drawing, storage and export stay fast. */
 export const MAX_POSITIONS_PER_OBJECT = 10_000;
 
-const KIND_BY_TYPE: Record<MissionGeometry["type"], MissionObjectKind> = {
+const KIND_BY_TYPE: Record<PackageGeometry["type"], PackageObjectKind> = {
   Point: "point",
   LineString: "line",
   Polygon: "polygon",
@@ -16,7 +16,7 @@ const KIND_BY_TYPE: Record<MissionGeometry["type"], MissionObjectKind> = {
 export const MAX_CIRCLE_RADIUS_METRES = 100_000;
 const METRES_PER_DEGREE = 111_320;
 
-export function kindOf(geometry: MissionGeometry): MissionObjectKind {
+export function kindOf(geometry: PackageGeometry): PackageObjectKind {
   return KIND_BY_TYPE[geometry.type];
 }
 
@@ -57,7 +57,7 @@ function isPositionList(value: unknown): value is number[][] {
 }
 
 /** Imported JSON may nest arrays wrongly; check the shape before reading positions. */
-function hasValidNesting(geometry: MissionGeometry): boolean {
+function hasValidNesting(geometry: PackageGeometry): boolean {
   switch (geometry.type) {
     case "Point":
     case "Circle":
@@ -71,7 +71,7 @@ function hasValidNesting(geometry: MissionGeometry): boolean {
   }
 }
 
-function ringsOf(geometry: MissionGeometry): number[][][] {
+function ringsOf(geometry: PackageGeometry): number[][][] {
   switch (geometry.type) {
     case "Point":
     case "Circle":
@@ -90,7 +90,7 @@ function circleCrossesAntimeridian(geometry: CircleGeometry): boolean {
   return metresPerDegree <= 0 || Math.abs(longitude) + geometry.radius / metresPerDegree > 180;
 }
 
-function shapeProblem(geometry: MissionGeometry): string | null {
+function shapeProblem(geometry: PackageGeometry): string | null {
   if (geometry.type === "Circle") {
     const radius: unknown = geometry.radius;
     if (typeof radius !== "number" || !Number.isFinite(radius) || radius < 0.1 || radius > MAX_CIRCLE_RADIUS_METRES) {
@@ -120,7 +120,7 @@ function shapeProblem(geometry: MissionGeometry): string | null {
  * Validates RFC 7946 geometry in WGS84. Altitude is optional metres HAE; a missing altitude means
  * unknown and is never filled with zero. Problems are reported on the `geometry` field.
  */
-export function geometryProblems(geometry: MissionGeometry): ProblemFieldError[] {
+export function geometryProblems(geometry: PackageGeometry): ProblemFieldError[] {
   const problem = (code: string, message: string): ProblemFieldError[] => [{ field: "geometry", code, message }];
   if (!hasValidNesting(geometry)) {
     return problem("INVALID_STRUCTURE", "Coordinates are not nested as RFC 7946 requires for this geometry type.");

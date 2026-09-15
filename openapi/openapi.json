@@ -153,9 +153,9 @@
 					"members.manage",
 					"members.sync",
 					"member-claims.create",
-					"missions.read",
-					"missions.edit",
-					"missions.publish",
+					"data-packages.read",
+					"data-packages.edit",
+					"data-packages.publish",
 					"artifacts.generate",
 					"artifacts.download",
 					"service-accounts.manage",
@@ -911,846 +911,6 @@
 					"id",
 					"name",
 					"permissions"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionDto": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"eventId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string",
-						"nullable": true
-					},
-					"latestRevision": {
-						"type": "number",
-						"format": "double",
-						"nullable": true,
-						"description": "Number of the newest published revision, or `null` while nothing is published."
-					},
-					"version": {
-						"type": "number",
-						"format": "double",
-						"description": "Optimistic-concurrency version; send it back unchanged with updates."
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updatedAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"eventId",
-					"name",
-					"description",
-					"latestRevision",
-					"version",
-					"createdAt",
-					"updatedAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionPage": {
-				"properties": {
-					"items": {
-						"items": {
-							"$ref": "#/components/schemas/MissionDto"
-						},
-						"type": "array"
-					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
-					}
-				},
-				"required": [
-					"items",
-					"page"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CreateMissionRequest": {
-				"properties": {
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"description": {
-						"type": "string",
-						"nullable": true,
-						"maxLength": 1000
-					}
-				},
-				"required": [
-					"name"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpdateMissionRequest": {
-				"properties": {
-					"version": {
-						"type": "integer",
-						"format": "int32",
-						"description": "Version the client last read.",
-						"minimum": 1
-					},
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"description": {
-						"type": "string",
-						"nullable": true,
-						"maxLength": 1000
-					}
-				},
-				"required": [
-					"version",
-					"name",
-					"description"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionRevisionSummaryDto": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"missionId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"number": {
-						"type": "number",
-						"format": "double",
-						"description": "Increments per mission, starting at 1."
-					},
-					"snapshotHash": {
-						"type": "string",
-						"description": "SHA-256 of the canonical snapshot, for provenance."
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"missionId",
-					"number",
-					"snapshotHash",
-					"createdAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionRevisionPage": {
-				"properties": {
-					"items": {
-						"items": {
-							"$ref": "#/components/schemas/MissionRevisionSummaryDto"
-						},
-						"type": "array"
-					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
-					}
-				},
-				"required": [
-					"items",
-					"page"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionSnapshotLayer": {
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"name": {
-						"type": "string"
-					},
-					"sortOrder": {
-						"type": "number",
-						"format": "double"
-					},
-					"visible": {
-						"type": "boolean"
-					}
-				},
-				"required": [
-					"id",
-					"name",
-					"sortOrder",
-					"visible"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionObjectKind": {
-				"type": "string",
-				"enum": [
-					"point",
-					"line",
-					"polygon",
-					"circle"
-				]
-			},
-			"Position": {
-				"items": {
-					"type": "number",
-					"format": "double"
-				},
-				"type": "array",
-				"description": "GeoJSON position: `[longitude, latitude]` or `[longitude, latitude, altitudeMetresHae]`.",
-				"minItems": 2,
-				"maxItems": 3
-			},
-			"PointGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Point"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"$ref": "#/components/schemas/Position"
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"LineStringGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"LineString"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"items": {
-							"$ref": "#/components/schemas/Position"
-						},
-						"type": "array"
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PolygonGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Polygon"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"items": {
-							"items": {
-								"$ref": "#/components/schemas/Position"
-							},
-							"type": "array"
-						},
-						"type": "array",
-						"description": "Outer ring first, then holes; every ring repeats its first position at the end."
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CircleGeometry": {
-				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\nan approximated polygon (EDITOR.md) and maps to ATAK `u-d-c-c` circles.",
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Circle"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"$ref": "#/components/schemas/Position",
-						"description": "Centre position."
-					},
-					"radius": {
-						"type": "number",
-						"format": "double",
-						"description": "Radius in metres.",
-						"minimum": 0.1,
-						"maximum": 100000
-					}
-				},
-				"required": [
-					"type",
-					"coordinates",
-					"radius"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionGeometry": {
-				"anyOf": [
-					{
-						"$ref": "#/components/schemas/PointGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/LineStringGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/PolygonGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/CircleGeometry"
-					}
-				],
-				"description": "RFC 7946 geometry in WGS84, plus circles as an explicit domain extension."
-			},
-			"HexColor": {
-				"type": "string",
-				"description": "Colour as `#RRGGBB`.",
-				"pattern": "^#[0-9A-Fa-f]{6}$"
-			},
-			"MissionObjectStyle": {
-				"properties": {
-					"color": {
-						"$ref": "#/components/schemas/HexColor",
-						"description": "Marker, line and polygon outline colour."
-					},
-					"strokeWidth": {
-						"type": "integer",
-						"format": "int32",
-						"description": "Line and outline width in pixels.",
-						"minimum": 1,
-						"maximum": 20
-					},
-					"fillOpacity": {
-						"type": "number",
-						"format": "double",
-						"description": "Polygon fill opacity; the fill uses `color`.",
-						"minimum": 0,
-						"maximum": 1
-					}
-				},
-				"required": [
-					"color",
-					"strokeWidth",
-					"fillOpacity"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionSnapshotObject": {
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"layerId": {
-						"type": "string"
-					},
-					"kind": {
-						"$ref": "#/components/schemas/MissionObjectKind"
-					},
-					"name": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string",
-						"nullable": true
-					},
-					"geometry": {
-						"$ref": "#/components/schemas/MissionGeometry"
-					},
-					"style": {
-						"$ref": "#/components/schemas/MissionObjectStyle"
-					}
-				},
-				"required": [
-					"id",
-					"layerId",
-					"kind",
-					"name",
-					"description",
-					"geometry",
-					"style"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionSnapshot": {
-				"description": "Everything a package generator needs; timestamps and versions are left out on purpose.",
-				"properties": {
-					"schema": {
-						"type": "number",
-						"format": "double"
-					},
-					"name": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string",
-						"nullable": true
-					},
-					"layers": {
-						"items": {
-							"$ref": "#/components/schemas/MissionSnapshotLayer"
-						},
-						"type": "array"
-					},
-					"objects": {
-						"items": {
-							"$ref": "#/components/schemas/MissionSnapshotObject"
-						},
-						"type": "array"
-					}
-				},
-				"required": [
-					"schema",
-					"name",
-					"description",
-					"layers",
-					"objects"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionRevisionDto": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"missionId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"number": {
-						"type": "number",
-						"format": "double",
-						"description": "Increments per mission, starting at 1."
-					},
-					"snapshotHash": {
-						"type": "string",
-						"description": "SHA-256 of the canonical snapshot, for provenance."
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"snapshot": {
-						"$ref": "#/components/schemas/MissionSnapshot"
-					}
-				},
-				"required": [
-					"id",
-					"missionId",
-					"number",
-					"snapshotHash",
-					"createdAt",
-					"snapshot"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PublishMissionResponse": {
-				"properties": {
-					"created": {
-						"type": "boolean",
-						"description": "`false` when the draft equals the latest revision, which is returned instead."
-					},
-					"revision": {
-						"$ref": "#/components/schemas/MissionRevisionDto"
-					}
-				},
-				"required": [
-					"created",
-					"revision"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionObjectDto": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"missionId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"layerId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"kind": {
-						"$ref": "#/components/schemas/MissionObjectKind"
-					},
-					"name": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string",
-						"nullable": true
-					},
-					"geometry": {
-						"$ref": "#/components/schemas/MissionGeometry"
-					},
-					"style": {
-						"$ref": "#/components/schemas/MissionObjectStyle"
-					},
-					"version": {
-						"type": "number",
-						"format": "double"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updatedAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"missionId",
-					"layerId",
-					"kind",
-					"name",
-					"description",
-					"geometry",
-					"style",
-					"version",
-					"createdAt",
-					"updatedAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionObjectPage": {
-				"properties": {
-					"items": {
-						"items": {
-							"$ref": "#/components/schemas/MissionObjectDto"
-						},
-						"type": "array"
-					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
-					}
-				},
-				"required": [
-					"items",
-					"page"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CreateMissionObjectRequest": {
-				"properties": {
-					"layerId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"description": {
-						"type": "string",
-						"nullable": true,
-						"maxLength": 2000
-					},
-					"geometry": {
-						"$ref": "#/components/schemas/MissionGeometry"
-					},
-					"style": {
-						"$ref": "#/components/schemas/MissionObjectStyle",
-						"description": "Defaults to a blue outline with a light fill."
-					}
-				},
-				"required": [
-					"layerId",
-					"name",
-					"geometry"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpdateMissionObjectRequest": {
-				"properties": {
-					"version": {
-						"type": "integer",
-						"format": "int32",
-						"minimum": 1
-					},
-					"layerId": {
-						"$ref": "#/components/schemas/Uuid",
-						"description": "Moving an object to another layer of the same mission is allowed."
-					},
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"description": {
-						"type": "string",
-						"nullable": true,
-						"maxLength": 2000
-					},
-					"geometry": {
-						"$ref": "#/components/schemas/MissionGeometry"
-					},
-					"style": {
-						"$ref": "#/components/schemas/MissionObjectStyle"
-					}
-				},
-				"required": [
-					"version",
-					"layerId",
-					"name",
-					"description",
-					"geometry",
-					"style"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionLayerDto": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"missionId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"sortOrder": {
-						"type": "number",
-						"format": "double",
-						"description": "Drawing and export order; lower values are drawn first."
-					},
-					"visible": {
-						"type": "boolean",
-						"description": "Editor display only; hidden layers are still published."
-					},
-					"locked": {
-						"type": "boolean",
-						"description": "Locked layers reject object changes until they are unlocked."
-					},
-					"version": {
-						"type": "number",
-						"format": "double"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updatedAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"missionId",
-					"name",
-					"sortOrder",
-					"visible",
-					"locked",
-					"version",
-					"createdAt",
-					"updatedAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MissionLayerPage": {
-				"properties": {
-					"items": {
-						"items": {
-							"$ref": "#/components/schemas/MissionLayerDto"
-						},
-						"type": "array"
-					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
-					}
-				},
-				"required": [
-					"items",
-					"page"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CreateMissionLayerRequest": {
-				"properties": {
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					}
-				},
-				"required": [
-					"name"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpdateMissionLayerRequest": {
-				"properties": {
-					"version": {
-						"type": "integer",
-						"format": "int32",
-						"minimum": 1
-					},
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"sortOrder": {
-						"type": "integer",
-						"format": "int32",
-						"minimum": 0,
-						"maximum": 10000
-					},
-					"visible": {
-						"type": "boolean"
-					},
-					"locked": {
-						"type": "boolean"
-					}
-				},
-				"required": [
-					"version",
-					"name",
-					"sortOrder",
-					"visible",
-					"locked"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ImportReportEntry": {
-				"properties": {
-					"feature": {
-						"type": "string",
-						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
-					},
-					"message": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"feature",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"GeoJsonImportReport": {
-				"properties": {
-					"accepted": {
-						"type": "number",
-						"format": "double",
-						"description": "Number of objects created."
-					},
-					"changed": {
-						"items": {
-							"$ref": "#/components/schemas/ImportReportEntry"
-						},
-						"type": "array",
-						"description": "Imported, but adjusted: split multi-geometries, clamped styles."
-					},
-					"skipped": {
-						"items": {
-							"$ref": "#/components/schemas/ImportReportEntry"
-						},
-						"type": "array",
-						"description": "Not imported because the content type is not supported, e.g. GeometryCollection."
-					},
-					"rejected": {
-						"items": {
-							"$ref": "#/components/schemas/ImportReportEntry"
-						},
-						"type": "array",
-						"description": "Not imported because the content is invalid, e.g. a self-intersecting polygon."
-					}
-				},
-				"required": [
-					"accepted",
-					"changed",
-					"skipped",
-					"rejected"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"GeoJsonDocument": {
-				"description": "Untrusted GeoJSON document: a FeatureCollection, a Feature or a bare geometry.",
-				"properties": {
-					"type": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"type"
-				],
-				"type": "object",
-				"additionalProperties": {}
-			},
-			"GeoJsonFeatureCollection": {
-				"description": "GeoJSON FeatureCollection exported from a mission draft or revision.",
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"FeatureCollection"
-						],
-						"nullable": false
-					},
-					"features": {
-						"items": {},
-						"type": "array"
-					}
-				},
-				"required": [
-					"type",
-					"features"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -3000,6 +2160,846 @@
 				"required": [
 					"created",
 					"revision"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageRevisionSummaryDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"number": {
+						"type": "number",
+						"format": "double",
+						"description": "Increments per data package, starting at 1."
+					},
+					"snapshotHash": {
+						"type": "string",
+						"description": "SHA-256 of the canonical snapshot, for provenance."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"packageId",
+					"number",
+					"snapshotHash",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageRevisionPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/PackageRevisionSummaryDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageSnapshotLayer": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"sortOrder": {
+						"type": "number",
+						"format": "double"
+					},
+					"visible": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"sortOrder",
+					"visible"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageObjectKind": {
+				"type": "string",
+				"enum": [
+					"point",
+					"line",
+					"polygon",
+					"circle"
+				]
+			},
+			"Position": {
+				"items": {
+					"type": "number",
+					"format": "double"
+				},
+				"type": "array",
+				"description": "GeoJSON position: `[longitude, latitude]` or `[longitude, latitude, altitudeMetresHae]`.",
+				"minItems": 2,
+				"maxItems": 3
+			},
+			"PointGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Point"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position"
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LineStringGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"LineString"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PolygonGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Polygon"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"items": {
+								"$ref": "#/components/schemas/Position"
+							},
+							"type": "array"
+						},
+						"type": "array",
+						"description": "Outer ring first, then holes; every ring repeats its first position at the end."
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CircleGeometry": {
+				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\nan approximated polygon (EDITOR.md) and maps to ATAK `u-d-c-c` circles.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Circle"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position",
+						"description": "Centre position."
+					},
+					"radius": {
+						"type": "number",
+						"format": "double",
+						"description": "Radius in metres.",
+						"minimum": 0.1,
+						"maximum": 100000
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"radius"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageGeometry": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/PointGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/LineStringGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/PolygonGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/CircleGeometry"
+					}
+				],
+				"description": "RFC 7946 geometry in WGS84, plus circles as an explicit domain extension."
+			},
+			"HexColor": {
+				"type": "string",
+				"description": "Colour as `#RRGGBB`.",
+				"pattern": "^#[0-9A-Fa-f]{6}$"
+			},
+			"PackageObjectStyle": {
+				"properties": {
+					"color": {
+						"$ref": "#/components/schemas/HexColor",
+						"description": "Marker, line and polygon outline colour."
+					},
+					"strokeWidth": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Line and outline width in pixels.",
+						"minimum": 1,
+						"maximum": 20
+					},
+					"fillOpacity": {
+						"type": "number",
+						"format": "double",
+						"description": "Polygon fill opacity; the fill uses `color`.",
+						"minimum": 0,
+						"maximum": 1
+					}
+				},
+				"required": [
+					"color",
+					"strokeWidth",
+					"fillOpacity"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageSnapshotObject": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"layerId": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PackageObjectKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/PackageGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/PackageObjectStyle"
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"description",
+					"geometry",
+					"style"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageSnapshot": {
+				"description": "Everything a package generator needs; timestamps and versions are left out on purpose.",
+				"properties": {
+					"schema": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"layers": {
+						"items": {
+							"$ref": "#/components/schemas/PackageSnapshotLayer"
+						},
+						"type": "array"
+					},
+					"objects": {
+						"items": {
+							"$ref": "#/components/schemas/PackageSnapshotObject"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"schema",
+					"name",
+					"description",
+					"layers",
+					"objects"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageRevisionDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"number": {
+						"type": "number",
+						"format": "double",
+						"description": "Increments per data package, starting at 1."
+					},
+					"snapshotHash": {
+						"type": "string",
+						"description": "SHA-256 of the canonical snapshot, for provenance."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"snapshot": {
+						"$ref": "#/components/schemas/PackageSnapshot"
+					}
+				},
+				"required": [
+					"id",
+					"packageId",
+					"number",
+					"snapshotHash",
+					"createdAt",
+					"snapshot"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PublishDataPackageResponse": {
+				"properties": {
+					"created": {
+						"type": "boolean",
+						"description": "`false` when the draft equals the latest revision, which is returned instead."
+					},
+					"revision": {
+						"$ref": "#/components/schemas/PackageRevisionDto"
+					}
+				},
+				"required": [
+					"created",
+					"revision"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageObjectDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PackageObjectKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/PackageGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/PackageObjectStyle"
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"packageId",
+					"layerId",
+					"kind",
+					"name",
+					"description",
+					"geometry",
+					"style",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageObjectPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/PackageObjectDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatePackageObjectRequest": {
+				"properties": {
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 2000
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/PackageGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/PackageObjectStyle",
+						"description": "Defaults to a blue outline with a light fill."
+					}
+				},
+				"required": [
+					"layerId",
+					"name",
+					"geometry"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdatePackageObjectRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Moving an object to another layer of the same data package is allowed."
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 2000
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/PackageGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/PackageObjectStyle"
+					}
+				},
+				"required": [
+					"version",
+					"layerId",
+					"name",
+					"description",
+					"geometry",
+					"style"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageLayerDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"sortOrder": {
+						"type": "number",
+						"format": "double",
+						"description": "Drawing and export order; lower values are drawn first."
+					},
+					"visible": {
+						"type": "boolean",
+						"description": "Editor display only; hidden layers are still published."
+					},
+					"locked": {
+						"type": "boolean",
+						"description": "Locked layers reject object changes until they are unlocked."
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"packageId",
+					"name",
+					"sortOrder",
+					"visible",
+					"locked",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageLayerPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/PackageLayerDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatePackageLayerRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdatePackageLayerRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"sortOrder": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 10000
+					},
+					"visible": {
+						"type": "boolean"
+					},
+					"locked": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"sortOrder",
+					"visible",
+					"locked"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportReportEntry": {
+				"properties": {
+					"feature": {
+						"type": "string",
+						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"feature",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GeoJsonImportReport": {
+				"properties": {
+					"accepted": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of objects created."
+					},
+					"changed": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Imported, but adjusted: split multi-geometries, clamped styles."
+					},
+					"skipped": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Not imported because the content type is not supported, e.g. GeometryCollection."
+					},
+					"rejected": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Not imported because the content is invalid, e.g. a self-intersecting polygon."
+					}
+				},
+				"required": [
+					"accepted",
+					"changed",
+					"skipped",
+					"rejected"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GeoJsonDocument": {
+				"description": "Untrusted GeoJSON document: a FeatureCollection, a Feature or a bare geometry.",
+				"properties": {
+					"type": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"type"
+				],
+				"type": "object",
+				"additionalProperties": {}
+			},
+			"GeoJsonFeatureCollection": {
+				"description": "GeoJSON FeatureCollection exported from a data package draft or revision.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"FeatureCollection"
+						],
+						"nullable": false
+					},
+					"features": {
+						"items": {},
+						"type": "array"
+					}
+				},
+				"required": [
+					"type",
+					"features"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DataPackageDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"latestRevision": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Number of the newest published revision, or `null` while nothing is published."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"name",
+					"description",
+					"latestRevision",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DataPackagePage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/DataPackageDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateDataPackageRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 1000
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateDataPackageRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 1000
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"description"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -4574,1919 +4574,6 @@
 					}
 				],
 				"parameters": []
-			}
-		},
-		"/events/{eventId}/missions": {
-			"get": {
-				"operationId": "ListMissions",
-				"responses": {
-					"200": {
-						"description": "Missions",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionPage"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Invalid cursor",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Lists the event's missions ordered by creation time, oldest first.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "query",
-						"name": "limit",
-						"required": false,
-						"schema": {
-							"format": "int32",
-							"type": "integer",
-							"minimum": 1,
-							"maximum": 100
-						}
-					},
-					{
-						"in": "query",
-						"name": "cursor",
-						"required": false,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			},
-			"post": {
-				"operationId": "CreateMission",
-				"responses": {
-					"201": {
-						"description": "Mission created",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Validation failed",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Creates a mission with one empty layer.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/CreateMissionRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/events/{eventId}/missions/{missionId}": {
-			"get": {
-				"operationId": "GetMission",
-				"responses": {
-					"200": {
-						"description": "Mission",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			},
-			"put": {
-				"operationId": "UpdateMission",
-				"responses": {
-					"200": {
-						"description": "Mission updated",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Version conflict or event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Validation failed",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Replaces name and description. Requires the current `version`.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/UpdateMissionRequest"
-							}
-						}
-					}
-				}
-			},
-			"delete": {
-				"operationId": "DeleteMission",
-				"responses": {
-					"204": {
-						"description": "Mission deleted"
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Deletes the mission with its layers, objects and published revisions.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/revisions": {
-			"get": {
-				"operationId": "ListMissionRevisions",
-				"responses": {
-					"200": {
-						"description": "Mission revisions",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionRevisionPage"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Invalid cursor",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Lists published revisions, oldest first, without their snapshots.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "query",
-						"name": "limit",
-						"required": false,
-						"schema": {
-							"format": "int32",
-							"type": "integer",
-							"minimum": 1,
-							"maximum": 100
-						}
-					},
-					{
-						"in": "query",
-						"name": "cursor",
-						"required": false,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			},
-			"post": {
-				"operationId": "PublishMission",
-				"responses": {
-					"200": {
-						"description": "Published, or the unchanged latest revision",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/PublishMissionResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Publishes the current draft. Requires `missions.publish`.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/revisions/{number}": {
-			"get": {
-				"operationId": "GetMissionRevision",
-				"responses": {
-					"200": {
-						"description": "Mission revision",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionRevisionDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Returns one revision with its snapshot.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "number",
-						"required": true,
-						"schema": {
-							"format": "int32",
-							"type": "integer",
-							"minimum": 1
-						}
-					}
-				]
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/objects": {
-			"get": {
-				"operationId": "ListMissionObjects",
-				"responses": {
-					"200": {
-						"description": "Mission objects",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionObjectPage"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Invalid cursor",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Lists the mission's objects in creation order, optionally only those of one layer.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "query",
-						"name": "layerId",
-						"required": false,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "query",
-						"name": "limit",
-						"required": false,
-						"schema": {
-							"format": "int32",
-							"type": "integer",
-							"minimum": 1,
-							"maximum": 100
-						}
-					},
-					{
-						"in": "query",
-						"name": "cursor",
-						"required": false,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			},
-			"post": {
-				"operationId": "CreateMissionObject",
-				"responses": {
-					"201": {
-						"description": "Mission object created",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionObjectDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Layer locked, too many objects or event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Invalid geometry or other validation failure",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/CreateMissionObjectRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/objects/{objectId}": {
-			"get": {
-				"operationId": "GetMissionObject",
-				"responses": {
-					"200": {
-						"description": "Mission object",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionObjectDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "objectId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			},
-			"put": {
-				"operationId": "UpdateMissionObject",
-				"responses": {
-					"200": {
-						"description": "Mission object updated",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionObjectDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Version conflict, layer locked or event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Invalid geometry or other validation failure",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Replaces the object. Requires the current `version`.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "objectId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/UpdateMissionObjectRequest"
-							}
-						}
-					}
-				}
-			},
-			"delete": {
-				"operationId": "DeleteMissionObject",
-				"responses": {
-					"204": {
-						"description": "Mission object deleted"
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Layer locked or event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "objectId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/layers": {
-			"get": {
-				"operationId": "ListMissionLayers",
-				"responses": {
-					"200": {
-						"description": "Mission layers",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionLayerPage"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Invalid cursor",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Lists the mission's layers in creation order; sort by `sortOrder` for display.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "query",
-						"name": "limit",
-						"required": false,
-						"schema": {
-							"format": "int32",
-							"type": "integer",
-							"minimum": 1,
-							"maximum": 100
-						}
-					},
-					{
-						"in": "query",
-						"name": "cursor",
-						"required": false,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			},
-			"post": {
-				"operationId": "CreateMissionLayer",
-				"responses": {
-					"201": {
-						"description": "Mission layer created",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionLayerDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Too many layers or event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Validation failed",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Adds a layer on top of the existing ones.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/CreateMissionLayerRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/layers/{layerId}": {
-			"put": {
-				"operationId": "UpdateMissionLayer",
-				"responses": {
-					"200": {
-						"description": "Mission layer updated",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/MissionLayerDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Version conflict or event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Validation failed",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Replaces name, order, visibility and lock state. Requires the current `version`.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "layerId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/UpdateMissionLayerRequest"
-							}
-						}
-					}
-				}
-			},
-			"delete": {
-				"operationId": "DeleteMissionLayer",
-				"responses": {
-					"204": {
-						"description": "Mission layer deleted"
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Deletes the layer and all of its objects.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "layerId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/layers/{layerId}/import": {
-			"post": {
-				"operationId": "ImportMissionGeoJson",
-				"responses": {
-					"200": {
-						"description": "Import report",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/GeoJsonImportReport"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Layer locked, too many objects or event archived",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Imports a GeoJSON FeatureCollection, Feature or geometry into the layer. Points, lines and\npolygons are supported; multi-geometries are split. The report lists every adjustment, every\nskipped and every rejected feature. Request bodies are limited to 1 MB.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "layerId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/GeoJsonDocument"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/geojson": {
-			"get": {
-				"operationId": "ExportMissionDraftGeoJson",
-				"responses": {
-					"200": {
-						"description": "GeoJSON of the draft",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/GeoJsonFeatureCollection"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			}
-		},
-		"/events/{eventId}/missions/{missionId}/revisions/{number}/geojson": {
-			"get": {
-				"operationId": "ExportMissionRevisionGeoJson",
-				"responses": {
-					"200": {
-						"description": "GeoJSON of the revision",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/GeoJsonFeatureCollection"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Exports a published revision as a GeoJSON FeatureCollection.",
-				"tags": [
-					"Missions"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					},
-					{
-						"serviceAccountBearer": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "eventId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "missionId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "number",
-						"required": true,
-						"schema": {
-							"format": "int32",
-							"type": "integer",
-							"minimum": 1
-						}
-					}
-				]
 			}
 		},
 		"/events/{eventId}/members/{memberId}/claims": {
@@ -9284,6 +7371,1919 @@
 					{
 						"in": "path",
 						"name": "revisionId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/revisions": {
+			"get": {
+				"operationId": "ListPackageRevisions",
+				"responses": {
+					"200": {
+						"description": "Package revisions",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageRevisionPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists published revisions, oldest first, without their snapshots.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "PublishDataPackage",
+				"responses": {
+					"200": {
+						"description": "Published, or the unchanged latest revision",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PublishDataPackageResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Publishes the current draft. Requires `data-packages.publish`.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/revisions/{number}": {
+			"get": {
+				"operationId": "GetPackageRevision",
+				"responses": {
+					"200": {
+						"description": "Package revision",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageRevisionDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns one revision with its snapshot.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "number",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/objects": {
+			"get": {
+				"operationId": "ListPackageObjects",
+				"responses": {
+					"200": {
+						"description": "Package objects",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageObjectPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the data package's objects in creation order, optionally only those of one layer.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "layerId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreatePackageObject",
+				"responses": {
+					"201": {
+						"description": "Package object created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageObjectDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Layer locked, too many objects or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid geometry or other validation failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreatePackageObjectRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/objects/{objectId}": {
+			"get": {
+				"operationId": "GetPackageObject",
+				"responses": {
+					"200": {
+						"description": "Package object",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageObjectDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "objectId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdatePackageObject",
+				"responses": {
+					"200": {
+						"description": "Package object updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageObjectDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, layer locked or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid geometry or other validation failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the object. Requires the current `version`.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "objectId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdatePackageObjectRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeletePackageObject",
+				"responses": {
+					"204": {
+						"description": "Package object deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Layer locked or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "objectId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/layers": {
+			"get": {
+				"operationId": "ListPackageLayers",
+				"responses": {
+					"200": {
+						"description": "Package layers",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageLayerPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the data package's layers in creation order; sort by `sortOrder` for display.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreatePackageLayer",
+				"responses": {
+					"201": {
+						"description": "Package layer created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageLayerDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Too many layers or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Adds a layer on top of the existing ones.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreatePackageLayerRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/layers/{layerId}": {
+			"put": {
+				"operationId": "UpdatePackageLayer",
+				"responses": {
+					"200": {
+						"description": "Package layer updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PackageLayerDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces name, order, visibility and lock state. Requires the current `version`.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "layerId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdatePackageLayerRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeletePackageLayer",
+				"responses": {
+					"204": {
+						"description": "Package layer deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Deletes the layer and all of its objects.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "layerId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/layers/{layerId}/import": {
+			"post": {
+				"operationId": "ImportPackageGeoJson",
+				"responses": {
+					"200": {
+						"description": "Import report",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GeoJsonImportReport"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Layer locked, too many objects or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Imports a GeoJSON FeatureCollection, Feature or geometry into the layer. Points, lines and\npolygons are supported; multi-geometries are split. The report lists every adjustment, every\nskipped and every rejected feature. Request bodies are limited to 1 MB.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "layerId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GeoJsonDocument"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/geojson": {
+			"get": {
+				"operationId": "ExportPackageDraftGeoJson",
+				"responses": {
+					"200": {
+						"description": "GeoJSON of the draft",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GeoJsonFeatureCollection"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/revisions/{number}/geojson": {
+			"get": {
+				"operationId": "ExportPackageRevisionGeoJson",
+				"responses": {
+					"200": {
+						"description": "GeoJSON of the revision",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GeoJsonFeatureCollection"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Exports a published revision as a GeoJSON FeatureCollection.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "number",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages": {
+			"get": {
+				"operationId": "ListDataPackages",
+				"responses": {
+					"200": {
+						"description": "Data packages",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DataPackagePage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the event's data packages ordered by creation time, oldest first.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateDataPackage",
+				"responses": {
+					"201": {
+						"description": "Data package created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DataPackageDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a data package with one empty layer.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateDataPackageRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}": {
+			"get": {
+				"operationId": "GetDataPackage",
+				"responses": {
+					"200": {
+						"description": "Data package",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DataPackageDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateDataPackage",
+				"responses": {
+					"200": {
+						"description": "Data package updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DataPackageDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces name and description. Requires the current `version`.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateDataPackageRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteDataPackage",
+				"responses": {
+					"204": {
+						"description": "Data package deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Deletes the data package with its layers, objects and published revisions.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"

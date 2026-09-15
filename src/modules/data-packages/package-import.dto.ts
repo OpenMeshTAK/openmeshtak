@@ -21,7 +21,7 @@ export interface GeoJsonImportReport {
   rejected: ImportReportEntry[];
 }
 
-/** GeoJSON FeatureCollection exported from a mission draft or revision. */
+/** GeoJSON FeatureCollection exported from a data package draft or revision. */
 export interface GeoJsonFeatureCollection {
   type: "FeatureCollection";
   features: unknown[];

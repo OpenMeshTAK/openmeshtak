@@ -32,7 +32,7 @@ model Event {
   syncIssues             SyncIssue[]
   memberClaims           MemberClaim[]
   configurationRevisions EventConfigurationRevision[]
-  missions               MissionProject[]
+  dataPackages           DataPackage[]
 }
 
 model User {
@@ -426,73 +426,73 @@ model EventConfigurationRevision {
   @@index([eventId, createdAt, id])
 }
 
-/// Editable, format-neutral mission content of one event. ATAK packages are generated from it.
-model MissionProject {
+/// Editable, format-neutral map content of one event, distributed as an ATAK Data Package.
+model DataPackage {
   id          String            @id
   eventId     String
   name        String
   description String?
   version     Int               @default(1)
   event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  layers      MissionLayer[]
-  objects     MissionObject[]
-  revisions   MissionRevision[]
+  layers      PackageLayer[]
+  objects     PackageObject[]
+  revisions   PackageRevision[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
   @@index([eventId, createdAt, id])
 }
 
-model MissionLayer {
-  id        String          @id
-  missionId String
-  name      String
+model PackageLayer {
+  id          String          @id
+  packageId   String
+  name        String
   /// Drawing and export order; lower values are drawn first.
-  sortOrder Int
-  visible   Boolean         @default(true)
-  locked    Boolean         @default(false)
-  version   Int             @default(1)
-  mission   MissionProject  @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  objects   MissionObject[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  sortOrder   Int
+  visible     Boolean         @default(true)
+  locked      Boolean         @default(false)
+  version     Int             @default(1)
+  dataPackage DataPackage     @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  objects     PackageObject[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
-  @@index([missionId, sortOrder])
+  @@index([packageId, sortOrder])
 }
 
-/// One point, line or polygon. Geometry is validated RFC 7946 GeoJSON in WGS84.
-model MissionObject {
-  id          String         @id
-  missionId   String
+/// One point, line, polygon or circle. Geometry is validated RFC 7946 GeoJSON in WGS84.
+model PackageObject {
+  id          String       @id
+  packageId   String
   layerId     String
-  /// "point", "line" or "polygon"; mirrors the geometry type for filtering.
+  /// "point", "line", "polygon" or "circle"; mirrors the geometry type for filtering.
   kind        String
   geometry    Json
   name        String
   description String?
   style       Json
-  version     Int            @default(1)
-  mission     MissionProject @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  layer       MissionLayer   @relation(fields: [layerId], references: [id], onDelete: Cascade)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  version     Int          @default(1)
+  dataPackage DataPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  layer       PackageLayer @relation(fields: [layerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  @@index([missionId, createdAt, id])
+  @@index([packageId, createdAt, id])
   @@index([layerId])
 }
 
-/// Immutable published state of a mission; packages reference a revision, never the draft.
-model MissionRevision {
-  id            String         @id
-  missionId     String
+/// Immutable published state of a data package; distribution uses a revision, never the draft.
+model PackageRevision {
+  id            String      @id
+  packageId     String
   number        Int
   snapshot      Json
   snapshotHash  String
   createdByType String
   createdById   String
-  mission       MissionProject @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  createdAt     DateTime       @default(now())
+  dataPackage   DataPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
 
-  @@unique([missionId, number])
-  @@index([missionId, createdAt, id])
+  @@unique([packageId, number])
+  @@index([packageId, createdAt, id])
 }

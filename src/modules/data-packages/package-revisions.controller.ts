@@ -16,18 +16,18 @@ import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import type { MissionRevisionDto, MissionRevisionPage, PublishMissionResponse } from "./mission-revision.dto.js";
-import { getRevision, listRevisions, publishMission } from "./mission-revisions.service.js";
+import type { PackageRevisionDto, PackageRevisionPage, PublishDataPackageResponse } from "./package-revision.dto.js";
+import { getRevision, listRevisions, publishDataPackage } from "./package-revisions.service.js";
 
-/** Immutable published mission states. Packages reference a revision, never the draft. */
-@Route("events/{eventId}/missions/{missionId}/revisions")
-@Tags("Missions")
+/** Immutable published data package states. Packages reference a revision, never the draft. */
+@Route("events/{eventId}/data-packages/{packageId}/revisions")
+@Tags("Data packages")
 @Security("sessionCookie")
 @Security("serviceAccountBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 @Response<ProblemDetails>(404, "Not found")
-export class MissionRevisionsController extends Controller {
+export class PackageRevisionsController extends Controller {
   /**
    * Lists published revisions, oldest first, without their snapshots.
    * @isInt limit
@@ -35,29 +35,29 @@ export class MissionRevisionsController extends Controller {
    * @maximum limit 100
    */
   @Get()
-  @SuccessResponse(200, "Mission revisions")
+  @SuccessResponse(200, "Package revisions")
   @Middlewares(allowQueryParameters("limit", "cursor"))
   @Response<ProblemDetails>(400, "Invalid cursor")
-  public async listMissionRevisions(
+  public async listPackageRevisions(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
     @Query() limit?: number,
     @Query() cursor?: string,
-  ): Promise<MissionRevisionPage> {
-    return listRevisions(requestContext(request).principal, eventId, missionId, limit, cursor);
+  ): Promise<PackageRevisionPage> {
+    return listRevisions(requestContext(request).principal, eventId, packageId, limit, cursor);
   }
 
-  /** Publishes the current draft. Requires `missions.publish`. */
+  /** Publishes the current draft. Requires `data-packages.publish`. */
   @Post()
   @SuccessResponse(200, "Published, or the unchanged latest revision")
   @Response<ProblemDetails>(409, "Event archived")
-  public async publishMission(
+  public async publishDataPackage(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
-  ): Promise<PublishMissionResponse> {
-    return publishMission(requestContext(request), eventId, missionId);
+    @Path() packageId: Uuid,
+  ): Promise<PublishDataPackageResponse> {
+    return publishDataPackage(requestContext(request), eventId, packageId);
   }
 
   /**
@@ -66,13 +66,13 @@ export class MissionRevisionsController extends Controller {
    * @minimum number 1
    */
   @Get("{number}")
-  @SuccessResponse(200, "Mission revision")
-  public async getMissionRevision(
+  @SuccessResponse(200, "Package revision")
+  public async getPackageRevision(
     @Request() request: unknown,
     @Path() eventId: Uuid,
-    @Path() missionId: Uuid,
+    @Path() packageId: Uuid,
     @Path() number: number,
-  ): Promise<MissionRevisionDto> {
-    return getRevision(requestContext(request).principal, eventId, missionId, number);
+  ): Promise<PackageRevisionDto> {
+    return getRevision(requestContext(request).principal, eventId, packageId, number);
   }
 }

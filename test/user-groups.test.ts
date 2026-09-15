@@ -75,7 +75,7 @@ void describe("user groups", () => {
     const eventId = await createEvent();
     const created = (
       await createGroup("editors", [
-        { permission: "missions.edit", eventId },
+        { permission: "data-packages.edit", eventId },
         { permission: "events.read", eventId: null },
       ]).expect(201)
     ).body as UserGroupBody;

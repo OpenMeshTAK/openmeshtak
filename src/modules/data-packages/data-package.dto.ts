@@ -1,7 +1,7 @@
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
 
-export interface MissionDto {
+export interface DataPackageDto {
   id: Uuid;
   eventId: Uuid;
   name: string;
@@ -16,12 +16,12 @@ export interface MissionDto {
   updatedAt: string;
 }
 
-export interface MissionPage {
-  items: MissionDto[];
+export interface DataPackagePage {
+  items: DataPackageDto[];
   page: PageInfo;
 }
 
-export interface CreateMissionRequest {
+export interface CreateDataPackageRequest {
   /**
    * @minLength 1
    * @maxLength 100
@@ -31,7 +31,7 @@ export interface CreateMissionRequest {
   description?: string | null;
 }
 
-export interface UpdateMissionRequest {
+export interface UpdateDataPackageRequest {
   /**
    * Version the client last read.
    * @isInt
@@ -47,9 +47,9 @@ export interface UpdateMissionRequest {
   description: string | null;
 }
 
-export interface MissionLayerDto {
+export interface PackageLayerDto {
   id: Uuid;
-  missionId: Uuid;
+  packageId: Uuid;
   name: string;
   /** Drawing and export order; lower values are drawn first. */
   sortOrder: number;
@@ -64,12 +64,12 @@ export interface MissionLayerDto {
   updatedAt: string;
 }
 
-export interface MissionLayerPage {
-  items: MissionLayerDto[];
+export interface PackageLayerPage {
+  items: PackageLayerDto[];
   page: PageInfo;
 }
 
-export interface CreateMissionLayerRequest {
+export interface CreatePackageLayerRequest {
   /**
    * @minLength 1
    * @maxLength 100
@@ -77,7 +77,7 @@ export interface CreateMissionLayerRequest {
   name: string;
 }
 
-export interface UpdateMissionLayerRequest {
+export interface UpdatePackageLayerRequest {
   /**
    * @isInt
    * @minimum 1

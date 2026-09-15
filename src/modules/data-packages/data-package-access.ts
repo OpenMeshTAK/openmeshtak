@@ -1,34 +1,34 @@
-import type { Event, MissionProject } from "../../generated/prisma/client.js";
+import type { Event, DataPackage } from "../../generated/prisma/client.js";
 import type { Permission } from "../../shared/auth/permissions.js";
 import type { Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem } from "../../shared/errors/problem-error.js";
 import { eventArchivedProblem, requireEventPermission } from "../events/event-access.js";
 
-export interface MissionContext {
+export interface DataPackageContext {
   event: Event;
-  mission: MissionProject;
+  dataPackage: DataPackage;
 }
 
 /**
- * Loads a mission of an event after checking the event-scoped mission permission. Missions of
+ * Loads a data package of an event after checking the event-scoped data package permission. Packages of
  * other events are concealed as `404`.
  */
-export async function requireMission(
+export async function requireDataPackage(
   principal: Principal,
   eventId: string,
-  missionId: string,
+  packageId: string,
   permission: Permission,
-): Promise<MissionContext> {
+): Promise<DataPackageContext> {
   const event = await requireEventPermission(principal, eventId, permission);
-  const mission = await database.missionProject.findFirst({ where: { id: missionId, eventId } });
-  if (mission === null) {
+  const dataPackage = await database.dataPackage.findFirst({ where: { id: packageId, eventId } });
+  if (dataPackage === null) {
     throw notFoundProblem();
   }
-  return { event, mission };
+  return { event, dataPackage };
 }
 
-/** Archived events are read-only, including their mission content (PRODUCT.md). */
+/** Archived events are read-only, including their data package content (PRODUCT.md). */
 export function requireEditableEvent(event: Event): void {
   if (event.status === "archived") {
     throw eventArchivedProblem();

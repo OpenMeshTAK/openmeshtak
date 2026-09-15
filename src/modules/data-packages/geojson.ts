@@ -1,14 +1,14 @@
 import { geometryProblems } from "./geometry.js";
-import type { MissionGeometry, MissionObjectStyle } from "./mission-object.dto.js";
-import type { GeoJsonImportReport } from "./mission-import.dto.js";
-import type { MissionSnapshot } from "./mission-snapshot.js";
+import type { PackageGeometry, PackageObjectStyle } from "./package-object.dto.js";
+import type { GeoJsonImportReport } from "./package-import.dto.js";
+import type { PackageSnapshot } from "./package-snapshot.js";
 
 /** One object the import would create, after conversion and validation. */
 export interface ImportCandidate {
   name: string;
   description: string | null;
-  geometry: MissionGeometry;
-  style: MissionObjectStyle;
+  geometry: PackageGeometry;
+  style: PackageObjectStyle;
 }
 
 export interface ImportConversion {
@@ -19,7 +19,7 @@ export interface ImportConversion {
 type JsonObject = Record<string, unknown>;
 
 const SUPPORTED = new Set(["Point", "LineString", "Polygon"]);
-const MULTI_PARTS: Record<string, MissionGeometry["type"]> = {
+const MULTI_PARTS: Record<string, PackageGeometry["type"]> = {
   MultiPoint: "Point",
   MultiLineString: "LineString",
   MultiPolygon: "Polygon",
@@ -42,7 +42,7 @@ function label(index: number, name: string | null): string {
  * Reads the common simplestyle-spec properties (`stroke`, `marker-color`, `stroke-width`,
  * `fill-opacity`). Out-of-range values are clamped and reported as changes.
  */
-function styleFrom(properties: JsonObject, fallback: MissionObjectStyle, changes: string[]): MissionObjectStyle {
+function styleFrom(properties: JsonObject, fallback: PackageObjectStyle, changes: string[]): PackageObjectStyle {
   const colorValue = properties.stroke ?? properties["marker-color"] ?? properties.fill;
   const color =
     typeof colorValue === "string" && /^#[0-9A-Fa-f]{6}$/.test(colorValue) ? colorValue.toUpperCase() : fallback.color;
@@ -64,7 +64,7 @@ function styleFrom(properties: JsonObject, fallback: MissionObjectStyle, changes
   return { color, strokeWidth, fillOpacity };
 }
 
-const IMPORTED_NAMES: Record<MissionGeometry["type"], string> = {
+const IMPORTED_NAMES: Record<PackageGeometry["type"], string> = {
   Point: "point",
   LineString: "line",
   Polygon: "area",
@@ -75,7 +75,7 @@ const IMPORTED_NAMES: Record<MissionGeometry["type"], string> = {
  * GeoJSON has no circles. OpenMeshTak exports them as points with `shape: "circle"` and a
  * `radius` in metres, and reads that convention back so a round trip keeps the circle.
  */
-function asCircle(part: JsonObject, properties: JsonObject): MissionGeometry | null {
+function asCircle(part: JsonObject, properties: JsonObject): PackageGeometry | null {
   if (part.type !== "Point" || properties.shape !== "circle" || typeof properties.radius !== "number") {
     return null;
   }
@@ -113,7 +113,7 @@ function partsOf(geometry: JsonObject): JsonObject[] | null {
  * Converts untrusted GeoJSON into validated objects plus a report. Nothing is silently dropped:
  * every feature ends up accepted, changed, skipped or rejected with a reason (EDITOR.md).
  */
-export function convertGeoJson(document: unknown, fallbackStyle: MissionObjectStyle): ImportConversion {
+export function convertGeoJson(document: unknown, fallbackStyle: PackageObjectStyle): ImportConversion {
   const report: ImportConversion["report"] = { changed: [], skipped: [], rejected: [] };
   const candidates: ImportCandidate[] = [];
   const features = featuresOf(document);
@@ -144,7 +144,7 @@ export function convertGeoJson(document: unknown, fallbackStyle: MissionObjectSt
     const description = text(properties.description, 2000);
 
     parts.forEach((part, partIndex) => {
-      const geometry = asCircle(part, properties) ?? (part as unknown as MissionGeometry);
+      const geometry = asCircle(part, properties) ?? (part as unknown as PackageGeometry);
       const problem = Array.isArray(part.coordinates) ? geometryProblems(geometry)[0] : undefined;
       if (!Array.isArray(part.coordinates) || problem !== undefined) {
         report.rejected.push({ feature: where, message: problem?.message ?? "The geometry has no coordinates." });
@@ -166,7 +166,7 @@ export function convertGeoJson(document: unknown, fallbackStyle: MissionObjectSt
 }
 
 /** Exports a snapshot as a FeatureCollection with simplestyle-spec properties. */
-export function snapshotToGeoJson(snapshot: MissionSnapshot): JsonObject {
+export function snapshotToGeoJson(snapshot: PackageSnapshot): JsonObject {
   const layerNames = new Map(snapshot.layers.map(({ id, name }) => [id, name]));
   return {
     type: "FeatureCollection",
