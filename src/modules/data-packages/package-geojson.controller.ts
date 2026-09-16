@@ -14,7 +14,7 @@ import {
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import type { GeoJsonDocument, GeoJsonFeatureCollection, GeoJsonImportReport } from "./package-import.dto.js";
+import type { GeoJsonDocument, GeoJsonFeatureCollection, ImportReport } from "./package-import.dto.js";
 import { exportDraftGeoJson, exportRevisionGeoJson, importGeoJson } from "./package-import.service.js";
 
 /** GeoJSON import into a draft layer and export of drafts or published revisions. */
@@ -40,7 +40,7 @@ export class PackageGeoJsonController extends Controller {
     @Path() packageId: Uuid,
     @Path() layerId: Uuid,
     @Body() body: GeoJsonDocument,
-  ): Promise<GeoJsonImportReport> {
+  ): Promise<ImportReport> {
     return importGeoJson(requestContext(request), eventId, packageId, layerId, body);
   }
 

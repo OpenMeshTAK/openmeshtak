@@ -2818,7 +2818,8 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"GeoJsonImportReport": {
+			"ImportReport": {
+				"description": "Outcome of a GeoJSON or ATAK import; every input item appears somewhere in it.",
 				"properties": {
 					"accepted": {
 						"type": "number",
@@ -8578,7 +8579,7 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/GeoJsonImportReport"
+									"$ref": "#/components/schemas/ImportReport"
 								}
 							}
 						}

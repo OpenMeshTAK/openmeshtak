@@ -10,7 +10,8 @@ export interface ImportReportEntry {
   message: string;
 }
 
-export interface GeoJsonImportReport {
+/** Outcome of a GeoJSON or ATAK import; every input item appears somewhere in it. */
+export interface ImportReport {
   /** Number of objects created. */
   accepted: number;
   /** Imported, but adjusted: split multi-geometries, clamped styles. */

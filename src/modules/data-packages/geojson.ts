@@ -1,20 +1,7 @@
 import { geometryProblems } from "./geometry.js";
+import type { ImportCandidate, ImportConversion } from "./import-candidate.js";
 import type { PackageGeometry, PackageObjectStyle } from "./package-object.dto.js";
-import type { GeoJsonImportReport } from "./package-import.dto.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
-
-/** One object the import would create, after conversion and validation. */
-export interface ImportCandidate {
-  name: string;
-  description: string | null;
-  geometry: PackageGeometry;
-  style: PackageObjectStyle;
-}
-
-export interface ImportConversion {
-  candidates: ImportCandidate[];
-  report: Omit<GeoJsonImportReport, "accepted">;
-}
 
 type JsonObject = Record<string, unknown>;
 
