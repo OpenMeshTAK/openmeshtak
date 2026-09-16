@@ -46,6 +46,8 @@ import { PackageLayersController } from './../modules/data-packages/package-laye
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageGeoJsonController } from './../modules/data-packages/package-geojson.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PackageAtakController } from './../modules/data-packages/package-atak.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { DataPackagesController } from './../modules/data-packages/data-packages.controller.js';
 import { expressAuthentication } from './../shared/auth/authorization.js';
 // @ts-ignore - no great way to install types from subpackage
@@ -3497,6 +3499,74 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'exportPackageRevisionGeoJson',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageAtakController_importAtakDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId/import/atak',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageAtakController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageAtakController.prototype.importAtakDataPackage)),
+
+            async function PackageAtakController_importAtakDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageAtakController_importAtakDataPackage, request, response });
+
+                const controller = new PackageAtakController();
+
+              await templateService.apiHandler({
+                methodName: 'importAtakDataPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageAtakController_exportAtakDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number/atak',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageAtakController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageAtakController.prototype.exportAtakDataPackage)),
+
+            async function PackageAtakController_exportAtakDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageAtakController_exportAtakDataPackage, request, response });
+
+                const controller = new PackageAtakController();
+
+              await templateService.apiHandler({
+                methodName: 'exportAtakDataPackage',
                 controller,
                 response,
                 next,
