@@ -76,6 +76,21 @@ export function errorHandler(
     return;
   }
 
+  // body-parser marks its own failures with a `type`; they are client errors, not server faults.
+  const bodyError = (error as { type?: unknown } | null)?.type;
+  if (bodyError === "entity.too.large" || bodyError === "entity.parse.failed") {
+    const tooLarge = bodyError === "entity.too.large";
+    sendProblem(response, {
+      type: tooLarge ? "urn:openmeshtak:problem:payload-too-large" : "urn:openmeshtak:problem:malformed-body",
+      title: tooLarge ? "Request body too large" : "Malformed request body",
+      status: tooLarge ? 413 : 400,
+      detail: tooLarge ? "The request body exceeds the allowed size." : "The request body could not be parsed.",
+      code: tooLarge ? "PAYLOAD_TOO_LARGE" : "MALFORMED_BODY",
+      traceId,
+    });
+    return;
+  }
+
   logger.error(
     {
       error,
