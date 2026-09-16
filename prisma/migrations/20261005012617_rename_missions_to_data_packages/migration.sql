@@ -101,6 +101,25 @@ CREATE INDEX "PackageRevision_packageId_createdAt_id_idx" ON "PackageRevision"("
 -- CreateIndex
 CREATE UNIQUE INDEX "PackageRevision_packageId_number_key" ON "PackageRevision"("packageId", "number");
 
--- Permissions were renamed from missions.* to data-packages.* (decided 2026-10-05).
+-- Permissions were renamed from missions.* to data-packages.* (decided 2026-10-05). A grant that
+-- already exists under the new name (for example added to the Admin group by a newer server)
+-- replaces the old one instead of violating the unique scope.
+DELETE FROM "PermissionGrant"
+WHERE "permission" LIKE 'missions.%'
+  AND EXISTS (
+    SELECT 1 FROM "PermissionGrant" AS "renamed"
+    WHERE "renamed"."userGroupId" = "PermissionGrant"."userGroupId"
+      AND "renamed"."scopeKey" = "PermissionGrant"."scopeKey"
+      AND "renamed"."permission" = 'data-packages.' || substr("PermissionGrant"."permission", 10)
+  );
 UPDATE "PermissionGrant" SET "permission" = 'data-packages.' || substr("permission", 10) WHERE "permission" LIKE 'missions.%';
+
+DELETE FROM "ServiceAccountPermissionGrant"
+WHERE "permission" LIKE 'missions.%'
+  AND EXISTS (
+    SELECT 1 FROM "ServiceAccountPermissionGrant" AS "renamed"
+    WHERE "renamed"."serviceAccountId" = "ServiceAccountPermissionGrant"."serviceAccountId"
+      AND "renamed"."scopeKey" = "ServiceAccountPermissionGrant"."scopeKey"
+      AND "renamed"."permission" = 'data-packages.' || substr("ServiceAccountPermissionGrant"."permission", 10)
+  );
 UPDATE "ServiceAccountPermissionGrant" SET "permission" = 'data-packages.' || substr("permission", 10) WHERE "permission" LIKE 'missions.%';
