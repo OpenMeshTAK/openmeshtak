@@ -3447,6 +3447,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                layerId: {"in":"query","name":"layerId","ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/geojson',
             authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
@@ -3481,6 +3482,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
                 number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
+                layerId: {"in":"query","name":"layerId","ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number/geojson',
             authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
@@ -3549,6 +3551,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
                 number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
+                layerId: {"in":"query","name":"layerId","ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number/atak',
             authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),

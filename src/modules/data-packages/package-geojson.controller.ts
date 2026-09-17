@@ -2,8 +2,10 @@ import {
   Body,
   Controller,
   Get,
+  Middlewares,
   Path,
   Post,
+  Query,
   Request,
   Response,
   Route,
@@ -12,6 +14,7 @@ import {
   Tags,
 } from "tsoa";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
+import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { GeoJsonDocument, GeoJsonFeatureCollection, ImportReport } from "./package-import.dto.js";
@@ -44,30 +47,37 @@ export class PackageGeoJsonController extends Controller {
     return importGeoJson(requestContext(request), eventId, packageId, layerId, body);
   }
 
-  /** Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties. */
+  /**
+   * Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties.
+   * `layerId` limits the export to one layer.
+   */
   @Get("geojson")
+  @Middlewares(allowQueryParameters("layerId"))
   @SuccessResponse(200, "GeoJSON of the draft")
   public async exportPackageDraftGeoJson(
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Path() packageId: Uuid,
+    @Query() layerId?: Uuid,
   ): Promise<GeoJsonFeatureCollection> {
-    return exportDraftGeoJson(requestContext(request).principal, eventId, packageId);
+    return exportDraftGeoJson(requestContext(request).principal, eventId, packageId, layerId);
   }
 
   /**
-   * Exports a published revision as a GeoJSON FeatureCollection.
+   * Exports a published revision as a GeoJSON FeatureCollection; `layerId` limits it to one layer.
    * @isInt number
    * @minimum number 1
    */
   @Get("revisions/{number}/geojson")
+  @Middlewares(allowQueryParameters("layerId"))
   @SuccessResponse(200, "GeoJSON of the revision")
   public async exportPackageRevisionGeoJson(
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Path() packageId: Uuid,
     @Path() number: number,
+    @Query() layerId?: Uuid,
   ): Promise<GeoJsonFeatureCollection> {
-    return exportRevisionGeoJson(requestContext(request).principal, eventId, packageId, number);
+    return exportRevisionGeoJson(requestContext(request).principal, eventId, packageId, number, layerId);
   }
 }

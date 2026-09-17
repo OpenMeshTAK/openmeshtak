@@ -74,3 +74,17 @@ export async function buildPackageSnapshot(
 export function hashPackageSnapshot(snapshot: PackageSnapshot): string {
   return createHash("sha256").update(JSON.stringify(snapshot), "utf8").digest("hex");
 }
+
+/** Narrows a snapshot to one layer for per-layer exports; `null` when the layer is not in it. */
+export function snapshotOfLayer(snapshot: PackageSnapshot, layerId: string): PackageSnapshot | null {
+  const layer = snapshot.layers.find(({ id }) => id === layerId);
+  if (layer === undefined) {
+    return null;
+  }
+  return {
+    ...snapshot,
+    name: `${snapshot.name} - ${layer.name}`,
+    layers: [layer],
+    objects: snapshot.objects.filter((object) => object.layerId === layerId),
+  };
+}

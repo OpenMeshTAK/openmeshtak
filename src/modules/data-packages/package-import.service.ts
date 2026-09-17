@@ -11,7 +11,7 @@ import type { ImportConversion } from "./import-candidate.js";
 import type { GeoJsonDocument, GeoJsonFeatureCollection, ImportReport } from "./package-import.dto.js";
 import { findLayer } from "./package-layers.service.js";
 import { DEFAULT_STYLE, MAX_OBJECTS_PER_PACKAGE } from "./package-objects.service.js";
-import { buildPackageSnapshot, type PackageSnapshot } from "./package-snapshot.js";
+import { buildPackageSnapshot, snapshotOfLayer, type PackageSnapshot } from "./package-snapshot.js";
 
 export type ImportFormat = "geojson" | "atak";
 
@@ -117,13 +117,27 @@ export async function findRevision(packageId: string, number: number): Promise<P
   return revision;
 }
 
+/** The whole snapshot, or only one of its layers; an unknown layer is a `404`. */
+export function exportedSnapshot(snapshot: PackageSnapshot, layerId: string | undefined): PackageSnapshot {
+  if (layerId === undefined) {
+    return snapshot;
+  }
+  const layer = snapshotOfLayer(snapshot, layerId);
+  if (layer === null) {
+    throw notFoundProblem();
+  }
+  return layer;
+}
+
 export async function exportDraftGeoJson(
   principal: Principal,
   eventId: string,
   packageId: string,
+  layerId?: string,
 ): Promise<GeoJsonFeatureCollection> {
   await requireDataPackage(principal, eventId, packageId, "data-packages.read");
-  return snapshotToGeoJson(await buildPackageSnapshot(database, packageId)) as unknown as GeoJsonFeatureCollection;
+  const snapshot = exportedSnapshot(await buildPackageSnapshot(database, packageId), layerId);
+  return snapshotToGeoJson(snapshot) as unknown as GeoJsonFeatureCollection;
 }
 
 export async function exportRevisionGeoJson(
@@ -131,8 +145,10 @@ export async function exportRevisionGeoJson(
   eventId: string,
   packageId: string,
   number: number,
+  layerId?: string,
 ): Promise<GeoJsonFeatureCollection> {
   await requireDataPackage(principal, eventId, packageId, "data-packages.read");
   const revision = await findRevision(packageId, number);
-  return snapshotToGeoJson(revision.snapshot as unknown as PackageSnapshot) as unknown as GeoJsonFeatureCollection;
+  const snapshot = exportedSnapshot(revision.snapshot as unknown as PackageSnapshot, layerId);
+  return snapshotToGeoJson(snapshot) as unknown as GeoJsonFeatureCollection;
 }

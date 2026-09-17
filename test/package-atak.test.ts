@@ -121,4 +121,32 @@ void describe("ATAK Data Package import and export", () => {
     const second = await download(`${packageUrl}/revisions/1/atak`);
     assert.deepEqual(binary(second), binary(response), "the same revision must produce identical bytes");
   });
+
+  void it("exports a single layer as its own package", async () => {
+    await importZip(dataPackageZip({ a: spotMarker })).expect(200);
+    const second = await request(app).post(`${packageUrl}/layers`).set("Cookie", editor.cookie).send({ name: "Areas" }).expect(201);
+    const areasId = (second.body as { id: string }).id;
+    await request(app)
+      .post(`${packageUrl}/layers/${areasId}/import/atak`)
+      .set("Cookie", editor.cookie)
+      .set("Content-Type", "application/zip")
+      .send(dataPackageZip({ b: freeformArea, c: circle }))
+      .expect(200);
+    await request(app).post(`${packageUrl}/revisions`).set("Cookie", editor.cookie).expect(200);
+
+    const layer = await download(`${packageUrl}/revisions/1/atak?layerId=${areasId}`);
+    const files = unzipSync(new Uint8Array(binary(layer)));
+    const manifest = strFromU8(files["MANIFEST/manifest.xml"] ?? new Uint8Array());
+    assert.match(manifest, /value="LS-2026 - Areas"/);
+    assert.match(manifest, new RegExp(`<Parameter name="uid" value="${areasId}"`));
+    assert.equal(Object.keys(files).filter((path) => path.endsWith(".cot")).length, 2);
+
+    const geojson = await request(app).get(`${packageUrl}/geojson`).query({ layerId: areasId }).set("Cookie", editor.cookie).expect(200);
+    assert.equal((geojson.body as { features: unknown[] }).features.length, 2);
+    await request(app)
+      .get(`${packageUrl}/revisions/1/atak`)
+      .query({ layerId: "00000000-0000-4000-8000-000000000000" })
+      .set("Cookie", editor.cookie)
+      .expect(404);
+  });
 });

@@ -7,6 +7,7 @@ import {
   Path,
   Post,
   Produces,
+  Query,
   Request,
   Response,
   Route,
@@ -16,6 +17,7 @@ import {
 } from "tsoa";
 import { ProblemError } from "../../shared/errors/problem-error.js";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
+import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import { MAX_UPLOAD_BYTES } from "./atak/data-package-archive.js";
@@ -71,10 +73,12 @@ export class PackageAtakController extends Controller {
 
   /**
    * Downloads a published revision as an ATAK Data Package (ZIP with `MANIFEST/manifest.xml`).
+   * `layerId` exports only that layer, as its own package.
    * @isInt number
    * @minimum number 1
    */
   @Get("revisions/{number}/atak")
+  @Middlewares(allowQueryParameters("layerId"))
   @Produces("application/zip")
   @SuccessResponse(200, "ATAK Data Package")
   public async exportAtakDataPackage(
@@ -82,8 +86,9 @@ export class PackageAtakController extends Controller {
     @Path() eventId: Uuid,
     @Path() packageId: Uuid,
     @Path() number: number,
+    @Query() layerId?: Uuid,
   ): Promise<Readable> {
-    const { fileName, bytes } = await exportAtak(requestContext(request).principal, eventId, packageId, number);
+    const { fileName, bytes } = await exportAtak(requestContext(request).principal, eventId, packageId, number, layerId);
     this.setHeader("Content-Type", "application/zip");
     this.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
     return Readable.from([Buffer.from(bytes)]);

@@ -5,7 +5,7 @@ import { readDataPackage, writeDataPackage } from "./atak/data-package-archive.j
 import { requireDataPackage } from "./data-package-access.js";
 import { emptyConversion, type ImportConversion } from "./import-candidate.js";
 import type { ImportReport } from "./package-import.dto.js";
-import { findRevision, requireImportTarget, saveImport } from "./package-import.service.js";
+import { exportedSnapshot, findRevision, requireImportTarget, saveImport } from "./package-import.service.js";
 import { DEFAULT_STYLE } from "./package-objects.service.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
 
@@ -51,22 +51,24 @@ export interface AtakExport {
 }
 
 /**
- * Builds the ATAK Data Package of a published revision. The package UID is the data package ID,
- * so importing a newer revision on a device replaces the older one.
+ * Builds the ATAK Data Package of a published revision, or of one of its layers. The package UID
+ * is the data package ID (or the layer ID for a single layer), so importing a newer revision on a
+ * device replaces the older one without replacing the other packages.
  */
 export async function exportAtak(
   principal: Principal,
   eventId: string,
   packageId: string,
   number: number,
+  layerId?: string,
 ): Promise<AtakExport> {
   const { dataPackage } = await requireDataPackage(principal, eventId, packageId, "data-packages.read");
   const revision = await findRevision(packageId, number);
-  const snapshot = revision.snapshot as unknown as PackageSnapshot;
+  const snapshot = exportedSnapshot(revision.snapshot as unknown as PackageSnapshot, layerId);
 
   const bytes = writeDataPackage(
     {
-      uid: dataPackage.id,
+      uid: layerId ?? dataPackage.id,
       name: snapshot.name,
       events: snapshot.objects.map((object) => ({ uid: object.id, xml: objectToCot(object, revision.createdAt) })),
     },

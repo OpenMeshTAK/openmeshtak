@@ -8720,7 +8720,7 @@
 						}
 					}
 				},
-				"description": "Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties.",
+				"description": "Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties.\n`layerId` limits the export to one layer.",
 				"tags": [
 					"Data packages"
 				],
@@ -8745,6 +8745,14 @@
 						"in": "path",
 						"name": "packageId",
 						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "layerId",
+						"required": false,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
 						}
@@ -8797,7 +8805,7 @@
 						}
 					}
 				},
-				"description": "Exports a published revision as a GeoJSON FeatureCollection.",
+				"description": "Exports a published revision as a GeoJSON FeatureCollection; `layerId` limits it to one layer.",
 				"tags": [
 					"Data packages"
 				],
@@ -8834,6 +8842,14 @@
 							"format": "int32",
 							"type": "integer",
 							"minimum": 1
+						}
+					},
+					{
+						"in": "query",
+						"name": "layerId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
 						}
 					}
 				]
@@ -9010,7 +9026,7 @@
 						}
 					}
 				},
-				"description": "Downloads a published revision as an ATAK Data Package (ZIP with `MANIFEST/manifest.xml`).",
+				"description": "Downloads a published revision as an ATAK Data Package (ZIP with `MANIFEST/manifest.xml`).\n`layerId` exports only that layer, as its own package.",
 				"tags": [
 					"Data packages"
 				],
@@ -9047,6 +9063,14 @@
 							"format": "int32",
 							"type": "integer",
 							"minimum": 1
+						}
+					},
+					{
+						"in": "query",
+						"name": "layerId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
 						}
 					}
 				]
