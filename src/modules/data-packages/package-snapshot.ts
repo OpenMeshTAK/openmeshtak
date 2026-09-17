@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Prisma } from "../../generated/prisma/client.js";
-import type { PackageGeometry, PackageObjectKind, PackageObjectStyle } from "./package-object.dto.js";
+import type { PackageGeometry, PackageObjectKind, PackageObjectStyle, TakMarker } from "./package-object.dto.js";
+import { readTak } from "./tak-marker.js";
 
 /** Version of the snapshot document; bump it when its shape changes. */
 export const PACKAGE_SNAPSHOT_SCHEMA = 1;
@@ -20,6 +21,7 @@ export interface PackageSnapshotObject {
   description: string | null;
   geometry: PackageGeometry;
   style: PackageObjectStyle;
+  tak: TakMarker | null;
 }
 
 /** Everything a package generator needs; timestamps and versions are left out on purpose. */
@@ -67,6 +69,7 @@ export async function buildPackageSnapshot(
       // Written only by the objects service after validation.
       geometry: object.geometry as unknown as PackageGeometry,
       style: object.style as unknown as PackageObjectStyle,
+      tak: readTak(object.tak),
     })),
   };
 }

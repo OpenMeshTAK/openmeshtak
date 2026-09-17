@@ -471,6 +471,8 @@ model PackageObject {
   name        String
   description String?
   style       Json
+  /// Optional TAK marker metadata (CoT type, icon set path); markers only.
+  tak         Json?
   version     Int          @default(1)
   dataPackage DataPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
   layer       PackageLayer @relation(fields: [layerId], references: [id], onDelete: Cascade)

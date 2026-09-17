@@ -1,5 +1,5 @@
 import type { ImportReport } from "./package-import.dto.js";
-import type { PackageGeometry, PackageObjectStyle } from "./package-object.dto.js";
+import type { PackageGeometry, PackageObjectStyle, TakMarker } from "./package-object.dto.js";
 
 /** One object an import would create, after conversion and validation. */
 export interface ImportCandidate {
@@ -7,6 +7,8 @@ export interface ImportCandidate {
   description: string | null;
   geometry: PackageGeometry;
   style: PackageObjectStyle;
+  /** Markers only; `null` for plain spot markers and shapes. */
+  tak: TakMarker | null;
 }
 
 /** Result of converting one import file, before anything is saved. */

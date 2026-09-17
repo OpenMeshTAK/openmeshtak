@@ -1,4 +1,5 @@
 import { geometryProblems } from "./geometry.js";
+import { parseTakMarker } from "./tak-marker.js";
 import type { ImportCandidate, ImportConversion } from "./import-candidate.js";
 import type { PackageGeometry, PackageObjectStyle } from "./package-object.dto.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
@@ -143,6 +144,7 @@ export function convertGeoJson(document: unknown, fallbackStyle: PackageObjectSt
         description,
         geometry,
         style,
+        tak: geometry.type === "Point" ? parseTakMarker(properties["cot-type"], properties["iconset-path"]) : null,
       });
     });
     if (changes.length > 0) {
@@ -165,6 +167,7 @@ export function snapshotToGeoJson(snapshot: PackageSnapshot): JsonObject {
       properties: {
         name: object.name,
         ...(object.geometry.type === "Circle" ? { shape: "circle", radius: object.geometry.radius } : {}),
+        ...(object.tak === null ? {} : { "cot-type": object.tak.cotType, "iconset-path": object.tak.iconsetPath }),
         description: object.description,
         layer: layerNames.get(object.layerId) ?? null,
         ...(object.kind === "point" ? { "marker-color": object.style.color } : { stroke: object.style.color }),

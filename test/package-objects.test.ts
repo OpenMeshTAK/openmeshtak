@@ -137,6 +137,7 @@ void describe("data package objects", () => {
       description: null,
       geometry: { type: "Point", coordinates: [8.1, 50.1, 120] },
       style: object.style,
+      tak: null,
     };
 
     await request(app).put(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie).send(update).expect(200);
@@ -167,6 +168,28 @@ void describe("data package objects", () => {
       .post(`${packageUrl}/objects`)
       .set("Cookie", editor.cookie)
       .send({ layerId: foreignLayer, name: "Sneaky", geometry: { type: "Point", coordinates: [8, 50] } })
+      .expect(422);
+  });
+
+  void it("stores TAK symbols on markers only", async () => {
+    const marker = await request(app)
+      .post(`${packageUrl}/objects`)
+      .set("Cookie", editor.cookie)
+      .send({ layerId, name: "BRAVO 1", geometry: { type: "Point", coordinates: [8, 50] }, tak: { cotType: "a-f-G-U-C-I", iconsetPath: null } })
+      .expect(201);
+    assert.deepEqual((marker.body as { tak: unknown }).tak, { cotType: "a-f-G-U-C-I", iconsetPath: null });
+
+    const area = await request(app)
+      .post(`${packageUrl}/objects`)
+      .set("Cookie", editor.cookie)
+      .send({ layerId, name: "Area", geometry: square, tak: { cotType: "a-f-G", iconsetPath: null } })
+      .expect(422);
+    assert.equal((area.body as { errors: Array<{ code: string }> }).errors[0]?.code, "NOT_A_MARKER");
+
+    await request(app)
+      .post(`${packageUrl}/objects`)
+      .set("Cookie", editor.cookie)
+      .send({ layerId, name: "Bad", geometry: { type: "Point", coordinates: [8, 50] }, tak: { cotType: "<script>", iconsetPath: null } })
       .expect(422);
   });
 });

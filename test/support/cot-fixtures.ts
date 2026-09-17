@@ -68,3 +68,7 @@ export function dataPackageZip(events: Record<string, string>, extra: Record<str
   }
   return Buffer.from(zipSync(files));
 }
+
+export const friendlyInfantry = `<event version="2.0" uid="66666666-6666-4666-8666-666666666666" type="a-f-G-U-C-I" time="2026-08-30T19:34:46.20Z" start="2026-08-30T19:34:46.20Z" stale="2027-08-30T19:34:46.20Z" how="h-g-i-g-o"><point lat="50.12" lon="8.67" hae="9999999" ce="9999999" le="9999999" /><detail><contact callsign="BRAVO 1" /><archive /></detail></event>`;
+
+export const customIcon = `<event version="2.0" uid="77777777-7777-4777-8777-777777777777" type="a-u-G" time="2026-08-30T19:34:46.20Z" start="2026-08-30T19:34:46.20Z" stale="2027-08-30T19:34:46.20Z" how="h-g-i-g-o"><point lat="50.13" lon="8.66" hae="100" ce="9999999" le="9999999" /><detail><contact callsign="HIKER" /><usericon iconsetpath="f7f71666-8b28-4b57-9fbb-e38e61d33b79/Google/hiker.png" /><archive /></detail></event>`;

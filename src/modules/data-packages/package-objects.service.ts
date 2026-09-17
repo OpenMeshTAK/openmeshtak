@@ -17,6 +17,7 @@ import {
 } from "../../shared/pagination/cursor.js";
 import { geometryProblems, kindOf } from "./geometry.js";
 import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
+import { readTak, takColumn } from "./tak-marker.js";
 import type {
   CreatePackageObjectRequest,
   PackageGeometry,
@@ -42,6 +43,7 @@ export function toObjectDto(row: PackageObject): PackageObjectDto {
     // Written only by this service after validation.
     geometry: row.geometry as unknown as PackageGeometry,
     style: row.style as unknown as PackageObjectStyle,
+    tak: readTak(row.tak),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -150,6 +152,7 @@ export async function createObject(
       description: input.description ?? null,
       geometry: jsonValue(input.geometry),
       style: jsonValue(input.style ?? DEFAULT_STYLE),
+      tak: takColumn(input.geometry, input.tak),
     },
   });
   return toObjectDto(row);
@@ -180,6 +183,7 @@ export async function updateObject(
       description: input.description,
       geometry: jsonValue(input.geometry),
       style: jsonValue(input.style),
+      tak: takColumn(input.geometry, input.tak),
       version: { increment: 1 },
     },
   });

@@ -1,7 +1,8 @@
 import { XMLParser } from "fast-xml-parser";
 import { geometryProblems } from "../geometry.js";
 import type { ImportCandidate } from "../import-candidate.js";
-import type { PackageGeometry, PackageObjectStyle } from "../package-object.dto.js";
+import type { PackageGeometry, PackageObjectStyle, TakMarker } from "../package-object.dto.js";
+import { parseTakMarker } from "../tak-marker.js";
 import { parseArgb, parseCotNumber, parseLinkPoint, withAltitude, type CotColor } from "./cot-values.js";
 
 type XmlNode = Record<string, unknown>;
@@ -109,11 +110,26 @@ function circleGeometry(point: XmlNode, detail: XmlNode, changes: string[]): Pac
   return { type: "Circle", coordinates: center, radius: Math.round(major * 100) / 100 };
 }
 
+/** Spot markers, waypoints and MIL-STD-2525 units (`a-*`) are markers. */
+function isMarkerType(type: string): boolean {
+  return type === MARKER_TYPE || type.startsWith("b-m-p-") || type.startsWith("a-");
+}
+
+/**
+ * Keeps the CoT type and icon set of a marker so the export reproduces it. Plain spot markers need
+ * nothing: their spot-map icon path is derived from the colour again on export.
+ */
+function takMarker(type: string, detail: XmlNode): TakMarker | null {
+  const iconsetPath = text(node(detail.usericon).iconsetpath, 256);
+  const derivedSpotIcon = iconsetPath === null || iconsetPath.startsWith("COT_MAPPING_SPOTMAP/");
+  if (type === MARKER_TYPE && derivedSpotIcon) {
+    return null;
+  }
+  return parseTakMarker(type, derivedSpotIcon ? null : iconsetPath);
+}
+
 function geometryFor(type: string, point: XmlNode, detail: XmlNode, changes: string[]): PackageGeometry | string | null {
-  if (type === MARKER_TYPE || type.startsWith("b-m-p-") || type.startsWith("a-")) {
-    if (type !== MARKER_TYPE) {
-      changes.push(`marker type ${type} imported as a plain marker`);
-    }
+  if (isMarkerType(type)) {
     const position = eventPosition(point);
     return position === null ? "The marker has no readable position." : { type: "Point", coordinates: position };
   }
@@ -170,6 +186,7 @@ export function convertCotEvent(xml: string, fallback: PackageObjectStyle): CotC
       description: text(detail.remarks, 2000),
       geometry,
       style,
+      tak: geometry.type === "Point" ? takMarker(type, detail) : null,
     },
     changes,
   };

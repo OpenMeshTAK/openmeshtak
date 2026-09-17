@@ -11,6 +11,7 @@ import type { ImportConversion } from "./import-candidate.js";
 import type { GeoJsonDocument, GeoJsonFeatureCollection, ImportReport } from "./package-import.dto.js";
 import { findLayer } from "./package-layers.service.js";
 import { DEFAULT_STYLE, MAX_OBJECTS_PER_PACKAGE } from "./package-objects.service.js";
+import { takColumn } from "./tak-marker.js";
 import { buildPackageSnapshot, snapshotOfLayer, type PackageSnapshot } from "./package-snapshot.js";
 
 export type ImportFormat = "geojson" | "atak";
@@ -73,6 +74,7 @@ export async function saveImport(
         description: candidate.description,
         geometry: candidate.geometry as unknown as Prisma.InputJsonValue,
         style: candidate.style as unknown as Prisma.InputJsonValue,
+        tak: takColumn(candidate.geometry, candidate.tak),
       })),
     });
     await recordAudit(

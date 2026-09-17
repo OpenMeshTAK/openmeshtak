@@ -1,5 +1,6 @@
 import { XMLBuilder } from "fast-xml-parser";
 import type { PackageSnapshotObject } from "../package-snapshot.js";
+import { SPOT_MARKER_TYPE } from "../tak-marker.js";
 import { COT_UNKNOWN, toArgb } from "./cot-values.js";
 
 /** Published objects stay on ATAK maps for a year unless a newer package replaces them. */
@@ -62,13 +63,18 @@ function eventBody(object: PackageSnapshotObject) {
   switch (geometry.type) {
     case "Point": {
       const argb = String(toArgb(object.style.color, 1));
+      const type = object.tak?.cotType ?? SPOT_MARKER_TYPE;
+      // Spot markers get their colour icon; other types keep a stored icon set path or let ATAK
+      // draw the symbol from the type (e.g. MIL-STD-2525 for `a-*`).
+      const iconsetPath =
+        object.tak?.iconsetPath ?? (type === SPOT_MARKER_TYPE ? `COT_MAPPING_SPOTMAP/${SPOT_MARKER_TYPE}/${argb}` : null);
       return {
-        type: "b-m-p-s-m",
+        type,
         how: "h-g-i-g-o",
         point: pointElement(geometry.coordinates),
         details: {
           color: { "@_argb": argb },
-          usericon: { "@_iconsetpath": `COT_MAPPING_SPOTMAP/b-m-p-s-m/${argb}` },
+          ...(iconsetPath === null ? {} : { usericon: { "@_iconsetpath": iconsetPath } }),
         },
       };
     }

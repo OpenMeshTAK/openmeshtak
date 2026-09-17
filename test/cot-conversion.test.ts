@@ -4,7 +4,7 @@ import { convertCotEvent } from "../src/modules/data-packages/atak/cot-import.js
 import { objectToCot } from "../src/modules/data-packages/atak/cot-export.js";
 import { parseArgb, parseLinkPoint, toArgb } from "../src/modules/data-packages/atak/cot-values.js";
 import { DEFAULT_STYLE } from "../src/modules/data-packages/package-objects.service.js";
-import { circle, freeformArea, route, spotMarker } from "./support/cot-fixtures.js";
+import { circle, customIcon, freeformArea, friendlyInfantry, route, spotMarker } from "./support/cot-fixtures.js";
 
 void describe("CoT values", () => {
   void it("reads link points with dot and locale comma decimals", () => {
@@ -56,6 +56,19 @@ void describe("CoT event conversion", () => {
     }
   });
 
+  void it("keeps military symbol types and custom icon sets of markers", () => {
+    const infantry = convertCotEvent(friendlyInfantry, DEFAULT_STYLE);
+    const hiker = convertCotEvent(customIcon, DEFAULT_STYLE);
+    const spot = convertCotEvent(spotMarker, DEFAULT_STYLE);
+    assert.deepEqual(infantry.outcome === "accepted" ? infantry.candidate.tak : undefined, { cotType: "a-f-G-U-C-I", iconsetPath: null });
+    assert.deepEqual(hiker.outcome === "accepted" ? hiker.candidate.tak : undefined, {
+      cotType: "a-u-G",
+      iconsetPath: "f7f71666-8b28-4b57-9fbb-e38e61d33b79/Google/hiker.png",
+    });
+    assert.equal(spot.outcome === "accepted" ? spot.candidate.tak : undefined, null);
+    assert.deepEqual(infantry.outcome === "accepted" ? infantry.changes : undefined, []);
+  });
+
   void it("skips unsupported types and rejects DOCTYPE documents", () => {
     assert.deepEqual(convertCotEvent(route, DEFAULT_STYLE), { outcome: "skipped", message: "CoT type b-m-r is not supported yet." });
     const entity = `<!DOCTYPE event [<!ENTITY x SYSTEM "file:///etc/passwd">]>${spotMarker}`;
@@ -63,7 +76,7 @@ void describe("CoT event conversion", () => {
   });
 
   void it("exports objects that import back unchanged", () => {
-    for (const xml of [spotMarker, freeformArea, circle]) {
+    for (const xml of [spotMarker, freeformArea, circle, friendlyInfantry, customIcon]) {
       const imported = convertCotEvent(xml, DEFAULT_STYLE);
       assert.equal(imported.outcome, "accepted");
       if (imported.outcome !== "accepted") {
@@ -79,6 +92,7 @@ void describe("CoT event conversion", () => {
         assert.deepEqual(again.candidate.geometry, imported.candidate.geometry);
         assert.equal(again.candidate.name, imported.candidate.name);
         assert.equal(again.candidate.style.color, imported.candidate.style.color);
+        assert.deepEqual(again.candidate.tak, imported.candidate.tak);
       }
     }
   });

@@ -2410,6 +2410,34 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"CotType": {
+				"type": "string",
+				"description": "CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly\ninfantry).",
+				"pattern": "^[a-z](-[A-Za-z0-9]+){1,15}$",
+				"maxLength": 64
+			},
+			"TakMarker": {
+				"description": "Optional TAK presentation of a marker, kept so ATAK packages round-trip without loss.",
+				"properties": {
+					"cotType": {
+						"$ref": "#/components/schemas/CotType",
+						"description": "Defaults to the spot marker `b-m-p-s-m`; `a-*` types are drawn as military symbols."
+					},
+					"iconsetPath": {
+						"type": "string",
+						"nullable": true,
+						"description": "ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom\nicon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.",
+						"pattern": "^[^\\u0000-\\u001f<>\"]+$",
+						"maxLength": 256
+					}
+				},
+				"required": [
+					"cotType",
+					"iconsetPath"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PackageSnapshotObject": {
 				"properties": {
 					"id": {
@@ -2433,6 +2461,14 @@
 					},
 					"style": {
 						"$ref": "#/components/schemas/PackageObjectStyle"
+					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakMarker"
+							}
+						],
+						"nullable": true
 					}
 				},
 				"required": [
@@ -2442,7 +2478,8 @@
 					"name",
 					"description",
 					"geometry",
-					"style"
+					"style",
+					"tak"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -2564,6 +2601,15 @@
 					"style": {
 						"$ref": "#/components/schemas/PackageObjectStyle"
 					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakMarker"
+							}
+						],
+						"nullable": true,
+						"description": "Only markers carry TAK metadata; `null` means a plain spot marker."
+					},
 					"version": {
 						"type": "number",
 						"format": "double"
@@ -2586,6 +2632,7 @@
 					"description",
 					"geometry",
 					"style",
+					"tak",
 					"version",
 					"createdAt",
 					"updatedAt"
@@ -2633,6 +2680,15 @@
 					"style": {
 						"$ref": "#/components/schemas/PackageObjectStyle",
 						"description": "Defaults to a blue outline with a light fill."
+					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakMarker"
+							}
+						],
+						"nullable": true,
+						"description": "Markers only."
 					}
 				},
 				"required": [
@@ -2669,6 +2725,15 @@
 					},
 					"style": {
 						"$ref": "#/components/schemas/PackageObjectStyle"
+					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakMarker"
+							}
+						],
+						"nullable": true,
+						"description": "Markers only; send `null` for a plain spot marker."
 					}
 				},
 				"required": [
@@ -2677,7 +2742,8 @@
 					"name",
 					"description",
 					"geometry",
-					"style"
+					"style",
+					"tak"
 				],
 				"type": "object",
 				"additionalProperties": false
