@@ -70,6 +70,44 @@ void describe("profile channel resolution", () => {
     ]);
   });
 
+  void it("withholds a secret primary channel from non-holders while still listing it for everyone", () => {
+    const secretPrimary = [
+      channel("command", {
+        secret: true,
+        keyHolders: { ...none, roleIds: ["leader"] },
+      }),
+    ];
+    const live = new Map([["command", { released: false }]]);
+
+    assert.deepEqual(
+      resolveProfileChannels(secretPrimary, live, {
+        memberId: "m1",
+        eventRoleId: "participant",
+        eventGroupId: "alpha",
+      }),
+      [
+        {
+          id: "command",
+          name: "command",
+          primary: true,
+          uplinkEnabled: false,
+          downlinkEnabled: false,
+          positionPrecision: 0,
+          delivery: "on-site",
+          keyHolder: false,
+        },
+      ],
+    );
+    assert.equal(
+      resolveProfileChannels(secretPrimary, live, {
+        memberId: "m2",
+        eventRoleId: "leader",
+        eventGroupId: "alpha",
+      })[0]?.delivery,
+      "included",
+    );
+  });
+
   void it("includes released secret channels and skips deleted ones", () => {
     const live = new Map(withheld);
     live.set("command", { released: true });

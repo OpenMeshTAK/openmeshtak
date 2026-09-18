@@ -1181,7 +1181,7 @@
 					},
 					"secret": {
 						"type": "boolean",
-						"description": "Secret channels need an AES key and cannot be the primary channel."
+						"description": "Secret channels need an AES key. The primary channel may also be secret."
 					},
 					"keyHolders": {
 						"$ref": "#/components/schemas/ChannelAudience",

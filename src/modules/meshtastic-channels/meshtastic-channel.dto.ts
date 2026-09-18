@@ -99,7 +99,7 @@ export interface CreateMeshtasticChannelRequest {
   downlinkEnabled?: boolean;
   positionPrecision?: PositionPrecision;
   audience?: ChannelAudience;
-  /** Secret channels need an AES key and cannot be the primary channel. */
+  /** Secret channels need an AES key. The primary channel may also be secret. */
   secret?: boolean;
   /** Only for secret channels. */
   keyHolders?: ChannelAudience;

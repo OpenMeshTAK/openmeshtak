@@ -292,32 +292,29 @@ void describe("Meshtastic channels", () => {
     assert.equal((holders.body as ProblemBody).errors?.[0]?.code, "KEY_HOLDERS_REQUIRE_SECRET");
   });
 
-  void it("never lets a secret channel become the primary channel", async () => {
-    const secretFirst = await createChannel({ name: "Command", secret: true }).expect(422);
-    assert.equal(
-      (secretFirst.body as ProblemBody).errors?.[0]?.code,
-      "PRIMARY_CANNOT_BE_SECRET",
-    );
+  void it("allows the primary channel to be secret", async () => {
+    const primary = (await createChannel({ name: "Command", secret: true }).expect(201)).body as ChannelBody;
+    assert.equal(primary.primary, true);
+    assert.equal(primary.secret, true);
 
-    const primary = (await createChannel({ name: "Event" }).expect(201)).body as ChannelBody;
-    await createChannel({ name: "Command", secret: true }).expect(201);
-
-    await request(app).delete(channels(`/${primary.id}`)).set("Cookie", admin.cookie).expect(422);
-    const moved = await request(app)
+    const secondary = (await createChannel({ name: "Event" }).expect(201)).body as ChannelBody;
+    await request(app)
       .put(channels(`/${primary.id}`))
       .set("Cookie", admin.cookie)
       .send({
         version: primary.version,
-        name: "Event",
+        name: "Command",
         sortOrder: 9,
         uplinkEnabled: false,
         downlinkEnabled: false,
         positionPrecision: 0,
         audience: none,
-        secret: false,
+        secret: true,
         keyHolders: none,
       })
-      .expect(422);
-    assert.equal((moved.body as ProblemBody).errors?.[0]?.code, "PRIMARY_CANNOT_BE_SECRET");
+      .expect(200);
+
+    const reread = await request(app).get(channels(`/${secondary.id}`)).set("Cookie", admin.cookie).expect(200);
+    assert.equal((reread.body as ChannelBody).primary, true);
   });
 });

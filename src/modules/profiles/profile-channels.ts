@@ -24,9 +24,9 @@ function selects(selection: ChannelAudience, recipient: ChannelRecipient): boole
 /**
  * Resolves which published channels one member receives. The primary channel reaches everyone;
  * a secondary channel only its audience, and is otherwise left out entirely rather than hidden.
- * A withheld secret channel is `included` only for key holders, who must also be in its audience;
- * everyone else in the audience learns only that it is handed out on site. Channels deleted since
- * publication are skipped because their key no longer exists.
+ * Any channel, including the primary, may be secret. A withheld secret channel is `included` only
+ * for key holders; everyone else in its audience learns only that it is handed out on site.
+ * Channels deleted since publication are skipped because their key no longer exists.
  */
 export function resolveProfileChannels(
   channels: SnapshotChannel[],

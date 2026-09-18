@@ -30,7 +30,7 @@ import {
 import { audienceRows, EMPTY_AUDIENCE, toAudience, validateAudience } from "./channel-audience.js";
 import { CHANNEL_DEVICE_ORDER } from "./channel-order.js";
 import { decryptChannelPsk, encryptChannelPsk, parseOrGeneratePsk, pskKind } from "./channel-psk.js";
-import { assertPrimaryIsNotSecret, secrecyProblems } from "./channel-secrecy.js";
+import { secrecyProblems } from "./channel-secrecy.js";
 import type {
   ChannelAudience,
   CreateMeshtasticChannelRequest,
@@ -233,7 +233,6 @@ export async function createMeshtasticChannel(
         },
       });
       await replaceSelectors(transaction, id, selection);
-      await assertPrimaryIsNotSecret(transaction, eventId);
       await recordAudit(
         audit(actor, "meshtastic-channel.created", row, {
           pskKind: pskKind(psk.length),
@@ -283,7 +282,6 @@ export async function updateMeshtasticChannel(
         throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
       }
       await replaceSelectors(transaction, channelId, input);
-      await assertPrimaryIsNotSecret(transaction, eventId);
       await recordAudit(
         audit(actor, "meshtastic-channel.updated", { ...current, name: input.name }, {
           secret: input.secret,
@@ -308,7 +306,6 @@ export async function deleteMeshtasticChannel(
 
   await database.$transaction(async (transaction) => {
     await transaction.meshtasticChannel.delete({ where: { id: current.id } });
-    await assertPrimaryIsNotSecret(transaction, eventId);
     await recordAudit(audit(actor, "meshtastic-channel.deleted", current), transaction);
   });
 }
