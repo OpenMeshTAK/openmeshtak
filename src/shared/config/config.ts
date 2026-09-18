@@ -21,6 +21,7 @@ const environmentSchema = z.object({
     .default("info"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PUBLIC_ORIGIN: z.url().default("http://localhost:3000"),
+  ROOT_ENCRYPTION_KEY_FILE: z.string().min(1).optional(),
   TRUST_PROXY: booleanFromString.default(false),
 });
 
@@ -28,6 +29,13 @@ const environment = environmentSchema.parse(process.env);
 
 if (environment.NODE_ENV === "production" && environment.BETTER_AUTH_SECRET === undefined) {
   throw new Error("BETTER_AUTH_SECRET is required in production.");
+}
+
+if (
+  environment.NODE_ENV === "production" &&
+  environment.ROOT_ENCRYPTION_KEY_FILE === undefined
+) {
+  throw new Error("ROOT_ENCRYPTION_KEY_FILE is required in production.");
 }
 
 if (
@@ -47,5 +55,6 @@ export const config = Object.freeze({
   nodeEnvironment: environment.NODE_ENV,
   port: environment.APP_PORT,
   publicOrigin: environment.PUBLIC_ORIGIN,
+  rootEncryptionKeyFile: environment.ROOT_ENCRYPTION_KEY_FILE,
   trustProxy: environment.TRUST_PROXY,
 });
