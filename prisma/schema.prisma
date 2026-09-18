@@ -522,6 +522,9 @@ model MeshtasticChannel {
   downlinkEnabled   Boolean                     @default(false)
   /// Upstream `ModuleSettings.position_precision`: 0 sends no position, 32 full precision.
   positionPrecision Int                         @default(0)
+  /// Secret channels withhold the PSK from everyone except key holders until `releasedAt`.
+  secret            Boolean                     @default(false)
+  releasedAt        DateTime?
   version           Int                         @default(1)
   event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   audience          MeshtasticChannelAudience[]
@@ -532,10 +535,12 @@ model MeshtasticChannel {
   @@index([eventId, createdAt, id])
 }
 
-/// One audience entry of a channel: exactly one of group, role or member is set.
+/// One selector of a channel: exactly one of group, role or member is set. `keyHolder` rows select
+/// the members of a secret channel who receive its key before release.
 model MeshtasticChannelAudience {
   id            String            @id
   channelId     String
+  keyHolder     Boolean           @default(false)
   eventGroupId  String?
   eventRoleId   String?
   eventMemberId String?

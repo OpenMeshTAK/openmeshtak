@@ -20,8 +20,13 @@ interface ChannelBody {
   primary: boolean;
   psk: { kind: string; version: number; rotatedAt: string | null };
   audience: { groupIds: string[]; roleIds: string[]; memberIds: string[] };
+  keyHolders: { groupIds: string[]; roleIds: string[]; memberIds: string[] };
+  secret: boolean;
+  releasedAt: string | null;
   version: number;
 }
+
+const none = { groupIds: [], roleIds: [], memberIds: [] };
 
 let app: Express;
 let admin: TestUser;
@@ -129,6 +134,8 @@ void describe("Meshtastic channels", () => {
         downlinkEnabled: false,
         positionPrecision: 13,
         audience: { groupIds: [groupId], roleIds: [], memberIds: [] },
+        secret: false,
+        keyHolders: none,
       })
       .expect(200);
     assert.equal((updated.body as ChannelBody).primary, false);
@@ -144,6 +151,8 @@ void describe("Meshtastic channels", () => {
         downlinkEnabled: false,
         positionPrecision: 0,
         audience: { groupIds: [], roleIds: [], memberIds: [] },
+        secret: false,
+        keyHolders: none,
       })
       .expect(200);
 
@@ -161,6 +170,8 @@ void describe("Meshtastic channels", () => {
         downlinkEnabled: false,
         positionPrecision: 0,
         audience: { groupIds: [], roleIds: [], memberIds: [] },
+        secret: false,
+        keyHolders: none,
       })
       .expect(409);
     assert.equal((stale.body as ProblemBody).code, "VERSION_CONFLICT");
@@ -232,5 +243,81 @@ void describe("Meshtastic channels", () => {
     await request(app).delete(`/api/v1/events/${eventId}/groups/${groupId}`).set("Cookie", admin.cookie).expect(204);
     const reread = await request(app).get(channels(`/${channel.id}`)).set("Cookie", admin.cookie).expect(200);
     assert.deepEqual((reread.body as ChannelBody).audience.groupIds, []);
+  });
+
+  void it("withholds secret channels until they are released", async () => {
+    await createChannel({ name: "Event" }).expect(201);
+    const roleId = randomUUID();
+    await database.eventRole.create({
+      data: { id: roleId, eventId, name: "Leader", slug: "leader" },
+    });
+    const secret = (
+      await createChannel({
+        name: "Command",
+        secret: true,
+        audience: { groupIds: [groupId], roleIds: [], memberIds: [] },
+        keyHolders: { groupIds: [], roleIds: [roleId], memberIds: [] },
+      }).expect(201)
+    ).body as ChannelBody;
+    assert.equal(secret.secret, true);
+    assert.equal(secret.releasedAt, null);
+    assert.deepEqual(secret.keyHolders.roleIds, [roleId]);
+    assert.deepEqual(secret.audience.roleIds, []);
+
+    const released = await request(app)
+      .post(channels(`/${secret.id}/release`))
+      .set("Cookie", admin.cookie)
+      .send({ version: secret.version })
+      .expect(200);
+    assert.notEqual((released.body as ChannelBody).releasedAt, null);
+
+    const again = await request(app)
+      .post(channels(`/${secret.id}/release`))
+      .set("Cookie", admin.cookie)
+      .send({ version: (released.body as ChannelBody).version })
+      .expect(409);
+    assert.equal((again.body as ProblemBody).code, "CHANNEL_NOT_WITHHELD");
+  });
+
+  void it("requires a real key for secret channels and key holders only on them", async () => {
+    await createChannel({ name: "Event" }).expect(201);
+
+    const publicKey = await createChannel({ name: "Open", secret: true, psk: "AQ==" }).expect(422);
+    assert.equal((publicKey.body as ProblemBody).errors?.[0]?.code, "SECRET_REQUIRES_KEY");
+
+    const holders = await createChannel({
+      name: "Plain",
+      keyHolders: { groupIds: [groupId], roleIds: [], memberIds: [] },
+    }).expect(422);
+    assert.equal((holders.body as ProblemBody).errors?.[0]?.code, "KEY_HOLDERS_REQUIRE_SECRET");
+  });
+
+  void it("never lets a secret channel become the primary channel", async () => {
+    const secretFirst = await createChannel({ name: "Command", secret: true }).expect(422);
+    assert.equal(
+      (secretFirst.body as ProblemBody).errors?.[0]?.code,
+      "PRIMARY_CANNOT_BE_SECRET",
+    );
+
+    const primary = (await createChannel({ name: "Event" }).expect(201)).body as ChannelBody;
+    await createChannel({ name: "Command", secret: true }).expect(201);
+
+    await request(app).delete(channels(`/${primary.id}`)).set("Cookie", admin.cookie).expect(422);
+    const moved = await request(app)
+      .put(channels(`/${primary.id}`))
+      .set("Cookie", admin.cookie)
+      .send({
+        version: primary.version,
+        name: "Event",
+        sortOrder: 9,
+        uplinkEnabled: false,
+        downlinkEnabled: false,
+        positionPrecision: 0,
+        audience: none,
+        secret: false,
+        keyHolders: none,
+      })
+      .expect(422);
+    assert.equal((moved.body as ProblemBody).errors?.[0]?.code, "PRIMARY_CANNOT_BE_SECRET");
   });
 });

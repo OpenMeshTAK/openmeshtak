@@ -416,6 +416,9 @@ const models: TsoaRoute.Models = {
             "downlinkEnabled": {"dataType":"boolean","required":true},
             "positionPrecision": {"dataType":"double","required":true},
             "audience": {"ref":"ChannelAudience","required":true},
+            "secret": {"dataType":"boolean","required":true},
+            "releasedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "keyHolders": {"ref":"ChannelAudience","required":true},
             "version": {"dataType":"double","required":true},
             "createdAt": {"dataType":"string","required":true},
             "updatedAt": {"dataType":"string","required":true},
@@ -457,6 +460,8 @@ const models: TsoaRoute.Models = {
             "downlinkEnabled": {"dataType":"boolean"},
             "positionPrecision": {"ref":"PositionPrecision"},
             "audience": {"ref":"ChannelAudience"},
+            "secret": {"dataType":"boolean"},
+            "keyHolders": {"ref":"ChannelAudience"},
         },
         "additionalProperties": false,
     },
@@ -471,6 +476,8 @@ const models: TsoaRoute.Models = {
             "downlinkEnabled": {"dataType":"boolean","required":true},
             "positionPrecision": {"ref":"PositionPrecision","required":true},
             "audience": {"ref":"ChannelAudience","required":true},
+            "secret": {"dataType":"boolean","required":true},
+            "keyHolders": {"ref":"ChannelAudience","required":true},
         },
         "additionalProperties": false,
     },
@@ -480,6 +487,14 @@ const models: TsoaRoute.Models = {
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
             "psk": {"dataType":"string","validators":{"maxLength":{"value":64}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ReleaseMeshtasticChannelRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
         },
         "additionalProperties": false,
     },
@@ -2222,6 +2237,40 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'rotateMeshtasticChannelPsk',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticChannelsController_releaseMeshtasticChannel: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"ReleaseMeshtasticChannelRequest"},
+        };
+        app.post('/api/v1/events/:eventId/meshtastic/channels/:channelId/release',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.releaseMeshtasticChannel)),
+
+            async function MeshtasticChannelsController_releaseMeshtasticChannel(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticChannelsController_releaseMeshtasticChannel, request, response });
+
+                const controller = new MeshtasticChannelsController();
+
+              await templateService.apiHandler({
+                methodName: 'releaseMeshtasticChannel',
                 controller,
                 response,
                 next,

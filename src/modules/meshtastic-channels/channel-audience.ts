@@ -18,7 +18,11 @@ async function hasUnknownIds(ids: string[], lookup: Lookup): Promise<boolean> {
 }
 
 /** Every selected group, role and member must belong to the channel's event. */
-export async function validateAudience(eventId: string, audience: ChannelAudience): Promise<void> {
+export async function validateAudience(
+  eventId: string,
+  audience: ChannelAudience,
+  field: "audience" | "keyHolders" = "audience",
+): Promise<void> {
   const inEvent = (ids: string[]) => ({ where: { eventId, id: { in: ids } }, select: { id: true } });
   const checks: Array<[keyof ChannelAudience, Lookup]> = [
     ["groupIds", (ids) => database.eventGroup.findMany(inEvent(ids))],
@@ -27,10 +31,10 @@ export async function validateAudience(eventId: string, audience: ChannelAudienc
   ];
 
   const problems: ProblemFieldError[] = [];
-  for (const [field, lookup] of checks) {
-    if (await hasUnknownIds(audience[field], lookup)) {
+  for (const [key, lookup] of checks) {
+    if (await hasUnknownIds(audience[key], lookup)) {
       problems.push({
-        field: `audience.${field}`,
+        field: `${field}.${key}`,
         code: "UNKNOWN_REFERENCE",
         message: "Select only groups, roles and members of this event.",
       });
@@ -41,21 +45,24 @@ export async function validateAudience(eventId: string, audience: ChannelAudienc
   }
 }
 
+/** Key-holder selectors share the table with audience selectors and differ only by the flag. */
 export function audienceRows(
   channelId: string,
   audience: ChannelAudience,
+  keyHolder = false,
 ): Prisma.MeshtasticChannelAudienceCreateManyInput[] {
   return [
     ...unique(audience.groupIds).map((eventGroupId) => ({ eventGroupId })),
     ...unique(audience.roleIds).map((eventRoleId) => ({ eventRoleId })),
     ...unique(audience.memberIds).map((eventMemberId) => ({ eventMemberId })),
-  ].map((target) => ({ id: randomUUID(), channelId, ...target }));
+  ].map((target) => ({ id: randomUUID(), channelId, keyHolder, ...target }));
 }
 
 /** Sorted so responses and configuration snapshots are deterministic. */
-export function toAudience(rows: MeshtasticChannelAudience[]): ChannelAudience {
+export function toAudience(rows: MeshtasticChannelAudience[], keyHolder = false): ChannelAudience {
+  const selected = rows.filter((row) => row.keyHolder === keyHolder);
   const pick = (key: "eventGroupId" | "eventRoleId" | "eventMemberId"): string[] =>
-    rows.flatMap((row) => (row[key] === null ? [] : [row[key]])).sort();
+    selected.flatMap((row) => (row[key] === null ? [] : [row[key]])).sort();
 
   return {
     groupIds: pick("eventGroupId"),

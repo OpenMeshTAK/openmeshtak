@@ -1020,6 +1020,20 @@
 					"audience": {
 						"$ref": "#/components/schemas/ChannelAudience"
 					},
+					"secret": {
+						"type": "boolean",
+						"description": "Secret channels withhold their key from every participant view and artifact except those of\nkey holders until the channel is released."
+					},
+					"releasedAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "When a secret channel was released to its whole audience; `null` while withheld.",
+						"format": "date-time"
+					},
+					"keyHolders": {
+						"$ref": "#/components/schemas/ChannelAudience",
+						"description": "Members of the audience who receive a secret channel ahead of the event to share it on site.\nSelected like the audience; only members who are also in the audience count."
+					},
 					"version": {
 						"type": "number",
 						"format": "double",
@@ -1045,6 +1059,9 @@
 					"downlinkEnabled",
 					"positionPrecision",
 					"audience",
+					"secret",
+					"releasedAt",
+					"keyHolders",
 					"version",
 					"createdAt",
 					"updatedAt"
@@ -1113,6 +1130,14 @@
 					},
 					"audience": {
 						"$ref": "#/components/schemas/ChannelAudience"
+					},
+					"secret": {
+						"type": "boolean",
+						"description": "Secret channels need an AES key and cannot be the primary channel."
+					},
+					"keyHolders": {
+						"$ref": "#/components/schemas/ChannelAudience",
+						"description": "Only for secret channels."
 					}
 				},
 				"required": [
@@ -1146,6 +1171,13 @@
 					},
 					"audience": {
 						"$ref": "#/components/schemas/ChannelAudience"
+					},
+					"secret": {
+						"type": "boolean",
+						"description": "Turning a channel secret again withholds it until it is released anew."
+					},
+					"keyHolders": {
+						"$ref": "#/components/schemas/ChannelAudience"
 					}
 				},
 				"required": [
@@ -1155,7 +1187,9 @@
 					"uplinkEnabled",
 					"downlinkEnabled",
 					"positionPrecision",
-					"audience"
+					"audience",
+					"secret",
+					"keyHolders"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1172,6 +1206,21 @@
 						"type": "string",
 						"description": "Optional replacement key in the same format as on creation; omit it for a random key.",
 						"maxLength": 64
+					}
+				},
+				"required": [
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ReleaseMeshtasticChannelRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
 					}
 				},
 				"required": [
@@ -5460,6 +5509,103 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/RotateChannelPskRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/meshtastic/channels/{channelId}/release": {
+			"post": {
+				"operationId": "ReleaseMeshtasticChannel",
+				"responses": {
+					"200": {
+						"description": "Channel released",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticChannelDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, channel not withheld or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Releases a withheld secret channel to its whole audience. Audited; requires the current\n`version`.",
+				"tags": [
+					"Meshtastic channels"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ReleaseMeshtasticChannelRequest"
 							}
 						}
 					}

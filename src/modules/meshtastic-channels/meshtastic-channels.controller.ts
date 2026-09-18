@@ -23,6 +23,7 @@ import type {
   CreateMeshtasticChannelRequest,
   MeshtasticChannelDto,
   MeshtasticChannelPage,
+  ReleaseMeshtasticChannelRequest,
   RevealedChannelPsk,
   RotateChannelPskRequest,
   UpdateMeshtasticChannelRequest,
@@ -32,6 +33,7 @@ import {
   deleteMeshtasticChannel,
   getMeshtasticChannel,
   listMeshtasticChannels,
+  releaseMeshtasticChannel,
   revealMeshtasticChannelPsk,
   rotateMeshtasticChannelPsk,
   updateMeshtasticChannel,
@@ -135,6 +137,23 @@ export class MeshtasticChannelsController extends Controller {
     @Body() body: RotateChannelPskRequest,
   ): Promise<MeshtasticChannelDto> {
     return rotateMeshtasticChannelPsk(requestContext(request), eventId, channelId, body);
+  }
+
+  /**
+   * Releases a withheld secret channel to its whole audience. Audited; requires the current
+   * `version`.
+   */
+  @Post("{channelId}/release")
+  @SuccessResponse(200, "Channel released")
+  @Response<ProblemDetails>(403, "Access denied")
+  @Response<ProblemDetails>(409, "Version conflict, channel not withheld or event archived")
+  public async releaseMeshtasticChannel(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Path() channelId: Uuid,
+    @Body() body: ReleaseMeshtasticChannelRequest,
+  ): Promise<MeshtasticChannelDto> {
+    return releaseMeshtasticChannel(requestContext(request), eventId, channelId, body);
   }
 
   /** Returns the plain key. Requires `channel-keys.reveal`; every reveal is audited. */

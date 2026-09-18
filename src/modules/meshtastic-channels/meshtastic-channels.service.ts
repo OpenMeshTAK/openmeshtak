@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type {
   MeshtasticChannel,
   MeshtasticChannelAudience,
+  Prisma,
 } from "../../generated/prisma/client.js";
 import { recordAudit, type AuditEntry } from "../../shared/audit/audit.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
@@ -10,6 +11,7 @@ import { isUniqueConstraintError } from "../../shared/database/unique-constraint
 import {
   notFoundProblem,
   ProblemError,
+  validationProblem,
   versionConflictProblem,
 } from "../../shared/errors/problem-error.js";
 import {
@@ -27,10 +29,13 @@ import {
 } from "../events/event-access.js";
 import { audienceRows, EMPTY_AUDIENCE, toAudience, validateAudience } from "./channel-audience.js";
 import { decryptChannelPsk, encryptChannelPsk, parseOrGeneratePsk, pskKind } from "./channel-psk.js";
+import { assertPrimaryIsNotSecret, secrecyProblems } from "./channel-secrecy.js";
 import type {
+  ChannelAudience,
   CreateMeshtasticChannelRequest,
   MeshtasticChannelDto,
   MeshtasticChannelPage,
+  ReleaseMeshtasticChannelRequest,
   RevealedChannelPsk,
   RotateChannelPskRequest,
   UpdateMeshtasticChannelRequest,
@@ -64,6 +69,9 @@ function toDto(row: ChannelRow, primaryId: string | null): MeshtasticChannelDto 
     downlinkEnabled: row.downlinkEnabled,
     positionPrecision: row.positionPrecision,
     audience: toAudience(row.audience),
+    secret: row.secret,
+    releasedAt: row.releasedAt?.toISOString() ?? null,
+    keyHolders: toAudience(row.audience, true),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -95,6 +103,33 @@ function nameConflict(error: unknown): unknown {
         code: "CHANNEL_NAME_CONFLICT",
       })
     : error;
+}
+
+async function validateChannelInput(
+  eventId: string,
+  input: { secret: boolean; audience: ChannelAudience; keyHolders: ChannelAudience },
+  pskBytes: number,
+): Promise<void> {
+  const problems = secrecyProblems(input.secret, input.keyHolders, pskBytes);
+  if (problems.length > 0) {
+    throw validationProblem(problems);
+  }
+  await validateAudience(eventId, input.audience);
+  await validateAudience(eventId, input.keyHolders, "keyHolders");
+}
+
+async function replaceSelectors(
+  transaction: Prisma.TransactionClient,
+  channelId: string,
+  input: { audience: ChannelAudience; keyHolders: ChannelAudience },
+): Promise<void> {
+  await transaction.meshtasticChannelAudience.deleteMany({ where: { channelId } });
+  await transaction.meshtasticChannelAudience.createMany({
+    data: [
+      ...audienceRows(channelId, input.audience),
+      ...audienceRows(channelId, input.keyHolders, true),
+    ],
+  });
 }
 
 function channelLimitProblem(): ProblemError {
@@ -162,9 +197,13 @@ export async function createMeshtasticChannel(
   input: CreateMeshtasticChannelRequest,
 ): Promise<MeshtasticChannelDto> {
   await requireMutableEvent(actor.principal, eventId);
-  const audience = input.audience ?? EMPTY_AUDIENCE;
-  await validateAudience(eventId, audience);
   const psk = parseOrGeneratePsk(input.psk);
+  const selection = {
+    secret: input.secret ?? false,
+    audience: input.audience ?? EMPTY_AUDIENCE,
+    keyHolders: input.keyHolders ?? EMPTY_AUDIENCE,
+  };
+  await validateChannelInput(eventId, selection, psk.length);
   const id = randomUUID();
 
   try {
@@ -189,11 +228,16 @@ export async function createMeshtasticChannel(
           uplinkEnabled: input.uplinkEnabled ?? false,
           downlinkEnabled: input.downlinkEnabled ?? false,
           positionPrecision: input.positionPrecision ?? 0,
+          secret: selection.secret,
         },
       });
-      await transaction.meshtasticChannelAudience.createMany({ data: audienceRows(id, audience) });
+      await replaceSelectors(transaction, id, selection);
+      await assertPrimaryIsNotSecret(transaction, eventId);
       await recordAudit(
-        audit(actor, "meshtastic-channel.created", row, { pskKind: pskKind(psk.length) }),
+        audit(actor, "meshtastic-channel.created", row, {
+          pskKind: pskKind(psk.length),
+          secret: selection.secret,
+        }),
         transaction,
       );
     });
@@ -215,7 +259,7 @@ export async function updateMeshtasticChannel(
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
   }
-  await validateAudience(eventId, input.audience);
+  await validateChannelInput(eventId, input, current.pskBytes);
 
   try {
     await database.$transaction(async (transaction) => {
@@ -227,6 +271,9 @@ export async function updateMeshtasticChannel(
           uplinkEnabled: input.uplinkEnabled,
           downlinkEnabled: input.downlinkEnabled,
           positionPrecision: input.positionPrecision,
+          secret: input.secret,
+          // A channel that stays secret keeps its release; becoming secret withholds it anew.
+          releasedAt: input.secret && current.secret ? current.releasedAt : null,
           version: { increment: 1 },
         },
       });
@@ -234,12 +281,12 @@ export async function updateMeshtasticChannel(
         const latest = await transaction.meshtasticChannel.findUnique({ where: { id: channelId } });
         throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
       }
-      await transaction.meshtasticChannelAudience.deleteMany({ where: { channelId } });
-      await transaction.meshtasticChannelAudience.createMany({
-        data: audienceRows(channelId, input.audience),
-      });
+      await replaceSelectors(transaction, channelId, input);
+      await assertPrimaryIsNotSecret(transaction, eventId);
       await recordAudit(
-        audit(actor, "meshtastic-channel.updated", { ...current, name: input.name }),
+        audit(actor, "meshtastic-channel.updated", { ...current, name: input.name }, {
+          secret: input.secret,
+        }),
         transaction,
       );
     });
@@ -260,6 +307,7 @@ export async function deleteMeshtasticChannel(
 
   await database.$transaction(async (transaction) => {
     await transaction.meshtasticChannel.delete({ where: { id: current.id } });
+    await assertPrimaryIsNotSecret(transaction, eventId);
     await recordAudit(audit(actor, "meshtastic-channel.deleted", current), transaction);
   });
 }
@@ -277,6 +325,10 @@ export async function rotateMeshtasticChannelPsk(
     throw versionConflictProblem(current.version);
   }
   const psk = parseOrGeneratePsk(input.psk);
+  const problems = secrecyProblems(current.secret, EMPTY_AUDIENCE, psk.length);
+  if (problems.length > 0) {
+    throw validationProblem(problems);
+  }
 
   await database.$transaction(async (transaction) => {
     const updated = await transaction.meshtasticChannel.updateMany({
@@ -300,6 +352,50 @@ export async function rotateMeshtasticChannelPsk(
       }),
       transaction,
     );
+  });
+
+  return channelDto(eventId, channelId);
+}
+
+function notWithheldProblem(): ProblemError {
+  return new ProblemError({
+    type: "urn:openmeshtak:problem:channel-not-withheld",
+    title: "Channel is not withheld",
+    status: 409,
+    detail: "Only secret channels that have not been released yet can be released.",
+    code: "CHANNEL_NOT_WITHHELD",
+  });
+}
+
+/**
+ * Hands a secret channel to its whole audience from now on. Earlier artifacts are not reissued,
+ * so members without a key holder's handout must fetch their profile again.
+ */
+export async function releaseMeshtasticChannel(
+  actor: ActorContext,
+  eventId: string,
+  channelId: string,
+  input: ReleaseMeshtasticChannelRequest,
+): Promise<MeshtasticChannelDto> {
+  await requireMutableEvent(actor.principal, eventId);
+  const current = await findChannel(eventId, channelId);
+  if (current.version !== input.version) {
+    throw versionConflictProblem(current.version);
+  }
+  if (!current.secret || current.releasedAt !== null) {
+    throw notWithheldProblem();
+  }
+
+  await database.$transaction(async (transaction) => {
+    const updated = await transaction.meshtasticChannel.updateMany({
+      where: { id: channelId, eventId, version: input.version, secret: true, releasedAt: null },
+      data: { releasedAt: new Date(), version: { increment: 1 } },
+    });
+    if (updated.count !== 1) {
+      const latest = await transaction.meshtasticChannel.findUnique({ where: { id: channelId } });
+      throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
+    }
+    await recordAudit(audit(actor, "meshtastic-channel.released", current), transaction);
   });
 
   return channelDto(eventId, channelId);

@@ -38,6 +38,21 @@ export interface MeshtasticChannelDto {
   /** Upstream position precision: 0 sends no position, 32 sends the full position. */
   positionPrecision: number;
   audience: ChannelAudience;
+  /**
+   * Secret channels withhold their key from every participant view and artifact except those of
+   * key holders until the channel is released.
+   */
+  secret: boolean;
+  /**
+   * When a secret channel was released to its whole audience; `null` while withheld.
+   * @format date-time
+   */
+  releasedAt: string | null;
+  /**
+   * Members of the audience who receive a secret channel ahead of the event to share it on site.
+   * Selected like the audience; only members who are also in the audience count.
+   */
+  keyHolders: ChannelAudience;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
   /** @format date-time */
@@ -79,6 +94,10 @@ export interface CreateMeshtasticChannelRequest {
   downlinkEnabled?: boolean;
   positionPrecision?: PositionPrecision;
   audience?: ChannelAudience;
+  /** Secret channels need an AES key and cannot be the primary channel. */
+  secret?: boolean;
+  /** Only for secret channels. */
+  keyHolders?: ChannelAudience;
 }
 
 export interface UpdateMeshtasticChannelRequest {
@@ -94,6 +113,18 @@ export interface UpdateMeshtasticChannelRequest {
   downlinkEnabled: boolean;
   positionPrecision: PositionPrecision;
   audience: ChannelAudience;
+  /** Turning a channel secret again withholds it until it is released anew. */
+  secret: boolean;
+  keyHolders: ChannelAudience;
+}
+
+export interface ReleaseMeshtasticChannelRequest {
+  /**
+   * Version the client last read.
+   * @isInt
+   * @minimum 1
+   */
+  version: number;
 }
 
 export interface RotateChannelPskRequest {
