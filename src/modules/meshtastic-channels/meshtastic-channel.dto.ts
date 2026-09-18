@@ -1,7 +1,12 @@
-import type { MeshtasticChannelName } from "../event-groups/group-provisioning.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
 import type { ChannelPskKind } from "./channel-psk.js";
+
+/**
+ * Meshtastic channel name; ASCII so the upstream 11-byte limit equals the character count.
+ * @pattern ^[A-Za-z0-9_-]{1,11}$
+ */
+export type MeshtasticChannelName = string;
 
 /**
  * Who receives a secondary channel: every member that matches any listed group, role or member.

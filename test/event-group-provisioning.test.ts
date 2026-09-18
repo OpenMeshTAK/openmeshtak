@@ -19,7 +19,7 @@ interface GroupBody {
     callsignFormat: string;
     shortNamePrefix: string | null;
     tak: { team: string; role: string; serverGroups: string[] };
-    meshtastic: { deviceRole: string; channels: string[] };
+    meshtastic: { deviceRole: string };
     missionGroups: string[];
   };
 }
@@ -28,7 +28,7 @@ const bravo = {
   callsignFormat: "{username} [Bravo]",
   shortNamePrefix: "B",
   tak: { team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
-  meshtastic: { deviceRole: "CLIENT", channels: ["global", "bravo"] },
+  meshtastic: { deviceRole: "CLIENT" },
   missionGroups: ["global", "bravo"],
 };
 
@@ -67,7 +67,7 @@ void describe("event group provisioning", () => {
       callsignFormat: "{username}",
       shortNamePrefix: "B",
       tak: { team: "Cyan", role: "Team Member", serverGroups: [] },
-      meshtastic: { deviceRole: "CLIENT", channels: [] },
+      meshtastic: { deviceRole: "CLIENT" },
       missionGroups: [],
     });
 
@@ -83,7 +83,6 @@ void describe("event group provisioning", () => {
       { ...bravo, tak: { ...bravo.tak, team: "Pink" } },
       { ...bravo, tak: { ...bravo.tak, role: "Admiral" } },
       { ...bravo, meshtastic: { ...bravo.meshtastic, deviceRole: "REPEATER" } },
-      { ...bravo, meshtastic: { ...bravo.meshtastic, channels: ["twelve-chars"] } },
       { ...bravo, shortNamePrefix: "BRAV" },
       { ...bravo, shortNamePrefix: "b" },
     ]) {

@@ -20,7 +20,12 @@ interface ProfileBody {
   eventRole: { slug: string };
   group: { slug: string };
   tak: { callsign: string; team: string; role: string; serverGroups: string[] };
-  meshtastic: { longName: string; shortName: string | null; deviceRole: string; channels: string[] };
+  meshtastic: {
+    longName: string;
+    shortName: string | null;
+    deviceRole: string;
+    channels: Array<{ name: string; primary: boolean; delivery: string; keyHolder: boolean }>;
+  };
   missionGroups: string[];
 }
 
@@ -28,7 +33,7 @@ const bravoProvisioning = {
   callsignFormat: "{username} [Bravo]",
   shortNamePrefix: "B",
   tak: { team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
-  meshtastic: { deviceRole: "CLIENT", channels: ["global", "bravo"] },
+  meshtastic: { deviceRole: "CLIENT" },
   missionGroups: ["global", "bravo"],
 };
 
@@ -37,10 +42,25 @@ let admin: TestUser;
 let eventId: string;
 let bravoId: string;
 let memberId: string;
+let commandId: string;
 let peterCookie: string;
 
 function profileUrl(): string {
   return `/api/v1/events/${eventId}/members/${memberId}/profile`;
+}
+
+function channelSummary(profile: ProfileBody): string[] {
+  return profile.meshtastic.channels.map(
+    ({ name, primary, delivery }) => `${name}${primary ? "*" : ""}:${delivery}`,
+  );
+}
+
+function createChannel(body: Record<string, unknown>): request.Test {
+  return request(app)
+    .post(`/api/v1/events/${eventId}/meshtastic/channels`)
+    .set("Cookie", admin.cookie)
+    .send(body)
+    .expect(201);
 }
 
 async function profileAs(cookie: string, status = 200): Promise<ProfileBody> {
@@ -76,6 +96,23 @@ void describe("Peter/Bravo end to end", () => {
       .send({ name: "Bravo", slug: "bravo", provisioning: bravoProvisioning })
       .expect(201);
     bravoId = (bravo.body as { id: string }).id;
+    const charlie = await request(app)
+      .post(`/api/v1/events/${eventId}/groups`)
+      .set("Cookie", admin.cookie)
+      .send({ name: "Charlie", slug: "charlie" })
+      .expect(201);
+    const charlieId = (charlie.body as { id: string }).id;
+
+    const only = (groupIds: string[]) => ({ groupIds, roleIds: [], memberIds: [] });
+    await createChannel({ name: "Event" });
+    await createChannel({ name: "Bravo", audience: only([bravoId]) });
+    await createChannel({ name: "Charlie", audience: only([charlieId]) });
+    const command = await createChannel({
+      name: "Command",
+      secret: true,
+      audience: only([bravoId, charlieId]),
+    });
+    commandId = (command.body as { id: string }).id;
 
     const bot = await createServiceAccountKey([{ permission: "members.sync", eventId }]);
     const synced = await request(app)
@@ -107,13 +144,35 @@ void describe("Peter/Bravo end to end", () => {
       group: { slug: "bravo", name: "Bravo" },
       tak: { callsign: "Peter [Bravo]", team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
       meshtastic: {
+        ...profile.meshtastic,
         longName: "Peter [Bravo]",
         shortName: "B1",
         deviceRole: "CLIENT",
-        channels: ["global", "bravo"],
       },
       missionGroups: ["global", "bravo"],
     });
+    assert.deepEqual(channelSummary(profile), [
+      "Event*:included",
+      "Bravo:included",
+      "Command:on-site",
+    ]);
+  });
+
+  void it("hands the secret channel to Peter once it is released", async () => {
+    const command = await request(app)
+      .get(`/api/v1/events/${eventId}/meshtastic/channels/${commandId}`)
+      .set("Cookie", admin.cookie);
+    await request(app)
+      .post(`/api/v1/events/${eventId}/meshtastic/channels/${commandId}/release`)
+      .set("Cookie", admin.cookie)
+      .send({ version: (command.body as { version: number }).version })
+      .expect(200);
+
+    assert.deepEqual(channelSummary(await profileAs(admin.cookie)), [
+      "Event*:included",
+      "Bravo:included",
+      "Command:included",
+    ]);
   });
 
   void it("lets Peter claim access and read only his own profile", async () => {

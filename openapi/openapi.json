@@ -724,6 +724,53 @@
 				],
 				"description": "Non-deprecated Meshtastic `Config.DeviceConfig.Role` values from upstream `config.proto`.\n`ROUTER_CLIENT` and `REPEATER` are deprecated upstream and intentionally excluded."
 			},
+			"ProfileChannel": {
+				"description": "A channel the member receives. `included` channels come with the member's channel set;\n`on-site` channels are secret and handed out on site by a key holder before their release.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"primary": {
+						"type": "boolean"
+					},
+					"uplinkEnabled": {
+						"type": "boolean"
+					},
+					"downlinkEnabled": {
+						"type": "boolean"
+					},
+					"positionPrecision": {
+						"type": "number",
+						"format": "double"
+					},
+					"delivery": {
+						"type": "string",
+						"enum": [
+							"included",
+							"on-site"
+						]
+					},
+					"keyHolder": {
+						"type": "boolean",
+						"description": "Holds this secret channel ahead of the event to share it on site."
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"primary",
+					"uplinkEnabled",
+					"downlinkEnabled",
+					"positionPrecision",
+					"delivery",
+					"keyHolder"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ResolvedProfileDto": {
 				"description": "The single resolved provisioning identity of one member in one event. Every TAK, Meshtastic and\nmission output is derived from this shape.",
 				"properties": {
@@ -803,9 +850,10 @@
 						"properties": {
 							"channels": {
 								"items": {
-									"type": "string"
+									"$ref": "#/components/schemas/ProfileChannel"
 								},
-								"type": "array"
+								"type": "array",
+								"description": "Device order, primary first. Channels outside the member's audience are absent."
 							},
 							"deviceRole": {
 								"$ref": "#/components/schemas/MeshtasticDeviceRole"
@@ -2099,7 +2147,7 @@
 			},
 			"ProvisioningName": {
 				"type": "string",
-				"description": "Identifier used for TAK server groups, Meshtastic channel names and mission groups.",
+				"description": "Identifier used for TAK server groups and mission groups.",
 				"pattern": "^[A-Za-z0-9_-]+$",
 				"minLength": 1,
 				"maxLength": 64
@@ -2143,22 +2191,15 @@
 					},
 					"meshtastic": {
 						"properties": {
-							"channels": {
-								"items": {
-									"$ref": "#/components/schemas/MeshtasticChannelName"
-								},
-								"type": "array",
-								"maxItems": 8
-							},
 							"deviceRole": {
 								"$ref": "#/components/schemas/MeshtasticDeviceRole"
 							}
 						},
 						"required": [
-							"channels",
 							"deviceRole"
 						],
-						"type": "object"
+						"type": "object",
+						"description": "Channels are event resources with their own audience; see the Meshtastic channels API."
 					},
 					"missionGroups": {
 						"items": {
@@ -2413,15 +2454,62 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"SnapshotChannel": {
+				"description": "A channel's published settings. Keys never enter snapshots: they stay encrypted on the channel,\nand rotation and release act on the channel directly so a leaked key stops being handed out at\nonce. `pskVersion` records which key was current when the revision was created.",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"uplinkEnabled": {
+						"type": "boolean"
+					},
+					"downlinkEnabled": {
+						"type": "boolean"
+					},
+					"positionPrecision": {
+						"type": "number",
+						"format": "double"
+					},
+					"secret": {
+						"type": "boolean"
+					},
+					"pskVersion": {
+						"type": "number",
+						"format": "double"
+					},
+					"audience": {
+						"$ref": "#/components/schemas/ChannelAudience"
+					},
+					"keyHolders": {
+						"$ref": "#/components/schemas/ChannelAudience"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"uplinkEnabled",
+					"downlinkEnabled",
+					"positionPrecision",
+					"secret",
+					"pskVersion",
+					"audience",
+					"keyHolders"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ConfigurationSnapshot": {
-				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.",
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel.",
 				"properties": {
 					"schemaVersion": {
 						"type": "number",
 						"enum": [
-							1
-						],
-						"nullable": false
+							1,
+							2
+						]
 					},
 					"roles": {
 						"items": {
@@ -2434,12 +2522,19 @@
 							"$ref": "#/components/schemas/SnapshotGroup"
 						},
 						"type": "array"
+					},
+					"channels": {
+						"items": {
+							"$ref": "#/components/schemas/SnapshotChannel"
+						},
+						"type": "array"
 					}
 				},
 				"required": [
 					"schemaVersion",
 					"roles",
-					"groups"
+					"groups",
+					"channels"
 				],
 				"type": "object",
 				"additionalProperties": false

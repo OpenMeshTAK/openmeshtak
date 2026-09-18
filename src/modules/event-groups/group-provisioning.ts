@@ -8,18 +8,12 @@ import {
 } from "./provisioning-values.js";
 
 /**
- * Identifier used for TAK server groups, Meshtastic channel names and mission groups.
+ * Identifier used for TAK server groups and mission groups.
  * @pattern ^[A-Za-z0-9_-]+$
  * @minLength 1
  * @maxLength 64
  */
 export type ProvisioningName = string;
-
-/**
- * Meshtastic channel name; ASCII so the upstream 11-byte limit equals the character count.
- * @pattern ^[A-Za-z0-9_-]{1,11}$
- */
-export type MeshtasticChannelName = string;
 
 export interface GroupProvisioning {
   /**
@@ -41,10 +35,9 @@ export interface GroupProvisioning {
     /** @maxItems 20 */
     serverGroups: ProvisioningName[];
   };
+  /** Channels are event resources with their own audience; see the Meshtastic channels API. */
   meshtastic: {
     deviceRole: MeshtasticDeviceRole;
-    /** @maxItems 8 */
-    channels: MeshtasticChannelName[];
   };
   /** @maxItems 20 */
   missionGroups: ProvisioningName[];
@@ -57,7 +50,6 @@ export interface GroupProvisioningColumns {
   takRole: string;
   takServerGroups: string[];
   meshtasticDeviceRole: string;
-  meshtasticChannels: string[];
   missionGroups: string[];
 }
 
@@ -70,7 +62,7 @@ export function defaultProvisioning(slug: string): GroupProvisioning {
     callsignFormat: "{username}",
     shortNamePrefix: defaultShortNamePrefix(slug),
     tak: { team: "Cyan", role: "Team Member", serverGroups: [] },
-    meshtastic: { deviceRole: "CLIENT", channels: [] },
+    meshtastic: { deviceRole: "CLIENT" },
     missionGroups: [],
   };
 }
@@ -104,7 +96,6 @@ export function provisioningProblems(provisioning: GroupProvisioning): ProblemFi
 
   for (const [field, values] of [
     ["provisioning.tak.serverGroups", provisioning.tak.serverGroups],
-    ["provisioning.meshtastic.channels", provisioning.meshtastic.channels],
     ["provisioning.missionGroups", provisioning.missionGroups],
   ] as const) {
     if (duplicates(values)) {
@@ -123,7 +114,6 @@ export function toProvisioningColumns(provisioning: GroupProvisioning): GroupPro
     takRole: provisioning.tak.role,
     takServerGroups: provisioning.tak.serverGroups,
     meshtasticDeviceRole: provisioning.meshtastic.deviceRole,
-    meshtasticChannels: provisioning.meshtastic.channels,
     missionGroups: provisioning.missionGroups,
   };
 }
@@ -144,7 +134,6 @@ export function toGroupProvisioning(row: EventGroup): GroupProvisioning {
     },
     meshtastic: {
       deviceRole: row.meshtasticDeviceRole as MeshtasticDeviceRole,
-      channels: stringArray(row.meshtasticChannels),
     },
     missionGroups: stringArray(row.missionGroups),
   };

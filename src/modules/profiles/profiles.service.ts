@@ -14,6 +14,7 @@ import {
   type ConfigurationSnapshot,
 } from "../event-configuration/configuration-snapshot.js";
 import type { MyEventMembershipDto, ResolvedProfileDto } from "./profile.dto.js";
+import type { LiveChannelState } from "./profile-channels.js";
 import { resolveProfile } from "./profile-resolver.js";
 
 const memberSelection = {
@@ -54,6 +55,14 @@ async function requireProfileAccess(
     return;
   }
   throw (await hasAnyGrantForEvent(principal, event.id)) ? forbidden() : notFoundProblem();
+}
+
+async function liveChannelStates(eventId: string): Promise<Map<string, LiveChannelState>> {
+  const channels = await database.meshtasticChannel.findMany({
+    where: { eventId },
+    select: { id: true, releasedAt: true },
+  });
+  return new Map(channels.map(({ id, releasedAt }) => [id, { released: releasedAt !== null }]));
 }
 
 /** Drafts preview the current configuration; active and archived events use the last revision. */
@@ -107,6 +116,8 @@ export async function getMemberProfile(
     member,
     role: { slug: role.slug, name: role.name },
     group,
+    channels: snapshot.channels,
+    liveChannels: await liveChannelStates(eventId),
     revision,
   });
 }

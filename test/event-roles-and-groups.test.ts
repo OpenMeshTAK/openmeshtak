@@ -46,7 +46,7 @@ for (const kind of ["roles", "groups"] as const) {
             callsignFormat: "{username} [Bravo]",
             shortNamePrefix: "B",
             tak: { team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
-            meshtastic: { deviceRole: "CLIENT", channels: ["global", "bravo"] },
+            meshtastic: { deviceRole: "CLIENT" },
             missionGroups: ["global", "bravo"],
           },
         }

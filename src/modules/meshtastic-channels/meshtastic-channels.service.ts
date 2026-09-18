@@ -28,6 +28,7 @@ import {
   requireReadableEvent,
 } from "../events/event-access.js";
 import { audienceRows, EMPTY_AUDIENCE, toAudience, validateAudience } from "./channel-audience.js";
+import { CHANNEL_DEVICE_ORDER } from "./channel-order.js";
 import { decryptChannelPsk, encryptChannelPsk, parseOrGeneratePsk, pskKind } from "./channel-psk.js";
 import { assertPrimaryIsNotSecret, secrecyProblems } from "./channel-secrecy.js";
 import type {
@@ -47,7 +48,7 @@ type ChannelRow = MeshtasticChannel & { audience: MeshtasticChannelAudience[] };
 async function primaryChannelId(eventId: string): Promise<string | null> {
   const primary = await database.meshtasticChannel.findFirst({
     where: { eventId },
-    orderBy: [{ sortOrder: "asc" }, ...CURSOR_ORDER],
+    orderBy: [...CHANNEL_DEVICE_ORDER],
     select: { id: true },
   });
   return primary?.id ?? null;

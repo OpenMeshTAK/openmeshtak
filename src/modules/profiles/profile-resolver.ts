@@ -1,5 +1,9 @@
-import type { SnapshotGroup } from "../event-configuration/configuration-snapshot.js";
+import type {
+  SnapshotChannel,
+  SnapshotGroup,
+} from "../event-configuration/configuration-snapshot.js";
 import { shortNameFor } from "../event-members/member-identity.js";
+import { resolveProfileChannels, type LiveChannelState } from "./profile-channels.js";
 import type { ProfileAssignment, ResolvedProfileDto } from "./profile.dto.js";
 
 export interface ProfileMember {
@@ -9,12 +13,16 @@ export interface ProfileMember {
   username: string;
   callsign: string;
   shortNameNumber: number;
+  eventRoleId: string;
+  eventGroupId: string;
 }
 
 export interface ProfileInputs {
   member: ProfileMember;
   role: ProfileAssignment;
   group: SnapshotGroup;
+  channels: SnapshotChannel[];
+  liveChannels: ReadonlyMap<string, LiveChannelState>;
   revision: { id: string; number: number } | null;
 }
 
@@ -25,7 +33,14 @@ export interface ProfileInputs {
  * Callsign and short-name number are member identity and come from the member record; every other
  * setting comes from the group as captured in the configuration revision.
  */
-export function resolveProfile({ member, role, group, revision }: ProfileInputs): ResolvedProfileDto {
+export function resolveProfile({
+  member,
+  role,
+  group,
+  channels,
+  liveChannels,
+  revision,
+}: ProfileInputs): ResolvedProfileDto {
   const { provisioning } = group;
 
   return {
@@ -48,7 +63,11 @@ export function resolveProfile({ member, role, group, revision }: ProfileInputs)
       longName: member.callsign,
       shortName: shortNameFor(provisioning.shortNamePrefix, member.shortNameNumber),
       deviceRole: provisioning.meshtastic.deviceRole,
-      channels: provisioning.meshtastic.channels,
+      channels: resolveProfileChannels(channels, liveChannels, {
+        memberId: member.id,
+        eventRoleId: member.eventRoleId,
+        eventGroupId: member.eventGroupId,
+      }),
     },
     missionGroups: provisioning.missionGroups,
   };

@@ -13,6 +13,7 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import { requireReadableEvent } from "../events/event-access.js";
+import { activationProblems, notReady } from "../events/event-readiness.js";
 import type {
   ConfigurationRevisionDto,
   ConfigurationRevisionPage,
@@ -111,6 +112,11 @@ export async function publishConfiguration(
       detail: "Only active events publish configuration revisions; activation creates the first one.",
       code: "EVENT_NOT_ACTIVE",
     });
+  }
+
+  const problems = await activationProblems(event);
+  if (problems.length > 0) {
+    throw notReady(problems);
   }
 
   const result = await database.$transaction((transaction) =>

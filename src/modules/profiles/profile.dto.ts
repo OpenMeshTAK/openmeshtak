@@ -5,6 +5,22 @@ import type {
   TakTeam,
 } from "../event-groups/provisioning-values.js";
 
+/**
+ * A channel the member receives. `included` channels come with the member's channel set;
+ * `on-site` channels are secret and handed out on site by a key holder before their release.
+ */
+export interface ProfileChannel {
+  id: Uuid;
+  name: string;
+  primary: boolean;
+  uplinkEnabled: boolean;
+  downlinkEnabled: boolean;
+  positionPrecision: number;
+  delivery: "included" | "on-site";
+  /** Holds this secret channel ahead of the event to share it on site. */
+  keyHolder: boolean;
+}
+
 export interface ProfileAssignment {
   slug: string;
   name: string;
@@ -39,7 +55,8 @@ export interface ResolvedProfileDto {
     /** `null` only in previews while the group has no short-name prefix. */
     shortName: string | null;
     deviceRole: MeshtasticDeviceRole;
-    channels: string[];
+    /** Device order, primary first. Channels outside the member's audience are absent. */
+    channels: ProfileChannel[];
   };
   missionGroups: string[];
 }

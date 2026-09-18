@@ -98,9 +98,41 @@ void describe("event configuration revisions", () => {
     const detail = (
       await request(app).get(url(`/configuration-revisions/${id}`)).set("Cookie", admin.cookie).expect(200)
     ).body as RevisionBody;
-    assert.equal(detail.snapshot.schemaVersion, 1);
+    assert.equal(detail.snapshot.schemaVersion, 2);
     assert.deepEqual(detail.snapshot.roles.map(({ slug }) => slug), ["participant"]);
     assert.equal(detail.snapshot.groups[0]?.provisioning.tak.team, "Cyan");
+  });
+
+  void it("refuses to activate or publish a secondary channel without an audience", async () => {
+    const createChannel = (name: string, groupIds: string[]) =>
+      request(app)
+        .post(url("/meshtastic/channels"))
+        .set("Cookie", admin.cookie)
+        .send({ name, audience: { groupIds, roleIds: [], memberIds: [] } })
+        .expect(201);
+    await createChannel("Event", []);
+    await createChannel("Bravo", [group.id]);
+    await createChannel("Empty", []);
+
+    const refused = await request(app)
+      .post(url("/activate"))
+      .set("Cookie", admin.cookie)
+      .send({ version: 1 })
+      .expect(409);
+    assert.deepEqual(
+      (refused.body as { errors: Array<{ field: string }> }).errors.map(({ field }) => field),
+      ["channels.Empty.audience"],
+    );
+
+    const channels = (await request(app).get(url("/meshtastic/channels")).set("Cookie", admin.cookie))
+      .body as { items: Array<{ id: string; name: string }> };
+    const empty = channels.items.find(({ name }) => name === "Empty");
+    await request(app).delete(url(`/meshtastic/channels/${empty?.id ?? ""}`)).set("Cookie", admin.cookie).expect(204);
+    await transition("activate", 1);
+
+    await request(app).delete(url(`/groups/${group.id}`)).set("Cookie", admin.cookie).expect(204);
+    const unpublishable = await publish().expect(409);
+    assert.equal((unpublishable.body as { code: string }).code, "EVENT_NOT_READY");
   });
 
   void it("publishes changes, skips unchanged configurations and keeps old snapshots immutable", async () => {

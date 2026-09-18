@@ -1,6 +1,6 @@
 import type { Prisma } from "../../generated/prisma/client.js";
 import { validationProblem, type ProblemFieldError } from "../../shared/errors/problem-error.js";
-import { CURSOR_ORDER } from "../../shared/pagination/cursor.js";
+import { CHANNEL_DEVICE_ORDER } from "./channel-order.js";
 import type { ChannelAudience } from "./meshtastic-channel.dto.js";
 import { pskKind } from "./channel-psk.js";
 
@@ -47,7 +47,7 @@ export async function assertPrimaryIsNotSecret(
 ): Promise<void> {
   const primary = await transaction.meshtasticChannel.findFirst({
     where: { eventId },
-    orderBy: [{ sortOrder: "asc" }, ...CURSOR_ORDER],
+    orderBy: [...CHANNEL_DEVICE_ORDER],
     select: { secret: true },
   });
   if (primary?.secret === true) {

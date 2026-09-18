@@ -45,7 +45,7 @@ const bravoProvisioning = {
   callsignFormat: "{username} [{group}]",
   shortNamePrefix: "B",
   tak: { team: "Purple", role: "Team Member", serverGroups: [] },
-  meshtastic: { deviceRole: "CLIENT", channels: [] },
+  meshtastic: { deviceRole: "CLIENT" },
   missionGroups: [],
 };
 
