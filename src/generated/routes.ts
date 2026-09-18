@@ -18,6 +18,8 @@ import { MyEventMembershipsController } from './../modules/profiles/profiles.con
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PrincipalController } from './../modules/principal/principal.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MeshtasticChannelsController } from './../modules/meshtastic-channels/meshtastic-channels.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ClaimExchangeController } from './../modules/member-claims/claim-exchange.controller.js';
@@ -120,7 +122,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Permission": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PermissionGrantDto": {
@@ -372,6 +374,122 @@ const models: TsoaRoute.Models = {
             "id": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ChannelPskKind": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["none"]},{"dataType":"enum","enums":["default"]},{"dataType":"enum","enums":["aes128"]},{"dataType":"enum","enums":["aes256"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ChannelPskInfo": {
+        "dataType": "refObject",
+        "properties": {
+            "kind": {"ref":"ChannelPskKind","required":true},
+            "version": {"dataType":"double","required":true},
+            "rotatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ChannelAudience": {
+        "dataType": "refObject",
+        "properties": {
+            "groupIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":100}}},
+            "roleIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":100}}},
+            "memberIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":500}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticChannelDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "sortOrder": {"dataType":"double","required":true},
+            "primary": {"dataType":"boolean","required":true},
+            "psk": {"ref":"ChannelPskInfo","required":true},
+            "uplinkEnabled": {"dataType":"boolean","required":true},
+            "downlinkEnabled": {"dataType":"boolean","required":true},
+            "positionPrecision": {"dataType":"double","required":true},
+            "audience": {"ref":"ChannelAudience","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticChannelPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"MeshtasticChannelDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticChannelName": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{"pattern":{"value":"^[A-Za-z0-9_-]{1,11}$"}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ChannelSortOrder": {
+        "dataType": "refAlias",
+        "type": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":1000}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PositionPrecision": {
+        "dataType": "refAlias",
+        "type": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":32}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateMeshtasticChannelRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"ref":"MeshtasticChannelName","required":true},
+            "sortOrder": {"ref":"ChannelSortOrder"},
+            "psk": {"dataType":"string","validators":{"maxLength":{"value":64}}},
+            "uplinkEnabled": {"dataType":"boolean"},
+            "downlinkEnabled": {"dataType":"boolean"},
+            "positionPrecision": {"ref":"PositionPrecision"},
+            "audience": {"ref":"ChannelAudience"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateMeshtasticChannelRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "name": {"ref":"MeshtasticChannelName","required":true},
+            "sortOrder": {"ref":"ChannelSortOrder","required":true},
+            "uplinkEnabled": {"dataType":"boolean","required":true},
+            "downlinkEnabled": {"dataType":"boolean","required":true},
+            "positionPrecision": {"ref":"PositionPrecision","required":true},
+            "audience": {"ref":"ChannelAudience","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RotateChannelPskRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "psk": {"dataType":"string","validators":{"maxLength":{"value":64}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RevealedChannelPsk": {
+        "dataType": "refObject",
+        "properties": {
+            "kind": {"ref":"ChannelPskKind","required":true},
+            "version": {"dataType":"double","required":true},
+            "psk": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -702,11 +820,6 @@ const models: TsoaRoute.Models = {
     "ProvisioningName": {
         "dataType": "refAlias",
         "type": {"dataType":"string","validators":{"pattern":{"value":"^[A-Za-z0-9_-]+$"},"minLength":{"value":1},"maxLength":{"value":64}}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MeshtasticChannelName": {
-        "dataType": "refAlias",
-        "type": {"dataType":"string","validators":{"pattern":{"value":"^[A-Za-z0-9_-]{1,11}$"}}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "GroupProvisioning": {
@@ -1908,6 +2021,240 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getPrincipal',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticChannelsController_listMeshtasticChannels: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/events/:eventId/meshtastic/channels',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.listMeshtasticChannels)),
+
+            async function MeshtasticChannelsController_listMeshtasticChannels(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticChannelsController_listMeshtasticChannels, request, response });
+
+                const controller = new MeshtasticChannelsController();
+
+              await templateService.apiHandler({
+                methodName: 'listMeshtasticChannels',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticChannelsController_createMeshtasticChannel: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateMeshtasticChannelRequest"},
+        };
+        app.post('/api/v1/events/:eventId/meshtastic/channels',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.createMeshtasticChannel)),
+
+            async function MeshtasticChannelsController_createMeshtasticChannel(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticChannelsController_createMeshtasticChannel, request, response });
+
+                const controller = new MeshtasticChannelsController();
+
+              await templateService.apiHandler({
+                methodName: 'createMeshtasticChannel',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticChannelsController_getMeshtasticChannel: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/meshtastic/channels/:channelId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.getMeshtasticChannel)),
+
+            async function MeshtasticChannelsController_getMeshtasticChannel(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticChannelsController_getMeshtasticChannel, request, response });
+
+                const controller = new MeshtasticChannelsController();
+
+              await templateService.apiHandler({
+                methodName: 'getMeshtasticChannel',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticChannelsController_updateMeshtasticChannel: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateMeshtasticChannelRequest"},
+        };
+        app.put('/api/v1/events/:eventId/meshtastic/channels/:channelId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.updateMeshtasticChannel)),
+
+            async function MeshtasticChannelsController_updateMeshtasticChannel(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticChannelsController_updateMeshtasticChannel, request, response });
+
+                const controller = new MeshtasticChannelsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateMeshtasticChannel',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticChannelsController_deleteMeshtasticChannel: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
+        };
+        app.delete('/api/v1/events/:eventId/meshtastic/channels/:channelId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.deleteMeshtasticChannel)),
+
+            async function MeshtasticChannelsController_deleteMeshtasticChannel(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticChannelsController_deleteMeshtasticChannel, request, response });
+
+                const controller = new MeshtasticChannelsController();
+
+              await templateService.apiHandler({
+                methodName: 'deleteMeshtasticChannel',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticChannelsController_rotateMeshtasticChannelPsk: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"RotateChannelPskRequest"},
+        };
+        app.post('/api/v1/events/:eventId/meshtastic/channels/:channelId/psk/rotate',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.rotateMeshtasticChannelPsk)),
+
+            async function MeshtasticChannelsController_rotateMeshtasticChannelPsk(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticChannelsController_rotateMeshtasticChannelPsk, request, response });
+
+                const controller = new MeshtasticChannelsController();
+
+              await templateService.apiHandler({
+                methodName: 'rotateMeshtasticChannelPsk',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticChannelsController_revealMeshtasticChannelPsk: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/meshtastic/channels/:channelId/psk/reveal',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.revealMeshtasticChannelPsk)),
+
+            async function MeshtasticChannelsController_revealMeshtasticChannelPsk(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticChannelsController_revealMeshtasticChannelPsk, request, response });
+
+                const controller = new MeshtasticChannelsController();
+
+              await templateService.apiHandler({
+                methodName: 'revealMeshtasticChannelPsk',
                 controller,
                 response,
                 next,

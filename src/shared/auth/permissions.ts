@@ -10,6 +10,7 @@ export const PERMISSIONS = [
   "members.manage",
   "members.sync",
   "member-claims.create",
+  "channel-keys.reveal",
   "data-packages.read",
   "data-packages.edit",
   "data-packages.publish",

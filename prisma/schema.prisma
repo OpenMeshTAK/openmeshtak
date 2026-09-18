@@ -33,6 +33,7 @@ model Event {
   memberClaims           MemberClaim[]
   configurationRevisions EventConfigurationRevision[]
   dataPackages           DataPackage[]
+  meshtasticChannels     MeshtasticChannel[]
 }
 
 model User {
@@ -266,16 +267,17 @@ model AuditEvent {
 
 /// Event-owned participant role such as `participant`. Never an authorization group.
 model EventRole {
-  id          String        @id
-  eventId     String
-  name        String
-  slug        String
-  description String?
-  version     Int           @default(1)
-  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  members     EventMember[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                String                      @id
+  eventId           String
+  name              String
+  slug              String
+  description       String?
+  version           Int                         @default(1)
+  event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  members           EventMember[]
+  channelSelections MeshtasticChannelAudience[]
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
 
   @@unique([eventId, slug])
   @@index([eventId, createdAt, id])
@@ -283,27 +285,28 @@ model EventRole {
 
 /// Event-owned tactical/provisioning group such as `bravo`. Never grants permissions.
 model EventGroup {
-  id                   String        @id
+  id                   String                      @id
   eventId              String
   name                 String
   slug                 String
   description          String?
-  version              Int           @default(1)
+  version              Int                         @default(1)
   /// Template such as `{username} [Bravo]`; validated against an allowlist of placeholders.
-  callsignFormat       String        @default("{username}")
+  callsignFormat       String                      @default("{username}")
   /// Meshtastic short-name prefix such as `B`; null until an administrator chooses a free one.
   shortNamePrefix      String?
-  takTeam              String        @default("Cyan")
-  takRole              String        @default("Team Member")
+  takTeam              String                      @default("Cyan")
+  takRole              String                      @default("Team Member")
   /// Validated JSON string arrays.
-  takServerGroups      Json          @default("[]")
-  meshtasticDeviceRole String        @default("CLIENT")
-  meshtasticChannels   Json          @default("[]")
-  missionGroups        Json          @default("[]")
-  event                Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  takServerGroups      Json                        @default("[]")
+  meshtasticDeviceRole String                      @default("CLIENT")
+  meshtasticChannels   Json                        @default("[]")
+  missionGroups        Json                        @default("[]")
+  event                Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   members              EventMember[]
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  channelSelections    MeshtasticChannelAudience[]
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
 
   @@unique([eventId, slug])
   @@unique([eventId, shortNamePrefix])
@@ -328,27 +331,28 @@ model ExternalIdentity {
 
 /// Participation of one user in one event with exactly one event role and one event group.
 model EventMember {
-  id               String        @id
-  eventId          String
-  userId           String
-  eventRoleId      String
-  eventGroupId     String
-  version          Int           @default(1)
+  id                String                      @id
+  eventId           String
+  userId            String
+  eventRoleId       String
+  eventGroupId      String
+  version           Int                         @default(1)
   /// Name reported for this event by the integration; untrusted display data used in callsigns.
-  username         String
+  username          String
   /// Effective callsign (override or rendered group format), unique within the event.
-  callsign         String
-  callsignOverride String?
+  callsign          String
+  callsignOverride  String?
   /// Stable per-group number behind Meshtastic short names such as `B1`.
-  shortNameNumber  Int
-  event            Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user             DomainUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shortNameNumber   Int
+  event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user              DomainUser                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Restrict: assigned roles and groups cannot be deleted until members are reassigned.
-  eventRole        EventRole     @relation(fields: [eventRoleId], references: [id], onDelete: Restrict)
-  eventGroup       EventGroup    @relation(fields: [eventGroupId], references: [id], onDelete: Restrict)
-  claims           MemberClaim[]
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  eventRole         EventRole                   @relation(fields: [eventRoleId], references: [id], onDelete: Restrict)
+  eventGroup        EventGroup                  @relation(fields: [eventGroupId], references: [id], onDelete: Restrict)
+  claims            MemberClaim[]
+  channelSelections MeshtasticChannelAudience[]
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
 
   @@unique([eventId, userId])
   @@unique([eventId, callsign])
@@ -497,4 +501,51 @@ model PackageRevision {
 
   @@unique([packageId, number])
   @@index([packageId, createdAt, id])
+}
+
+/// Meshtastic channel of an event. The lowest `sortOrder` is the primary channel and reaches every
+/// member; secondary channels reach only their audience.
+model MeshtasticChannel {
+  id                String                      @id
+  eventId           String
+  /// At most 11 bytes (upstream limit), unique within the event.
+  name              String
+  sortOrder         Int
+  /// Secret-box envelope of the PSK; never returned by normal responses.
+  pskEnvelope       String
+  /// Plain PSK length (0, 1, 16 or 32) so responses can describe the key without decrypting it.
+  pskBytes          Int
+  /// Incremented on every rotation so revisions and artifacts can tell which key they used.
+  pskVersion        Int                         @default(1)
+  pskRotatedAt      DateTime?
+  uplinkEnabled     Boolean                     @default(false)
+  downlinkEnabled   Boolean                     @default(false)
+  /// Upstream `ModuleSettings.position_precision`: 0 sends no position, 32 full precision.
+  positionPrecision Int                         @default(0)
+  version           Int                         @default(1)
+  event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  audience          MeshtasticChannelAudience[]
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  @@unique([eventId, name])
+  @@index([eventId, createdAt, id])
+}
+
+/// One audience entry of a channel: exactly one of group, role or member is set.
+model MeshtasticChannelAudience {
+  id            String            @id
+  channelId     String
+  eventGroupId  String?
+  eventRoleId   String?
+  eventMemberId String?
+  channel       MeshtasticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  eventGroup    EventGroup?       @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
+  eventRole     EventRole?        @relation(fields: [eventRoleId], references: [id], onDelete: Cascade)
+  eventMember   EventMember?      @relation(fields: [eventMemberId], references: [id], onDelete: Cascade)
+
+  @@index([channelId])
+  @@index([eventGroupId])
+  @@index([eventRoleId])
+  @@index([eventMemberId])
 }

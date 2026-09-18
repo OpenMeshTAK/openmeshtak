@@ -153,6 +153,7 @@
 					"members.manage",
 					"members.sync",
 					"member-claims.create",
+					"channel-keys.reveal",
 					"data-packages.read",
 					"data-packages.edit",
 					"data-packages.publish",
@@ -911,6 +912,293 @@
 					"id",
 					"name",
 					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChannelPskKind": {
+				"type": "string",
+				"enum": [
+					"none",
+					"default",
+					"aes128",
+					"aes256"
+				],
+				"description": "How a channel encrypts traffic, derived from the PSK length as defined by upstream\n`channel.proto`: no key disables encryption, one byte selects a well-known default key, and 16\nor 32 bytes are AES-128 or AES-256 keys."
+			},
+			"ChannelPskInfo": {
+				"description": "Describes the stored key without revealing it.",
+				"properties": {
+					"kind": {
+						"$ref": "#/components/schemas/ChannelPskKind"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Increments on every rotation."
+					},
+					"rotatedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"kind",
+					"version",
+					"rotatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChannelAudience": {
+				"description": "Who receives a secondary channel: every member that matches any listed group, role or member.\nThe primary channel always reaches every member, so its audience is ignored.",
+				"properties": {
+					"groupIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 100
+					},
+					"roleIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 100
+					},
+					"memberIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 500
+					}
+				},
+				"required": [
+					"groupIds",
+					"roleIds",
+					"memberIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticChannelDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"sortOrder": {
+						"type": "number",
+						"format": "double",
+						"description": "Channel order; the lowest value (oldest on ties) is the primary channel."
+					},
+					"primary": {
+						"type": "boolean"
+					},
+					"psk": {
+						"$ref": "#/components/schemas/ChannelPskInfo"
+					},
+					"uplinkEnabled": {
+						"type": "boolean"
+					},
+					"downlinkEnabled": {
+						"type": "boolean"
+					},
+					"positionPrecision": {
+						"type": "number",
+						"format": "double",
+						"description": "Upstream position precision: 0 sends no position, 32 sends the full position."
+					},
+					"audience": {
+						"$ref": "#/components/schemas/ChannelAudience"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"name",
+					"sortOrder",
+					"primary",
+					"psk",
+					"uplinkEnabled",
+					"downlinkEnabled",
+					"positionPrecision",
+					"audience",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticChannelPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/MeshtasticChannelDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticChannelName": {
+				"type": "string",
+				"description": "Meshtastic channel name; ASCII so the upstream 11-byte limit equals the character count.",
+				"pattern": "^[A-Za-z0-9_-]{1,11}$"
+			},
+			"ChannelSortOrder": {
+				"type": "integer",
+				"format": "int32",
+				"minimum": 0,
+				"maximum": 1000
+			},
+			"PositionPrecision": {
+				"type": "integer",
+				"format": "int32",
+				"minimum": 0,
+				"maximum": 32
+			},
+			"CreateMeshtasticChannelRequest": {
+				"properties": {
+					"name": {
+						"$ref": "#/components/schemas/MeshtasticChannelName"
+					},
+					"sortOrder": {
+						"$ref": "#/components/schemas/ChannelSortOrder",
+						"description": "Defaults to after the last channel."
+					},
+					"psk": {
+						"type": "string",
+						"description": "Optional base64 key: empty (no encryption), 1 byte (upstream default key), 16 or 32 bytes.\nOmit it to let the server generate a random 32-byte key.",
+						"maxLength": 64
+					},
+					"uplinkEnabled": {
+						"type": "boolean"
+					},
+					"downlinkEnabled": {
+						"type": "boolean"
+					},
+					"positionPrecision": {
+						"$ref": "#/components/schemas/PositionPrecision"
+					},
+					"audience": {
+						"$ref": "#/components/schemas/ChannelAudience"
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateMeshtasticChannelRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"$ref": "#/components/schemas/MeshtasticChannelName"
+					},
+					"sortOrder": {
+						"$ref": "#/components/schemas/ChannelSortOrder"
+					},
+					"uplinkEnabled": {
+						"type": "boolean"
+					},
+					"downlinkEnabled": {
+						"type": "boolean"
+					},
+					"positionPrecision": {
+						"$ref": "#/components/schemas/PositionPrecision"
+					},
+					"audience": {
+						"$ref": "#/components/schemas/ChannelAudience"
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"sortOrder",
+					"uplinkEnabled",
+					"downlinkEnabled",
+					"positionPrecision",
+					"audience"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RotateChannelPskRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"psk": {
+						"type": "string",
+						"description": "Optional replacement key in the same format as on creation; omit it for a random key.",
+						"maxLength": 64
+					}
+				},
+				"required": [
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RevealedChannelPsk": {
+				"description": "Plain key material; returned only by the audited reveal action.",
+				"properties": {
+					"kind": {
+						"$ref": "#/components/schemas/ChannelPskKind"
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"psk": {
+						"type": "string",
+						"description": "Base64 key exactly as Meshtastic clients expect it."
+					}
+				},
+				"required": [
+					"kind",
+					"version",
+					"psk"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1766,11 +2054,6 @@
 				"pattern": "^[A-Za-z0-9_-]+$",
 				"minLength": 1,
 				"maxLength": 64
-			},
-			"MeshtasticChannelName": {
-				"type": "string",
-				"description": "Meshtastic channel name; ASCII so the upstream 11-byte limit equals the character count.",
-				"pattern": "^[A-Za-z0-9_-]{1,11}$"
 			},
 			"GroupProvisioning": {
 				"properties": {
@@ -4641,6 +4924,623 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/events/{eventId}/meshtastic/channels": {
+			"get": {
+				"operationId": "ListMeshtasticChannels",
+				"responses": {
+					"200": {
+						"description": "Meshtastic channels",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticChannelPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the event's channels in creation order; sort by `sortOrder` for the device order.",
+				"tags": [
+					"Meshtastic channels"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateMeshtasticChannel",
+				"responses": {
+					"201": {
+						"description": "Meshtastic channel created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticChannelDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Name in use, channel limit reached or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a channel; without `psk` the server generates a random 32-byte key.",
+				"tags": [
+					"Meshtastic channels"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateMeshtasticChannelRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/meshtastic/channels/{channelId}": {
+			"get": {
+				"operationId": "GetMeshtasticChannel",
+				"responses": {
+					"200": {
+						"description": "Meshtastic channel",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticChannelDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Meshtastic channels"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateMeshtasticChannel",
+				"responses": {
+					"200": {
+						"description": "Meshtastic channel updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticChannelDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, name in use or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces everything except the key. Requires the current `version`.",
+				"tags": [
+					"Meshtastic channels"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateMeshtasticChannelRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteMeshtasticChannel",
+				"responses": {
+					"204": {
+						"description": "Meshtastic channel deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Meshtastic channels"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic/channels/{channelId}/psk/rotate": {
+			"post": {
+				"operationId": "RotateMeshtasticChannelPsk",
+				"responses": {
+					"200": {
+						"description": "Key rotated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticChannelDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the key, for example after a leak. Audited; requires the current `version`.",
+				"tags": [
+					"Meshtastic channels"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RotateChannelPskRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/meshtastic/channels/{channelId}/psk/reveal": {
+			"post": {
+				"operationId": "RevealMeshtasticChannelPsk",
+				"responses": {
+					"200": {
+						"description": "Channel key",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RevealedChannelPsk"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns the plain key. Requires `channel-keys.reveal`; every reveal is audited.",
+				"tags": [
+					"Meshtastic channels"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/events/{eventId}/members/{memberId}/claims": {
