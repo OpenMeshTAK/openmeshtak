@@ -25,6 +25,7 @@ interface ProfileBody {
     shortName: string | null;
     deviceRole: string;
     channels: Array<{ name: string; primary: boolean; delivery: string; keyHolder: boolean }>;
+    firmware: Record<string, unknown> & { flashingNotes?: string | null } | null;
   };
   missionGroups: string[];
 }
@@ -150,6 +151,15 @@ void describe("Peter/Bravo end to end", () => {
         deviceRole: "CLIENT",
       },
       missionGroups: ["global", "bravo"],
+    });
+    assert.deepEqual(profile.meshtastic.firmware, {
+      recommendedVersion: "2.8",
+      line: "2.8",
+      minimumVersion: "2.8.1",
+      channel: "alpha",
+      verified: true,
+      flasherUrl: "https://flasher.meshtastic.org/",
+      flashingNotes: profile.meshtastic.firmware?.flashingNotes ?? null,
     });
     assert.deepEqual(channelSummary(profile), [
       "Event*:included",

@@ -15,6 +15,7 @@ import {
 } from "../event-configuration/configuration-snapshot.js";
 import type { MyEventMembershipDto, ResolvedProfileDto } from "./profile.dto.js";
 import type { LiveChannelState } from "./profile-channels.js";
+import { resolveProfileFirmware } from "./profile-firmware.js";
 import { resolveProfile } from "./profile-resolver.js";
 
 const memberSelection = {
@@ -118,6 +119,7 @@ export async function getMemberProfile(
     group,
     channels: snapshot.channels,
     liveChannels: await liveChannelStates(eventId),
+    firmware: await resolveProfileFirmware(snapshot.meshtastic),
     revision,
   });
 }

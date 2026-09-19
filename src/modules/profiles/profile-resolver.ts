@@ -4,7 +4,7 @@ import type {
 } from "../event-configuration/configuration-snapshot.js";
 import { shortNameFor } from "../event-members/member-identity.js";
 import { resolveProfileChannels, type LiveChannelState } from "./profile-channels.js";
-import type { ProfileAssignment, ResolvedProfileDto } from "./profile.dto.js";
+import type { ProfileAssignment, ProfileFirmware, ResolvedProfileDto } from "./profile.dto.js";
 
 export interface ProfileMember {
   id: string;
@@ -23,6 +23,7 @@ export interface ProfileInputs {
   group: SnapshotGroup;
   channels: SnapshotChannel[];
   liveChannels: ReadonlyMap<string, LiveChannelState>;
+  firmware: ProfileFirmware | null;
   revision: { id: string; number: number } | null;
 }
 
@@ -39,6 +40,7 @@ export function resolveProfile({
   group,
   channels,
   liveChannels,
+  firmware,
   revision,
 }: ProfileInputs): ResolvedProfileDto {
   const { provisioning } = group;
@@ -68,6 +70,7 @@ export function resolveProfile({
         eventRoleId: member.eventRoleId,
         eventGroupId: member.eventGroupId,
       }),
+      firmware,
     },
     missionGroups: provisioning.missionGroups,
   };

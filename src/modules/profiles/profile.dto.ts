@@ -21,6 +21,20 @@ export interface ProfileChannel {
   keyHolder: boolean;
 }
 
+/** The Meshtastic firmware a participant must flash before importing OpenMeshTak settings. */
+export interface ProfileFirmware {
+  /** As recommended by the event, e.g. `2.8` or `2.8.3`. */
+  recommendedVersion: string;
+  line: string;
+  /** Lowest version the settings are made for, e.g. `2.8.1`. */
+  minimumVersion: string;
+  channel: "stable" | "beta" | "alpha";
+  /** `false` while no tested patch reaches the minimum version. */
+  verified: boolean;
+  flasherUrl: string;
+  flashingNotes: string | null;
+}
+
 export interface ProfileAssignment {
   slug: string;
   name: string;
@@ -57,6 +71,8 @@ export interface ResolvedProfileDto {
     deviceRole: MeshtasticDeviceRole;
     /** Device order, primary first. Channels outside the member's audience are absent. */
     channels: ProfileChannel[];
+    /** `null` for configurations published before events had a firmware version. */
+    firmware: ProfileFirmware | null;
   };
   missionGroups: string[];
 }

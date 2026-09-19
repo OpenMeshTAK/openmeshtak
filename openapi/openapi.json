@@ -771,6 +771,52 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ProfileFirmware": {
+				"description": "The Meshtastic firmware a participant must flash before importing OpenMeshTak settings.",
+				"properties": {
+					"recommendedVersion": {
+						"type": "string",
+						"description": "As recommended by the event, e.g. `2.8` or `2.8.3`."
+					},
+					"line": {
+						"type": "string"
+					},
+					"minimumVersion": {
+						"type": "string",
+						"description": "Lowest version the settings are made for, e.g. `2.8.1`."
+					},
+					"channel": {
+						"type": "string",
+						"enum": [
+							"stable",
+							"beta",
+							"alpha"
+						]
+					},
+					"verified": {
+						"type": "boolean",
+						"description": "`false` while no tested patch reaches the minimum version."
+					},
+					"flasherUrl": {
+						"type": "string"
+					},
+					"flashingNotes": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"recommendedVersion",
+					"line",
+					"minimumVersion",
+					"channel",
+					"verified",
+					"flasherUrl",
+					"flashingNotes"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ResolvedProfileDto": {
 				"description": "The single resolved provisioning identity of one member in one event. Every TAK, Meshtastic and\nmission output is derived from this shape.",
 				"properties": {
@@ -848,6 +894,15 @@
 					},
 					"meshtastic": {
 						"properties": {
+							"firmware": {
+								"allOf": [
+									{
+										"$ref": "#/components/schemas/ProfileFirmware"
+									}
+								],
+								"nullable": true,
+								"description": "`null` for configurations published before events had a firmware version."
+							},
 							"channels": {
 								"items": {
 									"$ref": "#/components/schemas/ProfileChannel"
@@ -868,6 +923,7 @@
 							}
 						},
 						"required": [
+							"firmware",
 							"channels",
 							"deviceRole",
 							"shortName",

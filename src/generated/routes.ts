@@ -356,6 +356,20 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ProfileFirmware": {
+        "dataType": "refObject",
+        "properties": {
+            "recommendedVersion": {"dataType":"string","required":true},
+            "line": {"dataType":"string","required":true},
+            "minimumVersion": {"dataType":"string","required":true},
+            "channel": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["stable"]},{"dataType":"enum","enums":["beta"]},{"dataType":"enum","enums":["alpha"]}],"required":true},
+            "verified": {"dataType":"boolean","required":true},
+            "flasherUrl": {"dataType":"string","required":true},
+            "flashingNotes": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ResolvedProfileDto": {
         "dataType": "refObject",
         "properties": {
@@ -369,7 +383,7 @@ const models: TsoaRoute.Models = {
             "eventRole": {"ref":"ProfileAssignment","required":true},
             "group": {"ref":"ProfileAssignment","required":true},
             "tak": {"dataType":"nestedObjectLiteral","nestedProperties":{"serverGroups":{"dataType":"array","array":{"dataType":"string"},"required":true},"role":{"ref":"TakRole","required":true},"team":{"ref":"TakTeam","required":true},"callsign":{"dataType":"string","required":true}},"required":true},
-            "meshtastic": {"dataType":"nestedObjectLiteral","nestedProperties":{"channels":{"dataType":"array","array":{"dataType":"refObject","ref":"ProfileChannel"},"required":true},"deviceRole":{"ref":"MeshtasticDeviceRole","required":true},"shortName":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"longName":{"dataType":"string","required":true}},"required":true},
+            "meshtastic": {"dataType":"nestedObjectLiteral","nestedProperties":{"firmware":{"dataType":"union","subSchemas":[{"ref":"ProfileFirmware"},{"dataType":"enum","enums":[null]}],"required":true},"channels":{"dataType":"array","array":{"dataType":"refObject","ref":"ProfileChannel"},"required":true},"deviceRole":{"ref":"MeshtasticDeviceRole","required":true},"shortName":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"longName":{"dataType":"string","required":true}},"required":true},
             "missionGroups": {"dataType":"array","array":{"dataType":"string"},"required":true},
         },
         "additionalProperties": false,
