@@ -33,6 +33,10 @@ const reviewedExceptions = new Map<string, Set<string>>([
   ["0BSD", new Set(["tslib@1.14.1", "tslib@2.8.1"])],
   ["EPL-2.0", new Set(["elkjs@0.11.1"])],
   ["Unlicense", new Set(["postgres@3.4.7", "robust-predicates@3.0.3"])],
+  // Both terms are individually allowlisted; the package requires both together.
+  ["(Apache-2.0 AND BSD-3-Clause)", new Set(["@bufbuild/protobuf@2.16.0"])],
+  // Official Meshtastic protobufs; npm metadata spells GPL-3.0 as "GPLV3".
+  ["GPLV3", new Set(["@meshtastic/protobufs@2.8.0"])],
 ]);
 
 const pnpmCli = process.env.npm_execpath;
