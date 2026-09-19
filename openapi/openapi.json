@@ -931,6 +931,37 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ChannelHandoutDto": {
+				"description": "A secret-bearing Meshtastic channel handout. It is returned only to the signed-in key holder,\nmust not be persisted by clients and becomes obsolete as soon as the channel key rotates.",
+				"properties": {
+					"channelId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"channelName": {
+						"type": "string"
+					},
+					"primary": {
+						"type": "boolean"
+					},
+					"pskVersion": {
+						"type": "number",
+						"format": "double"
+					},
+					"url": {
+						"type": "string",
+						"description": "Canonical Meshtastic ChannelSet URL; the fragment contains the channel key."
+					}
+				},
+				"required": [
+					"channelId",
+					"channelName",
+					"primary",
+					"pskVersion",
+					"url"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PrincipalDto": {
 				"properties": {
 					"type": {
@@ -5028,6 +5059,78 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/events/{eventId}/members/{memberId}/meshtastic/channels/{channelId}/handout": {
+			"get": {
+				"operationId": "GetChannelHandout",
+				"responses": {
+					"200": {
+						"description": "Channel handout",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ChannelHandoutDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Delivers an audited Meshtastic channel URL to the signed-in member when the published event\nconfiguration designates that member as a key holder. The URL contains secret key material.",
+				"tags": [
+					"Profiles"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "memberId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/principal": {

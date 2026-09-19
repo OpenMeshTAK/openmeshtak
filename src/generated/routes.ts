@@ -16,6 +16,8 @@ import { MemberProfileController } from './../modules/profiles/profiles.controll
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MyEventMembershipsController } from './../modules/profiles/profiles.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { ChannelHandoutsController } from './../modules/profiles/channel-handouts.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PrincipalController } from './../modules/principal/principal.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MeshtasticChannelsController } from './../modules/meshtastic-channels/meshtastic-channels.controller.js';
@@ -378,6 +380,18 @@ const models: TsoaRoute.Models = {
             "timeZone": {"dataType":"string","required":true},
             "memberId": {"ref":"Uuid","required":true},
             "callsign": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ChannelHandoutDto": {
+        "dataType": "refObject",
+        "properties": {
+            "channelId": {"ref":"Uuid","required":true},
+            "channelName": {"dataType":"string","required":true},
+            "primary": {"dataType":"boolean","required":true},
+            "pskVersion": {"dataType":"double","required":true},
+            "url": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -2037,6 +2051,40 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'listMyEventMemberships',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsChannelHandoutsController_getChannelHandout: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+                channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/members/:memberId/meshtastic/channels/:channelId/handout',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ChannelHandoutsController)),
+            ...(fetchMiddlewares<RequestHandler>(ChannelHandoutsController.prototype.getChannelHandout)),
+
+            async function ChannelHandoutsController_getChannelHandout(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsChannelHandoutsController_getChannelHandout, request, response });
+
+                const controller = new ChannelHandoutsController();
+
+              await templateService.apiHandler({
+                methodName: 'getChannelHandout',
                 controller,
                 response,
                 next,
