@@ -26,6 +26,8 @@ import { MeshtasticConfigurationController } from './../modules/meshtastic-confi
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MeshtasticChannelsController } from './../modules/meshtastic-channels/meshtastic-channels.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { DeviceProfileController } from './../modules/meshtastic-artifacts/device-profile.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ClaimExchangeController } from './../modules/member-claims/claim-exchange.controller.js';
@@ -2759,6 +2761,39 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'revealMeshtasticChannelPsk',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDeviceProfileController_getMeshtasticDeviceProfile: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/members/:memberId/meshtastic/device-profile',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DeviceProfileController)),
+            ...(fetchMiddlewares<RequestHandler>(DeviceProfileController.prototype.getMeshtasticDeviceProfile)),
+
+            async function DeviceProfileController_getMeshtasticDeviceProfile(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDeviceProfileController_getMeshtasticDeviceProfile, request, response });
+
+                const controller = new DeviceProfileController();
+
+              await templateService.apiHandler({
+                methodName: 'getMeshtasticDeviceProfile',
                 controller,
                 response,
                 next,

@@ -13,6 +13,7 @@ import {
   parseFirmwareVersion,
   type FirmwareVersion,
 } from "./firmware-version.js";
+import { isManagedFieldKey } from "./managed-fields.js";
 import { loadProfileProtobufs, protobufMismatch, resolveProtobufField } from "./profile-protobufs.js";
 
 export interface LoadedFirmwareField {
@@ -89,6 +90,9 @@ function fieldProblems(
     if (since === null || lineOf(since) !== file.firmware.line || compareFirmwareVersions(since, min) < 0) {
       problems.push(`${where} has since ${field.since} outside ${file.firmware.line} or below the minimum`);
     }
+  }
+  if (field.managedBy !== undefined && !isManagedFieldKey(key)) {
+    problems.push(`${where} is managed, but OpenMeshTak cannot resolve a value for it`);
   }
   if (field.managedBy === undefined && (!("default" in field) || field.default === undefined)) {
     problems.push(`${where} is editable and needs a default`);
