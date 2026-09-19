@@ -1,6 +1,5 @@
 import type { Uuid } from "../../shared/http/uuid.js";
 import type {
-  MeshtasticDeviceRole,
   TakRole,
   TakTeam,
 } from "../event-groups/provisioning-values.js";
@@ -68,7 +67,6 @@ export interface ResolvedProfileDto {
     longName: string;
     /** `null` only in previews while the group has no short-name prefix. */
     shortName: string | null;
-    deviceRole: MeshtasticDeviceRole;
     /** Device order, primary first. Channels outside the member's audience are absent. */
     channels: ProfileChannel[];
     /** `null` for configurations published before events had a firmware version. */

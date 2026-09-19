@@ -23,7 +23,6 @@ interface ProfileBody {
   meshtastic: {
     longName: string;
     shortName: string | null;
-    deviceRole: string;
     channels: Array<{ name: string; primary: boolean; delivery: string; keyHolder: boolean }>;
     firmware: Record<string, unknown> & { flashingNotes?: string | null } | null;
   };
@@ -34,7 +33,6 @@ const bravoProvisioning = {
   callsignFormat: "{username} [Bravo]",
   shortNamePrefix: "B",
   tak: { team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
-  meshtastic: { deviceRole: "CLIENT" },
   missionGroups: ["global", "bravo"],
 };
 
@@ -148,7 +146,6 @@ void describe("Peter/Bravo end to end", () => {
         ...profile.meshtastic,
         longName: "Peter [Bravo]",
         shortName: "B1",
-        deviceRole: "CLIENT",
       },
       missionGroups: ["global", "bravo"],
     });

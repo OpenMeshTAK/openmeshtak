@@ -67,8 +67,6 @@ function managedValue(key: ManagedFieldKey, profile: ResolvedProfileDto): Device
       return profile.meshtastic.longName;
     case "shortName":
       return profile.meshtastic.shortName;
-    case "config.device.role":
-      return profile.meshtastic.deviceRole;
   }
 }
 

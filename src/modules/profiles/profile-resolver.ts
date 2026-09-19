@@ -64,7 +64,6 @@ export function resolveProfile({
     meshtastic: {
       longName: member.callsign,
       shortName: shortNameFor(provisioning.shortNamePrefix, member.shortNameNumber),
-      deviceRole: provisioning.meshtastic.deviceRole,
       channels: resolveProfileChannels(channels, liveChannels, {
         memberId: member.id,
         eventRoleId: member.eventRoleId,

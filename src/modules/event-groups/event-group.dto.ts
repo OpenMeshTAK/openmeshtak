@@ -10,7 +10,7 @@ export interface EventGroupDto {
   /** Stable key used by integrations, unique within the event, e.g. `bravo`. */
   slug: string;
   description: string | null;
-  /** Callsign, TAK and Meshtastic settings shared by every member of the group. */
+  /** Callsign, TAK and short-name settings shared by every member of the group. */
   provisioning: GroupProvisioning;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;

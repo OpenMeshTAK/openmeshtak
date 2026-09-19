@@ -65,7 +65,7 @@ void describe("Meshtastic device profiles", () => {
     memberId = randomUUID();
     await database.eventRole.create({ data: { id: roleId, eventId, name: "Participant", slug: "participant" } });
     await database.eventGroup.create({
-      data: { id: groupId, eventId, name: "Bravo", slug: "bravo", shortNamePrefix: "B", meshtasticDeviceRole: "TAK" },
+      data: { id: groupId, eventId, name: "Bravo", slug: "bravo", shortNamePrefix: "B" },
     });
     await database.eventMember.createMany({
       data: [
@@ -95,7 +95,7 @@ void describe("Meshtastic device profiles", () => {
     await request(app)
       .put(`/api/v1/events/${eventId}/meshtastic/configuration/settings`)
       .set("Cookie", admin.cookie)
-      .send({ version: 0, settings: { "config.lora.hopLimit": 5, "config.lora.region": "EU_868" } })
+      .send({ version: 0, settings: { "config.lora.hopLimit": 5, "config.lora.region": "EU_868", "config.device.role": "TAK" } })
       .expect(200);
     await request(app).post(`/api/v1/events/${eventId}/activate`).set("Cookie", admin.cookie).send({ version: 1 }).expect(200);
   });

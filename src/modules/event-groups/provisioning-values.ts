@@ -29,23 +29,6 @@ export type TakRole =
   | "RTO"
   | "K9";
 
-/**
- * Non-deprecated Meshtastic `Config.DeviceConfig.Role` values from upstream `config.proto`.
- * `ROUTER_CLIENT` and `REPEATER` are deprecated upstream and intentionally excluded.
- */
-export type MeshtasticDeviceRole =
-  | "CLIENT"
-  | "CLIENT_MUTE"
-  | "CLIENT_HIDDEN"
-  | "CLIENT_BASE"
-  | "ROUTER"
-  | "ROUTER_LATE"
-  | "TRACKER"
-  | "SENSOR"
-  | "TAK"
-  | "TAK_TRACKER"
-  | "LOST_AND_FOUND";
-
 /** Upstream nanopb limits include the terminating null byte, hence one less than max_size. */
 export const MESHTASTIC_LONG_NAME_MAX_BYTES = 39;
 export const MESHTASTIC_SHORT_NAME_MAX_BYTES = 4;

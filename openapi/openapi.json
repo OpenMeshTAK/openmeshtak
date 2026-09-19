@@ -707,23 +707,6 @@
 				],
 				"description": "ATAK member roles from the upstream Meshtastic `atak.proto` `MemberRole` enum."
 			},
-			"MeshtasticDeviceRole": {
-				"type": "string",
-				"enum": [
-					"CLIENT",
-					"CLIENT_MUTE",
-					"CLIENT_HIDDEN",
-					"CLIENT_BASE",
-					"ROUTER",
-					"ROUTER_LATE",
-					"TRACKER",
-					"SENSOR",
-					"TAK",
-					"TAK_TRACKER",
-					"LOST_AND_FOUND"
-				],
-				"description": "Non-deprecated Meshtastic `Config.DeviceConfig.Role` values from upstream `config.proto`.\n`ROUTER_CLIENT` and `REPEATER` are deprecated upstream and intentionally excluded."
-			},
 			"ProfileChannel": {
 				"description": "A channel the member receives. `included` channels come with the member's channel set;\n`on-site` channels are secret and handed out on site by a key holder before their release.",
 				"properties": {
@@ -910,9 +893,6 @@
 								"type": "array",
 								"description": "Device order, primary first. Channels outside the member's audience are absent."
 							},
-							"deviceRole": {
-								"$ref": "#/components/schemas/MeshtasticDeviceRole"
-							},
 							"shortName": {
 								"type": "string",
 								"nullable": true,
@@ -925,7 +905,6 @@
 						"required": [
 							"firmware",
 							"channels",
-							"deviceRole",
 							"shortName",
 							"longName"
 						],
@@ -2725,18 +2704,6 @@
 						],
 						"type": "object"
 					},
-					"meshtastic": {
-						"properties": {
-							"deviceRole": {
-								"$ref": "#/components/schemas/MeshtasticDeviceRole"
-							}
-						},
-						"required": [
-							"deviceRole"
-						],
-						"type": "object",
-						"description": "Channels are event resources with their own audience; see the Meshtastic channels API."
-					},
 					"missionGroups": {
 						"items": {
 							"$ref": "#/components/schemas/ProvisioningName"
@@ -2749,7 +2716,6 @@
 					"callsignFormat",
 					"shortNamePrefix",
 					"tak",
-					"meshtastic",
 					"missionGroups"
 				],
 				"type": "object",
@@ -2776,7 +2742,7 @@
 					},
 					"provisioning": {
 						"$ref": "#/components/schemas/GroupProvisioning",
-						"description": "Callsign, TAK and Meshtastic settings shared by every member of the group."
+						"description": "Callsign, TAK and short-name settings shared by every member of the group."
 					},
 					"version": {
 						"type": "number",

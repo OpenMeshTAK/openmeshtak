@@ -127,9 +127,9 @@
       "section": "device",
       "type": "enum",
       "enum": "Config.DeviceConfig.Role",
-      "managedBy": "openmeshtak",
+      "default": "CLIENT",
       "label": "Device role",
-      "description": "Set per event group."
+      "description": "Role of every member's device in this event, for example Client or TAK."
     },
     "config.device.rebroadcastMode": {
       "section": "device",

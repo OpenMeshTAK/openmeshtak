@@ -2,7 +2,6 @@ import type { EventGroup } from "../../generated/prisma/client.js";
 import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
 import {
   CALLSIGN_PLACEHOLDERS,
-  type MeshtasticDeviceRole,
   type TakRole,
   type TakTeam,
 } from "./provisioning-values.js";
@@ -35,10 +34,6 @@ export interface GroupProvisioning {
     /** @maxItems 20 */
     serverGroups: ProvisioningName[];
   };
-  /** Channels are event resources with their own audience; see the Meshtastic channels API. */
-  meshtastic: {
-    deviceRole: MeshtasticDeviceRole;
-  };
   /** @maxItems 20 */
   missionGroups: ProvisioningName[];
 }
@@ -49,7 +44,6 @@ export interface GroupProvisioningColumns {
   takTeam: string;
   takRole: string;
   takServerGroups: string[];
-  meshtasticDeviceRole: string;
   missionGroups: string[];
 }
 
@@ -62,7 +56,6 @@ export function defaultProvisioning(slug: string): GroupProvisioning {
     callsignFormat: "{username}",
     shortNamePrefix: defaultShortNamePrefix(slug),
     tak: { team: "Cyan", role: "Team Member", serverGroups: [] },
-    meshtastic: { deviceRole: "CLIENT" },
     missionGroups: [],
   };
 }
@@ -113,7 +106,6 @@ export function toProvisioningColumns(provisioning: GroupProvisioning): GroupPro
     takTeam: provisioning.tak.team,
     takRole: provisioning.tak.role,
     takServerGroups: provisioning.tak.serverGroups,
-    meshtasticDeviceRole: provisioning.meshtastic.deviceRole,
     missionGroups: provisioning.missionGroups,
   };
 }
@@ -131,9 +123,6 @@ export function toGroupProvisioning(row: EventGroup): GroupProvisioning {
       team: row.takTeam as TakTeam,
       role: row.takRole as TakRole,
       serverGroups: stringArray(row.takServerGroups),
-    },
-    meshtastic: {
-      deviceRole: row.meshtasticDeviceRole as MeshtasticDeviceRole,
     },
     missionGroups: stringArray(row.missionGroups),
   };
