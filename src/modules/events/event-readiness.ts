@@ -2,6 +2,7 @@ import type { Event } from "../../generated/prisma/client.js";
 import { database } from "../../shared/database/database.js";
 import { ProblemError, type ProblemFieldError } from "../../shared/errors/problem-error.js";
 import { channelReadinessProblems } from "../meshtastic-channels/channel-readiness.js";
+import { loadMeshtasticConfiguration } from "../meshtastic-configuration/current-configuration.js";
 
 /**
  * Collects every unmet activation requirement at once so administrators can fix them together.
@@ -34,6 +35,7 @@ export async function activationProblems(event: Pick<Event, "id">): Promise<Prob
     });
   }
   problems.push(...(await channelReadinessProblems(event.id)));
+  problems.push(...(await loadMeshtasticConfiguration(database, event.id)).problems);
   return problems;
 }
 

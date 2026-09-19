@@ -22,6 +22,8 @@ import { PrincipalController } from './../modules/principal/principal.controller
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { FirmwareProfilesController } from './../modules/meshtastic-firmware/firmware-profiles.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MeshtasticConfigurationController } from './../modules/meshtastic-configuration/meshtastic-configuration.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MeshtasticChannelsController } from './../modules/meshtastic-channels/meshtastic-channels.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
@@ -472,6 +474,89 @@ const models: TsoaRoute.Models = {
             "sections": {"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareSectionDto"},"required":true},
             "fields": {"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareFieldDto"},"required":true},
             "enums": {"ref":"Record_string.string-Array_","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "FirmwareSettingsDocument": {
+        "dataType": "refObject",
+        "properties": {
+        },
+        "additionalProperties": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"},{"dataType":"boolean"}]},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationProblemDto": {
+        "dataType": "refObject",
+        "properties": {
+            "field": {"dataType":"string","required":true},
+            "code": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticConfigurationDto": {
+        "dataType": "refObject",
+        "properties": {
+            "eventId": {"ref":"Uuid","required":true},
+            "firmwareVersion": {"dataType":"string","required":true},
+            "effectiveMinimumVersion": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "profileId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "verified": {"dataType":"boolean","required":true},
+            "settings": {"ref":"FirmwareSettingsDocument","required":true},
+            "problems": {"dataType":"array","array":{"dataType":"refObject","ref":"ConfigurationProblemDto"},"required":true},
+            "version": {"dataType":"double","required":true},
+            "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateMeshtasticSettingsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "settings": {"ref":"FirmwareSettingsDocument","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "FirmwareChangeReportDto": {
+        "dataType": "refObject",
+        "properties": {
+            "kept": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "dropped": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "invalid": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "added": {"dataType":"array","array":{"dataType":"string"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "FirmwareChangePreviewDto": {
+        "dataType": "refObject",
+        "properties": {
+            "firmwareVersion": {"dataType":"string","required":true},
+            "effectiveMinimumVersion": {"dataType":"string","required":true},
+            "profileId": {"dataType":"string","required":true},
+            "report": {"ref":"FirmwareChangeReportDto","required":true},
+            "confirmation": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PreviewFirmwareChangeRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "firmwareVersion": {"dataType":"string","required":true,"validators":{"maxLength":{"value":20}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ChangeFirmwareRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "firmwareVersion": {"dataType":"string","required":true,"validators":{"maxLength":{"value":20}}},
+            "confirmation": {"dataType":"string"},
         },
         "additionalProperties": false,
     },
@@ -1058,13 +1143,26 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SnapshotMeshtastic": {
+        "dataType": "refObject",
+        "properties": {
+            "firmwareVersion": {"dataType":"string","required":true},
+            "effectiveMinimumVersion": {"dataType":"string","required":true},
+            "profileId": {"dataType":"string","required":true},
+            "profileSha256": {"dataType":"string","required":true},
+            "settings": {"ref":"FirmwareSettingsDocument","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ConfigurationSnapshot": {
         "dataType": "refObject",
         "properties": {
-            "schemaVersion": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]}],"required":true},
+            "schemaVersion": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]},{"dataType":"enum","enums":[3]}],"required":true},
             "roles": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotRole"},"required":true},
             "groups": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotGroup"},"required":true},
             "channels": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotChannel"},"required":true},
+            "meshtastic": {"dataType":"union","subSchemas":[{"ref":"SnapshotMeshtastic"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -2248,6 +2346,137 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getFirmwareProfile',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticConfigurationController_getMeshtasticConfiguration: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/meshtastic/configuration',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.getMeshtasticConfiguration)),
+
+            async function MeshtasticConfigurationController_getMeshtasticConfiguration(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticConfigurationController_getMeshtasticConfiguration, request, response });
+
+                const controller = new MeshtasticConfigurationController();
+
+              await templateService.apiHandler({
+                methodName: 'getMeshtasticConfiguration',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticConfigurationController_updateMeshtasticSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateMeshtasticSettingsRequest"},
+        };
+        app.put('/api/v1/events/:eventId/meshtastic/configuration/settings',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.updateMeshtasticSettings)),
+
+            async function MeshtasticConfigurationController_updateMeshtasticSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticConfigurationController_updateMeshtasticSettings, request, response });
+
+                const controller = new MeshtasticConfigurationController();
+
+              await templateService.apiHandler({
+                methodName: 'updateMeshtasticSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticConfigurationController_previewFirmwareChange: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"PreviewFirmwareChangeRequest"},
+        };
+        app.post('/api/v1/events/:eventId/meshtastic/configuration/firmware/preview',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.previewFirmwareChange)),
+
+            async function MeshtasticConfigurationController_previewFirmwareChange(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticConfigurationController_previewFirmwareChange, request, response });
+
+                const controller = new MeshtasticConfigurationController();
+
+              await templateService.apiHandler({
+                methodName: 'previewFirmwareChange',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticConfigurationController_changeFirmware: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"ChangeFirmwareRequest"},
+        };
+        app.put('/api/v1/events/:eventId/meshtastic/configuration/firmware',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.changeFirmware)),
+
+            async function MeshtasticConfigurationController_changeFirmware(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticConfigurationController_changeFirmware, request, response });
+
+                const controller = new MeshtasticConfigurationController();
+
+              await templateService.apiHandler({
+                methodName: 'changeFirmware',
                 controller,
                 response,
                 next,

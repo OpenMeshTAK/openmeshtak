@@ -1225,6 +1225,225 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"FirmwareSettingsDocument": {
+				"description": "Values of a firmware profile's editable fields, keyed by field key.",
+				"properties": {},
+				"type": "object",
+				"additionalProperties": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number",
+							"format": "double"
+						},
+						{
+							"type": "boolean"
+						}
+					]
+				}
+			},
+			"ConfigurationProblemDto": {
+				"properties": {
+					"field": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"field",
+					"code",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticConfigurationDto": {
+				"properties": {
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"firmwareVersion": {
+						"type": "string",
+						"description": "Recommended firmware: a line such as `2.8` or a minimum patch such as `2.8.3`."
+					},
+					"effectiveMinimumVersion": {
+						"type": "string",
+						"nullable": true,
+						"description": "The given patch or the profile minimum; `null` when the version is no longer supported."
+					},
+					"profileId": {
+						"type": "string",
+						"nullable": true
+					},
+					"verified": {
+						"type": "boolean",
+						"description": "`false` when no tested patch reaches the effective minimum version."
+					},
+					"settings": {
+						"$ref": "#/components/schemas/FirmwareSettingsDocument"
+					},
+					"problems": {
+						"items": {
+							"$ref": "#/components/schemas/ConfigurationProblemDto"
+						},
+						"type": "array",
+						"description": "Why the stored configuration is not valid for this Core release; empty when it is."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until the configuration is first saved."
+					},
+					"updatedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"eventId",
+					"firmwareVersion",
+					"effectiveMinimumVersion",
+					"profileId",
+					"verified",
+					"settings",
+					"problems",
+					"version",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateMeshtasticSettingsRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 0
+					},
+					"settings": {
+						"$ref": "#/components/schemas/FirmwareSettingsDocument",
+						"description": "Complete or partial document; missing fields take the profile default."
+					}
+				},
+				"required": [
+					"version",
+					"settings"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"FirmwareChangeReportDto": {
+				"properties": {
+					"kept": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"dropped": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"invalid": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"added": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"kept",
+					"dropped",
+					"invalid",
+					"added"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"FirmwareChangePreviewDto": {
+				"properties": {
+					"firmwareVersion": {
+						"type": "string"
+					},
+					"effectiveMinimumVersion": {
+						"type": "string"
+					},
+					"profileId": {
+						"type": "string"
+					},
+					"report": {
+						"$ref": "#/components/schemas/FirmwareChangeReportDto"
+					},
+					"confirmation": {
+						"type": "string",
+						"nullable": true,
+						"description": "Token to send with the change when it needs confirmation; `null` when only the minimum patch\nwithin the same line is raised, which never drops values."
+					}
+				},
+				"required": [
+					"firmwareVersion",
+					"effectiveMinimumVersion",
+					"profileId",
+					"report",
+					"confirmation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PreviewFirmwareChangeRequest": {
+				"properties": {
+					"firmwareVersion": {
+						"type": "string",
+						"maxLength": 20
+					}
+				},
+				"required": [
+					"firmwareVersion"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChangeFirmwareRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 0
+					},
+					"firmwareVersion": {
+						"type": "string",
+						"maxLength": 20
+					},
+					"confirmation": {
+						"type": "string",
+						"description": "The `confirmation` of the preview the administrator accepted."
+					}
+				},
+				"required": [
+					"version",
+					"firmwareVersion"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ChannelPskKind": {
 				"type": "string",
 				"enum": [
@@ -2762,14 +2981,44 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"SnapshotMeshtastic": {
+				"description": "The event's Meshtastic firmware target and settings, with the profile file hash so an artifact\ncan always be traced back to the exact field definitions used to generate it.",
+				"properties": {
+					"firmwareVersion": {
+						"type": "string"
+					},
+					"effectiveMinimumVersion": {
+						"type": "string"
+					},
+					"profileId": {
+						"type": "string"
+					},
+					"profileSha256": {
+						"type": "string"
+					},
+					"settings": {
+						"$ref": "#/components/schemas/FirmwareSettingsDocument"
+					}
+				},
+				"required": [
+					"firmwareVersion",
+					"effectiveMinimumVersion",
+					"profileId",
+					"profileSha256",
+					"settings"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ConfigurationSnapshot": {
-				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel.",
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`.",
 				"properties": {
 					"schemaVersion": {
 						"type": "number",
 						"enum": [
 							1,
-							2
+							2,
+							3
 						]
 					},
 					"roles": {
@@ -2789,13 +3038,23 @@
 							"$ref": "#/components/schemas/SnapshotChannel"
 						},
 						"type": "array"
+					},
+					"meshtastic": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/SnapshotMeshtastic"
+							}
+						],
+						"nullable": true,
+						"description": "`null` in revisions created before version 3."
 					}
 				},
 				"required": [
 					"schemaVersion",
 					"roles",
 					"groups",
-					"channels"
+					"channels",
+					"meshtastic"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5523,6 +5782,361 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/meshtastic/configuration": {
+			"get": {
+				"operationId": "GetMeshtasticConfiguration",
+				"responses": {
+					"200": {
+						"description": "Meshtastic configuration",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticConfigurationDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Meshtastic configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic/configuration/settings": {
+			"put": {
+				"operationId": "UpdateMeshtasticSettings",
+				"responses": {
+					"200": {
+						"description": "Settings updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticConfigurationDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the settings for the current firmware version. Requires the current `version`.",
+				"tags": [
+					"Meshtastic configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateMeshtasticSettingsRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/meshtastic/configuration/firmware/preview": {
+			"post": {
+				"operationId": "PreviewFirmwareChange",
+				"responses": {
+					"200": {
+						"description": "Firmware change preview",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/FirmwareChangePreviewDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Unsupported firmware version",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Reports which settings a firmware change would keep, drop, invalidate or add.",
+				"tags": [
+					"Meshtastic configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PreviewFirmwareChangeRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/meshtastic/configuration/firmware": {
+			"put": {
+				"operationId": "ChangeFirmware",
+				"responses": {
+					"200": {
+						"description": "Firmware changed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticConfigurationDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, unconfirmed change or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Unsupported firmware version",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Changes the recommended firmware. Except for raising the minimum patch within a line, send\nthe `confirmation` of the preview that was accepted.",
+				"tags": [
+					"Meshtastic configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ChangeFirmwareRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/meshtastic/channels": {

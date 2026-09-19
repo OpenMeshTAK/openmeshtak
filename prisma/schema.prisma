@@ -14,26 +14,27 @@ enum EventStatus {
 }
 
 model Event {
-  id                     String                          @id
-  name                   String
-  slug                   String                          @unique
-  timeZone               String
-  status                 EventStatus                     @default(draft)
-  version                Int                             @default(1)
-  startsAt               DateTime?
-  endsAt                 DateTime?
-  createdAt              DateTime                        @default(now())
-  updatedAt              DateTime                        @updatedAt
-  permissionGrants       PermissionGrant[]
-  serviceAccountGrants   ServiceAccountPermissionGrant[]
-  roles                  EventRole[]
-  groups                 EventGroup[]
-  members                EventMember[]
-  syncIssues             SyncIssue[]
-  memberClaims           MemberClaim[]
-  configurationRevisions EventConfigurationRevision[]
-  dataPackages           DataPackage[]
-  meshtasticChannels     MeshtasticChannel[]
+  id                      String                          @id
+  name                    String
+  slug                    String                          @unique
+  timeZone                String
+  status                  EventStatus                     @default(draft)
+  version                 Int                             @default(1)
+  startsAt                DateTime?
+  endsAt                  DateTime?
+  createdAt               DateTime                        @default(now())
+  updatedAt               DateTime                        @updatedAt
+  permissionGrants        PermissionGrant[]
+  serviceAccountGrants    ServiceAccountPermissionGrant[]
+  roles                   EventRole[]
+  groups                  EventGroup[]
+  members                 EventMember[]
+  syncIssues              SyncIssue[]
+  memberClaims            MemberClaim[]
+  configurationRevisions  EventConfigurationRevision[]
+  dataPackages            DataPackage[]
+  meshtasticChannels      MeshtasticChannel[]
+  meshtasticConfiguration MeshtasticConfiguration?
 }
 
 model User {
@@ -552,4 +553,18 @@ model MeshtasticChannelAudience {
   @@index([eventGroupId])
   @@index([eventRoleId])
   @@index([eventMemberId])
+}
+
+/// An event's recommended Meshtastic firmware and its radio settings. Missing for events that still
+/// use the default firmware line and profile defaults.
+model MeshtasticConfiguration {
+  eventId         String   @id
+  /// Line or line plus minimum patch, such as `2.8` or `2.8.3`; selects the firmware profile.
+  firmwareVersion String
+  /// Values of the profile's editable fields, keyed by field key and validated on every write.
+  settings        Json
+  version         Int      @default(1)
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

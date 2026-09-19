@@ -4,6 +4,9 @@ import { toGroupProvisioning, type GroupProvisioning } from "../event-groups/gro
 import { toAudience } from "../meshtastic-channels/channel-audience.js";
 import { CHANNEL_DEVICE_ORDER } from "../meshtastic-channels/channel-order.js";
 import type { ChannelAudience } from "../meshtastic-channels/meshtastic-channel.dto.js";
+import { loadMeshtasticConfiguration } from "../meshtastic-configuration/current-configuration.js";
+import type { FirmwareSettingsDocument } from "../meshtastic-configuration/meshtastic-configuration.dto.js";
+import { formatFirmwareVersion } from "../meshtastic-firmware/firmware-version.js";
 
 export interface SnapshotRole {
   id: string;
@@ -36,14 +39,29 @@ export interface SnapshotChannel {
 }
 
 /**
+ * The event's Meshtastic firmware target and settings, with the profile file hash so an artifact
+ * can always be traced back to the exact field definitions used to generate it.
+ */
+export interface SnapshotMeshtastic {
+  firmwareVersion: string;
+  effectiveMinimumVersion: string;
+  profileId: string;
+  profileSha256: string;
+  settings: FirmwareSettingsDocument;
+}
+
+/**
  * Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.
- * Version 2 added `channels` in device order, the first being the primary channel.
+ * Version 2 added `channels` in device order, the first being the primary channel; version 3
+ * added `meshtastic`.
  */
 export interface ConfigurationSnapshot {
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   roles: SnapshotRole[];
   groups: SnapshotGroup[];
   channels: SnapshotChannel[];
+  /** `null` in revisions created before version 3. */
+  meshtastic: SnapshotMeshtastic | null;
 }
 
 /**
@@ -54,7 +72,7 @@ export async function buildConfigurationSnapshot(
   transaction: Prisma.TransactionClient,
   eventId: string,
 ): Promise<ConfigurationSnapshot> {
-  const [roles, groups, channels] = await Promise.all([
+  const [roles, groups, channels, meshtastic] = await Promise.all([
     transaction.eventRole.findMany({
       where: { eventId },
       orderBy: { slug: "asc" },
@@ -66,10 +84,12 @@ export async function buildConfigurationSnapshot(
       orderBy: [...CHANNEL_DEVICE_ORDER],
       include: { audience: true },
     }),
+    loadMeshtasticConfiguration(transaction, eventId),
   ]);
+  const { firmware } = meshtastic;
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     roles,
     groups: groups.map((group) => ({
       id: group.id,
@@ -88,6 +108,17 @@ export async function buildConfigurationSnapshot(
       audience: toAudience(channel.audience),
       keyHolders: toAudience(channel.audience, true),
     })),
+    // Readiness checks keep unresolvable firmware out of published revisions.
+    meshtastic:
+      firmware === null
+        ? null
+        : {
+            firmwareVersion: meshtastic.firmwareVersion,
+            effectiveMinimumVersion: formatFirmwareVersion(firmware.effectiveMinimum),
+            profileId: firmware.profile.file.id,
+            profileSha256: firmware.profile.sha256,
+            settings: meshtastic.settings,
+          },
   };
 }
 
@@ -97,11 +128,13 @@ export function hashConfigurationSnapshot(snapshot: ConfigurationSnapshot): stri
 
 /**
  * Revisions are written only by this module from `ConfigurationSnapshot` values. Version 1
- * revisions predate event channels and therefore publish none.
+ * revisions predate event channels and therefore publish none; versions before 3 carry no
+ * Meshtastic configuration.
  */
 export function parseConfigurationSnapshot(value: Prisma.JsonValue): ConfigurationSnapshot {
-  const snapshot = value as unknown as Omit<ConfigurationSnapshot, "channels"> & {
+  const snapshot = value as unknown as Omit<ConfigurationSnapshot, "channels" | "meshtastic"> & {
     channels?: SnapshotChannel[];
+    meshtastic?: SnapshotMeshtastic | null;
   };
-  return { ...snapshot, channels: snapshot.channels ?? [] };
+  return { ...snapshot, channels: snapshot.channels ?? [], meshtastic: snapshot.meshtastic ?? null };
 }
