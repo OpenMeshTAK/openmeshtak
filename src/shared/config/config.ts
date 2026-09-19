@@ -19,6 +19,8 @@ const environmentSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
+  /** Extra firmware-profile directories, separated like PATH; mainly for test-only profiles. */
+  MESHTASTIC_FIRMWARE_PROFILE_DIRS: z.string().min(1).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PUBLIC_ORIGIN: z.url().default("http://localhost:3000"),
   ROOT_ENCRYPTION_KEY_FILE: z.string().min(1).optional(),
@@ -52,6 +54,7 @@ export const config = Object.freeze({
   databaseUrl: environment.DATABASE_URL,
   host: environment.APP_HOST,
   logLevel: environment.LOG_LEVEL,
+  meshtasticFirmwareProfileDirs: environment.MESHTASTIC_FIRMWARE_PROFILE_DIRS,
   nodeEnvironment: environment.NODE_ENV,
   port: environment.APP_PORT,
   publicOrigin: environment.PUBLIC_ORIGIN,

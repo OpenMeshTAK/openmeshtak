@@ -3,6 +3,7 @@ import { rotateBootstrapChallenge } from "./modules/setup/bootstrap.service.js";
 import { ensureAdministratorGrants } from "./modules/user-groups/system-groups.js";
 import { config } from "./shared/config/config.js";
 import { getRootKey } from "./shared/crypto/root-key.js";
+import { firmwareProfiles } from "./modules/meshtastic-firmware/firmware-profiles.js";
 import { connectDatabase, disconnectDatabase } from "./shared/database/database.js";
 import { logger } from "./shared/logging/logger.js";
 import { writeBootstrapOperatorNotice } from "./shared/logging/operator-output.js";
@@ -10,6 +11,8 @@ import { writeBootstrapOperatorNotice } from "./shared/logging/operator-output.j
 async function startServer(): Promise<void> {
   // Fail at boot rather than on the first secret write when the root key is missing or invalid.
   getRootKey();
+  // Invalid firmware profiles would make compatibility claims Core cannot keep.
+  await firmwareProfiles();
   await connectDatabase();
   await ensureAdministratorGrants();
 

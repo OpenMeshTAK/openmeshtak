@@ -1,0 +1,290 @@
+{
+  "id": "meshtastic-2.8",
+  "formatVersion": 1,
+  "firmware": {
+    "line": "2.8",
+    "min": "2.8.1",
+    "tested": ["2.8.1"],
+    "testedBuilds": ["8e6a88d"],
+    "channel": "alpha"
+  },
+  "protobufs": {
+    "module": "@meshtastic/protobufs",
+    "version": "2.8.1"
+  },
+  "flasherUrl": "https://flasher.meshtastic.org/",
+  "flashingNotes": "Flash the 2.8 alpha line with the official Meshtastic web flasher, then import the OpenMeshTak configuration in the Meshtastic app.",
+  "default": true,
+  "sections": [
+    { "id": "owner", "label": "Owner" },
+    { "id": "lora", "label": "LoRa" },
+    { "id": "device", "label": "Device" },
+    { "id": "position", "label": "Position" },
+    { "id": "power", "label": "Power" },
+    { "id": "display", "label": "Display" },
+    { "id": "bluetooth", "label": "Bluetooth" },
+    { "id": "security", "label": "Security" }
+  ],
+  "fields": {
+    "longName": {
+      "section": "owner",
+      "type": "string",
+      "maxBytes": 39,
+      "managedBy": "openmeshtak",
+      "label": "Long name",
+      "description": "The member's callsign."
+    },
+    "shortName": {
+      "section": "owner",
+      "type": "string",
+      "maxBytes": 4,
+      "managedBy": "openmeshtak",
+      "label": "Short name",
+      "description": "The group prefix plus the member's stable number."
+    },
+    "config.lora.region": {
+      "section": "lora",
+      "type": "enum",
+      "enum": "Config.LoRaConfig.RegionCode",
+      "default": "EU_868",
+      "label": "Region",
+      "description": "The region where the radios are used."
+    },
+    "config.lora.usePreset": {
+      "section": "lora",
+      "type": "boolean",
+      "default": true,
+      "label": "Use modem preset"
+    },
+    "config.lora.modemPreset": {
+      "section": "lora",
+      "type": "enum",
+      "enum": "Config.LoRaConfig.ModemPreset",
+      "default": "LONG_FAST",
+      "label": "Modem preset"
+    },
+    "config.lora.hopLimit": {
+      "section": "lora",
+      "type": "integer",
+      "min": 0,
+      "max": 7,
+      "default": 3,
+      "label": "Hop limit",
+      "description": "How many times a message may be repeated before it stops being forwarded."
+    },
+    "config.lora.txEnabled": {
+      "section": "lora",
+      "type": "boolean",
+      "default": true,
+      "label": "Transmit enabled"
+    },
+    "config.lora.txPower": {
+      "section": "lora",
+      "type": "integer",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "unit": "dBm",
+      "label": "Transmit power",
+      "description": "Zero uses the highest power that is legal for the region."
+    },
+    "config.lora.channelNum": {
+      "section": "lora",
+      "type": "integer",
+      "min": 0,
+      "max": 1000,
+      "default": 0,
+      "label": "Frequency slot",
+      "description": "Zero derives the slot from the primary channel name."
+    },
+    "config.lora.overrideDutyCycle": {
+      "section": "lora",
+      "type": "boolean",
+      "default": false,
+      "label": "Override duty cycle"
+    },
+    "config.lora.sx126xRxBoostedGain": {
+      "section": "lora",
+      "type": "boolean",
+      "default": false,
+      "label": "RX boosted gain",
+      "description": "Only for SX126x radios."
+    },
+    "config.lora.ignoreMqtt": {
+      "section": "lora",
+      "type": "boolean",
+      "default": false,
+      "label": "Ignore MQTT",
+      "description": "Ignore packets that travelled via MQTT anywhere on their path."
+    },
+    "config.lora.configOkToMqtt": {
+      "section": "lora",
+      "type": "boolean",
+      "default": false,
+      "label": "OK to MQTT"
+    },
+    "config.device.role": {
+      "section": "device",
+      "type": "enum",
+      "enum": "Config.DeviceConfig.Role",
+      "managedBy": "openmeshtak",
+      "label": "Device role",
+      "description": "Set per event group."
+    },
+    "config.device.rebroadcastMode": {
+      "section": "device",
+      "type": "enum",
+      "enum": "Config.DeviceConfig.RebroadcastMode",
+      "default": "ALL",
+      "label": "Rebroadcast mode"
+    },
+    "config.device.nodeInfoBroadcastSecs": {
+      "section": "device",
+      "type": "integer",
+      "min": 0,
+      "max": 604800,
+      "default": 10800,
+      "unit": "s",
+      "label": "Node info broadcast interval"
+    },
+    "config.device.ledHeartbeatDisabled": {
+      "section": "device",
+      "type": "boolean",
+      "default": false,
+      "label": "Disable LED heartbeat"
+    },
+    "config.position.gpsMode": {
+      "section": "position",
+      "type": "enum",
+      "enum": "Config.PositionConfig.GpsMode",
+      "default": "ENABLED",
+      "label": "GPS mode"
+    },
+    "config.position.positionBroadcastSecs": {
+      "section": "position",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 900,
+      "unit": "s",
+      "label": "Position broadcast interval",
+      "description": "The longest a node goes without broadcasting its position."
+    },
+    "config.position.positionBroadcastSmartEnabled": {
+      "section": "position",
+      "type": "boolean",
+      "default": true,
+      "label": "Smart position"
+    },
+    "config.position.broadcastSmartMinimumDistance": {
+      "section": "position",
+      "type": "integer",
+      "min": 0,
+      "max": 10000,
+      "default": 100,
+      "unit": "m",
+      "label": "Smart minimum distance"
+    },
+    "config.position.broadcastSmartMinimumIntervalSecs": {
+      "section": "position",
+      "type": "integer",
+      "min": 0,
+      "max": 3600,
+      "default": 30,
+      "unit": "s",
+      "label": "Smart minimum interval"
+    },
+    "config.position.gpsUpdateInterval": {
+      "section": "position",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 120,
+      "unit": "s",
+      "label": "GPS update interval"
+    },
+    "config.power.isPowerSaving": {
+      "section": "power",
+      "type": "boolean",
+      "default": false,
+      "label": "Power saving"
+    },
+    "config.display.screenOnSecs": {
+      "section": "display",
+      "type": "integer",
+      "min": 0,
+      "max": 3600,
+      "default": 60,
+      "unit": "s",
+      "label": "Screen on for"
+    },
+    "config.display.units": {
+      "section": "display",
+      "type": "enum",
+      "enum": "Config.DisplayConfig.DisplayUnits",
+      "default": "METRIC",
+      "label": "Display units"
+    },
+    "config.display.use12hClock": {
+      "section": "display",
+      "type": "boolean",
+      "default": false,
+      "label": "12-hour clock"
+    },
+    "config.bluetooth.enabled": {
+      "section": "bluetooth",
+      "type": "boolean",
+      "default": true,
+      "label": "Bluetooth enabled"
+    },
+    "config.bluetooth.mode": {
+      "section": "bluetooth",
+      "type": "enum",
+      "enum": "Config.BluetoothConfig.PairingMode",
+      "default": "RANDOM_PIN",
+      "label": "Pairing mode"
+    },
+    "config.security.packetSignaturePolicy": {
+      "section": "security",
+      "type": "enum",
+      "enum": "Config.SecurityConfig.PacketSignaturePolicy",
+      "default": "PACKET_SIGNATURE_POLICY_COMPATIBLE",
+      "label": "Packet signature policy"
+    },
+    "config.security.serialEnabled": {
+      "section": "security",
+      "type": "boolean",
+      "default": true,
+      "label": "Serial console"
+    }
+  },
+  "enums": {
+    "Config.LoRaConfig.RegionCode": [
+      "UNSET", "US", "EU_433", "EU_868", "CN", "JP", "ANZ", "KR", "TW", "RU", "IN", "NZ_865",
+      "TH", "LORA_24", "UA_433", "MY_433", "MY_919", "SG_923", "PH_433", "PH_868", "PH_915",
+      "ANZ_433", "KZ_433", "KZ_863", "NP_865", "BR_902", "ITU1_2M", "ITU2_2M", "EU_866",
+      "EU_874", "EU_917", "EU_N_868", "ITU3_2M", "ITU1_70CM", "ITU2_70CM", "ITU3_70CM",
+      "ITU2_125CM"
+    ],
+    "Config.LoRaConfig.ModemPreset": [
+      "LONG_FAST", "LONG_MODERATE", "LONG_TURBO", "MEDIUM_SLOW", "MEDIUM_FAST", "MEDIUM_TURBO",
+      "SHORT_SLOW", "SHORT_FAST", "SHORT_TURBO", "LITE_FAST", "LITE_SLOW", "NARROW_FAST",
+      "NARROW_SLOW", "TINY_FAST", "TINY_SLOW"
+    ],
+    "Config.DeviceConfig.Role": [
+      "CLIENT", "CLIENT_MUTE", "CLIENT_HIDDEN", "CLIENT_BASE", "ROUTER", "ROUTER_LATE", "TRACKER",
+      "SENSOR", "TAK", "TAK_TRACKER", "LOST_AND_FOUND"
+    ],
+    "Config.DeviceConfig.RebroadcastMode": [
+      "ALL", "LOCAL_ONLY", "KNOWN_ONLY", "NONE", "CORE_PORTNUMS_ONLY"
+    ],
+    "Config.PositionConfig.GpsMode": ["DISABLED", "ENABLED", "NOT_PRESENT"],
+    "Config.DisplayConfig.DisplayUnits": ["METRIC", "IMPERIAL"],
+    "Config.BluetoothConfig.PairingMode": ["RANDOM_PIN", "NO_PIN"],
+    "Config.SecurityConfig.PacketSignaturePolicy": [
+      "PACKET_SIGNATURE_POLICY_COMPATIBLE",
+      "PACKET_SIGNATURE_POLICY_BALANCED",
+      "PACKET_SIGNATURE_POLICY_STRICT"
+    ]
+  }
+}

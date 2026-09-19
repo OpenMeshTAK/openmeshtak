@@ -995,6 +995,236 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"FirmwareProfileSummaryDto": {
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "Stable profile id such as `meshtastic-2.8`."
+					},
+					"line": {
+						"type": "string",
+						"description": "Firmware line such as `2.8`."
+					},
+					"minVersion": {
+						"type": "string",
+						"description": "Lowest supported patch of the line, e.g. `2.8.1`."
+					},
+					"testedVersions": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Patches verified on a real device. Newer patches are allowed but not verified."
+					},
+					"channel": {
+						"type": "string",
+						"enum": [
+							"stable",
+							"beta",
+							"alpha"
+						]
+					},
+					"default": {
+						"type": "boolean"
+					},
+					"flasherUrl": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"line",
+					"minVersion",
+					"testedVersions",
+					"channel",
+					"default",
+					"flasherUrl"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"FirmwareSectionDto": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"FirmwareFieldDto": {
+				"properties": {
+					"key": {
+						"type": "string",
+						"description": "Path in the Meshtastic `DeviceProfile`, e.g. `config.lora.hopLimit`."
+					},
+					"section": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"string",
+							"integer",
+							"number",
+							"boolean",
+							"enum",
+							"bytes"
+						]
+					},
+					"label": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"unit": {
+						"type": "string"
+					},
+					"since": {
+						"type": "string",
+						"description": "First patch that has the field; hidden while the event's minimum version is lower."
+					},
+					"managed": {
+						"type": "boolean",
+						"description": "Resolved per member by OpenMeshTak and never editable."
+					},
+					"maxBytes": {
+						"type": "number",
+						"format": "double"
+					},
+					"min": {
+						"type": "number",
+						"format": "double"
+					},
+					"max": {
+						"type": "number",
+						"format": "double"
+					},
+					"enum": {
+						"type": "string",
+						"description": "Name of the enum in `enums`."
+					},
+					"default": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							},
+							{
+								"type": "boolean"
+							}
+						]
+					}
+				},
+				"required": [
+					"key",
+					"section",
+					"type",
+					"label",
+					"since",
+					"managed"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.string-Array_": {
+				"properties": {},
+				"additionalProperties": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"FirmwareProfileDto": {
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "Stable profile id such as `meshtastic-2.8`."
+					},
+					"line": {
+						"type": "string",
+						"description": "Firmware line such as `2.8`."
+					},
+					"minVersion": {
+						"type": "string",
+						"description": "Lowest supported patch of the line, e.g. `2.8.1`."
+					},
+					"testedVersions": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Patches verified on a real device. Newer patches are allowed but not verified."
+					},
+					"channel": {
+						"type": "string",
+						"enum": [
+							"stable",
+							"beta",
+							"alpha"
+						]
+					},
+					"default": {
+						"type": "boolean"
+					},
+					"flasherUrl": {
+						"type": "string"
+					},
+					"flashingNotes": {
+						"type": "string",
+						"nullable": true
+					},
+					"sha256": {
+						"type": "string",
+						"description": "SHA-256 of the profile file, recorded in configuration revisions."
+					},
+					"sections": {
+						"items": {
+							"$ref": "#/components/schemas/FirmwareSectionDto"
+						},
+						"type": "array"
+					},
+					"fields": {
+						"items": {
+							"$ref": "#/components/schemas/FirmwareFieldDto"
+						},
+						"type": "array"
+					},
+					"enums": {
+						"$ref": "#/components/schemas/Record_string.string-Array_"
+					}
+				},
+				"required": [
+					"id",
+					"line",
+					"minVersion",
+					"testedVersions",
+					"channel",
+					"default",
+					"flasherUrl",
+					"flashingNotes",
+					"sha256",
+					"sections",
+					"fields",
+					"enums"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ChannelPskKind": {
 				"type": "string",
 				"enum": [
@@ -5171,6 +5401,128 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/meshtastic/firmware-profiles": {
+			"get": {
+				"operationId": "ListFirmwareProfiles",
+				"responses": {
+					"200": {
+						"description": "Firmware profiles",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/FirmwareProfileSummaryDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the supported firmware lines, newest first.",
+				"tags": [
+					"Meshtastic firmware profiles"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/meshtastic/firmware-profiles/{profileId}": {
+			"get": {
+				"operationId": "GetFirmwareProfile",
+				"responses": {
+					"200": {
+						"description": "Firmware profile",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/FirmwareProfileDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns the sections, fields and enums of one profile.",
+				"tags": [
+					"Meshtastic firmware profiles"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "profileId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
 			}
 		},
 		"/events/{eventId}/meshtastic/channels": {

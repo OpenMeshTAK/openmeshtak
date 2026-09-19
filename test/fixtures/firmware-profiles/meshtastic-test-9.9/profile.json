@@ -1,0 +1,42 @@
+{
+  "id": "meshtastic-test-9.9",
+  "formatVersion": 1,
+  "firmware": {
+    "line": "9.9",
+    "min": "9.9.0",
+    "tested": [],
+    "channel": "alpha"
+  },
+  "protobufs": {
+    "module": "@meshtastic/protobufs",
+    "version": "2.8.1"
+  },
+  "flasherUrl": "https://flasher.meshtastic.org/",
+  "default": false,
+  "sections": [
+    { "id": "owner", "label": "Owner" },
+    { "id": "lora", "label": "LoRa" }
+  ],
+  "fields": {
+    "longName": { "section": "owner", "type": "string", "maxBytes": 39, "managedBy": "openmeshtak", "label": "Long name" },
+    "shortName": { "section": "owner", "type": "string", "maxBytes": 4, "managedBy": "openmeshtak", "label": "Short name" },
+    "config.lora.region": {
+      "section": "lora",
+      "type": "enum",
+      "enum": "Config.LoRaConfig.RegionCode",
+      "default": "EU_868",
+      "label": "Region"
+    },
+    "config.lora.hopLimit": { "section": "lora", "type": "integer", "min": 0, "max": 7, "default": 4, "label": "Hop limit" },
+    "config.lora.ignoreMqtt": {
+      "section": "lora",
+      "type": "boolean",
+      "default": true,
+      "since": "9.9.3",
+      "label": "Ignore MQTT"
+    }
+  },
+  "enums": {
+    "Config.LoRaConfig.RegionCode": ["EU_868", "US"]
+  }
+}

@@ -37,6 +37,8 @@ const testEnvironment = {
   DATABASE_URL: `file:./server/data/db/${testDatabaseFile}`,
   LOG_LEVEL: "silent",
   NODE_ENV: "test",
+  // A test-only firmware line proves new profiles need no code changes (ROADMAP Stage 5).
+  MESHTASTIC_FIRMWARE_PROFILE_DIRS: resolve("test/fixtures/firmware-profiles"),
 };
 
 mkdirSync(dirname(testDatabasePath), { recursive: true });

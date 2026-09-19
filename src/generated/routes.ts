@@ -20,6 +20,8 @@ import { ChannelHandoutsController } from './../modules/profiles/channel-handout
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PrincipalController } from './../modules/principal/principal.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { FirmwareProfilesController } from './../modules/meshtastic-firmware/firmware-profiles.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MeshtasticChannelsController } from './../modules/meshtastic-channels/meshtastic-channels.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
@@ -403,6 +405,73 @@ const models: TsoaRoute.Models = {
             "id": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "FirmwareProfileSummaryDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "line": {"dataType":"string","required":true},
+            "minVersion": {"dataType":"string","required":true},
+            "testedVersions": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "channel": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["stable"]},{"dataType":"enum","enums":["beta"]},{"dataType":"enum","enums":["alpha"]}],"required":true},
+            "default": {"dataType":"boolean","required":true},
+            "flasherUrl": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "FirmwareSectionDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "label": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "FirmwareFieldDto": {
+        "dataType": "refObject",
+        "properties": {
+            "key": {"dataType":"string","required":true},
+            "section": {"dataType":"string","required":true},
+            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["string"]},{"dataType":"enum","enums":["integer"]},{"dataType":"enum","enums":["number"]},{"dataType":"enum","enums":["boolean"]},{"dataType":"enum","enums":["enum"]},{"dataType":"enum","enums":["bytes"]}],"required":true},
+            "label": {"dataType":"string","required":true},
+            "description": {"dataType":"string"},
+            "unit": {"dataType":"string"},
+            "since": {"dataType":"string","required":true},
+            "managed": {"dataType":"boolean","required":true},
+            "maxBytes": {"dataType":"double"},
+            "min": {"dataType":"double"},
+            "max": {"dataType":"double"},
+            "enum": {"dataType":"string"},
+            "default": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"},{"dataType":"boolean"}]},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Record_string.string-Array_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"array","array":{"dataType":"string"}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "FirmwareProfileDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "line": {"dataType":"string","required":true},
+            "minVersion": {"dataType":"string","required":true},
+            "testedVersions": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "channel": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["stable"]},{"dataType":"enum","enums":["beta"]},{"dataType":"enum","enums":["alpha"]}],"required":true},
+            "default": {"dataType":"boolean","required":true},
+            "flasherUrl": {"dataType":"string","required":true},
+            "flashingNotes": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "sha256": {"dataType":"string","required":true},
+            "sections": {"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareSectionDto"},"required":true},
+            "fields": {"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareFieldDto"},"required":true},
+            "enums": {"ref":"Record_string.string-Array_","required":true},
         },
         "additionalProperties": false,
     },
@@ -2116,6 +2185,69 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getPrincipal',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsFirmwareProfilesController_listFirmwareProfiles: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/meshtastic/firmware-profiles',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(FirmwareProfilesController)),
+            ...(fetchMiddlewares<RequestHandler>(FirmwareProfilesController.prototype.listFirmwareProfiles)),
+
+            async function FirmwareProfilesController_listFirmwareProfiles(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsFirmwareProfilesController_listFirmwareProfiles, request, response });
+
+                const controller = new FirmwareProfilesController();
+
+              await templateService.apiHandler({
+                methodName: 'listFirmwareProfiles',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsFirmwareProfilesController_getFirmwareProfile: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                profileId: {"in":"path","name":"profileId","required":true,"dataType":"string"},
+        };
+        app.get('/api/v1/meshtastic/firmware-profiles/:profileId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(FirmwareProfilesController)),
+            ...(fetchMiddlewares<RequestHandler>(FirmwareProfilesController.prototype.getFirmwareProfile)),
+
+            async function FirmwareProfilesController_getFirmwareProfile(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsFirmwareProfilesController_getFirmwareProfile, request, response });
+
+                const controller = new FirmwareProfilesController();
+
+              await templateService.apiHandler({
+                methodName: 'getFirmwareProfile',
                 controller,
                 response,
                 next,
