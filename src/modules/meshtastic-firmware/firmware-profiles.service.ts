@@ -69,6 +69,6 @@ export async function getFirmwareProfile(principal: Principal, profileId: string
     sha256: profile.sha256,
     sections: profile.file.sections,
     fields: profile.fields.map(toFieldDto),
-    enums: profile.file.enums,
+    enums: profile.enums,
   };
 }

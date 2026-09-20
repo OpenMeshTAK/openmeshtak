@@ -24,8 +24,15 @@ export interface LoadedFirmwareField {
   descriptor: DescField;
 }
 
+export interface FirmwareEnumValue {
+  value: string;
+  label: string;
+}
+
 export interface LoadedFirmwareProfile {
   file: FirmwareProfileFile;
+  /** `file.enums` with every value in the `{ value, label }` form. */
+  enums: Record<string, FirmwareEnumValue[]>;
   /** SHA-256 of `profile.json`, recorded in configuration revisions for provenance. */
   sha256: string;
   min: FirmwareVersion;
@@ -74,8 +81,23 @@ function versionProblems(file: FirmwareProfileFile, problems: string[]): Firmwar
   return min;
 }
 
+function normalizeEnums(file: FirmwareProfileFile): Record<string, FirmwareEnumValue[]> {
+  return Object.fromEntries(
+    Object.entries(file.enums).map(([name, values]) => [
+      name,
+      values.map((entry) => (typeof entry === "string" ? { value: entry, label: entry } : entry)),
+    ]),
+  );
+}
+
+/** Allowed values of one enum, or undefined when the profile does not define it. */
+export function enumValues(profile: Pick<LoadedFirmwareProfile, "enums">, name: string): string[] | undefined {
+  return profile.enums[name]?.map(({ value }) => value);
+}
+
 function fieldProblems(
   file: FirmwareProfileFile,
+  enums: Record<string, FirmwareEnumValue[]>,
   key: string,
   field: FirmwareField,
   min: FirmwareVersion,
@@ -101,7 +123,7 @@ function fieldProblems(
     problems.push(`${where} has min above max`);
   }
   if (field.type === "enum") {
-    const values = file.enums[field.enum];
+    const values = enumValues({ enums }, field.enum);
     if (values === undefined) {
       problems.push(`${where} references missing enum ${field.enum}`);
     } else if (field.default !== undefined && !values.includes(field.default)) {
@@ -140,9 +162,10 @@ async function loadProfile(source: ProfileSource, problems: string[]): Promise<L
     return null;
   }
 
+  const enums = normalizeEnums(file);
   const fields: LoadedFirmwareField[] = [];
   for (const [key, definition] of Object.entries(file.fields)) {
-    problems.push(...fieldProblems(file, key, definition, min));
+    problems.push(...fieldProblems(file, enums, key, definition, min));
     const descriptor = resolveProtobufField(deviceProfile, key);
     if (descriptor === null) {
       problems.push(`${file.id}: field ${key} does not exist in DeviceProfile`);
@@ -151,7 +174,7 @@ async function loadProfile(source: ProfileSource, problems: string[]): Promise<L
     const mismatch = protobufMismatch(
       definition,
       descriptor,
-      definition.type === "enum" ? file.enums[definition.enum] : undefined,
+      definition.type === "enum" ? enumValues({ enums }, definition.enum) : undefined,
     );
     if (mismatch !== null) {
       problems.push(`${file.id}: field ${key} ${mismatch}`);
@@ -166,6 +189,7 @@ async function loadProfile(source: ProfileSource, problems: string[]): Promise<L
   }
   return {
     file,
+    enums,
     sha256: createHash("sha256").update(source.bytes).digest("hex"),
     min,
     deviceProfile,

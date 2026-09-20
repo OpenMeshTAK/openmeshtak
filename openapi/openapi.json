@@ -1173,11 +1173,28 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"Record_string.string-Array_": {
+			"FirmwareEnumValueDto": {
+				"properties": {
+					"value": {
+						"type": "string",
+						"description": "Upstream enum name stored in settings, e.g. `LONG_FAST`."
+					},
+					"label": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"value",
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.FirmwareEnumValueDto-Array_": {
 				"properties": {},
 				"additionalProperties": {
 					"items": {
-						"type": "string"
+						"$ref": "#/components/schemas/FirmwareEnumValueDto"
 					},
 					"type": "array"
 				},
@@ -1240,7 +1257,8 @@
 						"type": "array"
 					},
 					"enums": {
-						"$ref": "#/components/schemas/Record_string.string-Array_"
+						"$ref": "#/components/schemas/Record_string.FirmwareEnumValueDto-Array_",
+						"description": "Allowed values per enum with English UI labels."
 					}
 				},
 				"required": [

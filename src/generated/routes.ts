@@ -465,9 +465,18 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Record_string.string-Array_": {
+    "FirmwareEnumValueDto": {
+        "dataType": "refObject",
+        "properties": {
+            "value": {"dataType":"string","required":true},
+            "label": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Record_string.FirmwareEnumValueDto-Array_": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"array","array":{"dataType":"string"}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareEnumValueDto"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "FirmwareProfileDto": {
@@ -484,7 +493,7 @@ const models: TsoaRoute.Models = {
             "sha256": {"dataType":"string","required":true},
             "sections": {"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareSectionDto"},"required":true},
             "fields": {"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareFieldDto"},"required":true},
-            "enums": {"ref":"Record_string.string-Array_","required":true},
+            "enums": {"ref":"Record_string.FirmwareEnumValueDto-Array_","required":true},
         },
         "additionalProperties": false,
     },

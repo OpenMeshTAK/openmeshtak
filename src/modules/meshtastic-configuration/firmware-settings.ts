@@ -1,5 +1,5 @@
 import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
-import type { LoadedFirmwareField } from "../meshtastic-firmware/firmware-profile-loader.js";
+import { enumValues, type LoadedFirmwareField } from "../meshtastic-firmware/firmware-profile-loader.js";
 import { compareFirmwareVersions } from "../meshtastic-firmware/firmware-version.js";
 import type { EventFirmware } from "./event-firmware.js";
 
@@ -57,7 +57,7 @@ export function valueProblem(
 }
 
 function enumLookup(firmware: EventFirmware): (name: string) => readonly string[] {
-  return (name) => firmware.profile.file.enums[name] ?? [];
+  return (name) => enumValues(firmware.profile, name) ?? [];
 }
 
 /**

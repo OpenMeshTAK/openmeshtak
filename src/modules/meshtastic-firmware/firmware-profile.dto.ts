@@ -32,6 +32,12 @@ export interface FirmwareFieldDto {
   default?: string | number | boolean;
 }
 
+export interface FirmwareEnumValueDto {
+  /** Upstream enum name stored in settings, e.g. `LONG_FAST`. */
+  value: string;
+  label: string;
+}
+
 export interface FirmwareSectionDto {
   id: string;
   label: string;
@@ -43,5 +49,6 @@ export interface FirmwareProfileDto extends FirmwareProfileSummaryDto {
   sha256: string;
   sections: FirmwareSectionDto[];
   fields: FirmwareFieldDto[];
-  enums: Record<string, string[]>;
+  /** Allowed values per enum with English UI labels. */
+  enums: Record<string, FirmwareEnumValueDto[]>;
 }

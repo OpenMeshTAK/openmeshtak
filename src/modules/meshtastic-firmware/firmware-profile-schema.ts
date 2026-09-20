@@ -95,7 +95,13 @@ export const firmwareProfileSchema = z.strictObject({
   default: z.boolean(),
   sections: z.array(z.strictObject({ id: z.string().min(1), label: z.string().min(1) })).min(1),
   fields: z.record(z.string().regex(/^[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*$/), firmwareFieldSchema),
-  enums: z.record(z.string().min(1), z.array(z.string().min(1)).min(1)),
+  /** Allowed values per enum, either plain upstream names or with an English UI label. */
+  enums: z.record(
+    z.string().min(1),
+    z
+      .array(z.union([z.string().min(1), z.strictObject({ value: z.string().min(1), label: z.string().min(1) })]))
+      .min(1),
+  ),
 });
 
 export type FirmwareProfileFile = z.infer<typeof firmwareProfileSchema>;
