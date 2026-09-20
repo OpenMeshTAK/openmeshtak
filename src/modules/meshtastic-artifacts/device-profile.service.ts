@@ -16,6 +16,7 @@ import {
 } from "../meshtastic-firmware/firmware-profile-loader.js";
 import type { ManagedFieldKey } from "../meshtastic-firmware/managed-fields.js";
 import type { ProfileChannel, ResolvedProfileDto } from "../profiles/profile.dto.js";
+import { deviceChannels } from "../profiles/profile-tak.js";
 import { getMemberProfile } from "../profiles/profiles.service.js";
 import { encodeDeviceProfile, type DeviceProfileValue } from "./device-profile-encoder.js";
 
@@ -113,8 +114,7 @@ function checkManagedValue(firmware: LoadedFirmwareProfile, field: LoadedFirmwar
  * out entirely and the device keeps its current channels until the key holder shares them.
  */
 function deliverableChannels(profile: ResolvedProfileDto): ProfileChannel[] {
-  const included = profile.meshtastic.channels.filter(({ delivery }) => delivery === "included");
-  return included[0]?.primary === true ? included : [];
+  return deviceChannels(profile.meshtastic.channels);
 }
 
 function fileNameFor(callsign: string, line: string): string {

@@ -324,6 +324,80 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakConnectionMode": {
+				"type": "string",
+				"enum": [
+					"none",
+					"meshtastic-local-server"
+				],
+				"description": "- `none`: OpenMeshTak gives no TAK connection guidance.\n- `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and\n  connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so\n  OpenMeshTak provides guidance and settings, not a ready-made connection package."
+			},
+			"TakConfigurationDto": {
+				"properties": {
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"mode": {
+						"$ref": "#/components/schemas/TakConnectionMode"
+					},
+					"meshChannelId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "Channel for the app's \"TAK Mesh Channel\"; `null` uses the primary channel."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until first saved."
+					},
+					"updatedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"eventId",
+					"mode",
+					"meshChannelId",
+					"version",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateTakConfigurationRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 0
+					},
+					"mode": {
+						"$ref": "#/components/schemas/TakConnectionMode"
+					},
+					"meshChannelId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"version",
+					"mode",
+					"meshChannelId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SetupStatusResponse": {
 				"properties": {
 					"configured": {
@@ -707,6 +781,41 @@
 				],
 				"description": "ATAK member roles from the upstream Meshtastic `atak.proto` `MemberRole` enum."
 			},
+			"ProfileTakConnection": {
+				"description": "Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the\napp's \"TAK Mesh Channel\": the channel's slot on this member's device, or `null` while that\nchannel has not reached the device yet (then the primary channel is used).",
+				"properties": {
+					"mode": {
+						"type": "string",
+						"enum": [
+							"meshtastic-local-server"
+						],
+						"nullable": false
+					},
+					"meshChannel": {
+						"properties": {
+							"slot": {
+								"type": "number",
+								"format": "double"
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"slot",
+							"name"
+						],
+						"type": "object",
+						"nullable": true
+					}
+				},
+				"required": [
+					"mode",
+					"meshChannel"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ProfileChannel": {
 				"description": "A channel the member receives. `included` channels come with the member's channel set;\n`on-site` channels are secret and handed out on site by a key holder before their release.",
 				"properties": {
@@ -851,6 +960,15 @@
 					},
 					"tak": {
 						"properties": {
+							"connection": {
+								"allOf": [
+									{
+										"$ref": "#/components/schemas/ProfileTakConnection"
+									}
+								],
+								"nullable": true,
+								"description": "How this member connects ATAK/iTAK; `null` when the event gives no guidance."
+							},
 							"serverGroups": {
 								"items": {
 									"type": "string"
@@ -868,6 +986,7 @@
 							}
 						},
 						"required": [
+							"connection",
 							"serverGroups",
 							"role",
 							"team",
@@ -3068,15 +3187,37 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"CurrentTakConfiguration": {
+				"properties": {
+					"mode": {
+						"$ref": "#/components/schemas/TakConnectionMode"
+					},
+					"meshChannelId": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"mode",
+					"meshChannelId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SnapshotTak": {
+				"$ref": "#/components/schemas/CurrentTakConfiguration",
+				"description": "How TAK clients connect; `null` in revisions created before version 4."
+			},
 			"ConfigurationSnapshot": {
-				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`.",
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`.",
 				"properties": {
 					"schemaVersion": {
 						"type": "number",
 						"enum": [
 							1,
 							2,
-							3
+							3,
+							4
 						]
 					},
 					"roles": {
@@ -3105,6 +3246,14 @@
 						],
 						"nullable": true,
 						"description": "`null` in revisions created before version 3."
+					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/SnapshotTak"
+							}
+						],
+						"nullable": true
 					}
 				},
 				"required": [
@@ -3112,7 +3261,8 @@
 					"roles",
 					"groups",
 					"channels",
-					"meshtastic"
+					"meshtastic",
+					"tak"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -4921,6 +5071,161 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/tak/configuration": {
+			"get": {
+				"operationId": "GetTakConfiguration",
+				"responses": {
+					"200": {
+						"description": "TAK configuration",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakConfigurationDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateTakConfiguration",
+				"responses": {
+					"200": {
+						"description": "TAK configuration updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakConfigurationDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the TAK connection settings. Requires the current `version` (0 before the first save).",
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTakConfigurationRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/setup": {

@@ -20,6 +20,16 @@ export interface ProfileChannel {
   keyHolder: boolean;
 }
 
+/**
+ * Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the
+ * app's "TAK Mesh Channel": the channel's slot on this member's device, or `null` while that
+ * channel has not reached the device yet (then the primary channel is used).
+ */
+export interface ProfileTakConnection {
+  mode: "meshtastic-local-server";
+  meshChannel: { name: string; slot: number } | null;
+}
+
 /** The Meshtastic firmware a participant must flash before importing OpenMeshTak settings. */
 export interface ProfileFirmware {
   /** As recommended by the event, e.g. `2.8` or `2.8.3`. */
@@ -62,6 +72,8 @@ export interface ResolvedProfileDto {
     team: TakTeam;
     role: TakRole;
     serverGroups: string[];
+    /** How this member connects ATAK/iTAK; `null` when the event gives no guidance. */
+    connection: ProfileTakConnection | null;
   };
   meshtastic: {
     longName: string;

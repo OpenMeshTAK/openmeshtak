@@ -120,6 +120,7 @@ export async function getMemberProfile(
     channels: snapshot.channels,
     liveChannels: await liveChannelStates(eventId),
     firmware: await resolveProfileFirmware(snapshot.meshtastic),
+    tak: snapshot.tak,
     revision,
   });
 }

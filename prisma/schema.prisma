@@ -35,6 +35,7 @@ model Event {
   dataPackages            DataPackage[]
   meshtasticChannels      MeshtasticChannel[]
   meshtasticConfiguration MeshtasticConfiguration?
+  takConfiguration        TakConfiguration?
 }
 
 model User {
@@ -532,6 +533,7 @@ model MeshtasticChannel {
   version           Int                         @default(1)
   event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   audience          MeshtasticChannelAudience[]
+  takConfigurations TakConfiguration[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -589,4 +591,19 @@ model DataPackageAudience {
   @@index([eventGroupId])
   @@index([eventRoleId])
   @@index([eventMemberId])
+}
+
+/// How the event's TAK clients connect. RC1 offers the Meshtastic app's local TAK server: ATAK/iTAK
+/// on the same phone connect to the app, which carries CoT over the chosen mesh channel.
+model TakConfiguration {
+  eventId       String             @id
+  /// "none" or "meshtastic-local-server".
+  mode          String             @default("none")
+  /// Channel the app's "TAK Mesh Channel" should use; null means the primary channel.
+  meshChannelId String?
+  version       Int                @default(1)
+  event         Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  meshChannel   MeshtasticChannel? @relation(fields: [meshChannelId], references: [id], onDelete: SetNull)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 }

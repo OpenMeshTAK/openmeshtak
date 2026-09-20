@@ -1,8 +1,10 @@
 import type {
   SnapshotChannel,
   SnapshotGroup,
+  SnapshotTak,
 } from "../event-configuration/configuration-snapshot.js";
 import { shortNameFor } from "../event-members/member-identity.js";
+import { resolveTakConnection } from "./profile-tak.js";
 import { resolveProfileChannels, type LiveChannelState } from "./profile-channels.js";
 import type { ProfileAssignment, ProfileFirmware, ResolvedProfileDto } from "./profile.dto.js";
 
@@ -24,6 +26,7 @@ export interface ProfileInputs {
   channels: SnapshotChannel[];
   liveChannels: ReadonlyMap<string, LiveChannelState>;
   firmware: ProfileFirmware | null;
+  tak: SnapshotTak | null;
   revision: { id: string; number: number } | null;
 }
 
@@ -41,9 +44,15 @@ export function resolveProfile({
   channels,
   liveChannels,
   firmware,
+  tak,
   revision,
 }: ProfileInputs): ResolvedProfileDto {
   const { provisioning } = group;
+  const memberChannels = resolveProfileChannels(channels, liveChannels, {
+    memberId: member.id,
+    eventRoleId: member.eventRoleId,
+    eventGroupId: member.eventGroupId,
+  });
 
   return {
     eventId: member.eventId,
@@ -60,15 +69,12 @@ export function resolveProfile({
       team: provisioning.tak.team,
       role: provisioning.tak.role,
       serverGroups: provisioning.tak.serverGroups,
+      connection: resolveTakConnection(tak, memberChannels),
     },
     meshtastic: {
       longName: member.callsign,
       shortName: shortNameFor(provisioning.shortNamePrefix, member.shortNameNumber),
-      channels: resolveProfileChannels(channels, liveChannels, {
-        memberId: member.id,
-        eventRoleId: member.eventRoleId,
-        eventGroupId: member.eventGroupId,
-      }),
+      channels: memberChannels,
       firmware,
     },
   };

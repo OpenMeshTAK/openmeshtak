@@ -8,6 +8,8 @@ import { UsersController } from './../modules/users/users.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { UserGroupsController } from './../modules/user-groups/user-groups.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakConfigurationController } from './../modules/tak-configuration/tak-configuration.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SetupController } from './../modules/setup/setup.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ServiceAccountsController } from './../modules/service-accounts/service-accounts.controller.js';
@@ -195,6 +197,33 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakConnectionMode": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["none"]},{"dataType":"enum","enums":["meshtastic-local-server"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakConfigurationDto": {
+        "dataType": "refObject",
+        "properties": {
+            "eventId": {"ref":"Uuid","required":true},
+            "mode": {"ref":"TakConnectionMode","required":true},
+            "meshChannelId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
+            "version": {"dataType":"double","required":true},
+            "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateTakConfigurationRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "mode": {"ref":"TakConnectionMode","required":true},
+            "meshChannelId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SetupStatusResponse": {
         "dataType": "refObject",
         "properties": {
@@ -340,6 +369,15 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["Team Member"]},{"dataType":"enum","enums":["Team Lead"]},{"dataType":"enum","enums":["HQ"]},{"dataType":"enum","enums":["Sniper"]},{"dataType":"enum","enums":["Medic"]},{"dataType":"enum","enums":["Forward Observer"]},{"dataType":"enum","enums":["RTO"]},{"dataType":"enum","enums":["K9"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ProfileTakConnection": {
+        "dataType": "refObject",
+        "properties": {
+            "mode": {"dataType":"enum","enums":["meshtastic-local-server"],"required":true},
+            "meshChannel": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"slot":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ProfileChannel": {
         "dataType": "refObject",
         "properties": {
@@ -381,7 +419,7 @@ const models: TsoaRoute.Models = {
             "callsign": {"dataType":"string","required":true},
             "eventRole": {"ref":"ProfileAssignment","required":true},
             "group": {"ref":"ProfileAssignment","required":true},
-            "tak": {"dataType":"nestedObjectLiteral","nestedProperties":{"serverGroups":{"dataType":"array","array":{"dataType":"string"},"required":true},"role":{"ref":"TakRole","required":true},"team":{"ref":"TakTeam","required":true},"callsign":{"dataType":"string","required":true}},"required":true},
+            "tak": {"dataType":"nestedObjectLiteral","nestedProperties":{"connection":{"dataType":"union","subSchemas":[{"ref":"ProfileTakConnection"},{"dataType":"enum","enums":[null]}],"required":true},"serverGroups":{"dataType":"array","array":{"dataType":"string"},"required":true},"role":{"ref":"TakRole","required":true},"team":{"ref":"TakTeam","required":true},"callsign":{"dataType":"string","required":true}},"required":true},
             "meshtastic": {"dataType":"nestedObjectLiteral","nestedProperties":{"firmware":{"dataType":"union","subSchemas":[{"ref":"ProfileFirmware"},{"dataType":"enum","enums":[null]}],"required":true},"channels":{"dataType":"array","array":{"dataType":"refObject","ref":"ProfileChannel"},"required":true},"shortName":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"longName":{"dataType":"string","required":true}},"required":true},
         },
         "additionalProperties": false,
@@ -1186,14 +1224,29 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CurrentTakConfiguration": {
+        "dataType": "refObject",
+        "properties": {
+            "mode": {"ref":"TakConnectionMode","required":true},
+            "meshChannelId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SnapshotTak": {
+        "dataType": "refAlias",
+        "type": {"ref":"CurrentTakConfiguration","validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ConfigurationSnapshot": {
         "dataType": "refObject",
         "properties": {
-            "schemaVersion": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]},{"dataType":"enum","enums":[3]}],"required":true},
+            "schemaVersion": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]},{"dataType":"enum","enums":[3]},{"dataType":"enum","enums":[4]}],"required":true},
             "roles": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotRole"},"required":true},
             "groups": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotGroup"},"required":true},
             "channels": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotChannel"},"required":true},
             "meshtastic": {"dataType":"union","subSchemas":[{"ref":"SnapshotMeshtastic"},{"dataType":"enum","enums":[null]}],"required":true},
+            "tak": {"dataType":"union","subSchemas":[{"ref":"SnapshotTak"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -1921,6 +1974,71 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakConfigurationController_getTakConfiguration: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/tak/configuration',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakConfigurationController)),
+            ...(fetchMiddlewares<RequestHandler>(TakConfigurationController.prototype.getTakConfiguration)),
+
+            async function TakConfigurationController_getTakConfiguration(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakConfigurationController_getTakConfiguration, request, response });
+
+                const controller = new TakConfigurationController();
+
+              await templateService.apiHandler({
+                methodName: 'getTakConfiguration',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakConfigurationController_updateTakConfiguration: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateTakConfigurationRequest"},
+        };
+        app.put('/api/v1/events/:eventId/tak/configuration',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakConfigurationController)),
+            ...(fetchMiddlewares<RequestHandler>(TakConfigurationController.prototype.updateTakConfiguration)),
+
+            async function TakConfigurationController_updateTakConfiguration(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakConfigurationController_updateTakConfiguration, request, response });
+
+                const controller = new TakConfigurationController();
+
+              await templateService.apiHandler({
+                methodName: 'updateTakConfiguration',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

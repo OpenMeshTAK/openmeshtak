@@ -139,7 +139,7 @@ void describe("Peter/Bravo end to end", () => {
       callsign: "Peter [Bravo]",
       eventRole: { slug: "participant", name: "Participant" },
       group: { slug: "bravo", name: "Bravo" },
-      tak: { callsign: "Peter [Bravo]", team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
+      tak: { callsign: "Peter [Bravo]", team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"], connection: null },
       meshtastic: {
         ...profile.meshtastic,
         longName: "Peter [Bravo]",

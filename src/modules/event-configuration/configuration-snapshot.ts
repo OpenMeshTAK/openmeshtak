@@ -7,6 +7,7 @@ import type { EventAudience } from "../event-audience/event-audience.js";
 import { loadMeshtasticConfiguration } from "../meshtastic-configuration/current-configuration.js";
 import type { FirmwareSettingsDocument } from "../meshtastic-configuration/meshtastic-configuration.dto.js";
 import { formatFirmwareVersion } from "../meshtastic-firmware/firmware-version.js";
+import { loadTakConfiguration, type CurrentTakConfiguration } from "../tak-configuration/tak-configuration.service.js";
 
 export interface SnapshotRole {
   id: string;
@@ -50,18 +51,22 @@ export interface SnapshotMeshtastic {
   settings: FirmwareSettingsDocument;
 }
 
+/** How TAK clients connect; `null` in revisions created before version 4. */
+export type SnapshotTak = CurrentTakConfiguration;
+
 /**
  * Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.
  * Version 2 added `channels` in device order, the first being the primary channel; version 3
- * added `meshtastic`.
+ * added `meshtastic`; version 4 added `tak`.
  */
 export interface ConfigurationSnapshot {
-  schemaVersion: 1 | 2 | 3;
+  schemaVersion: 1 | 2 | 3 | 4;
   roles: SnapshotRole[];
   groups: SnapshotGroup[];
   channels: SnapshotChannel[];
   /** `null` in revisions created before version 3. */
   meshtastic: SnapshotMeshtastic | null;
+  tak: SnapshotTak | null;
 }
 
 /**
@@ -72,7 +77,7 @@ export async function buildConfigurationSnapshot(
   transaction: Prisma.TransactionClient,
   eventId: string,
 ): Promise<ConfigurationSnapshot> {
-  const [roles, groups, channels, meshtastic] = await Promise.all([
+  const [roles, groups, channels, meshtastic, tak] = await Promise.all([
     transaction.eventRole.findMany({
       where: { eventId },
       orderBy: { slug: "asc" },
@@ -85,11 +90,12 @@ export async function buildConfigurationSnapshot(
       include: { audience: true },
     }),
     loadMeshtasticConfiguration(transaction, eventId),
+    loadTakConfiguration(transaction, eventId),
   ]);
   const { firmware } = meshtastic;
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     roles,
     groups: groups.map((group) => ({
       id: group.id,
@@ -119,6 +125,7 @@ export async function buildConfigurationSnapshot(
             profileSha256: firmware.profile.sha256,
             settings: meshtastic.settings,
           },
+    tak,
   };
 }
 
@@ -132,9 +139,15 @@ export function hashConfigurationSnapshot(snapshot: ConfigurationSnapshot): stri
  * Meshtastic configuration.
  */
 export function parseConfigurationSnapshot(value: Prisma.JsonValue): ConfigurationSnapshot {
-  const snapshot = value as unknown as Omit<ConfigurationSnapshot, "channels" | "meshtastic"> & {
+  const snapshot = value as unknown as Omit<ConfigurationSnapshot, "channels" | "meshtastic" | "tak"> & {
     channels?: SnapshotChannel[];
     meshtastic?: SnapshotMeshtastic | null;
+    tak?: SnapshotTak | null;
   };
-  return { ...snapshot, channels: snapshot.channels ?? [], meshtastic: snapshot.meshtastic ?? null };
+  return {
+    ...snapshot,
+    channels: snapshot.channels ?? [],
+    meshtastic: snapshot.meshtastic ?? null,
+    tak: snapshot.tak ?? null,
+  };
 }
