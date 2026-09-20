@@ -1,3 +1,4 @@
+import type { PackageRevision } from "../../generated/prisma/client.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { convertCotEvent } from "./atak/cot-import.js";
 import { objectToCot } from "./atak/cot-export.js";
@@ -62,13 +63,16 @@ export async function exportAtak(
   number: number,
   layerId?: string,
 ): Promise<AtakExport> {
-  const { dataPackage } = await requireDataPackage(principal, eventId, packageId, "data-packages.read");
-  const revision = await findRevision(packageId, number);
-  const snapshot = exportedSnapshot(revision.snapshot as unknown as PackageSnapshot, layerId);
+  await requireDataPackage(principal, eventId, packageId, "data-packages.read");
+  return buildAtakExport(packageId, await findRevision(packageId, number), layerId);
+}
 
+/** Builds the export without permission checks; callers authorize first. */
+export function buildAtakExport(packageId: string, revision: PackageRevision, layerId?: string): AtakExport {
+  const snapshot = exportedSnapshot(revision.snapshot as unknown as PackageSnapshot, layerId);
   const bytes = writeDataPackage(
     {
-      uid: layerId ?? dataPackage.id,
+      uid: layerId ?? packageId,
       name: snapshot.name,
       events: snapshot.objects.map((object) => ({ uid: object.id, xml: objectToCot(object, revision.createdAt) })),
     },

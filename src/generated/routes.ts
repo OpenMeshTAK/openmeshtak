@@ -28,6 +28,8 @@ import { MeshtasticChannelsController } from './../modules/meshtastic-channels/m
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { DeviceProfileController } from './../modules/meshtastic-artifacts/device-profile.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MemberDataPackagesController } from './../modules/member-data-packages/member-data-packages.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ClaimExchangeController } from './../modules/member-claims/claim-exchange.controller.js';
@@ -708,6 +710,18 @@ const models: TsoaRoute.Models = {
             "kind": {"ref":"ChannelPskKind","required":true},
             "version": {"dataType":"double","required":true},
             "psk": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MemberDataPackageDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "revision": {"dataType":"double","required":true},
+            "publishedAt": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -2818,6 +2832,73 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getMeshtasticDeviceProfile',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMemberDataPackagesController_listMemberDataPackages: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/members/:memberId/data-packages',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MemberDataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(MemberDataPackagesController.prototype.listMemberDataPackages)),
+
+            async function MemberDataPackagesController_listMemberDataPackages(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMemberDataPackagesController_listMemberDataPackages, request, response });
+
+                const controller = new MemberDataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'listMemberDataPackages',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMemberDataPackagesController_downloadMemberDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/members/:memberId/data-packages/:packageId/atak',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MemberDataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(MemberDataPackagesController.prototype.downloadMemberDataPackage)),
+
+            async function MemberDataPackagesController_downloadMemberDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMemberDataPackagesController_downloadMemberDataPackage, request, response });
+
+                const controller = new MemberDataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'downloadMemberDataPackage',
                 controller,
                 response,
                 next,

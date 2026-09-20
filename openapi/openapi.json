@@ -1833,6 +1833,39 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"MemberDataPackageDto": {
+				"description": "A published Data Package a member receives, at its newest revision.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"revision": {
+						"type": "number",
+						"format": "double",
+						"description": "Newest published revision; downloads always deliver this one."
+					},
+					"publishedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"description",
+					"revision",
+					"publishedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"MemberClaimStatus": {
 				"type": "string",
 				"enum": [
@@ -7020,6 +7053,146 @@
 					{
 						"in": "path",
 						"name": "memberId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/members/{memberId}/data-packages": {
+			"get": {
+				"operationId": "ListMemberDataPackages",
+				"responses": {
+					"200": {
+						"description": "Data packages the member receives",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/MemberDataPackageDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The signed-in member's packages; people with `members.read` may preview any member's list.",
+				"tags": [
+					"Profiles"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "memberId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/members/{memberId}/data-packages/{packageId}/atak": {
+			"get": {
+				"operationId": "DownloadMemberDataPackage",
+				"responses": {
+					"200": {
+						"description": "ATAK Data Package",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Downloads the newest published revision as an ATAK Data Package. Only for the member.",
+				"tags": [
+					"Profiles"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "memberId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
