@@ -15,7 +15,11 @@ export interface CurrentMeshtasticConfiguration {
   firmwareVersion: string;
   /** `null` when the stored firmware version no longer resolves to a shipped profile. */
   firmware: EventFirmware | null;
-  /** As stored; for events without a stored configuration, the profile defaults. */
+  /**
+   * Every editable field of the firmware: the stored value, or the profile default for fields
+   * added to the profile after the configuration was saved. Stored values for fields the profile
+   * no longer has are left out here and reported in `problems`.
+   */
   settings: FirmwareSettings;
   problems: ProblemFieldError[];
   /** 0 until the configuration is first saved. */
@@ -47,10 +51,16 @@ export async function loadMeshtasticConfiguration(
 
   const stored = row.settings as Record<string, unknown>;
   const { problems } = validateSettings(resolved.firmware, stored);
+  const settings = defaultSettings(resolved.firmware);
+  for (const key of Object.keys(settings)) {
+    if (Object.hasOwn(stored, key)) {
+      settings[key] = stored[key] as FirmwareSettings[string];
+    }
+  }
   return {
     ...base,
     firmware: resolved.firmware,
-    settings: stored as FirmwareSettings,
+    settings,
     problems: problems.map((problem) => ({ ...problem, field: `meshtastic.${problem.field}` })),
   };
 }

@@ -137,6 +137,16 @@ void describe("event Meshtastic configuration", () => {
     assert.equal(raised.settings["config.lora.ignoreMqtt"], true);
   });
 
+  void it("fills fields added to the profile later with their defaults", async () => {
+    await database.meshtasticConfiguration.create({
+      data: { eventId, firmwareVersion: "2.8", settings: { "config.lora.hopLimit": 6 } },
+    });
+    const configuration = await current();
+    assert.equal(configuration.settings["config.lora.hopLimit"], 6);
+    assert.equal(configuration.settings["config.lora.region"], "EU_868");
+    assert.deepEqual(configuration.problems, []);
+  });
+
   void it("rejects unsupported lines and patches below the profile minimum", async () => {
     const unsupported = await preview("3.0").expect(422);
     assert.equal((unsupported.body as ProblemBody).errors?.[0]?.code, "UNSUPPORTED_FIRMWARE_LINE");
