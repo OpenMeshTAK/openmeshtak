@@ -3,7 +3,12 @@
  * as `managedBy: "openmeshtak"`, because the generator has to know where each value comes from.
  * Supporting another managed value is a deliberate code change.
  */
-export const MANAGED_FIELD_KEYS = ["longName", "shortName"] as const;
+export const MANAGED_FIELD_KEYS = [
+  "longName",
+  "shortName",
+  "moduleConfig.tak.team",
+  "moduleConfig.tak.role",
+] as const;
 
 export type ManagedFieldKey = (typeof MANAGED_FIELD_KEYS)[number];
 

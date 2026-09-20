@@ -4,8 +4,12 @@
   "firmware": {
     "line": "2.8",
     "min": "2.8.1",
-    "tested": ["2.8.1"],
-    "testedBuilds": ["8e6a88d"],
+    "tested": [
+      "2.8.1"
+    ],
+    "testedBuilds": [
+      "8e6a88d"
+    ],
     "channel": "alpha"
   },
   "protobufs": {
@@ -16,31 +20,168 @@
   "flashingNotes": "Flash the 2.8 alpha line with the official Meshtastic web flasher, then import the OpenMeshTak configuration in the Meshtastic app.",
   "default": true,
   "sections": [
-    { "id": "owner", "label": "Owner" },
-    { "id": "lora", "label": "LoRa" },
-    { "id": "device", "label": "Device" },
-    { "id": "position", "label": "Position" },
-    { "id": "power", "label": "Power" },
-    { "id": "display", "label": "Display" },
-    { "id": "bluetooth", "label": "Bluetooth" },
-    { "id": "security", "label": "Security" }
+    {
+      "id": "owner",
+      "label": "Owner"
+    },
+    {
+      "id": "device",
+      "label": "Device"
+    },
+    {
+      "id": "lora",
+      "label": "LoRa"
+    },
+    {
+      "id": "position",
+      "label": "Position"
+    },
+    {
+      "id": "power",
+      "label": "Power"
+    },
+    {
+      "id": "display",
+      "label": "Display"
+    },
+    {
+      "id": "bluetooth",
+      "label": "Bluetooth"
+    },
+    {
+      "id": "network",
+      "label": "Network"
+    },
+    {
+      "id": "security",
+      "label": "Security"
+    },
+    {
+      "id": "mqtt",
+      "label": "MQTT"
+    },
+    {
+      "id": "telemetry",
+      "label": "Telemetry"
+    },
+    {
+      "id": "neighborInfo",
+      "label": "Neighbor info"
+    },
+    {
+      "id": "rangeTest",
+      "label": "Range test"
+    },
+    {
+      "id": "storeForward",
+      "label": "Store and forward"
+    },
+    {
+      "id": "externalNotification",
+      "label": "External notification"
+    },
+    {
+      "id": "cannedMessage",
+      "label": "Canned messages"
+    },
+    {
+      "id": "detectionSensor",
+      "label": "Detection sensor"
+    },
+    {
+      "id": "tak",
+      "label": "TAK"
+    }
   ],
   "fields": {
     "longName": {
       "section": "owner",
       "type": "string",
-      "maxBytes": 39,
-      "managedBy": "openmeshtak",
+      "maxBytes": 24,
       "label": "Long name",
-      "description": "The member's callsign."
+      "description": "The member's callsign; at most 24 bytes in a device profile.",
+      "managedBy": "openmeshtak"
     },
     "shortName": {
       "section": "owner",
       "type": "string",
       "maxBytes": 4,
-      "managedBy": "openmeshtak",
       "label": "Short name",
-      "description": "The group prefix plus the member's stable number."
+      "description": "The group prefix plus the member's stable number.",
+      "managedBy": "openmeshtak"
+    },
+    "isUnmessagable": {
+      "section": "owner",
+      "type": "boolean",
+      "default": false,
+      "label": "Unmessageable",
+      "description": "Mark devices that cannot receive direct messages, such as unattended trackers."
+    },
+    "isLicensed": {
+      "section": "owner",
+      "type": "boolean",
+      "default": false,
+      "label": "Licensed amateur radio",
+      "description": "Disables encryption and identifies with the callsign; only for licensed operators."
+    },
+    "config.device.role": {
+      "section": "device",
+      "type": "enum",
+      "enum": "Config.DeviceConfig.Role",
+      "default": "CLIENT",
+      "label": "Device role",
+      "description": "Role of every member's device in this event."
+    },
+    "config.device.rebroadcastMode": {
+      "section": "device",
+      "type": "enum",
+      "enum": "Config.DeviceConfig.RebroadcastMode",
+      "default": "ALL",
+      "label": "Rebroadcast mode"
+    },
+    "config.device.nodeInfoBroadcastSecs": {
+      "section": "device",
+      "type": "integer",
+      "min": 0,
+      "max": 604800,
+      "default": 10800,
+      "unit": "s",
+      "label": "Node info broadcast interval"
+    },
+    "config.device.buzzerMode": {
+      "section": "device",
+      "type": "enum",
+      "enum": "Config.DeviceConfig.BuzzerMode",
+      "default": "ALL_ENABLED",
+      "label": "Buzzer mode"
+    },
+    "config.device.tzdef": {
+      "section": "device",
+      "type": "string",
+      "maxBytes": 64,
+      "default": "",
+      "label": "POSIX time zone",
+      "description": "For example CET-1CEST,M3.5.0,M10.5.0/3. Empty uses UTC."
+    },
+    "config.device.doubleTapAsButtonPress": {
+      "section": "device",
+      "type": "boolean",
+      "default": false,
+      "label": "Double tap as button press",
+      "description": "Needs an accelerometer."
+    },
+    "config.device.disableTripleClick": {
+      "section": "device",
+      "type": "boolean",
+      "default": false,
+      "label": "Disable triple click",
+      "description": "Disables the user button triple-press shortcut."
+    },
+    "config.device.ledHeartbeatDisabled": {
+      "section": "device",
+      "type": "boolean",
+      "default": false,
+      "label": "Disable LED heartbeat"
     },
     "config.lora.region": {
       "section": "lora",
@@ -54,7 +195,8 @@
       "section": "lora",
       "type": "boolean",
       "default": true,
-      "label": "Use modem preset"
+      "label": "Use modem preset",
+      "description": "Use the preset instead of manual bandwidth, spread factor and coding rate."
     },
     "config.lora.modemPreset": {
       "section": "lora",
@@ -62,6 +204,34 @@
       "enum": "Config.LoRaConfig.ModemPreset",
       "default": "LONG_FAST",
       "label": "Modem preset"
+    },
+    "config.lora.bandwidth": {
+      "section": "lora",
+      "type": "integer",
+      "min": 0,
+      "max": 1625,
+      "default": 0,
+      "unit": "kHz",
+      "label": "Bandwidth",
+      "description": "Only without a modem preset."
+    },
+    "config.lora.spreadFactor": {
+      "section": "lora",
+      "type": "integer",
+      "min": 0,
+      "max": 12,
+      "default": 0,
+      "label": "Spread factor",
+      "description": "Only without a modem preset; 7 to 12."
+    },
+    "config.lora.codingRate": {
+      "section": "lora",
+      "type": "integer",
+      "min": 0,
+      "max": 8,
+      "default": 0,
+      "label": "Coding rate",
+      "description": "Only without a modem preset; 5 to 8."
     },
     "config.lora.hopLimit": {
       "section": "lora",
@@ -92,16 +262,36 @@
       "section": "lora",
       "type": "integer",
       "min": 0,
-      "max": 1000,
+      "max": 10000,
       "default": 0,
       "label": "Frequency slot",
       "description": "Zero derives the slot from the primary channel name."
+    },
+    "config.lora.frequencyOffset": {
+      "section": "lora",
+      "type": "number",
+      "min": -1000000,
+      "max": 1000000,
+      "default": 0,
+      "unit": "Hz",
+      "label": "Frequency offset"
+    },
+    "config.lora.overrideFrequency": {
+      "section": "lora",
+      "type": "number",
+      "min": 0,
+      "max": 3000,
+      "default": 0,
+      "unit": "MHz",
+      "label": "Override frequency",
+      "description": "Zero keeps the regional frequency. Check local regulations."
     },
     "config.lora.overrideDutyCycle": {
       "section": "lora",
       "type": "boolean",
       "default": false,
-      "label": "Override duty cycle"
+      "label": "Override duty cycle",
+      "description": "Ignores the regional duty-cycle limit. Check local regulations."
     },
     "config.lora.sx126xRxBoostedGain": {
       "section": "lora",
@@ -109,6 +299,12 @@
       "default": false,
       "label": "RX boosted gain",
       "description": "Only for SX126x radios."
+    },
+    "config.lora.paFanDisabled": {
+      "section": "lora",
+      "type": "boolean",
+      "default": false,
+      "label": "Disable PA fan"
     },
     "config.lora.ignoreMqtt": {
       "section": "lora",
@@ -121,37 +317,8 @@
       "section": "lora",
       "type": "boolean",
       "default": false,
-      "label": "OK to MQTT"
-    },
-    "config.device.role": {
-      "section": "device",
-      "type": "enum",
-      "enum": "Config.DeviceConfig.Role",
-      "default": "CLIENT",
-      "label": "Device role",
-      "description": "Role of every member's device in this event, for example Client or TAK."
-    },
-    "config.device.rebroadcastMode": {
-      "section": "device",
-      "type": "enum",
-      "enum": "Config.DeviceConfig.RebroadcastMode",
-      "default": "ALL",
-      "label": "Rebroadcast mode"
-    },
-    "config.device.nodeInfoBroadcastSecs": {
-      "section": "device",
-      "type": "integer",
-      "min": 0,
-      "max": 604800,
-      "default": 10800,
-      "unit": "s",
-      "label": "Node info broadcast interval"
-    },
-    "config.device.ledHeartbeatDisabled": {
-      "section": "device",
-      "type": "boolean",
-      "default": false,
-      "label": "Disable LED heartbeat"
+      "label": "OK to MQTT",
+      "description": "Allow other nodes to forward this node's packets to MQTT."
     },
     "config.position.gpsMode": {
       "section": "position",
@@ -167,14 +334,15 @@
       "max": 86400,
       "default": 900,
       "unit": "s",
-      "label": "Position broadcast interval",
+      "label": "Broadcast interval",
       "description": "The longest a node goes without broadcasting its position."
     },
     "config.position.positionBroadcastSmartEnabled": {
       "section": "position",
       "type": "boolean",
       "default": true,
-      "label": "Smart position"
+      "label": "Smart position",
+      "description": "Broadcast earlier when the device moves."
     },
     "config.position.broadcastSmartMinimumDistance": {
       "section": "position",
@@ -203,11 +371,65 @@
       "unit": "s",
       "label": "GPS update interval"
     },
+    "config.position.fixedPosition": {
+      "section": "position",
+      "type": "boolean",
+      "default": false,
+      "label": "Fixed position",
+      "description": "Broadcast the last known position instead of a live GPS fix."
+    },
     "config.power.isPowerSaving": {
       "section": "power",
       "type": "boolean",
       "default": false,
-      "label": "Power saving"
+      "label": "Power saving",
+      "description": "Sleep as much as possible. Not for devices used with the phone apps."
+    },
+    "config.power.onBatteryShutdownAfterSecs": {
+      "section": "power",
+      "type": "integer",
+      "min": 0,
+      "max": 604800,
+      "default": 0,
+      "unit": "s",
+      "label": "Shutdown on power loss",
+      "description": "Zero disables the shutdown."
+    },
+    "config.power.waitBluetoothSecs": {
+      "section": "power",
+      "type": "integer",
+      "min": 0,
+      "max": 3600,
+      "default": 0,
+      "unit": "s",
+      "label": "Wait for Bluetooth"
+    },
+    "config.power.sdsSecs": {
+      "section": "power",
+      "type": "integer",
+      "min": 0,
+      "max": 604800,
+      "default": 0,
+      "unit": "s",
+      "label": "Super deep sleep after"
+    },
+    "config.power.lsSecs": {
+      "section": "power",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 0,
+      "unit": "s",
+      "label": "Light sleep duration"
+    },
+    "config.power.minWakeSecs": {
+      "section": "power",
+      "type": "integer",
+      "min": 0,
+      "max": 3600,
+      "default": 0,
+      "unit": "s",
+      "label": "Minimum wake time"
     },
     "config.display.screenOnSecs": {
       "section": "display",
@@ -218,6 +440,16 @@
       "unit": "s",
       "label": "Screen on for"
     },
+    "config.display.autoScreenCarouselSecs": {
+      "section": "display",
+      "type": "integer",
+      "min": 0,
+      "max": 3600,
+      "default": 0,
+      "unit": "s",
+      "label": "Carousel interval",
+      "description": "Zero disables the carousel."
+    },
     "config.display.units": {
       "section": "display",
       "type": "enum",
@@ -225,11 +457,56 @@
       "default": "METRIC",
       "label": "Display units"
     },
+    "config.display.displaymode": {
+      "section": "display",
+      "type": "enum",
+      "enum": "Config.DisplayConfig.DisplayMode",
+      "default": "DEFAULT",
+      "label": "Display mode"
+    },
+    "config.display.compassOrientation": {
+      "section": "display",
+      "type": "enum",
+      "enum": "Config.DisplayConfig.CompassOrientation",
+      "default": "DEGREES_0",
+      "label": "Compass orientation"
+    },
+    "config.display.flipScreen": {
+      "section": "display",
+      "type": "boolean",
+      "default": false,
+      "label": "Flip screen"
+    },
+    "config.display.headingBold": {
+      "section": "display",
+      "type": "boolean",
+      "default": false,
+      "label": "Bold heading"
+    },
+    "config.display.wakeOnTapOrMotion": {
+      "section": "display",
+      "type": "boolean",
+      "default": false,
+      "label": "Wake on tap or motion",
+      "description": "Needs an accelerometer."
+    },
     "config.display.use12hClock": {
       "section": "display",
       "type": "boolean",
       "default": false,
       "label": "12-hour clock"
+    },
+    "config.display.useLongNodeName": {
+      "section": "display",
+      "type": "boolean",
+      "default": false,
+      "label": "Show long node names"
+    },
+    "config.display.enableMessageBubbles": {
+      "section": "display",
+      "type": "boolean",
+      "default": false,
+      "label": "Message bubbles"
     },
     "config.bluetooth.enabled": {
       "section": "bluetooth",
@@ -244,6 +521,53 @@
       "default": "RANDOM_PIN",
       "label": "Pairing mode"
     },
+    "config.network.wifiEnabled": {
+      "section": "network",
+      "type": "boolean",
+      "default": false,
+      "label": "Wi-Fi enabled",
+      "description": "Enabling Wi-Fi disables the Bluetooth connection to the app."
+    },
+    "config.network.wifiSsid": {
+      "section": "network",
+      "type": "string",
+      "maxBytes": 32,
+      "default": "",
+      "label": "Wi-Fi network"
+    },
+    "config.network.ethEnabled": {
+      "section": "network",
+      "type": "boolean",
+      "default": false,
+      "label": "Ethernet enabled"
+    },
+    "config.network.addressMode": {
+      "section": "network",
+      "type": "enum",
+      "enum": "Config.NetworkConfig.AddressMode",
+      "default": "DHCP",
+      "label": "Address mode"
+    },
+    "config.network.ntpServer": {
+      "section": "network",
+      "type": "string",
+      "maxBytes": 32,
+      "default": "meshtastic.pool.ntp.org",
+      "label": "NTP server"
+    },
+    "config.network.rsyslogServer": {
+      "section": "network",
+      "type": "string",
+      "maxBytes": 32,
+      "default": "",
+      "label": "Syslog server"
+    },
+    "config.network.ipv6Enabled": {
+      "section": "network",
+      "type": "boolean",
+      "default": false,
+      "label": "IPv6"
+    },
     "config.security.packetSignaturePolicy": {
       "section": "security",
       "type": "enum",
@@ -256,35 +580,994 @@
       "type": "boolean",
       "default": true,
       "label": "Serial console"
+    },
+    "config.security.debugLogApiEnabled": {
+      "section": "security",
+      "type": "boolean",
+      "default": false,
+      "label": "Debug log API"
+    },
+    "config.security.isManaged": {
+      "section": "security",
+      "type": "boolean",
+      "default": false,
+      "label": "Managed device",
+      "description": "Locks the device settings in the apps. Only change this if remote administration is set up."
+    },
+    "moduleConfig.mqtt.enabled": {
+      "section": "mqtt",
+      "type": "boolean",
+      "default": false,
+      "label": "MQTT enabled"
+    },
+    "moduleConfig.mqtt.address": {
+      "section": "mqtt",
+      "type": "string",
+      "maxBytes": 63,
+      "default": "mqtt.meshtastic.org",
+      "label": "Broker address"
+    },
+    "moduleConfig.mqtt.username": {
+      "section": "mqtt",
+      "type": "string",
+      "maxBytes": 63,
+      "default": "meshdev",
+      "label": "Username"
+    },
+    "moduleConfig.mqtt.root": {
+      "section": "mqtt",
+      "type": "string",
+      "maxBytes": 31,
+      "default": "msh",
+      "label": "Root topic"
+    },
+    "moduleConfig.mqtt.encryptionEnabled": {
+      "section": "mqtt",
+      "type": "boolean",
+      "default": true,
+      "label": "Encryption enabled"
+    },
+    "moduleConfig.mqtt.jsonEnabled": {
+      "section": "mqtt",
+      "type": "boolean",
+      "default": false,
+      "label": "JSON output"
+    },
+    "moduleConfig.mqtt.tlsEnabled": {
+      "section": "mqtt",
+      "type": "boolean",
+      "default": false,
+      "label": "TLS"
+    },
+    "moduleConfig.mqtt.proxyToClientEnabled": {
+      "section": "mqtt",
+      "type": "boolean",
+      "default": false,
+      "label": "Proxy through the phone"
+    },
+    "moduleConfig.mqtt.mapReportingEnabled": {
+      "section": "mqtt",
+      "type": "boolean",
+      "default": false,
+      "label": "Map reporting"
+    },
+    "moduleConfig.mqtt.mapReportSettings.publishIntervalSecs": {
+      "section": "mqtt",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 0,
+      "unit": "s",
+      "label": "Map report interval"
+    },
+    "moduleConfig.mqtt.mapReportSettings.positionPrecision": {
+      "section": "mqtt",
+      "type": "integer",
+      "min": 0,
+      "max": 32,
+      "default": 0,
+      "label": "Map report position precision",
+      "description": "0 sends no position, 32 the exact position."
+    },
+    "moduleConfig.mqtt.mapReportSettings.shouldReportLocation": {
+      "section": "mqtt",
+      "type": "boolean",
+      "default": false,
+      "label": "Report location on the map"
+    },
+    "moduleConfig.telemetry.deviceUpdateInterval": {
+      "section": "telemetry",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 1800,
+      "unit": "s",
+      "label": "Device metrics interval"
+    },
+    "moduleConfig.telemetry.deviceTelemetryEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": true,
+      "label": "Send device metrics"
+    },
+    "moduleConfig.telemetry.environmentMeasurementEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Environment metrics"
+    },
+    "moduleConfig.telemetry.environmentUpdateInterval": {
+      "section": "telemetry",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 1800,
+      "unit": "s",
+      "label": "Environment metrics interval"
+    },
+    "moduleConfig.telemetry.environmentScreenEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Show environment metrics"
+    },
+    "moduleConfig.telemetry.environmentDisplayFahrenheit": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Fahrenheit"
+    },
+    "moduleConfig.telemetry.airQualityEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Air quality metrics"
+    },
+    "moduleConfig.telemetry.airQualityInterval": {
+      "section": "telemetry",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 1800,
+      "unit": "s",
+      "label": "Air quality interval"
+    },
+    "moduleConfig.telemetry.airQualityScreenEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Show air quality"
+    },
+    "moduleConfig.telemetry.powerMeasurementEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Power metrics"
+    },
+    "moduleConfig.telemetry.powerUpdateInterval": {
+      "section": "telemetry",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 1800,
+      "unit": "s",
+      "label": "Power metrics interval"
+    },
+    "moduleConfig.telemetry.powerScreenEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Show power metrics"
+    },
+    "moduleConfig.telemetry.healthMeasurementEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Health metrics"
+    },
+    "moduleConfig.telemetry.healthUpdateInterval": {
+      "section": "telemetry",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 1800,
+      "unit": "s",
+      "label": "Health metrics interval"
+    },
+    "moduleConfig.telemetry.healthScreenEnabled": {
+      "section": "telemetry",
+      "type": "boolean",
+      "default": false,
+      "label": "Show health metrics"
+    },
+    "moduleConfig.neighborInfo.enabled": {
+      "section": "neighborInfo",
+      "type": "boolean",
+      "default": false,
+      "label": "Neighbor info enabled"
+    },
+    "moduleConfig.neighborInfo.updateInterval": {
+      "section": "neighborInfo",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 14400,
+      "unit": "s",
+      "label": "Update interval"
+    },
+    "moduleConfig.neighborInfo.transmitOverLora": {
+      "section": "neighborInfo",
+      "type": "boolean",
+      "default": false,
+      "label": "Transmit over LoRa"
+    },
+    "moduleConfig.rangeTest.enabled": {
+      "section": "rangeTest",
+      "type": "boolean",
+      "default": false,
+      "label": "Range test enabled"
+    },
+    "moduleConfig.rangeTest.sender": {
+      "section": "rangeTest",
+      "type": "integer",
+      "min": 0,
+      "max": 3600,
+      "default": 0,
+      "unit": "s",
+      "label": "Send interval",
+      "description": "Zero only receives."
+    },
+    "moduleConfig.rangeTest.save": {
+      "section": "rangeTest",
+      "type": "boolean",
+      "default": false,
+      "label": "Save results",
+      "description": "Only on ESP32 devices."
+    },
+    "moduleConfig.rangeTest.clearOnReboot": {
+      "section": "rangeTest",
+      "type": "boolean",
+      "default": false,
+      "label": "Clear results on reboot"
+    },
+    "moduleConfig.storeForward.enabled": {
+      "section": "storeForward",
+      "type": "boolean",
+      "default": false,
+      "label": "Store and forward enabled"
+    },
+    "moduleConfig.storeForward.isServer": {
+      "section": "storeForward",
+      "type": "boolean",
+      "default": false,
+      "label": "Act as server"
+    },
+    "moduleConfig.storeForward.heartbeat": {
+      "section": "storeForward",
+      "type": "boolean",
+      "default": false,
+      "label": "Heartbeat"
+    },
+    "moduleConfig.storeForward.records": {
+      "section": "storeForward",
+      "type": "integer",
+      "min": 0,
+      "max": 10000,
+      "default": 0,
+      "label": "Records"
+    },
+    "moduleConfig.storeForward.historyReturnMax": {
+      "section": "storeForward",
+      "type": "integer",
+      "min": 0,
+      "max": 1000,
+      "default": 0,
+      "label": "History return maximum"
+    },
+    "moduleConfig.storeForward.historyReturnWindow": {
+      "section": "storeForward",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 0,
+      "unit": "s",
+      "label": "History return window"
+    },
+    "moduleConfig.externalNotification.enabled": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "External notification enabled"
+    },
+    "moduleConfig.externalNotification.outputMs": {
+      "section": "externalNotification",
+      "type": "integer",
+      "min": 0,
+      "max": 60000,
+      "default": 0,
+      "unit": "ms",
+      "label": "Output duration"
+    },
+    "moduleConfig.externalNotification.active": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Output active high"
+    },
+    "moduleConfig.externalNotification.alertMessage": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Alert on message"
+    },
+    "moduleConfig.externalNotification.alertMessageVibra": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Vibrate on message"
+    },
+    "moduleConfig.externalNotification.alertMessageBuzzer": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Buzz on message"
+    },
+    "moduleConfig.externalNotification.alertBell": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Alert on bell"
+    },
+    "moduleConfig.externalNotification.alertBellVibra": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Vibrate on bell"
+    },
+    "moduleConfig.externalNotification.alertBellBuzzer": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Buzz on bell"
+    },
+    "moduleConfig.externalNotification.usePwm": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Use PWM buzzer"
+    },
+    "moduleConfig.externalNotification.useI2sAsBuzzer": {
+      "section": "externalNotification",
+      "type": "boolean",
+      "default": false,
+      "label": "Use I2S as buzzer"
+    },
+    "moduleConfig.externalNotification.nagTimeout": {
+      "section": "externalNotification",
+      "type": "integer",
+      "min": 0,
+      "max": 65535,
+      "default": 0,
+      "unit": "s",
+      "label": "Nag timeout"
+    },
+    "moduleConfig.cannedMessage.enabled": {
+      "section": "cannedMessage",
+      "type": "boolean",
+      "default": false,
+      "label": "Canned messages enabled"
+    },
+    "moduleConfig.cannedMessage.sendBell": {
+      "section": "cannedMessage",
+      "type": "boolean",
+      "default": false,
+      "label": "Send bell"
+    },
+    "moduleConfig.cannedMessage.allowInputSource": {
+      "section": "cannedMessage",
+      "type": "string",
+      "maxBytes": 15,
+      "default": "",
+      "label": "Input source",
+      "description": "For example rotEnc1, upDownEnc1 or cardkb. Empty allows any."
+    },
+    "moduleConfig.detectionSensor.enabled": {
+      "section": "detectionSensor",
+      "type": "boolean",
+      "default": false,
+      "label": "Detection sensor enabled"
+    },
+    "moduleConfig.detectionSensor.name": {
+      "section": "detectionSensor",
+      "type": "string",
+      "maxBytes": 19,
+      "default": "",
+      "label": "Sensor name"
+    },
+    "moduleConfig.detectionSensor.minimumBroadcastSecs": {
+      "section": "detectionSensor",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 45,
+      "unit": "s",
+      "label": "Minimum broadcast interval"
+    },
+    "moduleConfig.detectionSensor.stateBroadcastSecs": {
+      "section": "detectionSensor",
+      "type": "integer",
+      "min": 0,
+      "max": 86400,
+      "default": 0,
+      "unit": "s",
+      "label": "State broadcast interval"
+    },
+    "moduleConfig.detectionSensor.sendBell": {
+      "section": "detectionSensor",
+      "type": "boolean",
+      "default": false,
+      "label": "Send bell"
+    },
+    "moduleConfig.detectionSensor.detectionTriggerType": {
+      "section": "detectionSensor",
+      "type": "enum",
+      "enum": "ModuleConfig.DetectionSensorConfig.TriggerType",
+      "default": "LOGIC_HIGH",
+      "label": "Trigger type"
+    },
+    "moduleConfig.detectionSensor.usePullup": {
+      "section": "detectionSensor",
+      "type": "boolean",
+      "default": false,
+      "label": "Use pull-up"
+    },
+    "moduleConfig.tak.team": {
+      "section": "tak",
+      "type": "enum",
+      "enum": "Team",
+      "label": "TAK team",
+      "description": "The team color of the member's group.",
+      "managedBy": "openmeshtak"
+    },
+    "moduleConfig.tak.role": {
+      "section": "tak",
+      "type": "enum",
+      "enum": "MemberRole",
+      "label": "TAK role",
+      "description": "The member's TAK role.",
+      "managedBy": "openmeshtak"
     }
   },
   "enums": {
-    "Config.LoRaConfig.RegionCode": [
-      "UNSET", "US", "EU_433", "EU_868", "CN", "JP", "ANZ", "KR", "TW", "RU", "IN", "NZ_865",
-      "TH", "LORA_24", "UA_433", "MY_433", "MY_919", "SG_923", "PH_433", "PH_868", "PH_915",
-      "ANZ_433", "KZ_433", "KZ_863", "NP_865", "BR_902", "ITU1_2M", "ITU2_2M", "EU_866",
-      "EU_874", "EU_917", "EU_N_868", "ITU3_2M", "ITU1_70CM", "ITU2_70CM", "ITU3_70CM",
-      "ITU2_125CM"
-    ],
-    "Config.LoRaConfig.ModemPreset": [
-      "LONG_FAST", "LONG_MODERATE", "LONG_TURBO", "MEDIUM_SLOW", "MEDIUM_FAST", "MEDIUM_TURBO",
-      "SHORT_SLOW", "SHORT_FAST", "SHORT_TURBO", "LITE_FAST", "LITE_SLOW", "NARROW_FAST",
-      "NARROW_SLOW", "TINY_FAST", "TINY_SLOW"
-    ],
     "Config.DeviceConfig.Role": [
-      "CLIENT", "CLIENT_MUTE", "CLIENT_HIDDEN", "CLIENT_BASE", "ROUTER", "ROUTER_LATE", "TRACKER",
-      "SENSOR", "TAK", "TAK_TRACKER", "LOST_AND_FOUND"
+      {
+        "value": "CLIENT",
+        "label": "Client"
+      },
+      {
+        "value": "CLIENT_MUTE",
+        "label": "Client mute"
+      },
+      {
+        "value": "CLIENT_HIDDEN",
+        "label": "Client hidden"
+      },
+      {
+        "value": "CLIENT_BASE",
+        "label": "Client base"
+      },
+      {
+        "value": "TAK",
+        "label": "TAK"
+      },
+      {
+        "value": "TAK_TRACKER",
+        "label": "TAK tracker"
+      },
+      {
+        "value": "TRACKER",
+        "label": "Tracker"
+      },
+      {
+        "value": "SENSOR",
+        "label": "Sensor"
+      },
+      {
+        "value": "ROUTER",
+        "label": "Router"
+      },
+      {
+        "value": "ROUTER_LATE",
+        "label": "Router late"
+      },
+      {
+        "value": "LOST_AND_FOUND",
+        "label": "Lost and found"
+      }
     ],
     "Config.DeviceConfig.RebroadcastMode": [
-      "ALL", "LOCAL_ONLY", "KNOWN_ONLY", "NONE", "CORE_PORTNUMS_ONLY"
+      {
+        "value": "ALL",
+        "label": "All"
+      },
+      {
+        "value": "LOCAL_ONLY",
+        "label": "Local only"
+      },
+      {
+        "value": "KNOWN_ONLY",
+        "label": "Known only"
+      },
+      {
+        "value": "CORE_PORTNUMS_ONLY",
+        "label": "Core packets only"
+      },
+      {
+        "value": "NONE",
+        "label": "None"
+      }
     ],
-    "Config.PositionConfig.GpsMode": ["DISABLED", "ENABLED", "NOT_PRESENT"],
-    "Config.DisplayConfig.DisplayUnits": ["METRIC", "IMPERIAL"],
-    "Config.BluetoothConfig.PairingMode": ["RANDOM_PIN", "NO_PIN"],
+    "Config.DeviceConfig.BuzzerMode": [
+      {
+        "value": "ALL_ENABLED",
+        "label": "All enabled"
+      },
+      {
+        "value": "NOTIFICATIONS_ONLY",
+        "label": "Notifications only"
+      },
+      {
+        "value": "SYSTEM_ONLY",
+        "label": "System only"
+      },
+      {
+        "value": "DIRECT_MSG_ONLY",
+        "label": "Direct messages only"
+      },
+      {
+        "value": "DISABLED",
+        "label": "Disabled"
+      }
+    ],
+    "Config.LoRaConfig.RegionCode": [
+      {
+        "value": "UNSET",
+        "label": "Not set"
+      },
+      {
+        "value": "EU_868",
+        "label": "European Union 868 MHz"
+      },
+      {
+        "value": "EU_433",
+        "label": "European Union 433 MHz"
+      },
+      {
+        "value": "EU_866",
+        "label": "European Union 866 MHz"
+      },
+      {
+        "value": "EU_874",
+        "label": "European Union 874 MHz"
+      },
+      {
+        "value": "EU_917",
+        "label": "European Union 917 MHz"
+      },
+      {
+        "value": "EU_N_868",
+        "label": "European Union 868 MHz narrow"
+      },
+      {
+        "value": "US",
+        "label": "United States"
+      },
+      {
+        "value": "ANZ",
+        "label": "Australia / New Zealand"
+      },
+      {
+        "value": "ANZ_433",
+        "label": "Australia / New Zealand 433 MHz"
+      },
+      {
+        "value": "NZ_865",
+        "label": "New Zealand 865 MHz"
+      },
+      {
+        "value": "CN",
+        "label": "China"
+      },
+      {
+        "value": "JP",
+        "label": "Japan"
+      },
+      {
+        "value": "KR",
+        "label": "Korea"
+      },
+      {
+        "value": "TW",
+        "label": "Taiwan"
+      },
+      {
+        "value": "RU",
+        "label": "Russia"
+      },
+      {
+        "value": "IN",
+        "label": "India"
+      },
+      {
+        "value": "TH",
+        "label": "Thailand"
+      },
+      {
+        "value": "UA_433",
+        "label": "Ukraine 433 MHz"
+      },
+      {
+        "value": "MY_433",
+        "label": "Malaysia 433 MHz"
+      },
+      {
+        "value": "MY_919",
+        "label": "Malaysia 919 MHz"
+      },
+      {
+        "value": "SG_923",
+        "label": "Singapore 923 MHz"
+      },
+      {
+        "value": "PH_433",
+        "label": "Philippines 433 MHz"
+      },
+      {
+        "value": "PH_868",
+        "label": "Philippines 868 MHz"
+      },
+      {
+        "value": "PH_915",
+        "label": "Philippines 915 MHz"
+      },
+      {
+        "value": "KZ_433",
+        "label": "Kazakhstan 433 MHz"
+      },
+      {
+        "value": "KZ_863",
+        "label": "Kazakhstan 863 MHz"
+      },
+      {
+        "value": "NP_865",
+        "label": "Nepal 865 MHz"
+      },
+      {
+        "value": "BR_902",
+        "label": "Brazil 902 MHz"
+      },
+      {
+        "value": "LORA_24",
+        "label": "2.4 GHz"
+      },
+      {
+        "value": "ITU1_2M",
+        "label": "ITU region 1 · 2 m amateur"
+      },
+      {
+        "value": "ITU2_2M",
+        "label": "ITU region 2 · 2 m amateur"
+      },
+      {
+        "value": "ITU3_2M",
+        "label": "ITU region 3 · 2 m amateur"
+      },
+      {
+        "value": "ITU1_70CM",
+        "label": "ITU region 1 · 70 cm amateur"
+      },
+      {
+        "value": "ITU2_70CM",
+        "label": "ITU region 2 · 70 cm amateur"
+      },
+      {
+        "value": "ITU3_70CM",
+        "label": "ITU region 3 · 70 cm amateur"
+      },
+      {
+        "value": "ITU2_125CM",
+        "label": "ITU region 2 · 1.25 m amateur"
+      }
+    ],
+    "Config.LoRaConfig.ModemPreset": [
+      {
+        "value": "LONG_FAST",
+        "label": "Long range · fast"
+      },
+      {
+        "value": "LONG_MODERATE",
+        "label": "Long range · moderate"
+      },
+      {
+        "value": "LONG_TURBO",
+        "label": "Long range · turbo"
+      },
+      {
+        "value": "MEDIUM_SLOW",
+        "label": "Medium range · slow"
+      },
+      {
+        "value": "MEDIUM_FAST",
+        "label": "Medium range · fast"
+      },
+      {
+        "value": "MEDIUM_TURBO",
+        "label": "Medium range · turbo"
+      },
+      {
+        "value": "SHORT_SLOW",
+        "label": "Short range · slow"
+      },
+      {
+        "value": "SHORT_FAST",
+        "label": "Short range · fast"
+      },
+      {
+        "value": "SHORT_TURBO",
+        "label": "Short range · turbo"
+      },
+      {
+        "value": "LITE_FAST",
+        "label": "Lite · fast"
+      },
+      {
+        "value": "LITE_SLOW",
+        "label": "Lite · slow"
+      },
+      {
+        "value": "NARROW_FAST",
+        "label": "Narrow · fast"
+      },
+      {
+        "value": "NARROW_SLOW",
+        "label": "Narrow · slow"
+      },
+      {
+        "value": "TINY_FAST",
+        "label": "Tiny · fast"
+      },
+      {
+        "value": "TINY_SLOW",
+        "label": "Tiny · slow"
+      }
+    ],
+    "Config.PositionConfig.GpsMode": [
+      {
+        "value": "ENABLED",
+        "label": "Enabled"
+      },
+      {
+        "value": "DISABLED",
+        "label": "Disabled"
+      },
+      {
+        "value": "NOT_PRESENT",
+        "label": "Not present"
+      }
+    ],
+    "Config.DisplayConfig.DisplayUnits": [
+      {
+        "value": "METRIC",
+        "label": "Metric"
+      },
+      {
+        "value": "IMPERIAL",
+        "label": "Imperial"
+      }
+    ],
+    "Config.DisplayConfig.DisplayMode": [
+      {
+        "value": "DEFAULT",
+        "label": "Default"
+      },
+      {
+        "value": "TWOCOLOR",
+        "label": "Two-color display"
+      },
+      {
+        "value": "INVERTED",
+        "label": "Inverted top bar"
+      },
+      {
+        "value": "COLOR",
+        "label": "Full-color display"
+      }
+    ],
+    "Config.DisplayConfig.CompassOrientation": [
+      {
+        "value": "DEGREES_0",
+        "label": "0°"
+      },
+      {
+        "value": "DEGREES_90",
+        "label": "90°"
+      },
+      {
+        "value": "DEGREES_180",
+        "label": "180°"
+      },
+      {
+        "value": "DEGREES_270",
+        "label": "270°"
+      },
+      {
+        "value": "DEGREES_0_INVERTED",
+        "label": "0° inverted"
+      },
+      {
+        "value": "DEGREES_90_INVERTED",
+        "label": "90° inverted"
+      },
+      {
+        "value": "DEGREES_180_INVERTED",
+        "label": "180° inverted"
+      },
+      {
+        "value": "DEGREES_270_INVERTED",
+        "label": "270° inverted"
+      }
+    ],
+    "Config.BluetoothConfig.PairingMode": [
+      {
+        "value": "RANDOM_PIN",
+        "label": "Random PIN"
+      },
+      {
+        "value": "NO_PIN",
+        "label": "No PIN"
+      }
+    ],
+    "Config.NetworkConfig.AddressMode": [
+      {
+        "value": "DHCP",
+        "label": "DHCP"
+      },
+      {
+        "value": "STATIC",
+        "label": "Static"
+      }
+    ],
     "Config.SecurityConfig.PacketSignaturePolicy": [
-      "PACKET_SIGNATURE_POLICY_COMPATIBLE",
-      "PACKET_SIGNATURE_POLICY_BALANCED",
-      "PACKET_SIGNATURE_POLICY_STRICT"
+      {
+        "value": "PACKET_SIGNATURE_POLICY_COMPATIBLE",
+        "label": "Compatible"
+      },
+      {
+        "value": "PACKET_SIGNATURE_POLICY_BALANCED",
+        "label": "Balanced"
+      },
+      {
+        "value": "PACKET_SIGNATURE_POLICY_STRICT",
+        "label": "Strict"
+      }
+    ],
+    "ModuleConfig.DetectionSensorConfig.TriggerType": [
+      {
+        "value": "LOGIC_LOW",
+        "label": "Logic low"
+      },
+      {
+        "value": "LOGIC_HIGH",
+        "label": "Logic high"
+      },
+      {
+        "value": "FALLING_EDGE",
+        "label": "Falling edge"
+      },
+      {
+        "value": "RISING_EDGE",
+        "label": "Rising edge"
+      },
+      {
+        "value": "EITHER_EDGE_ACTIVE_LOW",
+        "label": "Either edge, active low"
+      },
+      {
+        "value": "EITHER_EDGE_ACTIVE_HIGH",
+        "label": "Either edge, active high"
+      }
+    ],
+    "Team": [
+      {
+        "value": "White",
+        "label": "White"
+      },
+      {
+        "value": "Yellow",
+        "label": "Yellow"
+      },
+      {
+        "value": "Orange",
+        "label": "Orange"
+      },
+      {
+        "value": "Magenta",
+        "label": "Magenta"
+      },
+      {
+        "value": "Red",
+        "label": "Red"
+      },
+      {
+        "value": "Maroon",
+        "label": "Maroon"
+      },
+      {
+        "value": "Purple",
+        "label": "Purple"
+      },
+      {
+        "value": "Dark_Blue",
+        "label": "Dark blue"
+      },
+      {
+        "value": "Blue",
+        "label": "Blue"
+      },
+      {
+        "value": "Cyan",
+        "label": "Cyan"
+      },
+      {
+        "value": "Teal",
+        "label": "Teal"
+      },
+      {
+        "value": "Green",
+        "label": "Green"
+      },
+      {
+        "value": "Dark_Green",
+        "label": "Dark green"
+      },
+      {
+        "value": "Brown",
+        "label": "Brown"
+      }
+    ],
+    "MemberRole": [
+      {
+        "value": "TeamMember",
+        "label": "Team member"
+      },
+      {
+        "value": "TeamLead",
+        "label": "Team lead"
+      },
+      {
+        "value": "HQ",
+        "label": "HQ"
+      },
+      {
+        "value": "Sniper",
+        "label": "Sniper"
+      },
+      {
+        "value": "Medic",
+        "label": "Medic"
+      },
+      {
+        "value": "ForwardObserver",
+        "label": "Forward observer"
+      },
+      {
+        "value": "RTO",
+        "label": "RTO"
+      },
+      {
+        "value": "K9",
+        "label": "K9"
+      }
     ]
   }
 }

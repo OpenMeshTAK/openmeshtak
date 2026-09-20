@@ -116,6 +116,14 @@ void describe("Meshtastic device profiles", () => {
     assert.equal(profile.config?.device?.role, 7, "TAK role");
     assert.equal(profile.config?.security?.privateKey.length, 0, "never a device private key");
     assert.deepEqual(channelNames(profile.channelUrl), ["Event", "Bravo"]);
+    assert.equal(profile.moduleConfig?.tak?.team, 10, "Cyan from the group");
+    assert.equal(profile.moduleConfig?.tak?.role, 1, "Team Member from the group");
+  });
+
+  void it("refuses callsigns longer than a device profile allows", async () => {
+    await database.eventMember.update({ where: { id: memberId }, data: { callsign: "Peter with a very long callsign" } });
+    const response = await request(app).get(deviceProfileUrl(memberId)).set("Cookie", member.cookie).expect(409);
+    assert.equal((response.body as { code: string }).code, "DEVICE_PROFILE_VALUE_UNSUPPORTED");
   });
 
   void it("includes a withheld secret channel only for its key holder and audits that handout", async () => {

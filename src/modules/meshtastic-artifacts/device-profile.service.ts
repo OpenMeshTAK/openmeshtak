@@ -9,7 +9,11 @@ import { parseConfigurationSnapshot } from "../event-configuration/configuration
 import { decryptChannelPsk } from "../meshtastic-channels/channel-psk.js";
 import { meshtasticChannelSetUrl } from "../meshtastic-channels/channel-url.js";
 import { findFirmwareProfile } from "../meshtastic-firmware/firmware-profiles.js";
-import type { LoadedFirmwareProfile } from "../meshtastic-firmware/firmware-profile-loader.js";
+import {
+  enumValues,
+  type LoadedFirmwareField,
+  type LoadedFirmwareProfile,
+} from "../meshtastic-firmware/firmware-profile-loader.js";
 import type { ManagedFieldKey } from "../meshtastic-firmware/managed-fields.js";
 import type { ProfileChannel, ResolvedProfileDto } from "../profiles/profile.dto.js";
 import { getMemberProfile } from "../profiles/profiles.service.js";
@@ -61,12 +65,45 @@ async function publishedFirmware(eventId: string) {
   return { revision, meshtastic, profile };
 }
 
+/**
+ * OpenMeshTak stores TAK teams and roles with ATAK display names (`Dark Blue`, `Team Member`);
+ * the Meshtastic TAK module uses the upstream `atak.proto` enum names (`Dark_Blue`, `TeamMember`).
+ */
 function managedValue(key: ManagedFieldKey, profile: ResolvedProfileDto): DeviceProfileValue | null {
   switch (key) {
     case "longName":
       return profile.meshtastic.longName;
     case "shortName":
       return profile.meshtastic.shortName;
+    case "moduleConfig.tak.team":
+      return profile.tak.team.replaceAll(" ", "_");
+    case "moduleConfig.tak.role":
+      return profile.tak.role.replaceAll(" ", "");
+  }
+}
+
+function unsupportedValueProblem(field: LoadedFirmwareField, reason: string): ProblemError {
+  return new ProblemError({
+    type: "urn:openmeshtak:problem:device-profile-value-unsupported",
+    title: "Value does not fit the device profile",
+    status: 409,
+    detail: `${field.definition.label} ${reason} Ask an administrator to adjust it.`,
+    code: "DEVICE_PROFILE_VALUE_UNSUPPORTED",
+  });
+}
+
+/**
+ * Managed values come from member and group data rather than the validated settings document, so
+ * they are checked against the profile here. A callsign longer than the DeviceProfile limit would
+ * otherwise produce a file the Meshtastic app rejects or truncates.
+ */
+function checkManagedValue(firmware: LoadedFirmwareProfile, field: LoadedFirmwareField, value: DeviceProfileValue): void {
+  const { definition } = field;
+  if (definition.type === "string" && typeof value === "string" && Buffer.byteLength(value, "utf8") > definition.maxBytes) {
+    throw unsupportedValueProblem(field, `is longer than the ${String(definition.maxBytes)} bytes a device profile allows.`);
+  }
+  if (definition.type === "enum" && !(enumValues(firmware, definition.enum) ?? []).includes(String(value))) {
+    throw unsupportedValueProblem(field, `${String(value)} is not supported by this firmware.`);
   }
 }
 
@@ -91,12 +128,17 @@ function profileValues(
   profile: ResolvedProfileDto,
 ): Map<string, DeviceProfileValue> {
   const values = new Map<string, DeviceProfileValue>();
-  for (const { key, definition } of firmware.fields) {
+  for (const field of firmware.fields) {
+    const { key, definition } = field;
     const value =
       definition.managedBy === undefined ? settings[key] : managedValue(key as ManagedFieldKey, profile);
-    if (value !== undefined && value !== null) {
-      values.set(key, value);
+    if (value === undefined || value === null) {
+      continue;
     }
+    if (definition.managedBy !== undefined) {
+      checkManagedValue(firmware, field, value);
+    }
+    values.set(key, value);
   }
   return values;
 }
