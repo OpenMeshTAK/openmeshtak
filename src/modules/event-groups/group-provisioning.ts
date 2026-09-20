@@ -7,7 +7,7 @@ import {
 } from "./provisioning-values.js";
 
 /**
- * Identifier used for TAK server groups and mission groups.
+ * Identifier used for TAK server groups.
  * @pattern ^[A-Za-z0-9_-]+$
  * @minLength 1
  * @maxLength 64
@@ -34,8 +34,6 @@ export interface GroupProvisioning {
     /** @maxItems 20 */
     serverGroups: ProvisioningName[];
   };
-  /** @maxItems 20 */
-  missionGroups: ProvisioningName[];
 }
 
 export interface GroupProvisioningColumns {
@@ -44,7 +42,6 @@ export interface GroupProvisioningColumns {
   takTeam: string;
   takRole: string;
   takServerGroups: string[];
-  missionGroups: string[];
 }
 
 export function defaultShortNamePrefix(slug: string): string {
@@ -56,7 +53,6 @@ export function defaultProvisioning(slug: string): GroupProvisioning {
     callsignFormat: "{username}",
     shortNamePrefix: defaultShortNamePrefix(slug),
     tak: { team: "Cyan", role: "Team Member", serverGroups: [] },
-    missionGroups: [],
   };
 }
 
@@ -89,7 +85,6 @@ export function provisioningProblems(provisioning: GroupProvisioning): ProblemFi
 
   for (const [field, values] of [
     ["provisioning.tak.serverGroups", provisioning.tak.serverGroups],
-    ["provisioning.missionGroups", provisioning.missionGroups],
   ] as const) {
     if (duplicates(values)) {
       problems.push({ field, code: "DUPLICATE", message: "Each entry may appear only once." });
@@ -106,7 +101,6 @@ export function toProvisioningColumns(provisioning: GroupProvisioning): GroupPro
     takTeam: provisioning.tak.team,
     takRole: provisioning.tak.role,
     takServerGroups: provisioning.tak.serverGroups,
-    missionGroups: provisioning.missionGroups,
   };
 }
 
@@ -124,6 +118,5 @@ export function toGroupProvisioning(row: EventGroup): GroupProvisioning {
       role: row.takRole as TakRole,
       serverGroups: stringArray(row.takServerGroups),
     },
-    missionGroups: stringArray(row.missionGroups),
   };
 }

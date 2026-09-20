@@ -26,14 +26,12 @@ interface ProfileBody {
     channels: Array<{ name: string; primary: boolean; delivery: string; keyHolder: boolean }>;
     firmware: Record<string, unknown> & { flashingNotes?: string | null } | null;
   };
-  missionGroups: string[];
 }
 
 const bravoProvisioning = {
   callsignFormat: "{username} [Bravo]",
   shortNamePrefix: "B",
   tak: { team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
-  missionGroups: ["global", "bravo"],
 };
 
 let app: Express;
@@ -147,7 +145,6 @@ void describe("Peter/Bravo end to end", () => {
         longName: "Peter [Bravo]",
         shortName: "B1",
       },
-      missionGroups: ["global", "bravo"],
     });
     assert.deepEqual(profile.meshtastic.firmware, {
       recommendedVersion: "2.8",

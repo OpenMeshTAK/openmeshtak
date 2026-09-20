@@ -14,7 +14,7 @@ import { getMemberProfile, listMyEventMemberships } from "./profiles.service.js"
 @Response<ProblemDetails>(404, "Not found")
 export class MemberProfileController extends Controller {
   /**
-   * Resolves the member's callsign, TAK and Meshtastic identity and mission groups. Requires
+   * Resolves the member's callsign, TAK and Meshtastic identity. Requires
    * `members.read`, or being that member in an active event. Draft events return an
    * administrator preview of the unpublished configuration.
    */

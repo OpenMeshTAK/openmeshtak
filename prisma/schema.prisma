@@ -301,7 +301,6 @@ model EventGroup {
   takRole           String                      @default("Team Member")
   /// Validated JSON string arrays.
   takServerGroups   Json                        @default("[]")
-  missionGroups     Json                        @default("[]")
   event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   members           EventMember[]
   channelSelections MeshtasticChannelAudience[]

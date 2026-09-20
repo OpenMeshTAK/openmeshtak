@@ -72,7 +72,6 @@ export interface ResolvedProfileDto {
     /** `null` for configurations published before events had a firmware version. */
     firmware: ProfileFirmware | null;
   };
-  missionGroups: string[];
 }
 
 export interface MyEventMembershipDto {

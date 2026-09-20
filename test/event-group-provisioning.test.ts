@@ -19,7 +19,6 @@ interface GroupBody {
     callsignFormat: string;
     shortNamePrefix: string | null;
     tak: { team: string; role: string; serverGroups: string[] };
-    missionGroups: string[];
   };
 }
 
@@ -27,7 +26,6 @@ const bravo = {
   callsignFormat: "{username} [Bravo]",
   shortNamePrefix: "B",
   tak: { team: "Purple", role: "Team Member", serverGroups: ["global", "bravo"] },
-  missionGroups: ["global", "bravo"],
 };
 
 let app: Express;
@@ -65,7 +63,6 @@ void describe("event group provisioning", () => {
       callsignFormat: "{username}",
       shortNamePrefix: "B",
       tak: { team: "Cyan", role: "Team Member", serverGroups: [] },
-      missionGroups: [],
     });
 
     const second = (await createGroup("blue").expect(201)).body as GroupBody;
@@ -90,7 +87,7 @@ void describe("event group provisioning", () => {
     const response = await createGroup("bravo", {
       ...bravo,
       callsignFormat: "{name} [Bravo]",
-      missionGroups: ["global", "global"],
+      tak: { ...bravo.tak, serverGroups: ["global", "global"] },
     }).expect(422);
 
     assert.deepEqual(

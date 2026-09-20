@@ -909,12 +909,6 @@
 							"longName"
 						],
 						"type": "object"
-					},
-					"missionGroups": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array"
 					}
 				},
 				"required": [
@@ -928,8 +922,7 @@
 					"eventRole",
 					"group",
 					"tak",
-					"meshtastic",
-					"missionGroups"
+					"meshtastic"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -2713,7 +2706,7 @@
 			},
 			"ProvisioningName": {
 				"type": "string",
-				"description": "Identifier used for TAK server groups and mission groups.",
+				"description": "Identifier used for TAK server groups.",
 				"pattern": "^[A-Za-z0-9_-]+$",
 				"minLength": 1,
 				"maxLength": 64
@@ -2754,20 +2747,12 @@
 							"team"
 						],
 						"type": "object"
-					},
-					"missionGroups": {
-						"items": {
-							"$ref": "#/components/schemas/ProvisioningName"
-						},
-						"type": "array",
-						"maxItems": 20
 					}
 				},
 				"required": [
 					"callsignFormat",
 					"shortNamePrefix",
-					"tak",
-					"missionGroups"
+					"tak"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5611,7 +5596,7 @@
 						}
 					}
 				},
-				"description": "Resolves the member's callsign, TAK and Meshtastic identity and mission groups. Requires\n`members.read`, or being that member in an active event. Draft events return an\nadministrator preview of the unpublished configuration.",
+				"description": "Resolves the member's callsign, TAK and Meshtastic identity. Requires\n`members.read`, or being that member in an active event. Draft events return an\nadministrator preview of the unpublished configuration.",
 				"tags": [
 					"Profiles"
 				],

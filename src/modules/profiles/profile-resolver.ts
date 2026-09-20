@@ -71,6 +71,5 @@ export function resolveProfile({
       }),
       firmware,
     },
-    missionGroups: provisioning.missionGroups,
   };
 }
