@@ -3945,6 +3945,43 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"PackageAudience": {
+				"description": "Who receives the published Data Package: every event member, or only those matching any\nselected group, role or member. The selection is ignored while `allMembers` is true.",
+				"properties": {
+					"groupIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 100
+					},
+					"roleIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 100
+					},
+					"memberIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 500
+					},
+					"allMembers": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"groupIds",
+					"roleIds",
+					"memberIds",
+					"allMembers"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"DataPackageDto": {
 				"properties": {
 					"id": {
@@ -3966,6 +4003,9 @@
 						"nullable": true,
 						"description": "Number of the newest published revision, or `null` while nothing is published."
 					},
+					"audience": {
+						"$ref": "#/components/schemas/PackageAudience"
+					},
 					"version": {
 						"type": "number",
 						"format": "double",
@@ -3986,6 +4026,7 @@
 					"name",
 					"description",
 					"latestRevision",
+					"audience",
 					"version",
 					"createdAt",
 					"updatedAt"
@@ -4054,6 +4095,25 @@
 					"version",
 					"name",
 					"description"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdatePackageAudienceRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"audience": {
+						"$ref": "#/components/schemas/PackageAudience"
+					}
+				},
+				"required": [
+					"version",
+					"audience"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -11919,6 +11979,113 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/audience": {
+			"put": {
+				"operationId": "UpdateDataPackageAudience",
+				"responses": {
+					"200": {
+						"description": "Audience updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DataPackageDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Sets who receives the package's published revisions: all members or selected groups, roles\nand members. Requires `data-packages.publish` and the current `version`.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdatePackageAudienceRequest"
+							}
+						}
+					}
+				}
 			}
 		}
 	},

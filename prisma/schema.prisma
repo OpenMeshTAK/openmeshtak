@@ -277,6 +277,7 @@ model EventRole {
   event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   members           EventMember[]
   channelSelections MeshtasticChannelAudience[]
+  packageSelections DataPackageAudience[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -286,26 +287,27 @@ model EventRole {
 
 /// Event-owned tactical/provisioning group such as `bravo`. Never grants permissions.
 model EventGroup {
-  id                   String                      @id
-  eventId              String
-  name                 String
-  slug                 String
-  description          String?
-  version              Int                         @default(1)
+  id                String                      @id
+  eventId           String
+  name              String
+  slug              String
+  description       String?
+  version           Int                         @default(1)
   /// Template such as `{username} [Bravo]`; validated against an allowlist of placeholders.
-  callsignFormat       String                      @default("{username}")
+  callsignFormat    String                      @default("{username}")
   /// Meshtastic short-name prefix such as `B`; null until an administrator chooses a free one.
-  shortNamePrefix      String?
-  takTeam              String                      @default("Cyan")
-  takRole              String                      @default("Team Member")
+  shortNamePrefix   String?
+  takTeam           String                      @default("Cyan")
+  takRole           String                      @default("Team Member")
   /// Validated JSON string arrays.
-  takServerGroups      Json                        @default("[]")
-  missionGroups        Json                        @default("[]")
-  event                Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  members              EventMember[]
-  channelSelections    MeshtasticChannelAudience[]
-  createdAt            DateTime                    @default(now())
-  updatedAt            DateTime                    @updatedAt
+  takServerGroups   Json                        @default("[]")
+  missionGroups     Json                        @default("[]")
+  event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  members           EventMember[]
+  channelSelections MeshtasticChannelAudience[]
+  packageSelections DataPackageAudience[]
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
 
   @@unique([eventId, slug])
   @@unique([eventId, shortNamePrefix])
@@ -350,6 +352,7 @@ model EventMember {
   eventGroup        EventGroup                  @relation(fields: [eventGroupId], references: [id], onDelete: Restrict)
   claims            MemberClaim[]
   channelSelections MeshtasticChannelAudience[]
+  packageSelections DataPackageAudience[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -431,17 +434,20 @@ model EventConfigurationRevision {
 
 /// Editable, format-neutral map content of one event, distributed as an ATAK Data Package.
 model DataPackage {
-  id          String            @id
+  id          String                @id
   eventId     String
   name        String
   description String?
-  version     Int               @default(1)
-  event       Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  version     Int                   @default(1)
+  /// Distribution: every member of the event, or only the members the audience selects.
+  audienceAll Boolean               @default(true)
+  audience    DataPackageAudience[]
+  event       Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
   layers      PackageLayer[]
   objects     PackageObject[]
   revisions   PackageRevision[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
 
   @@index([eventId, createdAt, id])
 }
@@ -566,4 +572,22 @@ model MeshtasticConfiguration {
   event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+/// One audience selector of a Data Package: exactly one of group, role or member is set.
+model DataPackageAudience {
+  id            String       @id
+  packageId     String
+  eventGroupId  String?
+  eventRoleId   String?
+  eventMemberId String?
+  dataPackage   DataPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  eventGroup    EventGroup?  @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
+  eventRole     EventRole?   @relation(fields: [eventRoleId], references: [id], onDelete: Cascade)
+  eventMember   EventMember? @relation(fields: [eventMemberId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+  @@index([eventGroupId])
+  @@index([eventRoleId])
+  @@index([eventMemberId])
 }

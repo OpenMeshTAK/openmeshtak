@@ -1,5 +1,24 @@
+import type { EventAudience } from "../event-audience/event-audience.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
+
+/**
+ * Who receives the published Data Package: every event member, or only those matching any
+ * selected group, role or member. The selection is ignored while `allMembers` is true.
+ */
+export interface PackageAudience extends EventAudience {
+  allMembers: boolean;
+}
+
+export interface UpdatePackageAudienceRequest {
+  /**
+   * Version the client last read.
+   * @isInt
+   * @minimum 1
+   */
+  version: number;
+  audience: PackageAudience;
+}
 
 export interface DataPackageDto {
   id: Uuid;
@@ -8,6 +27,7 @@ export interface DataPackageDto {
   description: string | null;
   /** Number of the newest published revision, or `null` while nothing is published. */
   latestRevision: number | null;
+  audience: PackageAudience;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
   /** @format date-time */

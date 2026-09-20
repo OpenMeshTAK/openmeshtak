@@ -19,8 +19,15 @@ import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import type { CreateDataPackageRequest, DataPackageDto, DataPackagePage, UpdateDataPackageRequest } from "./data-package.dto.js";
+import type {
+  CreateDataPackageRequest,
+  DataPackageDto,
+  DataPackagePage,
+  UpdateDataPackageRequest,
+  UpdatePackageAudienceRequest,
+} from "./data-package.dto.js";
 import { createDataPackage, deleteDataPackage, getDataPackage, listDataPackages, updateDataPackage } from "./data-packages.service.js";
+import { updatePackageAudience } from "./package-audience.service.js";
 
 /**
  * Data packages hold an event's editable map content. Reads need `data-packages.read`, changes
@@ -103,5 +110,23 @@ export class DataPackagesController extends Controller {
   ): Promise<void> {
     await deleteDataPackage(requestContext(request), eventId, packageId);
     this.setStatus(204);
+  }
+
+  /**
+   * Sets who receives the package's published revisions: all members or selected groups, roles
+   * and members. Requires `data-packages.publish` and the current `version`.
+   */
+  @Put("{packageId}/audience")
+  @SuccessResponse(200, "Audience updated")
+  @Response<ProblemDetails>(403, "Access denied")
+  @Response<ProblemDetails>(409, "Version conflict or event archived")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async updateDataPackageAudience(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Path() packageId: Uuid,
+    @Body() body: UpdatePackageAudienceRequest,
+  ): Promise<DataPackageDto> {
+    return updatePackageAudience(requestContext(request), eventId, packageId, body);
   }
 }

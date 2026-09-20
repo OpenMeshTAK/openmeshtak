@@ -1507,6 +1507,17 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageAudience": {
+        "dataType": "refObject",
+        "properties": {
+            "groupIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":100}}},
+            "roleIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":100}}},
+            "memberIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":500}}},
+            "allMembers": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DataPackageDto": {
         "dataType": "refObject",
         "properties": {
@@ -1515,6 +1526,7 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "latestRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "audience": {"ref":"PackageAudience","required":true},
             "version": {"dataType":"double","required":true},
             "createdAt": {"dataType":"string","required":true},
             "updatedAt": {"dataType":"string","required":true},
@@ -1546,6 +1558,15 @@ const models: TsoaRoute.Models = {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":1000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdatePackageAudienceRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "audience": {"ref":"PackageAudience","required":true},
         },
         "additionalProperties": false,
     },
@@ -4649,6 +4670,40 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDataPackagesController_updateDataPackageAudience: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageAudienceRequest"},
+        };
+        app.put('/api/v1/events/:eventId/data-packages/:packageId/audience',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.updateDataPackageAudience)),
+
+            async function DataPackagesController_updateDataPackageAudience(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDataPackagesController_updateDataPackageAudience, request, response });
+
+                const controller = new DataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'updateDataPackageAudience',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

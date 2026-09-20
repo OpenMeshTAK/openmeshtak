@@ -11,6 +11,7 @@ import {
   decodeCursor,
   toPage,
 } from "../../shared/pagination/cursor.js";
+import { audienceFromSelectors } from "../event-audience/event-audience.js";
 import { requireEventPermission } from "../events/event-access.js";
 import type { CreateDataPackageRequest, DataPackageDto, DataPackagePage, UpdateDataPackageRequest } from "./data-package.dto.js";
 import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
@@ -21,6 +22,8 @@ const packageSelection = {
   name: true,
   description: true,
   version: true,
+  audienceAll: true,
+  audience: true,
   createdAt: true,
   updatedAt: true,
   revisions: { select: { number: true }, orderBy: { number: "desc" }, take: 1 },
@@ -35,13 +38,14 @@ function toDto(row: PackageRow): DataPackageDto {
     name: row.name,
     description: row.description,
     latestRevision: row.revisions[0]?.number ?? null,
+    audience: { allMembers: row.audienceAll, ...audienceFromSelectors(row.audience) },
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
 
-async function loadDto(packageId: string): Promise<DataPackageDto> {
+export async function loadDto(packageId: string): Promise<DataPackageDto> {
   return toDto(
     await database.dataPackage.findUniqueOrThrow({ where: { id: packageId }, select: packageSelection }),
   );
