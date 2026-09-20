@@ -79,9 +79,9 @@ function updateBravo(changes: Record<string, unknown>): request.Test {
 void describe("member identity rules", () => {
   void it("renders callsigns and checks upstream byte limits", () => {
     assert.equal(renderCallsign("{username} [{group}]", "Peter", "Bravo"), "Peter [Bravo]");
-    assert.ok(callsignFits("x".repeat(39)));
-    assert.ok(!callsignFits("x".repeat(40)));
-    assert.ok(!callsignFits("ü".repeat(20)), "multi-byte characters count as bytes");
+    assert.ok(callsignFits("x".repeat(24)));
+    assert.ok(!callsignFits("x".repeat(25)));
+    assert.ok(!callsignFits("ü".repeat(13)), "multi-byte characters count as bytes");
     assert.equal(nextShortNameNumber([1, 2, 4]), 3);
     assert.ok(shortNameFits("B", 999));
     assert.ok(!shortNameFits("B", 1000));
@@ -159,7 +159,7 @@ void describe("member callsigns and short names", () => {
     assert.equal((await sync("2", "Peter")).member?.callsign, "Peter M. [Bravo]");
   });
 
-  void it("rejects callsigns over the 39-byte long-name limit", async () => {
+  void it("rejects callsigns over the 24-byte long-name limit", async () => {
     const issue = await sync("1", "A-very-long-username-for-meshtastic");
     assert.deepEqual(issue.syncIssue?.reasons.map(({ field, code }) => `${field}:${code}`), [
       "callsign:TOO_LONG",

@@ -29,8 +29,13 @@ export type TakRole =
   | "RTO"
   | "K9";
 
-/** Upstream nanopb limits include the terminating null byte, hence one less than max_size. */
-export const MESHTASTIC_LONG_NAME_MAX_BYTES = 39;
+/**
+ * Upstream nanopb limits include the terminating null byte, hence one less than max_size. The
+ * callsign limit is the 24-byte `DeviceProfile.long_name` of the `.cfg` file (max_size 25 in
+ * clientonly.options), tighter than the 39 bytes a node accepts on air, so every callsign fits the
+ * device profile OpenMeshTak generates.
+ */
+export const MESHTASTIC_LONG_NAME_MAX_BYTES = 24;
 export const MESHTASTIC_SHORT_NAME_MAX_BYTES = 4;
 export const MESHTASTIC_MAX_CHANNELS = 8;
 

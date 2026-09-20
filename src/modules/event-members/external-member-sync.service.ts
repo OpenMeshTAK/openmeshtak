@@ -22,6 +22,7 @@ import {
   renderCallsign,
   shortNameFits,
 } from "./member-identity.js";
+import { MESHTASTIC_LONG_NAME_MAX_BYTES } from "../event-groups/provisioning-values.js";
 
 type Transaction = Prisma.TransactionClient;
 
@@ -119,7 +120,7 @@ async function resolve(
     reasons.push({
       field: "callsign",
       code: "TOO_LONG",
-      message: "The callsign exceeds the 39-byte Meshtastic long-name limit.",
+      message: `The callsign exceeds the ${String(MESHTASTIC_LONG_NAME_MAX_BYTES)}-byte Meshtastic long-name limit.`,
     });
   }
   const holder = await transaction.eventMember.findUnique({

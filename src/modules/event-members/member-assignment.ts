@@ -8,6 +8,7 @@ import {
   renderCallsign,
   shortNameFits,
 } from "./member-identity.js";
+import { MESHTASTIC_LONG_NAME_MAX_BYTES } from "../event-groups/provisioning-values.js";
 
 export interface RequestedAssignment {
   eventRoleId: string;
@@ -78,7 +79,7 @@ export async function resolveAssignment(
 
   const errors: ProblemFieldError[] = [];
   if (!callsignFits(callsign)) {
-    errors.push({ field: "callsignOverride", code: "TOO_LONG", message: "Callsign exceeds 39 bytes." });
+    errors.push({ field: "callsignOverride", code: "TOO_LONG", message: `Callsign exceeds ${String(MESHTASTIC_LONG_NAME_MAX_BYTES)} bytes.` });
   }
   const holder = await transaction.eventMember.findUnique({
     where: { eventId_callsign: { eventId, callsign } },

@@ -6,6 +6,7 @@ import {
   renderCallsign,
   shortNameFits,
 } from "./member-identity.js";
+import { MESHTASTIC_LONG_NAME_MAX_BYTES } from "../event-groups/provisioning-values.js";
 
 interface GroupIdentitySettings {
   id: string;
@@ -35,7 +36,7 @@ export async function refreshGroupMemberIdentities(
     const callsign =
       member.callsignOverride ?? renderCallsign(group.callsignFormat, member.username, group.name);
     if (!callsignFits(callsign)) {
-      errors.push({ field: `members.${member.id}.callsign`, code: "TOO_LONG", message: "Callsign exceeds 39 bytes." });
+      errors.push({ field: `members.${member.id}.callsign`, code: "TOO_LONG", message: `Callsign exceeds ${String(MESHTASTIC_LONG_NAME_MAX_BYTES)} bytes.` });
     }
     if (!shortNameFits(group.shortNamePrefix, member.shortNameNumber)) {
       errors.push({ field: `members.${member.id}.shortName`, code: "EXHAUSTED", message: "Short name exceeds 4 bytes." });
