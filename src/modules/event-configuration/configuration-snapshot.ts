@@ -3,7 +3,7 @@ import type { Prisma } from "../../generated/prisma/client.js";
 import { toGroupProvisioning, type GroupProvisioning } from "../event-groups/group-provisioning.js";
 import { toAudience } from "../meshtastic-channels/channel-audience.js";
 import { CHANNEL_DEVICE_ORDER } from "../meshtastic-channels/channel-order.js";
-import type { ChannelAudience } from "../meshtastic-channels/meshtastic-channel.dto.js";
+import type { EventAudience } from "../event-audience/event-audience.js";
 import { loadMeshtasticConfiguration } from "../meshtastic-configuration/current-configuration.js";
 import type { FirmwareSettingsDocument } from "../meshtastic-configuration/meshtastic-configuration.dto.js";
 import { formatFirmwareVersion } from "../meshtastic-firmware/firmware-version.js";
@@ -34,8 +34,8 @@ export interface SnapshotChannel {
   positionPrecision: number;
   secret: boolean;
   pskVersion: number;
-  audience: ChannelAudience;
-  keyHolders: ChannelAudience;
+  audience: EventAudience;
+  keyHolders: EventAudience;
 }
 
 /**

@@ -1,10 +1,6 @@
 import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
-import type { ChannelAudience } from "./meshtastic-channel.dto.js";
+import { isEmptyAudience, type EventAudience } from "../event-audience/event-audience.js";
 import { pskKind } from "./channel-psk.js";
-
-function isEmpty(audience: ChannelAudience): boolean {
-  return audience.groupIds.length + audience.roleIds.length + audience.memberIds.length === 0;
-}
 
 /**
  * Secrecy only protects anything with a real key: an unencrypted or well-known default key is
@@ -12,7 +8,7 @@ function isEmpty(audience: ChannelAudience): boolean {
  */
 export function secrecyProblems(
   secret: boolean,
-  keyHolders: ChannelAudience,
+  keyHolders: EventAudience,
   pskBytes: number,
 ): ProblemFieldError[] {
   const problems: ProblemFieldError[] = [];
@@ -24,7 +20,7 @@ export function secrecyProblems(
       message: "Secret channels need a 16-byte or 32-byte key.",
     });
   }
-  if (!secret && !isEmpty(keyHolders)) {
+  if (!secret && !isEmptyAudience(keyHolders)) {
     problems.push({
       field: "keyHolders",
       code: "KEY_HOLDERS_REQUIRE_SECRET",

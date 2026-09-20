@@ -1,3 +1,4 @@
+import type { EventAudience } from "../event-audience/event-audience.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
 import type { ChannelPskKind } from "./channel-psk.js";
@@ -7,19 +8,6 @@ import type { ChannelPskKind } from "./channel-psk.js";
  * @pattern ^[A-Za-z0-9_-]{1,11}$
  */
 export type MeshtasticChannelName = string;
-
-/**
- * Who receives a secondary channel: every member that matches any listed group, role or member.
- * The primary channel always reaches every member, so its audience is ignored.
- */
-export interface ChannelAudience {
-  /** @maxItems 100 */
-  groupIds: Uuid[];
-  /** @maxItems 100 */
-  roleIds: Uuid[];
-  /** @maxItems 500 */
-  memberIds: Uuid[];
-}
 
 /** Describes the stored key without revealing it. */
 export interface ChannelPskInfo {
@@ -42,7 +30,7 @@ export interface MeshtasticChannelDto {
   downlinkEnabled: boolean;
   /** Upstream position precision: 0 sends no position, 32 sends the full position. */
   positionPrecision: number;
-  audience: ChannelAudience;
+  audience: EventAudience;
   /**
    * Secret channels withhold their key from every participant view and artifact except those of
    * key holders until the channel is released.
@@ -57,7 +45,7 @@ export interface MeshtasticChannelDto {
    * Members of the audience who receive a secret channel ahead of the event to share it on site.
    * Selected like the audience; only members who are also in the audience count.
    */
-  keyHolders: ChannelAudience;
+  keyHolders: EventAudience;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
   /** @format date-time */
@@ -98,11 +86,11 @@ export interface CreateMeshtasticChannelRequest {
   uplinkEnabled?: boolean;
   downlinkEnabled?: boolean;
   positionPrecision?: PositionPrecision;
-  audience?: ChannelAudience;
+  audience?: EventAudience;
   /** Secret channels need an AES key. The primary channel may also be secret. */
   secret?: boolean;
   /** Only for secret channels. */
-  keyHolders?: ChannelAudience;
+  keyHolders?: EventAudience;
 }
 
 export interface UpdateMeshtasticChannelRequest {
@@ -117,10 +105,10 @@ export interface UpdateMeshtasticChannelRequest {
   uplinkEnabled: boolean;
   downlinkEnabled: boolean;
   positionPrecision: PositionPrecision;
-  audience: ChannelAudience;
+  audience: EventAudience;
   /** Turning a channel secret again withholds it until it is released anew. */
   secret: boolean;
-  keyHolders: ChannelAudience;
+  keyHolders: EventAudience;
 }
 
 export interface ReleaseMeshtasticChannelRequest {

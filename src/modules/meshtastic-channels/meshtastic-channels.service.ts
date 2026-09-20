@@ -27,12 +27,12 @@ import {
   requireMutableEvent,
   requireReadableEvent,
 } from "../events/event-access.js";
-import { audienceRows, EMPTY_AUDIENCE, toAudience, validateAudience } from "./channel-audience.js";
+import { EMPTY_AUDIENCE, validateAudience, type EventAudience } from "../event-audience/event-audience.js";
+import { audienceRows, toAudience } from "./channel-audience.js";
 import { CHANNEL_DEVICE_ORDER } from "./channel-order.js";
 import { decryptChannelPsk, encryptChannelPsk, parseOrGeneratePsk, pskKind } from "./channel-psk.js";
 import { secrecyProblems } from "./channel-secrecy.js";
 import type {
-  ChannelAudience,
   CreateMeshtasticChannelRequest,
   MeshtasticChannelDto,
   MeshtasticChannelPage,
@@ -108,21 +108,21 @@ function nameConflict(error: unknown): unknown {
 
 async function validateChannelInput(
   eventId: string,
-  input: { secret: boolean; audience: ChannelAudience; keyHolders: ChannelAudience },
+  input: { secret: boolean; audience: EventAudience; keyHolders: EventAudience },
   pskBytes: number,
 ): Promise<void> {
   const problems = secrecyProblems(input.secret, input.keyHolders, pskBytes);
   if (problems.length > 0) {
     throw validationProblem(problems);
   }
-  await validateAudience(eventId, input.audience);
+  await validateAudience(eventId, input.audience, "audience");
   await validateAudience(eventId, input.keyHolders, "keyHolders");
 }
 
 async function replaceSelectors(
   transaction: Prisma.TransactionClient,
   channelId: string,
-  input: { audience: ChannelAudience; keyHolders: ChannelAudience },
+  input: { audience: EventAudience; keyHolders: EventAudience },
 ): Promise<void> {
   await transaction.meshtasticChannelAudience.deleteMany({ where: { channelId } });
   await transaction.meshtasticChannelAudience.createMany({

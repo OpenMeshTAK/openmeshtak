@@ -1,24 +1,12 @@
 import type { SnapshotChannel } from "../event-configuration/configuration-snapshot.js";
-import type { ChannelAudience } from "../meshtastic-channels/meshtastic-channel.dto.js";
+import { audienceIncludes as selects, type AudienceRecipient } from "../event-audience/event-audience.js";
 import type { ProfileChannel } from "./profile.dto.js";
 
-export interface ChannelRecipient {
-  memberId: string;
-  eventRoleId: string;
-  eventGroupId: string;
-}
+export type ChannelRecipient = AudienceRecipient;
 
 /** Release state is read live from the channel so a release takes effect without publishing. */
 export interface LiveChannelState {
   released: boolean;
-}
-
-function selects(selection: ChannelAudience, recipient: ChannelRecipient): boolean {
-  return (
-    selection.groupIds.includes(recipient.eventGroupId) ||
-    selection.roleIds.includes(recipient.eventRoleId) ||
-    selection.memberIds.includes(recipient.memberId)
-  );
 }
 
 /**
