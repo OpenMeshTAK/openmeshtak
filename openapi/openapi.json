@@ -4285,6 +4285,155 @@
 				],
 				"type": "object",
 				"additionalProperties": false
+			},
+			"CombinedExportIncluded": {
+				"properties": {
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"revision": {
+						"type": "number",
+						"format": "double"
+					},
+					"objects": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"packageId",
+					"name",
+					"revision",
+					"objects"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CombinedExportSkipped": {
+				"properties": {
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"reason": {
+						"type": "string",
+						"enum": [
+							"not-published"
+						],
+						"nullable": false,
+						"description": "`not-published`: the package has no published revision yet."
+					}
+				},
+				"required": [
+					"packageId",
+					"name",
+					"reason"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CombinedExportNameClash": {
+				"description": "An object name used in more than one included package; both objects are kept.",
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"packageIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"name",
+					"packageIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CombinedExportReport": {
+				"properties": {
+					"included": {
+						"items": {
+							"$ref": "#/components/schemas/CombinedExportIncluded"
+						},
+						"type": "array"
+					},
+					"skipped": {
+						"items": {
+							"$ref": "#/components/schemas/CombinedExportSkipped"
+						},
+						"type": "array"
+					},
+					"nameClashes": {
+						"items": {
+							"$ref": "#/components/schemas/CombinedExportNameClash"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"included",
+					"skipped",
+					"nameClashes"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CombinedExportSelection": {
+				"properties": {
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"revision": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Published revision to use; omit for the newest one.",
+						"minimum": 1
+					},
+					"layerIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"description": "Only these layers of the package; omit for all layers.",
+						"maxItems": 100
+					}
+				},
+				"required": [
+					"packageId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CombinedExportRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"description": "Name of the combined Data Package; defaults to the event name.",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"packages": {
+						"items": {
+							"$ref": "#/components/schemas/CombinedExportSelection"
+						},
+						"type": "array",
+						"minItems": 1,
+						"maxItems": 100
+					}
+				},
+				"required": [
+					"packages"
+				],
+				"type": "object",
+				"additionalProperties": false
 			}
 		},
 		"securitySchemes": {
@@ -12545,6 +12694,195 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/UpdatePackageAudienceRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-package-exports/atak/preview": {
+			"post": {
+				"operationId": "PreviewCombinedExport",
+				"responses": {
+					"200": {
+						"description": "Export report",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CombinedExportReport"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Reports which packages and revisions an export would include, skip or name twice.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CombinedExportRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-package-exports/atak": {
+			"post": {
+				"operationId": "ExportCombinedDataPackage",
+				"responses": {
+					"200": {
+						"description": "ATAK Data Package",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Nothing published to export",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Builds the combined ATAK Data Package. Audited with the exported revisions.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CombinedExportRequest"
 							}
 						}
 					}

@@ -63,6 +63,8 @@ import { PackageGeoJsonController } from './../modules/data-packages/package-geo
 import { PackageAtakController } from './../modules/data-packages/package-atak.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { DataPackagesController } from './../modules/data-packages/data-packages.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { CombinedExportController } from './../modules/data-packages/combined-export.controller.js';
 import { expressAuthentication } from './../shared/auth/authorization.js';
 // @ts-ignore - no great way to install types from subpackage
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
@@ -1632,6 +1634,65 @@ const models: TsoaRoute.Models = {
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
             "audience": {"ref":"PackageAudience","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CombinedExportIncluded": {
+        "dataType": "refObject",
+        "properties": {
+            "packageId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "revision": {"dataType":"double","required":true},
+            "objects": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CombinedExportSkipped": {
+        "dataType": "refObject",
+        "properties": {
+            "packageId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "reason": {"dataType":"enum","enums":["not-published"],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CombinedExportNameClash": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true},
+            "packageIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CombinedExportReport": {
+        "dataType": "refObject",
+        "properties": {
+            "included": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportIncluded"},"required":true},
+            "skipped": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportSkipped"},"required":true},
+            "nameClashes": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportNameClash"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CombinedExportSelection": {
+        "dataType": "refObject",
+        "properties": {
+            "packageId": {"ref":"Uuid","required":true},
+            "revision": {"dataType":"integer","validators":{"minimum":{"value":1}}},
+            "layerIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"validators":{"maxItems":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CombinedExportRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "packages": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportSelection"},"required":true,"validators":{"minItems":{"value":1},"maxItems":{"value":100}}},
         },
         "additionalProperties": false,
     },
@@ -4896,6 +4957,72 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'updateDataPackageAudience',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsCombinedExportController_previewCombinedExport: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CombinedExportRequest"},
+        };
+        app.post('/api/v1/events/:eventId/data-package-exports/atak/preview',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(CombinedExportController)),
+            ...(fetchMiddlewares<RequestHandler>(CombinedExportController.prototype.previewCombinedExport)),
+
+            async function CombinedExportController_previewCombinedExport(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsCombinedExportController_previewCombinedExport, request, response });
+
+                const controller = new CombinedExportController();
+
+              await templateService.apiHandler({
+                methodName: 'previewCombinedExport',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsCombinedExportController_exportCombinedDataPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CombinedExportRequest"},
+        };
+        app.post('/api/v1/events/:eventId/data-package-exports/atak',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(CombinedExportController)),
+            ...(fetchMiddlewares<RequestHandler>(CombinedExportController.prototype.exportCombinedDataPackage)),
+
+            async function CombinedExportController_exportCombinedDataPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsCombinedExportController_exportCombinedDataPackage, request, response });
+
+                const controller = new CombinedExportController();
+
+              await templateService.apiHandler({
+                methodName: 'exportCombinedDataPackage',
                 controller,
                 response,
                 next,
