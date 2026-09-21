@@ -14,15 +14,15 @@ import type {
   CombinedExportSelection,
 } from "./combined-export.dto.js";
 import type { AtakExport } from "./package-atak.service.js";
-import type { PackageSnapshot, PackageSnapshotObject } from "./package-snapshot.js";
+import type { PackageSnapshot } from "./package-snapshot.js";
 
-interface IncludedPart {
+export interface IncludedPart {
   dataPackage: DataPackage;
   revision: PackageRevision;
-  objects: PackageSnapshotObject[];
+  snapshot: PackageSnapshot;
 }
 
-interface CombinedPlan {
+export interface CombinedPlan {
   report: CombinedExportReport;
   parts: IncludedPart[];
 }
@@ -33,10 +33,15 @@ async function findRevision(packageId: string, number: number | undefined): Prom
     : database.packageRevision.findUnique({ where: { packageId_number: { packageId, number } } });
 }
 
-/** Objects of the chosen layers; an unknown layer is a validation problem, not silently empty. */
-function selectedObjects(snapshot: PackageSnapshot, selection: CombinedExportSelection, index: number): PackageSnapshotObject[] {
+/** Narrows a snapshot to the chosen layers; an unknown or repeated layer is never silently ignored. */
+function selectedSnapshot(snapshot: PackageSnapshot, selection: CombinedExportSelection, index: number): PackageSnapshot {
   if (selection.layerIds === undefined) {
-    return snapshot.objects;
+    return snapshot;
+  }
+  if (new Set(selection.layerIds).size !== selection.layerIds.length) {
+    throw validationProblem([
+      { field: `packages.${String(index)}.layerIds`, code: "DUPLICATE", message: "Select each layer only once." },
+    ]);
   }
   const known = new Set(snapshot.layers.map(({ id }) => id));
   if (selection.layerIds.some((id) => !known.has(id))) {
@@ -45,13 +50,17 @@ function selectedObjects(snapshot: PackageSnapshot, selection: CombinedExportSel
     ]);
   }
   const wanted = new Set(selection.layerIds);
-  return snapshot.objects.filter(({ layerId }) => wanted.has(layerId));
+  return {
+    ...snapshot,
+    layers: snapshot.layers.filter(({ id }) => wanted.has(id)),
+    objects: snapshot.objects.filter(({ layerId }) => wanted.has(layerId)),
+  };
 }
 
 function nameClashes(parts: IncludedPart[]): CombinedExportNameClash[] {
   const owners = new Map<string, Set<string>>();
-  for (const { dataPackage, objects } of parts) {
-    for (const { name } of objects) {
+  for (const { dataPackage, snapshot } of parts) {
+    for (const { name } of snapshot.objects) {
       const trimmed = name.trim();
       if (trimmed !== "") {
         owners.set(trimmed, (owners.get(trimmed) ?? new Set()).add(dataPackage.id));
@@ -68,7 +77,11 @@ function nameClashes(parts: IncludedPart[]): CombinedExportNameClash[] {
  * Resolves the selection against published revisions. Packages without a published revision are
  * reported as skipped; the same package may not be selected twice.
  */
-async function planCombinedExport(principal: Principal, eventId: string, input: CombinedExportRequest): Promise<CombinedPlan> {
+export async function planCombinedExport(
+  principal: Principal,
+  eventId: string,
+  input: CombinedExportRequest,
+): Promise<CombinedPlan> {
   await requireEventPermission(principal, eventId, "data-packages.read");
   const ids = input.packages.map(({ packageId }) => packageId);
   if (new Set(ids).size !== ids.length) {
@@ -90,9 +103,14 @@ async function planCombinedExport(principal: Principal, eventId: string, input: 
       report.skipped.push({ packageId: dataPackage.id, name: dataPackage.name, reason: "not-published" });
       continue;
     }
-    const objects = selectedObjects(revision.snapshot as unknown as PackageSnapshot, selection, index);
-    parts.push({ dataPackage, revision, objects });
-    report.included.push({ packageId: dataPackage.id, name: dataPackage.name, revision: revision.number, objects: objects.length });
+    const snapshot = selectedSnapshot(revision.snapshot as unknown as PackageSnapshot, selection, index);
+    parts.push({ dataPackage, revision, snapshot });
+    report.included.push({
+      packageId: dataPackage.id,
+      name: dataPackage.name,
+      revision: revision.number,
+      objects: snapshot.objects.length,
+    });
   }
   report.nameClashes = nameClashes(parts);
   return { report, parts };
@@ -144,8 +162,8 @@ export async function exportCombined(
     {
       uid: combinedUid(eventId, parts),
       name,
-      events: parts.flatMap(({ revision, objects }) =>
-        objects.map((object) => ({ uid: object.id, xml: objectToCot(object, revision.createdAt) })),
+      events: parts.flatMap(({ revision, snapshot }) =>
+        snapshot.objects.map((object) => ({ uid: object.id, xml: objectToCot(object, revision.createdAt) })),
       ),
     },
     modifiedAt,

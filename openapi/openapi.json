@@ -4113,6 +4113,47 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DataPackageSourceDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"sourcePackageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"sourcePackageName": {
+						"type": "string"
+					},
+					"sourceRevision": {
+						"type": "number",
+						"format": "double"
+					},
+					"sourceSnapshotHash": {
+						"type": "string"
+					},
+					"sourceLayerIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"sourcePackageId",
+					"sourcePackageName",
+					"sourceRevision",
+					"sourceSnapshotHash",
+					"sourceLayerIds",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PackageAudience": {
 				"description": "Who receives the published Data Package: every event member, or only those matching any\nselected group, role or member. The selection is ignored while `allMembers` is true.",
 				"properties": {
@@ -4171,6 +4212,13 @@
 						"nullable": true,
 						"description": "Number of the newest published revision, or `null` while nothing is published."
 					},
+					"sources": {
+						"items": {
+							"$ref": "#/components/schemas/DataPackageSourceDto"
+						},
+						"type": "array",
+						"description": "Published package revisions whose content was copied into this package's initial draft."
+					},
 					"audience": {
 						"$ref": "#/components/schemas/PackageAudience"
 					},
@@ -4194,10 +4242,67 @@
 					"name",
 					"description",
 					"latestRevision",
+					"sources",
 					"audience",
 					"version",
 					"createdAt",
 					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CombinedExportSelection": {
+				"properties": {
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"revision": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Published revision to use; omit for the newest one.",
+						"minimum": 1
+					},
+					"layerIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"description": "Only these layers of the package; omit for all layers.",
+						"minItems": 1,
+						"maxItems": 100
+					}
+				},
+				"required": [
+					"packageId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateDataPackageCopyRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 1000
+					},
+					"packages": {
+						"items": {
+							"$ref": "#/components/schemas/CombinedExportSelection"
+						},
+						"type": "array",
+						"description": "Published package revisions and optional layer selections to copy.",
+						"minItems": 1,
+						"maxItems": 100
+					}
+				},
+				"required": [
+					"name",
+					"packages"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -4382,32 +4487,6 @@
 					"included",
 					"skipped",
 					"nameClashes"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CombinedExportSelection": {
-				"properties": {
-					"packageId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"revision": {
-						"type": "integer",
-						"format": "int32",
-						"description": "Published revision to use; omit for the newest one.",
-						"minimum": 1
-					},
-					"layerIds": {
-						"items": {
-							"$ref": "#/components/schemas/Uuid"
-						},
-						"type": "array",
-						"description": "Only these layers of the package; omit for all layers.",
-						"maxItems": 100
-					}
-				},
-				"required": [
-					"packageId"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -11916,6 +11995,105 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/data-package-copies": {
+			"post": {
+				"operationId": "CreateDataPackageCopy",
+				"responses": {
+					"201": {
+						"description": "Data package draft created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DataPackageDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived, nothing published or package limits exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Copies selected published layers with new UUIDs and records their source revisions.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateDataPackageCopyRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/data-packages/{packageId}/layers/{layerId}/import/atak": {

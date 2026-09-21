@@ -27,6 +27,7 @@ const packageSelection = {
   createdAt: true,
   updatedAt: true,
   revisions: { select: { number: true }, orderBy: { number: "desc" }, take: 1 },
+  sources: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] },
 } satisfies Prisma.DataPackageSelect;
 
 type PackageRow = Prisma.DataPackageGetPayload<{ select: typeof packageSelection }>;
@@ -38,6 +39,16 @@ function toDto(row: PackageRow): DataPackageDto {
     name: row.name,
     description: row.description,
     latestRevision: row.revisions[0]?.number ?? null,
+    sources: row.sources.map((source) => ({
+      id: source.id,
+      sourcePackageId: source.sourcePackageId,
+      sourcePackageName: source.sourcePackageName,
+      sourceRevision: source.sourceRevision,
+      sourceSnapshotHash: source.sourceSnapshotHash,
+      // Written only by the package-copy service from UUIDs selected in a validated snapshot.
+      sourceLayerIds: source.sourceLayerIds as string[],
+      createdAt: source.createdAt.toISOString(),
+    })),
     audience: { allMembers: row.audienceAll, ...audienceFromSelectors(row.audience) },
     version: row.version,
     createdAt: row.createdAt.toISOString(),

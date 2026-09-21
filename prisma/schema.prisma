@@ -446,10 +446,27 @@ model DataPackage {
   layers      PackageLayer[]
   objects     PackageObject[]
   revisions   PackageRevision[]
+  sources     DataPackageSource[]
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
 
   @@index([eventId, createdAt, id])
+}
+
+/// Immutable provenance for content copied from a published Data Package revision. Source fields
+/// are deliberately snapshots rather than relations, so deleting the source does not erase history.
+model DataPackageSource {
+  id                String      @id
+  packageId         String
+  sourcePackageId   String
+  sourcePackageName String
+  sourceRevision    Int
+  sourceSnapshotHash String
+  sourceLayerIds    Json
+  dataPackage       DataPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  createdAt         DateTime    @default(now())
+
+  @@index([packageId])
 }
 
 model PackageLayer {

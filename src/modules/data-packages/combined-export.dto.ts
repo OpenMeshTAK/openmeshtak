@@ -10,6 +10,7 @@ export interface CombinedExportSelection {
   revision?: number;
   /**
    * Only these layers of the package; omit for all layers.
+   * @minItems 1
    * @maxItems 100
    */
   layerIds?: Uuid[];

@@ -27,6 +27,8 @@ export interface DataPackageDto {
   description: string | null;
   /** Number of the newest published revision, or `null` while nothing is published. */
   latestRevision: number | null;
+  /** Published package revisions whose content was copied into this package's initial draft. */
+  sources: DataPackageSourceDto[];
   audience: PackageAudience;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
@@ -34,6 +36,17 @@ export interface DataPackageDto {
   createdAt: string;
   /** @format date-time */
   updatedAt: string;
+}
+
+export interface DataPackageSourceDto {
+  id: Uuid;
+  sourcePackageId: Uuid;
+  sourcePackageName: string;
+  sourceRevision: number;
+  sourceSnapshotHash: string;
+  sourceLayerIds: Uuid[];
+  /** @format date-time */
+  createdAt: string;
 }
 
 export interface DataPackagePage {
