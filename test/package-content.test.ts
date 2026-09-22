@@ -196,4 +196,42 @@ void describe("map content in data packages", () => {
     assert.equal(await database.storageBlob.count(), 1);
     await request(app).get(`${target.url}/revisions/1/atak`).set("Cookie", admin.cookie).expect(200);
   });
+
+  void it("keeps rubber sheets, lists their corners and serves their image", async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+    const kml = `<?xml version="1.0" encoding="utf-8"?>
+<kml xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns="http://www.opengis.net/kml/2.2">
+  <GroundOverlay><name>Game map</name><Icon><href>files/image.Png</href></Icon>
+    <gx:LatLonQuad><coordinates>11.81,52.37 11.84,52.37 11.84,52.38 11.81,52.38</coordinates></gx:LatLonQuad>
+  </GroundOverlay>
+</kml>`;
+    const kmz = zipSync({ "doc.kml": strToU8(kml), "files/image.Png": png });
+    const notASheet = zipSync({ "doc.kml": strToU8("<kml><Placemark/></kml>") });
+    const target = await createPackage("Sheets");
+    const report = (
+      await importZip(target, packageZip({ "sheet/DE_2024.kmz": kmz, "other/places.kmz": notASheet })).expect(200)
+    ).body as { retained: Array<{ feature: string }>; skipped: Array<{ feature: string }> };
+    assert.deepEqual(report.retained.map(({ feature }) => feature), ["sheet/DE_2024.kmz"]);
+    assert.deepEqual(report.skipped.map(({ feature }) => feature), ["other/places.kmz"]);
+
+    const contents = (await request(app).get(`${target.url}/contents`).set("Cookie", admin.cookie).expect(200)).body as Array<{
+      id: string;
+      kind: string;
+      name: string;
+      rubberSheet: { corners: number[][]; imageMediaType: string } | null;
+    }>;
+    assert.equal(contents[0]?.kind, "rubber-sheet");
+    assert.equal(contents[0]?.name, "Game map");
+    assert.deepEqual(contents[0]?.rubberSheet, {
+      corners: [[11.81, 52.37], [11.84, 52.37], [11.84, 52.38], [11.81, 52.38]],
+      imageMediaType: "image/png",
+    });
+
+    const image = await binary(request(app).get(`${target.url}/contents/${contents[0]?.id ?? ""}/image`).set("Cookie", admin.cookie)).expect(200);
+    assert.equal(image.headers["content-type"], "image/png");
+    assert.deepEqual(new Uint8Array(image.body as Buffer), png);
+
+    const files = await publishAndExport(target);
+    assert.deepEqual(files["sheet/DE_2024.kmz"], kmz);
+  });
 });

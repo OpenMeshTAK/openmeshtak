@@ -2,6 +2,7 @@ import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from "fflate";
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { ProblemError } from "../../../shared/errors/problem-error.js";
 import type { ImportReportEntry } from "../package-import.dto.js";
+import { readRubberSheet, type RubberSheet } from "./rubber-sheet.js";
 
 /** Upload limit includes the 49 MB real offline-map fixture. */
 export const MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
@@ -28,9 +29,11 @@ export interface ReadDataPackage {
 export interface PackageContentFile {
   path: string;
   name: string;
-  kind: "offline-map" | "nested-data-package";
-  mediaType: "application/x-sqlite3" | "application/zip";
+  kind: "offline-map" | "nested-data-package" | "rubber-sheet";
+  mediaType: "application/x-sqlite3" | "application/zip" | "application/vnd.google-earth.kmz";
   bytes: Uint8Array;
+  /** Placement of a rubber sheet, read from its KML. */
+  rubberSheet?: RubberSheet;
 }
 
 function archiveProblem(detail: string): ProblemError {
@@ -144,8 +147,18 @@ export function readDataPackage(bytes: Uint8Array): ReadDataPackage {
     if (path === MANIFEST_PATH || path.toLowerCase().endsWith(".cot")) {
       continue;
     }
+    const rubberSheet = isZip(content) && path.toLowerCase().endsWith(".kmz") ? readRubberSheet(content) : null;
     if (isSqlite(content)) {
       contentFiles.push({ path, name: path.split("/").at(-1)!, kind: "offline-map", mediaType: "application/x-sqlite3", bytes: content });
+    } else if (rubberSheet !== null) {
+      contentFiles.push({
+        path,
+        name: path.split("/").at(-1)!,
+        kind: "rubber-sheet",
+        mediaType: "application/vnd.google-earth.kmz",
+        bytes: content,
+        rubberSheet,
+      });
     } else if (isZip(content) && nestedPackageContainsOfflineMap(content, 1, budget)) {
       contentFiles.push({ path, name: path.split("/").at(-1)!, kind: "nested-data-package", mediaType: "application/zip", bytes: content });
     } else {

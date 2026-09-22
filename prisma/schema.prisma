@@ -457,33 +457,33 @@ model DataPackage {
 /// Immutable provenance for content copied from a published Data Package revision. Source fields
 /// are deliberately snapshots rather than relations, so deleting the source does not erase history.
 model DataPackageSource {
-  id                String      @id
-  packageId         String
-  sourcePackageId   String
-  sourcePackageName String
-  sourceRevision    Int
+  id                 String      @id
+  packageId          String
+  sourcePackageId    String
+  sourcePackageName  String
+  sourceRevision     Int
   sourceSnapshotHash String
-  sourceLayerIds    Json
-  dataPackage       DataPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  createdAt         DateTime    @default(now())
+  sourceLayerIds     Json
+  dataPackage        DataPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  createdAt          DateTime    @default(now())
 
   @@index([packageId])
 }
 
 model PackageLayer {
-  id          String          @id
+  id          String           @id
   packageId   String
   name        String
   /// Drawing and export order; lower values are drawn first.
   sortOrder   Int
-  visible     Boolean         @default(true)
-  locked      Boolean         @default(false)
-  version     Int             @default(1)
-  dataPackage DataPackage     @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  visible     Boolean          @default(true)
+  locked      Boolean          @default(false)
+  version     Int              @default(1)
+  dataPackage DataPackage      @relation(fields: [packageId], references: [id], onDelete: Cascade)
   objects     PackageObject[]
   contents    PackageContent[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([packageId, sortOrder])
 }
@@ -510,6 +510,8 @@ model PackageContent {
   kind        String
   name        String
   archivePath String
+  /// Kind-specific display data, such as a rubber sheet's corners; never needed to export.
+  metadata    Json?
   dataPackage DataPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
   layer       PackageLayer @relation(fields: [layerId], references: [id], onDelete: Cascade)
   blob        StorageBlob  @relation(fields: [blobId], references: [id], onDelete: Restrict)

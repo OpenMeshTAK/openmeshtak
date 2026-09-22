@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { PackageRevision, Prisma } from "../../generated/prisma/client.js";
+import { Prisma, type PackageRevision } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
@@ -26,6 +26,7 @@ export interface StoredPackageContent {
   kind: string;
   name: string;
   archivePath: string;
+  metadata: Prisma.InputJsonValue | null;
 }
 
 /** Checks access and the target layer before any (possibly large) input is converted. */
@@ -109,6 +110,7 @@ export async function saveImport(
           kind: content.kind,
           name: content.name,
           archivePath: content.archivePath,
+          metadata: content.metadata ?? Prisma.JsonNull,
         })),
       });
     }

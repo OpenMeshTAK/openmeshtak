@@ -3668,6 +3668,9 @@
 					},
 					"mediaType": {
 						"type": "string"
+					},
+					"metadata": {
+						"description": "Rubber-sheet placement and similar display data; absent for plain files."
 					}
 				},
 				"required": [
@@ -4379,6 +4382,80 @@
 				"required": [
 					"name",
 					"packages"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RubberSheetDto": {
+				"properties": {
+					"corners": {
+						"items": {
+							"items": {
+								"type": "number",
+								"format": "double"
+							},
+							"type": "array"
+						},
+						"type": "array",
+						"description": "Lower left, lower right, upper right and upper left corner as [longitude, latitude] in\nWGS84, as ATAK placed the image."
+					},
+					"imageMediaType": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg"
+						]
+					}
+				},
+				"required": [
+					"corners",
+					"imageMediaType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageContentDto": {
+				"description": "Map content kept from an imported ATAK Data Package; exported unchanged with its layer.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"type": "string",
+						"enum": [
+							"offline-map",
+							"nested-data-package",
+							"rubber-sheet"
+						]
+					},
+					"name": {
+						"type": "string"
+					},
+					"size": {
+						"type": "number",
+						"format": "double",
+						"description": "Size of the stored file in bytes."
+					},
+					"rubberSheet": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/RubberSheetDto"
+							}
+						],
+						"nullable": true,
+						"description": "Placement for display; only for rubber sheets."
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"size",
+					"rubberSheet"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -12288,6 +12365,172 @@
 						}
 					}
 				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/contents": {
+			"get": {
+				"operationId": "ListPackageContents",
+				"responses": {
+					"200": {
+						"description": "Map content",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/PackageContentDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Offline maps, nested map packages and rubber sheets kept from imports.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/contents/{contentId}/image": {
+			"get": {
+				"operationId": "GetRubberSheetImage",
+				"responses": {
+					"200": {
+						"description": "Rubber-sheet image",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The image of a rubber sheet for display on the map.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/events/{eventId}/data-packages/{packageId}/layers/{layerId}/import/atak": {

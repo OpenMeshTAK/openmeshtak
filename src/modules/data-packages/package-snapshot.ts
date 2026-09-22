@@ -34,6 +34,8 @@ export interface PackageSnapshotContent {
   sha256: string;
   size: number;
   mediaType: string;
+  /** Rubber-sheet placement and similar display data; absent for plain files. */
+  metadata?: unknown;
 }
 
 /** Everything a package generator needs; timestamps and versions are left out on purpose. */
@@ -96,6 +98,7 @@ export async function buildPackageSnapshot(
       sha256: content.blob.sha256,
       size: content.blob.size,
       mediaType: content.blob.mediaType,
+      ...(content.metadata === null ? {} : { metadata: content.metadata }),
     })),
   };
 }

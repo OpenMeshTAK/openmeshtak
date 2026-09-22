@@ -100,6 +100,7 @@ export async function createDataPackageCopy(
             kind: content.kind,
             name: content.name,
             archivePath: content.archivePath,
+            metadata: content.metadata === undefined ? Prisma.JsonNull : (content.metadata as Prisma.InputJsonValue),
           })),
         });
       }

@@ -70,6 +70,7 @@ async function storeContents(contents: ArchiveContent): Promise<StoredPackageCon
         kind: content.kind,
         name: content.name,
         archivePath: content.path,
+        metadata: content.rubberSheet === undefined ? null : { rubberSheet: { ...content.rubberSheet } },
       });
     }
     return stored;

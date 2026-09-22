@@ -64,6 +64,8 @@ import { PackageGeoJsonController } from './../modules/data-packages/package-geo
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageCopyController } from './../modules/data-packages/package-copy.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PackageContentController } from './../modules/data-packages/package-content.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageAtakController } from './../modules/data-packages/package-atak.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { DataPackagesController } from './../modules/data-packages/data-packages.controller.js';
@@ -1419,6 +1421,7 @@ const models: TsoaRoute.Models = {
             "sha256": {"dataType":"string","required":true},
             "size": {"dataType":"double","required":true},
             "mediaType": {"dataType":"string","required":true},
+            "metadata": {"dataType":"any"},
         },
         "additionalProperties": false,
     },
@@ -1663,6 +1666,28 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":1000}}},
             "packages": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportSelection"},"required":true,"validators":{"minItems":{"value":1},"maxItems":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RubberSheetDto": {
+        "dataType": "refObject",
+        "properties": {
+            "corners": {"dataType":"array","array":{"dataType":"array","array":{"dataType":"double"}},"required":true},
+            "imageMediaType": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["image/png"]},{"dataType":"enum","enums":["image/jpeg"]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageContentDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "layerId": {"ref":"Uuid","required":true},
+            "kind": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["offline-map"]},{"dataType":"enum","enums":["nested-data-package"]},{"dataType":"enum","enums":["rubber-sheet"]}],"required":true},
+            "name": {"dataType":"string","required":true},
+            "size": {"dataType":"double","required":true},
+            "rubberSheet": {"dataType":"union","subSchemas":[{"ref":"RubberSheetDto"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -4814,6 +4839,73 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageContentController_listPackageContents: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/contents',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.listPackageContents)),
+
+            async function PackageContentController_listPackageContents(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageContentController_listPackageContents, request, response });
+
+                const controller = new PackageContentController();
+
+              await templateService.apiHandler({
+                methodName: 'listPackageContents',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageContentController_getRubberSheetImage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                contentId: {"in":"path","name":"contentId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId/image',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.getRubberSheetImage)),
+
+            async function PackageContentController_getRubberSheetImage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageContentController_getRubberSheetImage, request, response });
+
+                const controller = new PackageContentController();
+
+              await templateService.apiHandler({
+                methodName: 'getRubberSheetImage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);
