@@ -49,6 +49,7 @@
     "@tsoa/runtime": "6.6.0",
     "@turf/kinks": "7.4.0",
     "better-auth": "1.7.7",
+    "better-sqlite3": "12.11.1",
     "dotenv": "18.0.5",
     "express": "4.22.3",
     "express-rate-limit": "8.7.0",
