@@ -3639,6 +3639,51 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"PackageSnapshotContent": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"layerId": {
+						"type": "string"
+					},
+					"blobId": {
+						"type": "string"
+					},
+					"kind": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"archivePath": {
+						"type": "string"
+					},
+					"sha256": {
+						"type": "string"
+					},
+					"size": {
+						"type": "number",
+						"format": "double"
+					},
+					"mediaType": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"blobId",
+					"kind",
+					"name",
+					"archivePath",
+					"sha256",
+					"size",
+					"mediaType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PackageSnapshot": {
 				"description": "Everything a package generator needs; timestamps and versions are left out on purpose.",
 				"properties": {
@@ -3664,6 +3709,13 @@
 							"$ref": "#/components/schemas/PackageSnapshotObject"
 						},
 						"type": "array"
+					},
+					"contents": {
+						"items": {
+							"$ref": "#/components/schemas/PackageSnapshotContent"
+						},
+						"type": "array",
+						"description": "Missing only on schema-1 revisions created before package content existed."
 					}
 				},
 				"required": [
@@ -4054,6 +4106,13 @@
 						"type": "array",
 						"description": "Imported, but adjusted: split multi-geometries, clamped styles."
 					},
+					"retained": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Opaque package files retained byte-for-byte, such as offline map caches."
+					},
 					"skipped": {
 						"items": {
 							"$ref": "#/components/schemas/ImportReportEntry"
@@ -4072,6 +4131,7 @@
 				"required": [
 					"accepted",
 					"changed",
+					"retained",
 					"skipped",
 					"rejected"
 				],

@@ -21,6 +21,7 @@ export async function clearDatabase(): Promise<void> {
     database.auditEvent.deleteMany(),
     database.memberClaim.deleteMany(),
     database.dataPackage.deleteMany(),
+    database.storageBlob.deleteMany(),
     database.eventConfigurationRevision.deleteMany(),
     database.syncIssue.deleteMany(),
     database.eventMember.deleteMany(),

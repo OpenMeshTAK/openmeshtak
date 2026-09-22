@@ -31,10 +31,12 @@ function run(command: string, args: string[], environment: NodeJS.ProcessEnv): v
 
 const testDatabaseFile = `openmeshtak-test-${randomUUID()}.sqlite`;
 const testDatabasePath = resolve("server/data/db", testDatabaseFile);
+const testDataDirectory = resolve("server/data", `test-${randomUUID()}`);
 const testEnvironment = {
   ...process.env,
   BETTER_AUTH_SECRET: "openmeshtak-test-secret-not-for-production",
   DATABASE_URL: `file:./server/data/db/${testDatabaseFile}`,
+  DATA_DIRECTORY: testDataDirectory,
   LOG_LEVEL: "silent",
   NODE_ENV: "test",
   // A test-only firmware line proves new profiles need no code changes (ROADMAP Stage 5).
@@ -58,4 +60,5 @@ try {
   for (const suffix of ["", "-shm", "-wal"]) {
     rmSync(`${testDatabasePath}${suffix}`, { force: true });
   }
+  rmSync(testDataDirectory, { recursive: true, force: true });
 }

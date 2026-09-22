@@ -1405,6 +1405,22 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageSnapshotContent": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "layerId": {"dataType":"string","required":true},
+            "blobId": {"dataType":"string","required":true},
+            "kind": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+            "archivePath": {"dataType":"string","required":true},
+            "sha256": {"dataType":"string","required":true},
+            "size": {"dataType":"double","required":true},
+            "mediaType": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PackageSnapshot": {
         "dataType": "refObject",
         "properties": {
@@ -1413,6 +1429,7 @@ const models: TsoaRoute.Models = {
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "layers": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageSnapshotLayer"},"required":true},
             "objects": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageSnapshotObject"},"required":true},
+            "contents": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageSnapshotContent"}},
         },
         "additionalProperties": false,
     },
@@ -1553,6 +1570,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "accepted": {"dataType":"double","required":true},
             "changed": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
+            "retained": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
             "skipped": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
             "rejected": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
         },

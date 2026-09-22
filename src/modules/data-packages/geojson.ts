@@ -102,7 +102,7 @@ function partsOf(geometry: JsonObject): JsonObject[] | null {
  * every feature ends up accepted, changed, skipped or rejected with a reason (EDITOR.md).
  */
 export function convertGeoJson(document: unknown, fallbackStyle: PackageObjectStyle): ImportConversion {
-  const report: ImportConversion["report"] = { changed: [], skipped: [], rejected: [] };
+  const report: ImportConversion["report"] = { changed: [], retained: [], skipped: [], rejected: [] };
   const candidates: ImportCandidate[] = [];
   const features = featuresOf(document);
   if (features === null) {

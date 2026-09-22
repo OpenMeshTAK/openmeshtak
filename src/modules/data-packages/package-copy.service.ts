@@ -87,6 +87,23 @@ export async function createDataPackageCopy(
         });
       }
 
+      // Stored map content is immutable, so the copy references the same blob instead of
+      // duplicating large tile caches.
+      const contents = part.snapshot.contents ?? [];
+      if (contents.length > 0) {
+        await transaction.packageContent.createMany({
+          data: contents.map((content) => ({
+            id: randomUUID(),
+            packageId,
+            layerId: layerIds.get(content.layerId)!,
+            blobId: content.blobId,
+            kind: content.kind,
+            name: content.name,
+            archivePath: content.archivePath,
+          })),
+        });
+      }
+
       await transaction.dataPackageSource.create({
         data: {
           id: randomUUID(),

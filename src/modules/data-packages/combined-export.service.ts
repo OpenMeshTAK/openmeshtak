@@ -14,6 +14,7 @@ import type {
   CombinedExportSelection,
 } from "./combined-export.dto.js";
 import type { AtakExport } from "./package-atak.service.js";
+import { loadContentFiles, mergeContentFiles } from "./package-content-files.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
 
 export interface IncludedPart {
@@ -54,6 +55,7 @@ function selectedSnapshot(snapshot: PackageSnapshot, selection: CombinedExportSe
     ...snapshot,
     layers: snapshot.layers.filter(({ id }) => wanted.has(id)),
     objects: snapshot.objects.filter(({ layerId }) => wanted.has(layerId)),
+    contents: snapshot.contents?.filter(({ layerId }) => wanted.has(layerId)) ?? [],
   };
 }
 
@@ -158,6 +160,14 @@ export async function exportCombined(
   const name = input.name ?? event.name;
   const modifiedAt = new Date(Math.max(...parts.map(({ revision }) => revision.createdAt.getTime())));
 
+  const files = mergeContentFiles(
+    await Promise.all(
+      parts.map(async ({ dataPackage, snapshot }) => ({
+        packageId: dataPackage.id,
+        files: await loadContentFiles(snapshot.contents ?? []),
+      })),
+    ),
+  );
   const bytes = writeDataPackage(
     {
       uid: combinedUid(eventId, parts),
@@ -165,6 +175,7 @@ export async function exportCombined(
       events: parts.flatMap(({ revision, snapshot }) =>
         snapshot.objects.map((object) => ({ uid: object.id, xml: objectToCot(object, revision.createdAt) })),
       ),
+      files,
     },
     modifiedAt,
   );

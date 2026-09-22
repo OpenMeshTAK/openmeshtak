@@ -16,6 +16,8 @@ export interface ImportReport {
   accepted: number;
   /** Imported, but adjusted: split multi-geometries, clamped styles. */
   changed: ImportReportEntry[];
+  /** Opaque package files retained byte-for-byte, such as offline map caches. */
+  retained: ImportReportEntry[];
   /** Not imported because the content type is not supported, e.g. GeometryCollection. */
   skipped: ImportReportEntry[];
   /** Not imported because the content is invalid, e.g. a self-intersecting polygon. */

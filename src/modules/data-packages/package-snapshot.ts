@@ -4,7 +4,7 @@ import type { PackageGeometry, PackageObjectKind, PackageObjectStyle, TakMarker 
 import { readTak } from "./tak-marker.js";
 
 /** Version of the snapshot document; bump it when its shape changes. */
-export const PACKAGE_SNAPSHOT_SCHEMA = 1;
+export const PACKAGE_SNAPSHOT_SCHEMA = 2;
 
 export interface PackageSnapshotLayer {
   id: string;
@@ -24,6 +24,18 @@ export interface PackageSnapshotObject {
   tak: TakMarker | null;
 }
 
+export interface PackageSnapshotContent {
+  id: string;
+  layerId: string;
+  blobId: string;
+  kind: string;
+  name: string;
+  archivePath: string;
+  sha256: string;
+  size: number;
+  mediaType: string;
+}
+
 /** Everything a package generator needs; timestamps and versions are left out on purpose. */
 export interface PackageSnapshot {
   schema: number;
@@ -31,6 +43,8 @@ export interface PackageSnapshot {
   description: string | null;
   layers: PackageSnapshotLayer[];
   objects: PackageSnapshotObject[];
+  /** Missing only on schema-1 revisions created before package content existed. */
+  contents?: PackageSnapshotContent[];
 }
 
 /**
@@ -48,6 +62,7 @@ export async function buildPackageSnapshot(
       description: true,
       layers: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
       objects: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] },
+      contents: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], include: { blob: true } },
     },
   });
   const layerPosition = new Map(dataPackage.layers.map(({ id }, index) => [id, index]));
@@ -71,6 +86,17 @@ export async function buildPackageSnapshot(
       style: object.style as unknown as PackageObjectStyle,
       tak: readTak(object.tak),
     })),
+    contents: dataPackage.contents.map((content) => ({
+      id: content.id,
+      layerId: content.layerId,
+      blobId: content.blobId,
+      kind: content.kind,
+      name: content.name,
+      archivePath: content.archivePath,
+      sha256: content.blob.sha256,
+      size: content.blob.size,
+      mediaType: content.blob.mediaType,
+    })),
   };
 }
 
@@ -89,5 +115,6 @@ export function snapshotOfLayer(snapshot: PackageSnapshot, layerId: string): Pac
     name: `${snapshot.name} - ${layer.name}`,
     layers: [layer],
     objects: snapshot.objects.filter((object) => object.layerId === layerId),
+    contents: snapshot.contents?.filter((content) => content.layerId === layerId) ?? [],
   };
 }

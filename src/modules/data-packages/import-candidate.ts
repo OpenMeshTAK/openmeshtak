@@ -18,5 +18,5 @@ export interface ImportConversion {
 }
 
 export function emptyConversion(): ImportConversion {
-  return { candidates: [], report: { changed: [], skipped: [], rejected: [] } };
+  return { candidates: [], report: { changed: [], retained: [], skipped: [], rejected: [] } };
 }

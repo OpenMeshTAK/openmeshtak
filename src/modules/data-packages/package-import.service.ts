@@ -16,6 +16,18 @@ import { buildPackageSnapshot, snapshotOfLayer, type PackageSnapshot } from "./p
 
 export type ImportFormat = "geojson" | "atak";
 
+export interface StoredPackageContent {
+  id: string;
+  blobId: string;
+  storageKey: string;
+  sha256: string;
+  size: number;
+  mediaType: string;
+  kind: string;
+  name: string;
+  archivePath: string;
+}
+
 /** Checks access and the target layer before any (possibly large) input is converted. */
 export async function requireImportTarget(
   actor: ActorContext,
@@ -48,6 +60,7 @@ export async function saveImport(
   layerId: string,
   { candidates, report }: ImportConversion,
   format: ImportFormat,
+  contents: StoredPackageContent[] = [],
 ): Promise<ImportReport> {
   await database.$transaction(async (transaction) => {
     const existing = await transaction.packageObject.count({ where: { packageId } });
@@ -77,6 +90,28 @@ export async function saveImport(
         tak: takColumn(candidate.geometry, candidate.tak),
       })),
     });
+    if (contents.length > 0) {
+      await transaction.storageBlob.createMany({
+        data: contents.map((content) => ({
+          id: content.blobId,
+          storageKey: content.storageKey,
+          sha256: content.sha256,
+          size: content.size,
+          mediaType: content.mediaType,
+        })),
+      });
+      await transaction.packageContent.createMany({
+        data: contents.map((content) => ({
+          id: content.id,
+          packageId,
+          layerId,
+          blobId: content.blobId,
+          kind: content.kind,
+          name: content.name,
+          archivePath: content.archivePath,
+        })),
+      });
+    }
     await recordAudit(
       {
         actor: actor.principal,
@@ -90,6 +125,7 @@ export async function saveImport(
           layerId,
           format,
           accepted: candidates.length,
+          retained: contents.length,
           skipped: report.skipped.length,
           rejected: report.rejected.length,
         },

@@ -445,6 +445,7 @@ model DataPackage {
   event       Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
   layers      PackageLayer[]
   objects     PackageObject[]
+  contents    PackageContent[]
   revisions   PackageRevision[]
   sources     DataPackageSource[]
   createdAt   DateTime              @default(now())
@@ -480,10 +481,43 @@ model PackageLayer {
   version     Int             @default(1)
   dataPackage DataPackage     @relation(fields: [packageId], references: [id], onDelete: Cascade)
   objects     PackageObject[]
+  contents    PackageContent[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
   @@index([packageId, sortOrder])
+}
+
+/// Immutable bytes kept outside the Web root under the generated `storageKey`.
+model StorageBlob {
+  id              String           @id
+  storageKey      String           @unique
+  sha256          String
+  size            Int
+  mediaType       String
+  packageContents PackageContent[]
+  createdAt       DateTime         @default(now())
+
+  @@index([sha256])
+}
+
+/// One opaque file retained from an imported ATAK Data Package and assigned to its target layer.
+model PackageContent {
+  id          String       @id
+  packageId   String
+  layerId     String
+  blobId      String
+  kind        String
+  name        String
+  archivePath String
+  dataPackage DataPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  layer       PackageLayer @relation(fields: [layerId], references: [id], onDelete: Cascade)
+  blob        StorageBlob  @relation(fields: [blobId], references: [id], onDelete: Restrict)
+  createdAt   DateTime     @default(now())
+
+  @@index([packageId, createdAt, id])
+  @@index([layerId])
+  @@index([blobId])
 }
 
 /// One point, line, polygon or circle. Geometry is validated RFC 7946 GeoJSON in WGS84.

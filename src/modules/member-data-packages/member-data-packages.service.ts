@@ -86,7 +86,7 @@ export async function downloadMemberDataPackage(
     throw notFoundProblem();
   }
 
-  const artifact = buildAtakExport(packageId, received.latest);
+  const artifact = await buildAtakExport(packageId, received.latest);
   await recordAudit({
     actor: actor.principal,
     action: "data-package.downloaded",

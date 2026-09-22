@@ -16,6 +16,7 @@ const environmentSchema = z.object({
     .string()
     .startsWith("file:")
     .default("file:./server/data/db/openmeshtak.sqlite"),
+  DATA_DIRECTORY: z.string().min(1).default("./server/data"),
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
@@ -52,6 +53,7 @@ export const config = Object.freeze({
   authSecret: environment.BETTER_AUTH_SECRET ?? randomBytes(32).toString("base64url"),
   bootstrapTokenTtlMinutes: environment.BOOTSTRAP_TOKEN_TTL_MINUTES,
   databaseUrl: environment.DATABASE_URL,
+  dataDirectory: environment.DATA_DIRECTORY,
   host: environment.APP_HOST,
   logLevel: environment.LOG_LEVEL,
   meshtasticFirmwareProfileDirs: environment.MESHTASTIC_FIRMWARE_PROFILE_DIRS,
