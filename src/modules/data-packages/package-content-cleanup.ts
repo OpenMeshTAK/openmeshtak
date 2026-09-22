@@ -1,6 +1,7 @@
 import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
 import { removeBlob } from "../../shared/storage/blob-storage.js";
+import { forgetTileCache } from "./atak/tile-cache.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
 
 function snapshotBlobIds(snapshot: unknown): string[] {
@@ -40,6 +41,8 @@ export async function removeUnreferencedBlobs(eventId: string, blobIds: readonly
       continue;
     }
     try {
+      // An open SQLite handle would keep the file locked on Windows.
+      forgetTileCache(blob.id);
       await removeBlob(blob.storageKey);
     } catch (error: unknown) {
       logger.warn({ error, event: "storage_blob_remove_failed", blobId }, "Stored file could not be removed");

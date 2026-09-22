@@ -1679,6 +1679,17 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "OfflineMapDto": {
+        "dataType": "refObject",
+        "properties": {
+            "minZoom": {"dataType":"double","required":true},
+            "maxZoom": {"dataType":"double","required":true},
+            "bounds": {"dataType":"array","array":{"dataType":"double"},"required":true},
+            "tiles": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PackageContentDto": {
         "dataType": "refObject",
         "properties": {
@@ -1688,6 +1699,7 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true},
             "size": {"dataType":"double","required":true},
             "rubberSheet": {"dataType":"union","subSchemas":[{"ref":"RubberSheetDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "offlineMap": {"dataType":"union","subSchemas":[{"ref":"OfflineMapDto"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -4867,6 +4879,43 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'listPackageContents',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageContentController_getOfflineMapTile: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                contentId: {"in":"path","name":"contentId","required":true,"ref":"Uuid"},
+                z: {"in":"path","name":"z","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"z"},"minimum":{"value":0},"maximum":{"value":24}}},
+                x: {"in":"path","name":"x","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"x"},"minimum":{"value":0}}},
+                y: {"in":"path","name":"y","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"y"},"minimum":{"value":0}}},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId/tiles/:z/:x/:y',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.getOfflineMapTile)),
+
+            async function PackageContentController_getOfflineMapTile(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageContentController_getOfflineMapTile, request, response });
+
+                const controller = new PackageContentController();
+
+              await templateService.apiHandler({
+                methodName: 'getOfflineMapTile',
                 controller,
                 response,
                 next,

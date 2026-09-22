@@ -4,7 +4,7 @@ import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { PackageContentDto } from "./package-content.dto.js";
-import { listPackageContents, rubberSheetImageOf } from "./package-content.service.js";
+import { listPackageContents, offlineMapTile, rubberSheetImageOf } from "./package-content.service.js";
 
 /** ATAK map content of a data package's draft. Requires `data-packages.read`. */
 @Route("events/{eventId}/data-packages/{packageId}/contents")
@@ -24,6 +24,33 @@ export class PackageContentController extends Controller {
     @Path() packageId: Uuid,
   ): Promise<PackageContentDto[]> {
     return listPackageContents(requestContext(request).principal, eventId, packageId);
+  }
+
+  /**
+   * One XYZ tile of an offline map for display on the map; `404` where the cache has no tile.
+   * @isInt z
+   * @minimum z 0
+   * @maximum z 24
+   * @isInt x
+   * @minimum x 0
+   * @isInt y
+   * @minimum y 0
+   */
+  @Get("{contentId}/tiles/{z}/{x}/{y}")
+  @Produces("image/png")
+  @SuccessResponse(200, "Tile image")
+  public async getOfflineMapTile(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Path() packageId: Uuid,
+    @Path() contentId: Uuid,
+    @Path() z: number,
+    @Path() x: number,
+    @Path() y: number,
+  ): Promise<Readable> {
+    const tile = await offlineMapTile(requestContext(request).principal, eventId, packageId, contentId, { z, x, y });
+    this.setHeader("Content-Type", tile.mediaType);
+    return Readable.from([Buffer.from(tile.bytes)]);
   }
 
   /** The image of a rubber sheet for display on the map. */

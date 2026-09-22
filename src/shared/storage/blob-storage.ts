@@ -5,7 +5,8 @@ import { config } from "../config/config.js";
 
 const storageRoot = resolve(config.dataDirectory, "storage");
 
-function storagePath(storageKey: string): string {
+/** Absolute path of a stored blob, for readers such as SQLite that need a file. Never served. */
+export function storagePath(storageKey: string): string {
   const path = resolve(storageRoot, storageKey);
   if (path !== storageRoot && !path.startsWith(`${storageRoot}${sep}`)) {
     throw new Error("Stored blob key escaped the storage directory.");

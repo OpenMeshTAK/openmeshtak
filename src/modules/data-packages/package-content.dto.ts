@@ -9,6 +9,14 @@ export interface RubberSheetDto {
   imageMediaType: "image/png" | "image/jpeg";
 }
 
+export interface OfflineMapDto {
+  minZoom: number;
+  maxZoom: number;
+  /** West, south, east, north in WGS84 degrees. */
+  bounds: number[];
+  tiles: number;
+}
+
 /** Map content kept from an imported ATAK Data Package; exported unchanged with its layer. */
 export interface PackageContentDto {
   id: Uuid;
@@ -19,4 +27,6 @@ export interface PackageContentDto {
   size: number;
   /** Placement for display; only for rubber sheets. */
   rubberSheet: RubberSheetDto | null;
+  /** Tile range for display; only for offline maps that could be read. */
+  offlineMap: OfflineMapDto | null;
 }

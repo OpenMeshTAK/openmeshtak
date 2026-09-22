@@ -23,7 +23,8 @@ function tileCache(provider: string): Uint8Array {
   const db = new DatabaseSync(path);
   db.exec("CREATE TABLE tiles (key INTEGER PRIMARY KEY, provider TEXT, tile BLOB)");
   db.exec("CREATE TABLE ATAK_metadata (key TEXT, value TEXT)");
-  db.prepare("INSERT INTO tiles VALUES (?, ?, ?)").run(1, provider, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  // Zoom 13, column 4365, row 2691: Mahlwinkel, packed like ATAK as ((z * 2^z) + x) * 2^z + y.
+  db.prepare("INSERT INTO tiles VALUES (?, ?, ?)").run(((13 * 8192 + 4365) * 8192) + 2691, provider, Buffer.from([0x89, 0x50, 0x4e, 0x47, 1]));
   db.prepare("INSERT INTO ATAK_metadata VALUES (?, ?)").run("srid", "3857");
   db.close();
   return new Uint8Array(readFileSync(path));
@@ -233,5 +234,26 @@ void describe("map content in data packages", () => {
 
     const files = await publishAndExport(target);
     assert.deepEqual(files["sheet/DE_2024.kmz"], kmz);
+  });
+
+  void it("serves offline-map tiles from plain and nested tile caches", async () => {
+    const target = await createPackage("Maps");
+    const nested = zipSync({ "MANIFEST/manifest.xml": strToU8(manifest("Inner", [])), "inner/map.sqlite": satellite });
+    await importZip(target, packageZip({ "maps/topo.sqlite": topo, "nested/inner.sqlite": nested })).expect(200);
+
+    const contents = (await request(app).get(`${target.url}/contents`).set("Cookie", admin.cookie).expect(200)).body as Array<{
+      id: string;
+      offlineMap: { minZoom: number; maxZoom: number; bounds: number[]; tiles: number } | null;
+    }>;
+    for (const content of contents) {
+      assert.equal(content.offlineMap?.minZoom, 13);
+      assert.equal(content.offlineMap?.tiles, 1);
+      const [west, south, east, north] = content.offlineMap?.bounds ?? [];
+      assert.ok(west! < 11.83 && east! > 11.82 && south! < 52.38 && north! > 52.37, "bounds cover Mahlwinkel");
+
+      const tile = await binary(request(app).get(`${target.url}/contents/${content.id}/tiles/13/4365/2691`).set("Cookie", admin.cookie)).expect(200);
+      assert.equal(tile.headers["content-type"], "image/png");
+      await request(app).get(`${target.url}/contents/${content.id}/tiles/13/4365/2692`).set("Cookie", admin.cookie).expect(404);
+    }
   });
 });
