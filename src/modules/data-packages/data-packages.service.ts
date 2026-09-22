@@ -11,6 +11,7 @@ import {
   decodeCursor,
   toPage,
 } from "../../shared/pagination/cursor.js";
+import { referencedBlobIds, removeUnreferencedBlobs } from "./package-content-cleanup.js";
 import { audienceFromSelectors } from "../event-audience/event-audience.js";
 import { requireEventPermission } from "../events/event-access.js";
 import type { CreateDataPackageRequest, DataPackageDto, DataPackagePage, UpdateDataPackageRequest } from "./data-package.dto.js";
@@ -146,9 +147,11 @@ export async function updateDataPackage(
 export async function deleteDataPackage(actor: ActorContext, eventId: string, packageId: string): Promise<void> {
   const { event } = await requireDataPackage(actor.principal, eventId, packageId, "data-packages.edit");
   requireEditableEvent(event);
+  const blobIds = await referencedBlobIds(packageId);
 
   await database.$transaction(async (transaction) => {
     await transaction.dataPackage.delete({ where: { id: packageId } });
     await recordAudit(audit(actor, "data-package.deleted", packageId, eventId), transaction);
   });
+  await removeUnreferencedBlobs(eventId, blobIds);
 }

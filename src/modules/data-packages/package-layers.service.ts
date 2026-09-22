@@ -17,6 +17,7 @@ import type {
   UpdatePackageLayerRequest,
 } from "./data-package.dto.js";
 import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
+import { referencedBlobIds, removeUnreferencedBlobs } from "./package-content-cleanup.js";
 
 /** Keeps one data package understandable in the editor and bounded for publishing. */
 export const MAX_LAYERS_PER_PACKAGE = 50;
@@ -131,5 +132,7 @@ export async function deleteLayer(
   const { event } = await requireDataPackage(actor.principal, eventId, packageId, "data-packages.edit");
   requireEditableEvent(event);
   const layer = await findLayer(packageId, layerId);
+  const blobIds = await referencedBlobIds(packageId, layer.id);
   await database.packageLayer.delete({ where: { id: layer.id } });
+  await removeUnreferencedBlobs(eventId, blobIds);
 }

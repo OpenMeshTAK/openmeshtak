@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -163,5 +163,37 @@ void describe("map content in data packages", () => {
     const contents = await database.packageContent.findMany({ where: { packageId: copyId } });
     assert.equal(contents.length, 1);
     assert.equal(contents[0]?.blobId, (await database.packageContent.findFirstOrThrow({ where: { packageId: source.id } })).blobId);
+  });
+
+  void it("deletes stored files with the package unless a copy still uses them", async () => {
+    const source = await createPackage("Source");
+    await importZip(source, packageZip({ "maps/topo.sqlite": topo })).expect(200);
+    await request(app).post(`${source.url}/revisions`).set("Cookie", admin.cookie).expect(200);
+    const blob = (await database.packageContent.findFirstOrThrow({ where: { packageId: source.id }, include: { blob: true } })).blob;
+    const file = resolve(config.dataDirectory, "storage", blob.storageKey);
+
+    const copy = await request(app)
+      .post(`/api/v1/events/${eventId}/data-package-copies`)
+      .set("Cookie", admin.cookie)
+      .send({ name: "Copy", packages: [{ packageId: source.id }] })
+      .expect(201);
+    await request(app).delete(source.url).set("Cookie", admin.cookie).expect(204);
+    assert.equal(existsSync(file), true, "the copy still uses the file");
+
+    await request(app).delete(`/api/v1/events/${eventId}/data-packages/${(copy.body as { id: string }).id}`).set("Cookie", admin.cookie).expect(204);
+    assert.equal(existsSync(file), false);
+    assert.equal(await database.storageBlob.count(), 0);
+  });
+
+  void it("keeps files of a deleted layer while a published revision still uses them", async () => {
+    const target = await createPackage("Maps");
+    await importZip(target, packageZip({ "maps/topo.sqlite": topo })).expect(200);
+    await request(app).post(`${target.url}/revisions`).set("Cookie", admin.cookie).expect(200);
+    const second = await request(app).post(`${target.url}/layers`).set("Cookie", admin.cookie).send({ name: "Other" }).expect(201);
+    assert.ok((second.body as { id: string }).id);
+
+    await request(app).delete(`${target.url}/layers/${target.layerId}`).set("Cookie", admin.cookie).expect(204);
+    assert.equal(await database.storageBlob.count(), 1);
+    await request(app).get(`${target.url}/revisions/1/atak`).set("Cookie", admin.cookie).expect(200);
   });
 });
