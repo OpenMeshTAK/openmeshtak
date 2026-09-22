@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { PackageRevision } from "../../generated/prisma/client.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
+import { database } from "../../shared/database/database.js";
 import { removeBlob, writeBlob } from "../../shared/storage/blob-storage.js";
 import { convertCotEvent } from "./atak/cot-import.js";
 import { objectToCot } from "./atak/cot-export.js";
@@ -16,6 +17,8 @@ import {
   type StoredPackageContent,
 } from "./package-import.service.js";
 import { loadContentFiles } from "./package-content-files.js";
+import type { DataPackageDto } from "./data-package.dto.js";
+import { createDataPackage, getDataPackage } from "./data-packages.service.js";
 import { DEFAULT_STYLE } from "./package-objects.service.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
 
@@ -26,7 +29,11 @@ function entryLabel(path: string): string {
 
 type ArchiveContent = ReturnType<typeof readDataPackage>["contentFiles"];
 
-function convertDataPackage(bytes: Uint8Array): { conversion: ImportConversion; contents: ArchiveContent } {
+function convertDataPackage(bytes: Uint8Array): {
+  name: string | null;
+  conversion: ImportConversion;
+  contents: ArchiveContent;
+} {
   const archive = readDataPackage(bytes);
   const conversion = emptyConversion();
   conversion.report.skipped.push(...archive.skipped);
@@ -45,7 +52,7 @@ function convertDataPackage(bytes: Uint8Array): { conversion: ImportConversion; 
       conversion.report[result.outcome].push({ feature: entryLabel(file.path), message: result.message });
     }
   }
-  return { conversion, contents: archive.contentFiles };
+  return { name: archive.name, conversion, contents: archive.contentFiles };
 }
 
 async function storeContents(contents: ArchiveContent): Promise<StoredPackageContent[]> {
@@ -87,6 +94,45 @@ export async function importAtak(
     return await saveImport(actor, eventId, packageId, layerId, conversion, "atak", stored);
   } catch (error: unknown) {
     await Promise.all(stored.map(({ storageKey }) => removeBlob(storageKey)));
+    throw error;
+  }
+}
+
+export interface ImportedDataPackage {
+  dataPackage: DataPackageDto;
+  report: ImportReport;
+}
+
+const MAX_PACKAGE_NAME = 100;
+
+/** Manifest name first, then the uploaded file name without its extension. */
+function importedName(manifestName: string | null, fileName: string | undefined): string {
+  const fromFile = fileName?.replace(/\.(zip|dpk|cot|xml)$/i, "").trim();
+  const name = manifestName?.trim() || fromFile || "Imported data package";
+  return name.slice(0, MAX_PACKAGE_NAME);
+}
+
+/**
+ * Creates a new data package from an ATAK Data Package and imports it into the first layer. The
+ * archive is read before anything is created, and a failed import removes the new package again,
+ * so a rejected upload never leaves an empty package behind.
+ */
+export async function importAtakAsNewPackage(
+  actor: ActorContext,
+  eventId: string,
+  bytes: Uint8Array,
+  fileName?: string,
+): Promise<ImportedDataPackage> {
+  const { name, conversion, contents } = convertDataPackage(bytes);
+  const created = await createDataPackage(actor, eventId, { name: importedName(name, fileName) });
+  const layer = await database.packageLayer.findFirstOrThrow({ where: { packageId: created.id }, orderBy: { sortOrder: "asc" } });
+  const stored = await storeContents(contents);
+  try {
+    const report = await saveImport(actor, eventId, created.id, layer.id, conversion, "atak", stored);
+    return { dataPackage: await getDataPackage(actor.principal, eventId, created.id), report };
+  } catch (error: unknown) {
+    await Promise.all(stored.map(({ storageKey }) => removeBlob(storageKey)));
+    await database.dataPackage.delete({ where: { id: created.id } });
     throw error;
   }
 }

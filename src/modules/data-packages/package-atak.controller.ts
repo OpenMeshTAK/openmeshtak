@@ -1,5 +1,4 @@
 import { Readable } from "node:stream";
-import express from "express";
 import {
   Controller,
   Get,
@@ -15,31 +14,13 @@ import {
   SuccessResponse,
   Tags,
 } from "tsoa";
-import { ProblemError } from "../../shared/errors/problem-error.js";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import { MAX_UPLOAD_BYTES } from "./atak/data-package-archive.js";
+import { rawUpload, uploadedBytes } from "./atak/raw-upload.js";
 import { exportAtak, importAtak } from "./package-atak.service.js";
 import type { ImportReport } from "./package-import.dto.js";
-
-/** Uploads arrive as raw bytes (ZIP or CoT XML); JSON bodies are parsed elsewhere and rejected. */
-const rawUpload = express.raw({ type: ["application/zip", "application/octet-stream", "application/xml", "text/xml"], limit: MAX_UPLOAD_BYTES });
-
-function uploadedBytes(request: unknown): Uint8Array {
-  const body = (request as { body?: unknown }).body;
-  if (!Buffer.isBuffer(body) || body.length === 0) {
-    throw new ProblemError({
-      type: "urn:openmeshtak:problem:unsupported-media-type",
-      title: "Unsupported upload",
-      status: 415,
-      detail: "Send the Data Package as application/zip or a CoT file as application/xml.",
-      code: "UNSUPPORTED_MEDIA_TYPE",
-    });
-  }
-  return new Uint8Array(body);
-}
 
 /** ATAK Data Package import into a draft layer and export of published revisions. */
 @Route("events/{eventId}/data-packages/{packageId}")

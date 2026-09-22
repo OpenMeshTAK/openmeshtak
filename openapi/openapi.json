@@ -3955,224 +3955,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"PackageLayerDto": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"packageId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"sortOrder": {
-						"type": "number",
-						"format": "double",
-						"description": "Drawing and export order; lower values are drawn first."
-					},
-					"visible": {
-						"type": "boolean",
-						"description": "Editor display only; hidden layers are still published."
-					},
-					"locked": {
-						"type": "boolean",
-						"description": "Locked layers reject object changes until they are unlocked."
-					},
-					"version": {
-						"type": "number",
-						"format": "double"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updatedAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"packageId",
-					"name",
-					"sortOrder",
-					"visible",
-					"locked",
-					"version",
-					"createdAt",
-					"updatedAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageLayerPage": {
-				"properties": {
-					"items": {
-						"items": {
-							"$ref": "#/components/schemas/PackageLayerDto"
-						},
-						"type": "array"
-					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
-					}
-				},
-				"required": [
-					"items",
-					"page"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CreatePackageLayerRequest": {
-				"properties": {
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					}
-				},
-				"required": [
-					"name"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpdatePackageLayerRequest": {
-				"properties": {
-					"version": {
-						"type": "integer",
-						"format": "int32",
-						"minimum": 1
-					},
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"sortOrder": {
-						"type": "integer",
-						"format": "int32",
-						"minimum": 0,
-						"maximum": 10000
-					},
-					"visible": {
-						"type": "boolean"
-					},
-					"locked": {
-						"type": "boolean"
-					}
-				},
-				"required": [
-					"version",
-					"name",
-					"sortOrder",
-					"visible",
-					"locked"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ImportReportEntry": {
-				"properties": {
-					"feature": {
-						"type": "string",
-						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
-					},
-					"message": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"feature",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ImportReport": {
-				"description": "Outcome of a GeoJSON or ATAK import; every input item appears somewhere in it.",
-				"properties": {
-					"accepted": {
-						"type": "number",
-						"format": "double",
-						"description": "Number of objects created."
-					},
-					"changed": {
-						"items": {
-							"$ref": "#/components/schemas/ImportReportEntry"
-						},
-						"type": "array",
-						"description": "Imported, but adjusted: split multi-geometries, clamped styles."
-					},
-					"retained": {
-						"items": {
-							"$ref": "#/components/schemas/ImportReportEntry"
-						},
-						"type": "array",
-						"description": "Opaque package files retained byte-for-byte, such as offline map caches."
-					},
-					"skipped": {
-						"items": {
-							"$ref": "#/components/schemas/ImportReportEntry"
-						},
-						"type": "array",
-						"description": "Not imported because the content type is not supported, e.g. GeometryCollection."
-					},
-					"rejected": {
-						"items": {
-							"$ref": "#/components/schemas/ImportReportEntry"
-						},
-						"type": "array",
-						"description": "Not imported because the content is invalid, e.g. a self-intersecting polygon."
-					}
-				},
-				"required": [
-					"accepted",
-					"changed",
-					"retained",
-					"skipped",
-					"rejected"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"GeoJsonDocument": {
-				"description": "Untrusted GeoJSON document: a FeatureCollection, a Feature or a bare geometry.",
-				"properties": {
-					"type": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"type"
-				],
-				"type": "object",
-				"additionalProperties": {}
-			},
-			"GeoJsonFeatureCollection": {
-				"description": "GeoJSON FeatureCollection exported from a data package draft or revision.",
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"FeatureCollection"
-						],
-						"nullable": false
-					},
-					"features": {
-						"items": {},
-						"type": "array"
-					}
-				},
-				"required": [
-					"type",
-					"features"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"DataPackageSourceDto": {
 				"properties": {
 					"id": {
@@ -4307,6 +4089,240 @@
 					"version",
 					"createdAt",
 					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportReportEntry": {
+				"properties": {
+					"feature": {
+						"type": "string",
+						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"feature",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportReport": {
+				"description": "Outcome of a GeoJSON or ATAK import; every input item appears somewhere in it.",
+				"properties": {
+					"accepted": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of objects created."
+					},
+					"changed": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Imported, but adjusted: split multi-geometries, clamped styles."
+					},
+					"retained": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Opaque package files retained byte-for-byte, such as offline map caches."
+					},
+					"skipped": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Not imported because the content type is not supported, e.g. GeometryCollection."
+					},
+					"rejected": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array",
+						"description": "Not imported because the content is invalid, e.g. a self-intersecting polygon."
+					}
+				},
+				"required": [
+					"accepted",
+					"changed",
+					"retained",
+					"skipped",
+					"rejected"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportedDataPackage": {
+				"properties": {
+					"dataPackage": {
+						"$ref": "#/components/schemas/DataPackageDto"
+					},
+					"report": {
+						"$ref": "#/components/schemas/ImportReport"
+					}
+				},
+				"required": [
+					"dataPackage",
+					"report"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageLayerDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"sortOrder": {
+						"type": "number",
+						"format": "double",
+						"description": "Drawing and export order; lower values are drawn first."
+					},
+					"visible": {
+						"type": "boolean",
+						"description": "Editor display only; hidden layers are still published."
+					},
+					"locked": {
+						"type": "boolean",
+						"description": "Locked layers reject object changes until they are unlocked."
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"packageId",
+					"name",
+					"sortOrder",
+					"visible",
+					"locked",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageLayerPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/PackageLayerDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatePackageLayerRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdatePackageLayerRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"sortOrder": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 10000
+					},
+					"visible": {
+						"type": "boolean"
+					},
+					"locked": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"sortOrder",
+					"visible",
+					"locked"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GeoJsonDocument": {
+				"description": "Untrusted GeoJSON document: a FeatureCollection, a Feature or a bare geometry.",
+				"properties": {
+					"type": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"type"
+				],
+				"type": "object",
+				"additionalProperties": {}
+			},
+			"GeoJsonFeatureCollection": {
+				"description": "GeoJSON FeatureCollection exported from a data package draft or revision.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"FeatureCollection"
+						],
+						"nullable": false
+					},
+					"features": {
+						"items": {},
+						"type": "array"
+					}
+				},
+				"required": [
+					"type",
+					"features"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -11355,6 +11371,124 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-package-imports/atak": {
+			"post": {
+				"operationId": "ImportAtakAsNewPackage",
+				"responses": {
+					"201": {
+						"description": "Data package created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ImportedDataPackage"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Too many objects or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Upload too large",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "Unsupported upload",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Unreadable archive",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a data package from an ATAK Data Package (`application/zip`) or a CoT file\n(`application/xml`) and imports it into the first layer. The name comes from the package\nmanifest, otherwise from `fileName`. A failed import leaves no package behind.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "fileName",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"maxLength": 255
 						}
 					}
 				]
