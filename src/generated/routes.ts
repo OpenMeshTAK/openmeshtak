@@ -54,6 +54,8 @@ import { ConfigurationRevisionsController } from './../modules/event-configurati
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageRevisionsController } from './../modules/data-packages/package-revisions.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PackageOrderController } from './../modules/data-packages/package-order.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageObjectsController } from './../modules/data-packages/package-objects.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageNewImportController } from './../modules/data-packages/package-new-import.controller.js';
@@ -1461,6 +1463,57 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DataPackageSourceDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "sourcePackageId": {"ref":"Uuid","required":true},
+            "sourcePackageName": {"dataType":"string","required":true},
+            "sourceRevision": {"dataType":"double","required":true},
+            "sourceSnapshotHash": {"dataType":"string","required":true},
+            "sourceLayerIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true},
+            "createdAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageAudience": {
+        "dataType": "refObject",
+        "properties": {
+            "groupIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":100}}},
+            "roleIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":100}}},
+            "memberIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":500}}},
+            "allMembers": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DataPackageDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "latestRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "sources": {"dataType":"array","array":{"dataType":"refObject","ref":"DataPackageSourceDto"},"required":true},
+            "audience": {"ref":"PackageAudience","required":true},
+            "sortOrder": {"dataType":"double","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ReorderDataPackagesRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "packageIds": {"dataType":"array","array":{"dataType":"string"},"required":true,"validators":{"maxItems":{"value":500}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PackageObjectDto": {
         "dataType": "refObject",
         "properties": {
@@ -1512,48 +1565,6 @@ const models: TsoaRoute.Models = {
             "geometry": {"ref":"PackageGeometry","required":true},
             "style": {"ref":"PackageObjectStyle","required":true},
             "tak": {"dataType":"union","subSchemas":[{"ref":"TakMarker"},{"dataType":"enum","enums":[null]}],"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "DataPackageSourceDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"ref":"Uuid","required":true},
-            "sourcePackageId": {"ref":"Uuid","required":true},
-            "sourcePackageName": {"dataType":"string","required":true},
-            "sourceRevision": {"dataType":"double","required":true},
-            "sourceSnapshotHash": {"dataType":"string","required":true},
-            "sourceLayerIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true},
-            "createdAt": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PackageAudience": {
-        "dataType": "refObject",
-        "properties": {
-            "groupIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":100}}},
-            "roleIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":100}}},
-            "memberIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true,"validators":{"maxItems":{"value":500}}},
-            "allMembers": {"dataType":"boolean","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "DataPackageDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"ref":"Uuid","required":true},
-            "eventId": {"ref":"Uuid","required":true},
-            "name": {"dataType":"string","required":true},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "latestRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
-            "sources": {"dataType":"array","array":{"dataType":"refObject","ref":"DataPackageSourceDto"},"required":true},
-            "audience": {"ref":"PackageAudience","required":true},
-            "version": {"dataType":"double","required":true},
-            "createdAt": {"dataType":"string","required":true},
-            "updatedAt": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -4365,6 +4376,39 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getPackageRevision',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageOrderController_reorderDataPackages: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"ReorderDataPackagesRequest"},
+        };
+        app.put('/api/v1/events/:eventId/data-package-order',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageOrderController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageOrderController.prototype.reorderDataPackages)),
+
+            async function PackageOrderController_reorderDataPackages(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageOrderController_reorderDataPackages, request, response });
+
+                const controller = new PackageOrderController();
+
+              await templateService.apiHandler({
+                methodName: 'reorderDataPackages',
                 controller,
                 response,
                 next,

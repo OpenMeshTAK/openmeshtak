@@ -3784,6 +3784,167 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DataPackageSourceDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"sourcePackageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"sourcePackageName": {
+						"type": "string"
+					},
+					"sourceRevision": {
+						"type": "number",
+						"format": "double"
+					},
+					"sourceSnapshotHash": {
+						"type": "string"
+					},
+					"sourceLayerIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"sourcePackageId",
+					"sourcePackageName",
+					"sourceRevision",
+					"sourceSnapshotHash",
+					"sourceLayerIds",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageAudience": {
+				"description": "Who receives the published Data Package: every event member, or only those matching any\nselected group, role or member. The selection is ignored while `allMembers` is true.",
+				"properties": {
+					"groupIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 100
+					},
+					"roleIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 100
+					},
+					"memberIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array",
+						"maxItems": 500
+					},
+					"allMembers": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"groupIds",
+					"roleIds",
+					"memberIds",
+					"allMembers"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DataPackageDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"latestRevision": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Number of the newest published revision, or `null` while nothing is published."
+					},
+					"sources": {
+						"items": {
+							"$ref": "#/components/schemas/DataPackageSourceDto"
+						},
+						"type": "array",
+						"description": "Published package revisions whose content was copied into this package's initial draft."
+					},
+					"audience": {
+						"$ref": "#/components/schemas/PackageAudience"
+					},
+					"sortOrder": {
+						"type": "number",
+						"format": "double",
+						"description": "Drawing order within the event; lower values are drawn first, below higher ones."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"name",
+					"description",
+					"latestRevision",
+					"sources",
+					"audience",
+					"sortOrder",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ReorderDataPackagesRequest": {
+				"properties": {
+					"packageIds": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Every data package of the event, bottom first; the last one is drawn on top.",
+						"maxItems": 500
+					}
+				},
+				"required": [
+					"packageIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PackageObjectDto": {
 				"properties": {
 					"id": {
@@ -3954,144 +4115,6 @@
 					"geometry",
 					"style",
 					"tak"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"DataPackageSourceDto": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"sourcePackageId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"sourcePackageName": {
-						"type": "string"
-					},
-					"sourceRevision": {
-						"type": "number",
-						"format": "double"
-					},
-					"sourceSnapshotHash": {
-						"type": "string"
-					},
-					"sourceLayerIds": {
-						"items": {
-							"$ref": "#/components/schemas/Uuid"
-						},
-						"type": "array"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"sourcePackageId",
-					"sourcePackageName",
-					"sourceRevision",
-					"sourceSnapshotHash",
-					"sourceLayerIds",
-					"createdAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageAudience": {
-				"description": "Who receives the published Data Package: every event member, or only those matching any\nselected group, role or member. The selection is ignored while `allMembers` is true.",
-				"properties": {
-					"groupIds": {
-						"items": {
-							"$ref": "#/components/schemas/Uuid"
-						},
-						"type": "array",
-						"maxItems": 100
-					},
-					"roleIds": {
-						"items": {
-							"$ref": "#/components/schemas/Uuid"
-						},
-						"type": "array",
-						"maxItems": 100
-					},
-					"memberIds": {
-						"items": {
-							"$ref": "#/components/schemas/Uuid"
-						},
-						"type": "array",
-						"maxItems": 500
-					},
-					"allMembers": {
-						"type": "boolean"
-					}
-				},
-				"required": [
-					"groupIds",
-					"roleIds",
-					"memberIds",
-					"allMembers"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"DataPackageDto": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"eventId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string",
-						"nullable": true
-					},
-					"latestRevision": {
-						"type": "number",
-						"format": "double",
-						"nullable": true,
-						"description": "Number of the newest published revision, or `null` while nothing is published."
-					},
-					"sources": {
-						"items": {
-							"$ref": "#/components/schemas/DataPackageSourceDto"
-						},
-						"type": "array",
-						"description": "Published package revisions whose content was copied into this package's initial draft."
-					},
-					"audience": {
-						"$ref": "#/components/schemas/PackageAudience"
-					},
-					"version": {
-						"type": "number",
-						"format": "double",
-						"description": "Optimistic-concurrency version; send it back unchanged with updates."
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updatedAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"eventId",
-					"name",
-					"description",
-					"latestRevision",
-					"sources",
-					"audience",
-					"version",
-					"createdAt",
-					"updatedAt"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -10993,6 +11016,108 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/data-package-order": {
+			"put": {
+				"operationId": "ReorderDataPackages",
+				"responses": {
+					"200": {
+						"description": "Data packages in their new order",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/DataPackageDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Packages changed meanwhile or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the order with the complete list of package IDs, bottom first.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ReorderDataPackagesRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/data-packages/{packageId}/objects": {

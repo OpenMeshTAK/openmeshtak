@@ -12,6 +12,7 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import { referencedBlobIds, removeUnreferencedBlobs } from "./package-content-cleanup.js";
+import { nextPackageSortOrder } from "./package-order.js";
 import { audienceFromSelectors } from "../event-audience/event-audience.js";
 import { requireEventPermission } from "../events/event-access.js";
 import type { CreateDataPackageRequest, DataPackageDto, DataPackagePage, UpdateDataPackageRequest } from "./data-package.dto.js";
@@ -23,6 +24,7 @@ const packageSelection = {
   name: true,
   description: true,
   version: true,
+  sortOrder: true,
   audienceAll: true,
   audience: true,
   createdAt: true,
@@ -51,6 +53,7 @@ function toDto(row: PackageRow): DataPackageDto {
       createdAt: source.createdAt.toISOString(),
     })),
     audience: { allMembers: row.audienceAll, ...audienceFromSelectors(row.audience) },
+    sortOrder: row.sortOrder,
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -113,6 +116,7 @@ export async function createDataPackage(
       data: {
         id: packageId,
         eventId,
+        sortOrder: await nextPackageSortOrder(transaction, eventId),
         name: input.name,
         description: input.description ?? null,
         layers: { create: { id: randomUUID(), name: "Layer 1", sortOrder: 0 } },

@@ -439,6 +439,8 @@ model DataPackage {
   name        String
   description String?
   version     Int                   @default(1)
+  /// Drawing order within the event; lower values are drawn first, below higher ones.
+  sortOrder   Int                   @default(0)
   /// Distribution: every member of the event, or only the members the audience selects.
   audienceAll Boolean               @default(true)
   audience    DataPackageAudience[]

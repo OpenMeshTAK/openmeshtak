@@ -30,6 +30,8 @@ export interface DataPackageDto {
   /** Published package revisions whose content was copied into this package's initial draft. */
   sources: DataPackageSourceDto[];
   audience: PackageAudience;
+  /** Drawing order within the event; lower values are drawn first, below higher ones. */
+  sortOrder: number;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
   /** @format date-time */
