@@ -13,7 +13,7 @@ import { downloadMemberDataPackage, listMemberDataPackages } from "./member-data
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(404, "Not found")
 export class MemberDataPackagesController extends Controller {
-  /** The signed-in member's packages; people with `members.read` may preview any member's list. */
+  /** The member's packages; `members.read` previews and `member-artifacts.download` acts on their behalf. */
   @Get()
   @SuccessResponse(200, "Data packages the member receives")
   public async listMemberDataPackages(
@@ -24,7 +24,7 @@ export class MemberDataPackagesController extends Controller {
     return listMemberDataPackages(requestContext(request).principal, eventId, memberId);
   }
 
-  /** Downloads the newest published revision as an ATAK Data Package. Only for the member. */
+  /** Downloads the newest published revision as an ATAK Data Package, for the member or on their behalf. */
   @Get("{packageId}/atak")
   @Produces("application/zip")
   @SuccessResponse(200, "ATAK Data Package")

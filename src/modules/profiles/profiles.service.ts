@@ -4,7 +4,8 @@ import {
   hasAnyGrantForEvent,
   hasPermission,
 } from "../../shared/auth/permission-check.js";
-import type { Principal } from "../../shared/auth/principal.js";
+import { recordAudit } from "../../shared/audit/audit.js";
+import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
 import { latestConfigurationRevision } from "../event-configuration/configuration-revisions.service.js";
@@ -39,21 +40,32 @@ function notPublished(): ProblemError {
   });
 }
 
+type ProfileAccess = "self" | "members-read" | "on-behalf";
+
 /**
  * Administrators with `members.read` see every member; a participant sees only their own profile
- * and only while the event is active. Everyone else gets the usual concealment rules.
+ * and only while the event is active. An operator with `member-artifacts.download` may open an
+ * active event's member profiles to provision devices on their behalf. Everyone else gets the
+ * usual concealment rules.
  */
 async function requireProfileAccess(
   principal: Principal,
   event: Event,
   memberUserId: string | null,
-): Promise<void> {
-  if (await hasPermission(principal, "members.read", event.id)) {
-    return;
-  }
+): Promise<ProfileAccess> {
   const isSelf = principal.type === "user" && memberUserId === principal.id;
   if (isSelf && event.status === "active") {
-    return;
+    return "self";
+  }
+  if (await hasPermission(principal, "members.read", event.id)) {
+    return "members-read";
+  }
+  if (
+    principal.type === "user" &&
+    event.status === "active" &&
+    (await hasPermission(principal, "member-artifacts.download", event.id))
+  ) {
+    return "on-behalf";
   }
   throw (await hasAnyGrantForEvent(principal, event.id)) ? forbidden() : notFoundProblem();
 }
@@ -87,11 +99,44 @@ async function configurationFor(
   };
 }
 
+/** Resolves a member profile for internal artifact generation, which audits on its own. */
 export async function getMemberProfile(
   principal: Principal,
   eventId: string,
   memberId: string,
 ): Promise<ResolvedProfileDto> {
+  return (await loadMemberProfile(principal, eventId, memberId)).profile;
+}
+
+/**
+ * The profile endpoint. Opening another member's resolved device settings for on-behalf
+ * provisioning is audited, because it is the start of handling that member's radio.
+ */
+export async function viewMemberProfile(
+  actor: ActorContext,
+  eventId: string,
+  memberId: string,
+): Promise<ResolvedProfileDto> {
+  const { profile, access } = await loadMemberProfile(actor.principal, eventId, memberId);
+  if (access === "on-behalf") {
+    await recordAudit({
+      actor: actor.principal,
+      action: "member-profile.viewed-on-behalf",
+      targetType: "event-member",
+      targetId: memberId,
+      result: "success",
+      traceId: actor.traceId,
+      metadata: { eventId, revisionNumber: profile.configurationRevision?.number ?? null },
+    });
+  }
+  return profile;
+}
+
+async function loadMemberProfile(
+  principal: Principal,
+  eventId: string,
+  memberId: string,
+): Promise<{ profile: ResolvedProfileDto; access: ProfileAccess }> {
   const event = await database.event.findUnique({ where: { id: eventId } });
   const member =
     event === null
@@ -101,7 +146,7 @@ export async function getMemberProfile(
   if (event === null) {
     throw notFoundProblem();
   }
-  await requireProfileAccess(principal, event, member?.userId ?? null);
+  const access = await requireProfileAccess(principal, event, member?.userId ?? null);
   if (member === null) {
     throw notFoundProblem();
   }
@@ -113,7 +158,7 @@ export async function getMemberProfile(
     throw notPublished();
   }
 
-  return resolveProfile({
+  const profile = resolveProfile({
     member,
     role: { slug: role.slug, name: role.name },
     group,
@@ -123,6 +168,7 @@ export async function getMemberProfile(
     tak: snapshot.tak,
     revision,
   });
+  return { profile, access };
 }
 
 /** The signed-in user's participations in active events, so the PWA can open their profile. */

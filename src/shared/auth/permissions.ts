@@ -16,6 +16,7 @@ export const PERMISSIONS = [
   "data-packages.publish",
   "artifacts.generate",
   "artifacts.download",
+  "member-artifacts.download",
   "service-accounts.manage",
   "audit.read",
 ] as const;

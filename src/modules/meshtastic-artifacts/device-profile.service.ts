@@ -3,11 +3,12 @@ import type { MeshtasticChannel } from "../../generated/prisma/client.js";
 import { recordAudit, type AuditEntry } from "../../shared/audit/audit.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
-import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
+import { ProblemError } from "../../shared/errors/problem-error.js";
 import { latestConfigurationRevision } from "../event-configuration/configuration-revisions.service.js";
 import { parseConfigurationSnapshot } from "../event-configuration/configuration-snapshot.js";
 import { decryptChannelPsk } from "../meshtastic-channels/channel-psk.js";
 import { meshtasticChannelSetUrl } from "../meshtastic-channels/channel-url.js";
+import { requireMemberArtifactAccess } from "../member-artifacts/member-artifact-access.js";
 import { findFirmwareProfile } from "../meshtastic-firmware/firmware-profiles.js";
 import {
   enumValues,
@@ -33,20 +34,6 @@ function republishProblem(detail: string): ProblemError {
     detail,
     code: "MESHTASTIC_NOT_PUBLISHED",
   });
-}
-
-/** Only the member themself downloads their device profile, and only while the event is active. */
-async function requireOwnActiveMembership(actor: ActorContext, eventId: string, memberId: string): Promise<void> {
-  if (actor.principal.type !== "user") {
-    throw notFoundProblem();
-  }
-  const member = await database.eventMember.findFirst({
-    where: { id: memberId, eventId },
-    select: { userId: true, event: { select: { status: true } } },
-  });
-  if (member === null || member.userId !== actor.principal.id || member.event.status !== "active") {
-    throw notFoundProblem();
-  }
 }
 
 /**
@@ -148,7 +135,7 @@ function auditEntries(
   actor: ActorContext,
   eventId: string,
   memberId: string,
-  context: { revisionNumber: number; profileId: string; artifactSha256: string },
+  context: { revisionNumber: number; profileId: string; artifactSha256: string; onBehalf: boolean },
   channels: Array<{ published: ProfileChannel; stored: MeshtasticChannel }>,
 ): AuditEntry[] {
   const handouts = channels
@@ -160,7 +147,14 @@ function auditEntries(
       targetId: stored.id,
       result: "success",
       traceId: actor.traceId,
-      metadata: { eventId, memberId, channelName: published.name, pskVersion: stored.pskVersion, format: "device-profile" },
+      metadata: {
+        eventId,
+        memberId,
+        channelName: published.name,
+        pskVersion: stored.pskVersion,
+        format: "device-profile",
+        onBehalf: context.onBehalf,
+      },
     }));
   return [
     {
@@ -185,7 +179,9 @@ export async function generateDeviceProfile(
   eventId: string,
   memberId: string,
 ): Promise<DeviceProfileArtifact> {
-  await requireOwnActiveMembership(actor, eventId, memberId);
+  // On behalf of a member the file is exactly the member's own: the profile below is resolved
+  // for the member, so their audience, key-holder status and channel releases decide the secrets.
+  const { onBehalf } = await requireMemberArtifactAccess(actor.principal, eventId, memberId);
   const profile = await getMemberProfile(actor.principal, eventId, memberId);
   const { revision, meshtastic, profile: firmware } = await publishedFirmware(eventId);
 
@@ -222,6 +218,7 @@ export async function generateDeviceProfile(
     revisionNumber: revision.number,
     profileId: firmware.file.id,
     artifactSha256: createHash("sha256").update(bytes).digest("hex"),
+    onBehalf,
   };
   await database.$transaction(async (transaction) => {
     for (const entry of auditEntries(actor, eventId, memberId, context, channels)) {

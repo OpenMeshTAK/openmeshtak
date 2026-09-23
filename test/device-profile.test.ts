@@ -139,9 +139,52 @@ void describe("Meshtastic device profiles", () => {
     assert.equal(audits.includes(commandKey.toString("base64")), false);
   });
 
-  void it("serves the file only to the member themself", async () => {
-    await request(app).get(deviceProfileUrl(memberId)).set("Cookie", holder.cookie).expect(404);
-    await request(app).get(deviceProfileUrl(memberId)).set("Cookie", admin.cookie).expect(404);
+  void it("serves the file only to the member themself or an on-behalf operator", async () => {
+    const reader = await createUser("Reader", [{ permission: "members.read", eventId }]);
+    const otherEvent = await createEvent();
+    const foreign = await createUser("Foreign", [{ permission: "member-artifacts.download", eventId: otherEvent }]);
+    for (const user of [holder, reader, foreign]) {
+      await request(app).get(deviceProfileUrl(memberId)).set("Cookie", user.cookie).expect(404);
+    }
     await request(app).get(deviceProfileUrl(memberId)).expect(401);
+  });
+
+  void it("gives an on-behalf operator exactly the member's own file and audits it", async () => {
+    const operator = await createUser("Operator", [{ permission: "member-artifacts.download", eventId }]);
+
+    const own = await download(member, memberId);
+    const onBehalf = await download(operator, memberId);
+    assert.deepEqual(onBehalf.profile, own.profile);
+    assert.deepEqual(channelNames(onBehalf.profile.channelUrl), ["Event", "Bravo"], "no secret the member lacks");
+
+    const forHolder = await download(operator, holderMemberId);
+    assert.deepEqual(channelNames(forHolder.profile.channelUrl), ["Event", "Bravo", "Command"], "the key holder's file");
+
+    const audits = await database.auditEvent.findMany({
+      where: { actorId: operator.id, action: "meshtastic.device-profile-generated" },
+    });
+    assert.deepEqual(audits.map(({ targetId }) => targetId).sort(), [holderMemberId, memberId].sort());
+    assert.ok(audits.every(({ metadata }) => (metadata as { onBehalf: boolean }).onBehalf));
+  });
+
+  void it("lets an on-behalf operator open the member's settings and audits the view", async () => {
+    const operator = await createUser("Operator", [{ permission: "member-artifacts.download", eventId }]);
+    const response = await request(app)
+      .get(`/api/v1/events/${eventId}/members/${memberId}/profile`)
+      .set("Cookie", operator.cookie)
+      .expect(200);
+    assert.equal((response.body as { meshtastic: { shortName: string } }).meshtastic.shortName, "B2");
+    const audit = await database.auditEvent.findFirstOrThrow({ where: { action: "member-profile.viewed-on-behalf" } });
+    assert.equal(audit.actorId, operator.id);
+    assert.equal(audit.targetId, memberId);
+
+    await request(app).get(`/api/v1/events/${eventId}/members/${memberId}/profile`).set("Cookie", member.cookie).expect(200);
+    assert.equal(await database.auditEvent.count({ where: { action: "member-profile.viewed-on-behalf" } }), 1);
+  });
+
+  void it("refuses on-behalf downloads outside active events", async () => {
+    const operator = await createUser("Operator", [{ permission: "member-artifacts.download", eventId }]);
+    await database.event.update({ where: { id: eventId }, data: { status: "archived" } });
+    await request(app).get(deviceProfileUrl(memberId)).set("Cookie", operator.cookie).expect(404);
   });
 });

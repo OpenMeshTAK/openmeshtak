@@ -159,6 +159,7 @@
 					"data-packages.publish",
 					"artifacts.generate",
 					"artifacts.download",
+					"member-artifacts.download",
 					"service-accounts.manage",
 					"audit.read"
 				]
@@ -6400,7 +6401,7 @@
 						}
 					}
 				},
-				"description": "Resolves the member's callsign, TAK and Meshtastic identity. Requires\n`members.read`, or being that member in an active event. Draft events return an\nadministrator preview of the unpublished configuration.",
+				"description": "Resolves the member's callsign, TAK and Meshtastic identity. Requires\n`members.read`, being that member in an active event, or `member-artifacts.download` in an\nactive event, which is audited as an on-behalf view. Draft events return an administrator\npreview of the unpublished configuration.",
 				"tags": [
 					"Profiles"
 				],
@@ -7821,7 +7822,7 @@
 						}
 					}
 				},
-				"description": "Generates the signed-in member's Meshtastic device profile (`.cfg`) from the published event\nconfiguration: owner names, device role, the event's radio settings and the channels the\nmember receives now. The file contains channel keys; every download is audited. The file\nname names the firmware line it is made for.",
+				"description": "Generates the signed-in member's Meshtastic device profile (`.cfg`) from the published event\nconfiguration: owner names, device role, the event's radio settings and the channels the\nmember receives now. An operator with `member-artifacts.download` receives exactly the\nmember's file on their behalf. The file contains channel keys; every download is audited. The file\nname names the firmware line it is made for.",
 				"tags": [
 					"Profiles"
 				],
@@ -7888,7 +7889,7 @@
 						}
 					}
 				},
-				"description": "The signed-in member's packages; people with `members.read` may preview any member's list.",
+				"description": "The member's packages; `members.read` previews and `member-artifacts.download` acts on their behalf.",
 				"tags": [
 					"Profiles"
 				],
@@ -7953,7 +7954,7 @@
 						}
 					}
 				},
-				"description": "Downloads the newest published revision as an ATAK Data Package. Only for the member.",
+				"description": "Downloads the newest published revision as an ATAK Data Package, for the member or on their behalf.",
 				"tags": [
 					"Profiles"
 				],

@@ -14,7 +14,8 @@ export class DeviceProfileController extends Controller {
   /**
    * Generates the signed-in member's Meshtastic device profile (`.cfg`) from the published event
    * configuration: owner names, device role, the event's radio settings and the channels the
-   * member receives now. The file contains channel keys; every download is audited. The file
+   * member receives now. An operator with `member-artifacts.download` receives exactly the
+   * member's file on their behalf. The file contains channel keys; every download is audited. The file
    * name names the firmware line it is made for.
    */
   @Get()

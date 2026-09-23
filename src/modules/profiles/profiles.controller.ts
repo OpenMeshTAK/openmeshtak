@@ -3,7 +3,7 @@ import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { MyEventMembershipDto, ResolvedProfileDto } from "./profile.dto.js";
-import { getMemberProfile, listMyEventMemberships } from "./profiles.service.js";
+import { listMyEventMemberships, viewMemberProfile } from "./profiles.service.js";
 
 @Route("events/{eventId}/members/{memberId}/profile")
 @Tags("Profiles")
@@ -15,8 +15,9 @@ import { getMemberProfile, listMyEventMemberships } from "./profiles.service.js"
 export class MemberProfileController extends Controller {
   /**
    * Resolves the member's callsign, TAK and Meshtastic identity. Requires
-   * `members.read`, or being that member in an active event. Draft events return an
-   * administrator preview of the unpublished configuration.
+   * `members.read`, being that member in an active event, or `member-artifacts.download` in an
+   * active event, which is audited as an on-behalf view. Draft events return an administrator
+   * preview of the unpublished configuration.
    */
   @Get()
   @SuccessResponse(200, "Resolved profile")
@@ -26,7 +27,7 @@ export class MemberProfileController extends Controller {
     @Path() eventId: Uuid,
     @Path() memberId: Uuid,
   ): Promise<ResolvedProfileDto> {
-    return getMemberProfile(requestContext(request).principal, eventId, memberId);
+    return viewMemberProfile(requestContext(request), eventId, memberId);
   }
 }
 

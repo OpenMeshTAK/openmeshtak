@@ -6,6 +6,7 @@ import { database } from "../../shared/database/database.js";
 import { notFoundProblem } from "../../shared/errors/problem-error.js";
 import { buildAtakExport, type AtakExport } from "../data-packages/package-atak.service.js";
 import { audienceFromSelectors, audienceIncludes, type AudienceRecipient } from "../event-audience/event-audience.js";
+import { requireMemberArtifactAccess } from "../member-artifacts/member-artifact-access.js";
 import type { MemberDataPackageDto } from "./member-data-package.dto.js";
 
 interface MemberContext {
@@ -32,6 +33,14 @@ function isOwnActiveMembership(principal: Principal, member: MemberContext | nul
   return member !== null && principal.type === "user" && member.userId === principal.id && member.active;
 }
 
+async function canListFor(principal: Principal, eventId: string, member: MemberContext): Promise<boolean> {
+  const { active } = member;
+  if (isOwnActiveMembership(principal, member) || (await hasPermission(principal, "members.read", eventId))) {
+    return true;
+  }
+  return active && principal.type === "user" && (await hasPermission(principal, "member-artifacts.download", eventId));
+}
+
 /**
  * Published packages whose audience includes the member, each at its newest revision. Packages
  * outside the audience are absent, and drafts never reach participants.
@@ -49,14 +58,17 @@ async function receivedPackages(eventId: string, recipient: AudienceRecipient) {
   });
 }
 
-/** The member sees their own list while the event is active; `members.read` may preview it. */
+/**
+ * The member sees their own list while the event is active; `members.read` may preview it and
+ * an on-behalf operator sees what they could download for the member.
+ */
 export async function listMemberDataPackages(
   principal: Principal,
   eventId: string,
   memberId: string,
 ): Promise<MemberDataPackageDto[]> {
   const member = await loadMember(eventId, memberId);
-  if (member === null || !(isOwnActiveMembership(principal, member) || (await hasPermission(principal, "members.read", eventId)))) {
+  if (member === null || !(await canListFor(principal, eventId, member))) {
     throw notFoundProblem();
   }
   return (await receivedPackages(eventId, member.recipient)).map(({ dataPackage, latest }) => ({
@@ -68,15 +80,19 @@ export async function listMemberDataPackages(
   }));
 }
 
-/** Only the member themself downloads, and only packages they receive. Every download is audited. */
+/**
+ * The member downloads packages they receive; an operator with `member-artifacts.download` may
+ * download exactly those packages on the member's behalf. Every download is audited.
+ */
 export async function downloadMemberDataPackage(
   actor: ActorContext,
   eventId: string,
   memberId: string,
   packageId: string,
 ): Promise<AtakExport> {
+  const { onBehalf } = await requireMemberArtifactAccess(actor.principal, eventId, memberId);
   const member = await loadMember(eventId, memberId);
-  if (!isOwnActiveMembership(actor.principal, member)) {
+  if (member === null) {
     throw notFoundProblem();
   }
   const received = (await receivedPackages(eventId, member.recipient)).find(
@@ -98,6 +114,7 @@ export async function downloadMemberDataPackage(
       eventId,
       memberId,
       revision: received.latest.number,
+      onBehalf,
       artifactSha256: createHash("sha256").update(artifact.bytes).digest("hex"),
     },
   });

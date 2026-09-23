@@ -110,6 +110,25 @@ void describe("member data packages", () => {
     await request(app).get(memberPackagesUrl(peterMemberId)).set("Cookie", anna.cookie).expect(404);
   });
 
+  void it("lets an on-behalf operator download exactly the member's packages", async () => {
+    const bravoPackage = await createPackage("Bravo only", [bravoId]);
+    const operator = await createUser("Operator", [{ permission: "member-artifacts.download", eventId }]);
+
+    assert.deepEqual(await names(operator, peterMemberId), ["Bravo only"]);
+    await request(app)
+      .get(memberPackagesUrl(peterMemberId, `/${bravoPackage}/atak`))
+      .set("Cookie", operator.cookie)
+      .expect(200);
+    await request(app)
+      .get(memberPackagesUrl(annaMemberId, `/${bravoPackage}/atak`))
+      .set("Cookie", operator.cookie)
+      .expect(404);
+    const audit = await database.auditEvent.findFirstOrThrow({ where: { action: "data-package.downloaded" } });
+    assert.equal(audit.actorId, operator.id);
+    assert.equal((audit.metadata as { onBehalf: boolean; memberId: string }).memberId, peterMemberId);
+    assert.equal((audit.metadata as { onBehalf: boolean }).onBehalf, true);
+  });
+
   void it("hides everything while the event is not active", async () => {
     await createPackage("Everyone", null);
     await database.event.update({ where: { id: eventId }, data: { status: "archived" } });
