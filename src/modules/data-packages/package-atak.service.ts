@@ -68,7 +68,8 @@ async function storeContents(contents: ArchiveContent): Promise<StoredPackageCon
         size: content.bytes.length,
         mediaType: content.mediaType,
         kind: content.kind,
-        name: content.name,
+        // Rubber sheets carry a readable name in their KML; other files keep their file name.
+        name: content.rubberSheet?.name ?? content.name,
         archivePath: content.path,
         metadata: content.rubberSheet === undefined ? null : { rubberSheet: { ...content.rubberSheet } },
       });

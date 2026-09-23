@@ -1,10 +1,30 @@
 import { Readable } from "node:stream";
-import { Controller, Get, Path, Produces, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Path,
+  Produces,
+  Put,
+  Request,
+  Response,
+  Route,
+  Security,
+  SuccessResponse,
+  Tags,
+} from "tsoa";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import type { PackageContentDto } from "./package-content.dto.js";
-import { listPackageContents, offlineMapTile, rubberSheetImageOf } from "./package-content.service.js";
+import type { PackageContentDto, UpdatePackageContentRequest } from "./package-content.dto.js";
+import {
+  deletePackageContent,
+  listPackageContents,
+  offlineMapTile,
+  rubberSheetImageOf,
+  updatePackageContent,
+} from "./package-content.service.js";
 
 /** ATAK map content of a data package's draft. Requires `data-packages.read`. */
 @Route("events/{eventId}/data-packages/{packageId}/contents")
@@ -66,5 +86,37 @@ export class PackageContentController extends Controller {
     const { bytes, mediaType } = await rubberSheetImageOf(requestContext(request).principal, eventId, packageId, contentId);
     this.setHeader("Content-Type", mediaType);
     return Readable.from([Buffer.from(bytes)]);
+  }
+
+  /**
+   * Renames, moves to another layer, shows/hides or changes the opacity of map content in the
+   * draft. Requires `data-packages.edit` and the current `version`.
+   */
+  @Put("{contentId}")
+  @SuccessResponse(200, "Map content updated")
+  @Response<ProblemDetails>(409, "Version conflict, layer locked or event archived")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async updatePackageContent(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Path() packageId: Uuid,
+    @Path() contentId: Uuid,
+    @Body() body: UpdatePackageContentRequest,
+  ): Promise<PackageContentDto> {
+    return updatePackageContent(requestContext(request), eventId, packageId, contentId, body);
+  }
+
+  /** Removes map content from the draft; published revisions keep it. Requires `data-packages.edit`. */
+  @Delete("{contentId}")
+  @SuccessResponse(204, "Map content removed")
+  @Response<ProblemDetails>(409, "Layer locked or event archived")
+  public async deletePackageContent(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Path() packageId: Uuid,
+    @Path() contentId: Uuid,
+  ): Promise<void> {
+    await deletePackageContent(requestContext(request), eventId, packageId, contentId);
+    this.setStatus(204);
   }
 }

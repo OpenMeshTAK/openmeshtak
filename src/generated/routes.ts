@@ -1711,6 +1711,21 @@ const models: TsoaRoute.Models = {
             "size": {"dataType":"double","required":true},
             "rubberSheet": {"dataType":"union","subSchemas":[{"ref":"RubberSheetDto"},{"dataType":"enum","enums":[null]}],"required":true},
             "offlineMap": {"dataType":"union","subSchemas":[{"ref":"OfflineMapDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "visible": {"dataType":"boolean","required":true},
+            "opacity": {"dataType":"double","required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdatePackageContentRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":200}}},
+            "layerId": {"dataType":"string","required":true},
+            "visible": {"dataType":"boolean","required":true},
+            "opacity": {"dataType":"double","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":1}}},
         },
         "additionalProperties": false,
     },
@@ -4999,6 +5014,75 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageContentController_updatePackageContent: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                contentId: {"in":"path","name":"contentId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageContentRequest"},
+        };
+        app.put('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.updatePackageContent)),
+
+            async function PackageContentController_updatePackageContent(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageContentController_updatePackageContent, request, response });
+
+                const controller = new PackageContentController();
+
+              await templateService.apiHandler({
+                methodName: 'updatePackageContent',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageContentController_deletePackageContent: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                contentId: {"in":"path","name":"contentId","required":true,"ref":"Uuid"},
+        };
+        app.delete('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.deletePackageContent)),
+
+            async function PackageContentController_deletePackageContent(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageContentController_deletePackageContent, request, response });
+
+                const controller = new PackageContentController();
+
+              await templateService.apiHandler({
+                methodName: 'deletePackageContent',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
               });
             } catch (err) {
                 return next(err);

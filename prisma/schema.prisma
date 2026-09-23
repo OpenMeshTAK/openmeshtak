@@ -514,6 +514,11 @@ model PackageContent {
   archivePath String
   /// Kind-specific display data, such as a rubber sheet's corners; never needed to export.
   metadata    Json?
+  /// Editor display only, like layer visibility; the exported file is always unchanged.
+  visible     Boolean      @default(true)
+  /// Editor display opacity from 0 to 1.
+  opacity     Float        @default(1)
+  version     Int          @default(1)
   dataPackage DataPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
   layer       PackageLayer @relation(fields: [layerId], references: [id], onDelete: Cascade)
   blob        StorageBlob  @relation(fields: [blobId], references: [id], onDelete: Restrict)

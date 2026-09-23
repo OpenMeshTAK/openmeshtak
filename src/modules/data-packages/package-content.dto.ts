@@ -29,4 +29,31 @@ export interface PackageContentDto {
   rubberSheet: RubberSheetDto | null;
   /** Tile range for display; only for offline maps that could be read. */
   offlineMap: OfflineMapDto | null;
+  /** Editor display only; the exported file is always unchanged. */
+  visible: boolean;
+  /** Editor display opacity from 0 to 1. */
+  opacity: number;
+  /** Optimistic-concurrency version; send it back unchanged with updates. */
+  version: number;
+}
+
+export interface UpdatePackageContentRequest {
+  /**
+   * @isInt
+   * @minimum 1
+   */
+  version: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /** Moves the content to another layer of the same package. */
+  layerId: string;
+  visible: boolean;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  opacity: number;
 }

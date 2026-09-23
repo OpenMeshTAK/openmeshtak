@@ -256,4 +256,47 @@ void describe("map content in data packages", () => {
       await request(app).get(`${target.url}/contents/${content.id}/tiles/13/4365/2692`).set("Cookie", admin.cookie).expect(404);
     }
   });
+
+  void it("renames, moves, hides and removes map content in the draft", async () => {
+    const target = await createPackage("Maps");
+    await importZip(target, packageZip({ "maps/topo.sqlite": topo })).expect(200);
+    const second = (await request(app).post(`${target.url}/layers`).set("Cookie", admin.cookie).send({ name: "Maps" }).expect(201))
+      .body as { id: string; version: number };
+    type Content = { id: string; name: string; layerId: string; visible: boolean; opacity: number; version: number };
+    const [content] = (await request(app).get(`${target.url}/contents`).set("Cookie", admin.cookie).expect(200)).body as Content[];
+    assert.ok(content);
+    assert.deepEqual([content.name, content.visible, content.opacity, content.version], ["topo.sqlite", true, 1, 1]);
+
+    const updated = (
+      await request(app)
+        .put(`${target.url}/contents/${content.id}`)
+        .set("Cookie", admin.cookie)
+        .send({ version: 1, name: "Topographic map", layerId: second.id, visible: false, opacity: 0.6 })
+        .expect(200)
+    ).body as Content;
+    assert.deepEqual([updated.name, updated.layerId, updated.visible, updated.opacity, updated.version], ["Topographic map", second.id, false, 0.6, 2]);
+
+    await request(app)
+      .put(`${target.url}/contents/${content.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ version: 1, name: "Stale", layerId: second.id, visible: true, opacity: 1 })
+      .expect(409);
+
+    await request(app).put(`${target.url}/layers/${second.id}`).set("Cookie", admin.cookie)
+      .send({ version: second.version, name: "Maps", sortOrder: 1, visible: true, locked: true }).expect(200);
+    await request(app).delete(`${target.url}/contents/${content.id}`).set("Cookie", admin.cookie).expect(409);
+    const shown = await request(app)
+      .put(`${target.url}/contents/${content.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ version: 2, name: "Topographic map", layerId: second.id, visible: true, opacity: 0.6 })
+      .expect(200);
+    assert.equal((shown.body as Content).visible, true, "display settings stay editable in locked layers");
+
+    const layer = (await request(app).get(`${target.url}/layers`).set("Cookie", admin.cookie)).body as { items: Array<{ id: string; version: number }> };
+    const locked = layer.items.find(({ id }) => id === second.id)!;
+    await request(app).put(`${target.url}/layers/${second.id}`).set("Cookie", admin.cookie)
+      .send({ version: locked.version, name: "Maps", sortOrder: 1, visible: true, locked: false }).expect(200);
+    await request(app).delete(`${target.url}/contents/${content.id}`).set("Cookie", admin.cookie).expect(204);
+    assert.equal(await database.storageBlob.count(), 0, "nothing else used the file");
+  });
 });
