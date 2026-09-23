@@ -19,12 +19,19 @@ const commonField = {
 /** `managedBy` marks values Core resolves per member; profile data can never make them editable. */
 const managedBy = z.literal("openmeshtak").optional();
 
+/**
+ * `secret` marks write-only values such as passwords: encrypted at rest, never returned and
+ * written only into the member's own device profile. They have no default.
+ */
+const secret = z.literal(true).optional();
+
 const stringField = z.strictObject({
   ...commonField,
   type: z.literal("string"),
   maxBytes: z.number().int().positive(),
   default: z.string().optional(),
   managedBy,
+  secret,
 });
 
 const integerField = z.strictObject({
@@ -34,6 +41,7 @@ const integerField = z.strictObject({
   max: z.number().int(),
   default: z.number().int().optional(),
   managedBy,
+  secret,
 });
 
 const numberField = z.strictObject({

@@ -24,6 +24,8 @@ export interface FirmwareFieldDto {
   since: string;
   /** Resolved per member by OpenMeshTak and never editable. */
   managed: boolean;
+  /** Write-only: set through the secrets endpoint and never returned. Has no default. */
+  secret: boolean;
   maxBytes?: number;
   min?: number;
   max?: number;

@@ -1,7 +1,7 @@
 import { eventAccessFor, forbidden } from "../../shared/auth/permission-check.js";
 import type { Principal } from "../../shared/auth/principal.js";
 import { notFoundProblem } from "../../shared/errors/problem-error.js";
-import type { LoadedFirmwareField, LoadedFirmwareProfile } from "./firmware-profile-loader.js";
+import { isSecretField, type LoadedFirmwareField, type LoadedFirmwareProfile } from "./firmware-profile-loader.js";
 import type {
   FirmwareFieldDto,
   FirmwareProfileDto,
@@ -48,6 +48,7 @@ function toFieldDto({ key, definition, since }: LoadedFirmwareField): FirmwareFi
     label: definition.label,
     since: formatFirmwareVersion(since),
     managed: definition.managedBy !== undefined,
+    secret: isSecretField({ definition }),
     ...Object.fromEntries(Object.entries(optional).filter(([, value]) => value !== undefined)),
   };
 }

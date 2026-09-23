@@ -21,6 +21,8 @@ export interface MeshtasticConfigurationDto {
   /** `false` when no tested patch reaches the effective minimum version. */
   verified: boolean;
   settings: FirmwareSettingsDocument;
+  /** Keys of secret fields that hold a value. The values themselves are never returned. */
+  secretsSet: string[];
   /** Why the stored configuration is not valid for this Core release; empty when it is. */
   problems: ConfigurationProblemDto[];
   /** Optimistic-concurrency version; 0 until the configuration is first saved. */
@@ -38,6 +40,22 @@ export interface UpdateMeshtasticSettingsRequest {
   version: number;
   /** Complete or partial document; missing fields take the profile default. */
   settings: FirmwareSettingsDocument;
+}
+
+/** Values of write-only secret fields; `null` clears a value. */
+export interface SecretSettingsChanges {
+  [key: string]: string | number | null;
+}
+
+export interface UpdateMeshtasticSecretsRequest {
+  /**
+   * Version the client last read.
+   * @isInt
+   * @minimum 0
+   */
+  version: number;
+  /** Only the secrets to change; others keep their value. */
+  secrets: SecretSettingsChanges;
 }
 
 export interface PreviewFirmwareChangeRequest {

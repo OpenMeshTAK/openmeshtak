@@ -97,6 +97,11 @@ void describe("Meshtastic device profiles", () => {
       .set("Cookie", admin.cookie)
       .send({ version: 0, settings: { "config.lora.hopLimit": 5, "config.lora.region": "EU_868", "config.device.role": "TAK" } })
       .expect(200);
+    await request(app)
+      .put(`/api/v1/events/${eventId}/meshtastic/configuration/secrets`)
+      .set("Cookie", admin.cookie)
+      .send({ version: 1, secrets: { "config.network.wifiPsk": "event-wifi-secret" } })
+      .expect(200);
     await request(app).post(`/api/v1/events/${eventId}/activate`).set("Cookie", admin.cookie).send({ version: 1 }).expect(200);
   });
 
@@ -115,6 +120,7 @@ void describe("Meshtastic device profiles", () => {
     assert.equal(profile.config?.lora?.usePreset, true);
     assert.equal(profile.config?.device?.role, 7, "TAK role");
     assert.equal(profile.config?.security?.privateKey.length, 0, "never a device private key");
+    assert.equal(profile.config?.network?.wifiPsk, "event-wifi-secret", "secrets only in the member's file");
     assert.deepEqual(channelNames(profile.channelUrl), ["Event", "Bravo"]);
     assert.equal(profile.moduleConfig?.tak?.team, 10, "Cyan from the group");
     assert.equal(profile.moduleConfig?.tak?.role, 1, "Team Member from the group");
@@ -137,6 +143,7 @@ void describe("Meshtastic device profiles", () => {
     assert.ok(actions.includes("meshtastic-channel.handout-delivered"));
     const audits = JSON.stringify(await database.auditEvent.findMany());
     assert.equal(audits.includes(commandKey.toString("base64")), false);
+    assert.equal(audits.includes("event-wifi-secret"), false);
   });
 
   void it("serves the file only to the member themself or an on-behalf operator", async () => {

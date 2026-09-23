@@ -505,6 +505,7 @@ const models: TsoaRoute.Models = {
             "unit": {"dataType":"string"},
             "since": {"dataType":"string","required":true},
             "managed": {"dataType":"boolean","required":true},
+            "secret": {"dataType":"boolean","required":true},
             "maxBytes": {"dataType":"double"},
             "min": {"dataType":"double"},
             "max": {"dataType":"double"},
@@ -573,6 +574,7 @@ const models: TsoaRoute.Models = {
             "profileId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "verified": {"dataType":"boolean","required":true},
             "settings": {"ref":"FirmwareSettingsDocument","required":true},
+            "secretsSet": {"dataType":"array","array":{"dataType":"string"},"required":true},
             "problems": {"dataType":"array","array":{"dataType":"refObject","ref":"ConfigurationProblemDto"},"required":true},
             "version": {"dataType":"double","required":true},
             "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
@@ -585,6 +587,22 @@ const models: TsoaRoute.Models = {
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
             "settings": {"ref":"FirmwareSettingsDocument","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SecretSettingsChanges": {
+        "dataType": "refObject",
+        "properties": {
+        },
+        "additionalProperties": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"},{"dataType":"enum","enums":[null]}]},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateMeshtasticSecretsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "secrets": {"ref":"SecretSettingsChanges","required":true},
         },
         "additionalProperties": false,
     },
@@ -2761,6 +2779,39 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'updateMeshtasticSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticConfigurationController_updateMeshtasticSecrets: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateMeshtasticSecretsRequest"},
+        };
+        app.put('/api/v1/events/:eventId/meshtastic/configuration/secrets',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.updateMeshtasticSecrets)),
+
+            async function MeshtasticConfigurationController_updateMeshtasticSecrets(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticConfigurationController_updateMeshtasticSecrets, request, response });
+
+                const controller = new MeshtasticConfigurationController();
+
+              await templateService.apiHandler({
+                methodName: 'updateMeshtasticSecrets',
                 controller,
                 response,
                 next,

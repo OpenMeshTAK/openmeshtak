@@ -15,18 +15,34 @@ import { formatFirmwareVersion, lineOf, parseFirmwareVersion } from "../meshtast
 import { loadMeshtasticConfiguration, type CurrentMeshtasticConfiguration } from "./current-configuration.js";
 import { isVerified, resolveEventFirmware, type EventFirmware } from "./event-firmware.js";
 import {
+  applySecretChanges,
+  keepSecretsFor,
   planFirmwareChange,
+  secretFields,
   validateSettings,
   type FirmwareChangeReport,
   type FirmwareSettings,
 } from "./firmware-settings.js";
+import { decryptSecretSettings, encryptSecretSettings } from "./secret-settings.js";
 import type {
   ChangeFirmwareRequest,
   FirmwareChangePreviewDto,
   MeshtasticConfigurationDto,
   PreviewFirmwareChangeRequest,
+  UpdateMeshtasticSecretsRequest,
   UpdateMeshtasticSettingsRequest,
 } from "./meshtastic-configuration.dto.js";
+
+/** Only which secrets are set leaves this module, never their values. */
+function setSecretKeys(eventId: string, current: CurrentMeshtasticConfiguration): string[] {
+  if (current.firmware === null) {
+    return [];
+  }
+  const secrets = decryptSecretSettings(eventId, current.secretsEnvelope);
+  return secretFields(current.firmware)
+    .map(({ key }) => key)
+    .filter((key) => Object.hasOwn(secrets, key));
+}
 
 function toDto(eventId: string, current: CurrentMeshtasticConfiguration): MeshtasticConfigurationDto {
   const { firmware } = current;
@@ -37,6 +53,7 @@ function toDto(eventId: string, current: CurrentMeshtasticConfiguration): Meshta
     profileId: firmware?.profile.file.id ?? null,
     verified: firmware !== null && isVerified(firmware),
     settings: current.settings,
+    secretsSet: setSecretKeys(eventId, current),
     problems: current.problems,
     version: current.version,
     updatedAt: current.updatedAt?.toISOString() ?? null,
@@ -59,7 +76,7 @@ async function storeConfiguration(
   transaction: Prisma.TransactionClient,
   eventId: string,
   expectedVersion: number,
-  data: { firmwareVersion: string; settings: FirmwareSettings },
+  data: { firmwareVersion: string; settings: FirmwareSettings; secretsEnvelope?: string | null },
 ): Promise<void> {
   if (expectedVersion === 0) {
     try {
@@ -128,6 +145,56 @@ export async function updateMeshtasticSettings(
   return toDto(eventId, await loadMeshtasticConfiguration(database, eventId));
 }
 
+/**
+ * Sets or clears write-only secrets such as the Wi-Fi password. Values are encrypted at rest,
+ * never returned and only written into members' own device profiles; the audit records keys only.
+ */
+export async function updateMeshtasticSecrets(
+  actor: ActorContext,
+  eventId: string,
+  input: UpdateMeshtasticSecretsRequest,
+): Promise<MeshtasticConfigurationDto> {
+  await requireMutableEvent(actor.principal, eventId);
+  const current = await loadMeshtasticConfiguration(database, eventId);
+  if (current.version !== input.version) {
+    throw versionConflictProblem(current.version);
+  }
+  const firmware = current.firmware ?? (await resolveOrReject(current.firmwareVersion));
+  const { secrets, problems } = applySecretChanges(
+    firmware,
+    decryptSecretSettings(eventId, current.secretsEnvelope),
+    input.secrets,
+  );
+  if (problems.length > 0) {
+    throw validationProblem(problems);
+  }
+
+  const changed = Object.keys(input.secrets);
+  await database.$transaction(async (transaction) => {
+    await storeConfiguration(transaction, eventId, input.version, {
+      firmwareVersion: current.firmwareVersion,
+      settings: current.settings,
+      secretsEnvelope: encryptSecretSettings(eventId, secrets),
+    });
+    await recordAudit(
+      {
+        actor: actor.principal,
+        action: "meshtastic-configuration.secrets-updated",
+        targetType: "event",
+        targetId: eventId,
+        result: "success",
+        traceId: actor.traceId,
+        metadata: {
+          set: changed.filter((key) => input.secrets[key] !== null),
+          cleared: changed.filter((key) => input.secrets[key] === null),
+        },
+      },
+      transaction,
+    );
+  });
+  return toDto(eventId, await loadMeshtasticConfiguration(database, eventId));
+}
+
 /** Raising only the minimum patch within a line adds fields and never drops a value. */
 function needsConfirmation(from: string, to: string): boolean {
   const before = parseFirmwareVersion(from);
@@ -153,11 +220,15 @@ function confirmationToken(
 async function planChange(eventId: string, firmwareVersion: string) {
   const current = await loadMeshtasticConfiguration(database, eventId);
   const next = await resolveOrReject(firmwareVersion);
-  const { report, settings } = planFirmwareChange(current.settings, next);
+  const planned = planFirmwareChange(current.settings, next);
+  const kept = keepSecretsFor(next, decryptSecretSettings(eventId, current.secretsEnvelope));
+  const settings = planned.settings;
+  const report = { ...planned.report, dropped: [...planned.report.dropped, ...kept.dropped] };
+  const secretsEnvelope = encryptSecretSettings(eventId, kept.secrets);
   const confirmation = needsConfirmation(current.firmwareVersion, next.recommended)
     ? confirmationToken(eventId, current.version, next.recommended, report)
     : null;
-  return { current, next, report, settings, confirmation };
+  return { current, next, report, settings, secretsEnvelope, confirmation };
 }
 
 export async function previewFirmwareChange(
@@ -196,7 +267,10 @@ export async function changeFirmware(
   input: ChangeFirmwareRequest,
 ): Promise<MeshtasticConfigurationDto> {
   await requireMutableEvent(actor.principal, eventId);
-  const { current, next, report, settings, confirmation } = await planChange(eventId, input.firmwareVersion);
+  const { current, next, report, settings, secretsEnvelope, confirmation } = await planChange(
+    eventId,
+    input.firmwareVersion,
+  );
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
   }
@@ -208,6 +282,7 @@ export async function changeFirmware(
     await storeConfiguration(transaction, eventId, input.version, {
       firmwareVersion: next.recommended,
       settings,
+      secretsEnvelope,
     });
     await recordAudit(
       {

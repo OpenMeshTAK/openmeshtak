@@ -24,6 +24,11 @@ export interface LoadedFirmwareField {
   descriptor: DescField;
 }
 
+/** Write-only fields such as passwords; see `secret` in the profile schema. */
+export function isSecretField({ definition }: Pick<LoadedFirmwareField, "definition">): boolean {
+  return "secret" in definition && definition.secret === true;
+}
+
 export interface FirmwareEnumValue {
   value: string;
   label: string;
@@ -116,7 +121,11 @@ function fieldProblems(
   if (field.managedBy !== undefined && !isManagedFieldKey(key)) {
     problems.push(`${where} is managed, but OpenMeshTak cannot resolve a value for it`);
   }
-  if (field.managedBy === undefined && (!("default" in field) || field.default === undefined)) {
+  const secret = "secret" in field && field.secret === true;
+  if (secret && (field.managedBy !== undefined || field.default !== undefined)) {
+    problems.push(`${where} is secret and can neither be managed nor have a default`);
+  }
+  if (!secret && field.managedBy === undefined && (!("default" in field) || field.default === undefined)) {
     problems.push(`${where} is editable and needs a default`);
   }
   if ((field.type === "integer" || field.type === "number") && field.min > field.max) {

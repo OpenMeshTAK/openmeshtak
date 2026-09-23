@@ -521,6 +521,15 @@
       "default": "RANDOM_PIN",
       "label": "Pairing mode"
     },
+    "config.bluetooth.fixedPin": {
+      "section": "bluetooth",
+      "type": "integer",
+      "min": 100000,
+      "max": 999999,
+      "secret": true,
+      "label": "Fixed PIN",
+      "description": "Six-digit pairing PIN used when the pairing mode is fixed PIN."
+    },
     "config.network.wifiEnabled": {
       "section": "network",
       "type": "boolean",
@@ -534,6 +543,13 @@
       "maxBytes": 32,
       "default": "",
       "label": "Wi-Fi network"
+    },
+    "config.network.wifiPsk": {
+      "section": "network",
+      "type": "string",
+      "maxBytes": 64,
+      "secret": true,
+      "label": "Wi-Fi password"
     },
     "config.network.ethEnabled": {
       "section": "network",
@@ -613,6 +629,14 @@
       "maxBytes": 63,
       "default": "meshdev",
       "label": "Username"
+    },
+    "moduleConfig.mqtt.password": {
+      "section": "mqtt",
+      "type": "string",
+      "maxBytes": 31,
+      "secret": true,
+      "label": "Password",
+      "description": "Leave unset to use the default password of the public server."
     },
     "moduleConfig.mqtt.root": {
       "section": "mqtt",

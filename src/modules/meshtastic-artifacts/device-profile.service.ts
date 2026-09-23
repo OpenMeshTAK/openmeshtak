@@ -8,10 +8,13 @@ import { latestConfigurationRevision } from "../event-configuration/configuratio
 import { parseConfigurationSnapshot } from "../event-configuration/configuration-snapshot.js";
 import { decryptChannelPsk } from "../meshtastic-channels/channel-psk.js";
 import { meshtasticChannelSetUrl } from "../meshtastic-channels/channel-url.js";
+import type { SecretSettings } from "../meshtastic-configuration/firmware-settings.js";
+import { decryptSecretSettings } from "../meshtastic-configuration/secret-settings.js";
 import { requireMemberArtifactAccess } from "../member-artifacts/member-artifact-access.js";
 import { findFirmwareProfile } from "../meshtastic-firmware/firmware-profiles.js";
 import {
   enumValues,
+  isSecretField,
   type LoadedFirmwareField,
   type LoadedFirmwareProfile,
 } from "../meshtastic-firmware/firmware-profile-loader.js";
@@ -109,16 +112,40 @@ function fileNameFor(callsign: string, line: string): string {
   return `${safe}-fw${line}.cfg`;
 }
 
+/**
+ * Secrets are read live, like channel keys, so a changed Wi-Fi password reaches the next download
+ * without a new publication. They never enter configuration snapshots.
+ */
+async function liveSecrets(eventId: string): Promise<SecretSettings> {
+  const row = await database.meshtasticConfiguration.findUnique({
+    where: { eventId },
+    select: { secretsEnvelope: true },
+  });
+  return decryptSecretSettings(eventId, row?.secretsEnvelope ?? null);
+}
+
+function fieldValue(
+  field: LoadedFirmwareField,
+  settings: Record<string, DeviceProfileValue>,
+  secrets: SecretSettings,
+  profile: ResolvedProfileDto,
+): DeviceProfileValue | null | undefined {
+  if (field.definition.managedBy !== undefined) {
+    return managedValue(field.key as ManagedFieldKey, profile);
+  }
+  return isSecretField(field) ? secrets[field.key] : settings[field.key];
+}
+
 function profileValues(
   firmware: LoadedFirmwareProfile,
   settings: Record<string, DeviceProfileValue>,
+  secrets: SecretSettings,
   profile: ResolvedProfileDto,
 ): Map<string, DeviceProfileValue> {
   const values = new Map<string, DeviceProfileValue>();
   for (const field of firmware.fields) {
     const { key, definition } = field;
-    const value =
-      definition.managedBy === undefined ? settings[key] : managedValue(key as ManagedFieldKey, profile);
+    const value = fieldValue(field, settings, secrets, profile);
     if (value === undefined || value === null) {
       continue;
     }
@@ -135,7 +162,7 @@ function auditEntries(
   actor: ActorContext,
   eventId: string,
   memberId: string,
-  context: { revisionNumber: number; profileId: string; artifactSha256: string; onBehalf: boolean },
+  context: { revisionNumber: number; profileId: string; artifactSha256: string; onBehalf: boolean; secretSettings: string[] },
   channels: Array<{ published: ProfileChannel; stored: MeshtasticChannel }>,
 ): AuditEntry[] {
   const handouts = channels
@@ -194,7 +221,8 @@ export async function generateDeviceProfile(
     return row === undefined ? [] : [{ published: channel, stored: row }];
   });
 
-  const values = profileValues(firmware, meshtastic.settings, profile);
+  const secrets = await liveSecrets(eventId);
+  const values = profileValues(firmware, meshtastic.settings, secrets, profile);
   if (channels.length > 0) {
     values.set(
       "channelUrl",
@@ -219,6 +247,8 @@ export async function generateDeviceProfile(
     profileId: firmware.file.id,
     artifactSha256: createHash("sha256").update(bytes).digest("hex"),
     onBehalf,
+    // Keys only: which secrets went into the file, never their values.
+    secretSettings: firmware.fields.filter((field) => isSecretField(field) && values.has(field.key)).map(({ key }) => key),
   };
   await database.$transaction(async (transaction) => {
     for (const entry of auditEntries(actor, eventId, memberId, context, channels)) {

@@ -22,6 +22,8 @@ export interface CurrentMeshtasticConfiguration {
    */
   settings: FirmwareSettings;
   problems: ProblemFieldError[];
+  /** Encrypted secret field values; decrypted only where a secret is changed or delivered. */
+  secretsEnvelope: string | null;
   /** 0 until the configuration is first saved. */
   version: number;
   updatedAt: Date | null;
@@ -35,7 +37,12 @@ export async function loadMeshtasticConfiguration(
   const profiles = await firmwareProfiles();
   const firmwareVersion = row?.firmwareVersion ?? (await defaultFirmwareProfile()).file.firmware.line;
   const resolved = resolveEventFirmware(profiles, firmwareVersion);
-  const base = { firmwareVersion, version: row?.version ?? 0, updatedAt: row?.updatedAt ?? null };
+  const base = {
+    firmwareVersion,
+    secretsEnvelope: row?.secretsEnvelope ?? null,
+    version: row?.version ?? 0,
+    updatedAt: row?.updatedAt ?? null,
+  };
 
   if (!resolved.ok) {
     return {

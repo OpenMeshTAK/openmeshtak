@@ -1,21 +1,30 @@
 import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
-import { enumValues, type LoadedFirmwareField } from "../meshtastic-firmware/firmware-profile-loader.js";
+import { enumValues, isSecretField, type LoadedFirmwareField } from "../meshtastic-firmware/firmware-profile-loader.js";
 import { compareFirmwareVersions } from "../meshtastic-firmware/firmware-version.js";
 import type { EventFirmware } from "./event-firmware.js";
 
 /** Values of the editable profile fields, keyed by field key. */
 export type FirmwareSettings = Record<string, string | number | boolean>;
 
-/**
- * Fields an administrator may set for this event: editable fields that already exist in the
- * effective minimum version. Server-managed fields never appear in the settings document.
- */
-export function editableFields(firmware: EventFirmware): LoadedFirmwareField[] {
+function availableUnmanagedFields(firmware: EventFirmware): LoadedFirmwareField[] {
   return firmware.profile.fields.filter(
     ({ definition, since }) =>
-      definition.managedBy === undefined &&
-      compareFirmwareVersions(since, firmware.effectiveMinimum) <= 0,
+      definition.managedBy === undefined && compareFirmwareVersions(since, firmware.effectiveMinimum) <= 0,
   );
+}
+
+/**
+ * Fields an administrator may set for this event in the settings document: editable fields that
+ * already exist in the effective minimum version. Server-managed and secret fields never appear
+ * in the settings document.
+ */
+export function editableFields(firmware: EventFirmware): LoadedFirmwareField[] {
+  return availableUnmanagedFields(firmware).filter((field) => !isSecretField(field));
+}
+
+/** Write-only fields available for the event's firmware, stored apart from the settings. */
+export function secretFields(firmware: EventFirmware): LoadedFirmwareField[] {
+  return availableUnmanagedFields(firmware).filter(isSecretField);
 }
 
 function defaultOf({ definition }: LoadedFirmwareField): string | number | boolean {
@@ -126,4 +135,56 @@ export function planFirmwareChange(
   }
   report.dropped = Object.keys(current).filter((key) => !nextKeys.has(key));
   return { report, settings };
+}
+
+/** Values of write-only secret fields, keyed by field key. */
+export type SecretSettings = Record<string, string | number>;
+
+/**
+ * Applies a partial secrets update: `null` clears a value, other values replace it after the
+ * same profile checks as normal settings. Keys must be secret fields of the event's firmware.
+ */
+export function applySecretChanges(
+  firmware: EventFirmware,
+  current: SecretSettings,
+  changes: Record<string, unknown>,
+): { secrets: SecretSettings; problems: ProblemFieldError[] } {
+  const byKey = new Map(secretFields(firmware).map((field) => [field.key, field]));
+  const secrets: SecretSettings = { ...current };
+  const problems: ProblemFieldError[] = [];
+  for (const [key, value] of Object.entries(changes)) {
+    const field = byKey.get(key);
+    if (field === undefined) {
+      problems.push({ field: `secrets.${key}`, code: "UNKNOWN_SECRET", message: "This secret does not exist for the event's firmware version." });
+    } else if (value === null) {
+      delete secrets[key];
+    } else {
+      const message = valueProblem(field, value, enumLookup(firmware));
+      if (message === null) {
+        secrets[key] = value as string | number;
+      } else {
+        problems.push({ field: `secrets.${key}`, code: "INVALID_SECRET", message });
+      }
+    }
+  }
+  return { secrets, problems };
+}
+
+/** Secrets that still fit a firmware; the others are dropped with a firmware change. */
+export function keepSecretsFor(
+  firmware: EventFirmware,
+  current: SecretSettings,
+): { secrets: SecretSettings; dropped: string[] } {
+  const byKey = new Map(secretFields(firmware).map((field) => [field.key, field]));
+  const secrets: SecretSettings = {};
+  const dropped: string[] = [];
+  for (const [key, value] of Object.entries(current)) {
+    const field = byKey.get(key);
+    if (field !== undefined && valueProblem(field, value, enumLookup(firmware)) === null) {
+      secrets[key] = value;
+    } else {
+      dropped.push(key);
+    }
+  }
+  return { secrets, dropped };
 }

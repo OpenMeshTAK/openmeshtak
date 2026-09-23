@@ -44,6 +44,10 @@ function saveSettings(version: number, settings: Record<string, unknown>): reque
   return request(app).put(url("/settings")).set("Cookie", admin.cookie).send({ version, settings });
 }
 
+function saveSecrets(version: number, secrets: Record<string, unknown>): request.Test {
+  return request(app).put(url("/secrets")).set("Cookie", admin.cookie).send({ version, secrets });
+}
+
 function preview(firmwareVersion: string): request.Test {
   return request(app).post(url("/firmware/preview")).set("Cookie", admin.cookie).send({ firmwareVersion });
 }
@@ -122,6 +126,46 @@ void describe("event Meshtastic configuration", () => {
     assert.equal(changed.profileId, "meshtastic-test-9.9");
     assert.equal(changed.verified, false);
     assert.deepEqual(changed.settings, { "config.lora.region": "EU_868", "config.lora.hopLimit": 6 });
+  });
+
+  void it("keeps secret fields write-only and encrypted at rest", async () => {
+    const wifiPassword = "correct-horse-battery";
+    const saved = (
+      await saveSecrets(0, { "config.network.wifiPsk": wifiPassword, "config.bluetooth.fixedPin": 482913 }).expect(200)
+    ).body as ConfigurationBody & { secretsSet: string[] };
+    assert.deepEqual(saved.secretsSet.sort(), ["config.bluetooth.fixedPin", "config.network.wifiPsk"]);
+    assert.equal(JSON.stringify(saved).includes(wifiPassword), false);
+    assert.equal("config.network.wifiPsk" in saved.settings, false);
+
+    const row = await database.meshtasticConfiguration.findUniqueOrThrow({ where: { eventId } });
+    const audits = await database.auditEvent.findMany();
+    for (const stored of [JSON.stringify(row), JSON.stringify(audits)]) {
+      assert.equal(stored.includes(wifiPassword), false);
+      assert.equal(stored.includes("482913"), false);
+    }
+
+    const invalid = await saveSecrets(1, { "config.bluetooth.fixedPin": 12, "config.lora.hopLimit": 3 }).expect(422);
+    assert.deepEqual(
+      (invalid.body as ProblemBody).errors?.map(({ field, code }) => `${field}:${code}`).sort(),
+      ["secrets.config.bluetooth.fixedPin:INVALID_SECRET", "secrets.config.lora.hopLimit:UNKNOWN_SECRET"],
+    );
+    const viaSettings = await saveSettings(1, { "config.network.wifiPsk": "x" }).expect(422);
+    assert.equal((viaSettings.body as ProblemBody).errors?.[0]?.code, "UNKNOWN_SETTING");
+
+    const cleared = (await saveSecrets(1, { "config.bluetooth.fixedPin": null }).expect(200)).body as { secretsSet: string[] };
+    assert.deepEqual(cleared.secretsSet, ["config.network.wifiPsk"]);
+  });
+
+  void it("drops secrets the new firmware does not have and reports them", async () => {
+    await saveSecrets(0, { "config.network.wifiPsk": "correct-horse-battery" }).expect(200);
+    const plan = (await preview("9.9").expect(200)).body as PreviewBody;
+    assert.ok(plan.report.dropped.includes("config.network.wifiPsk"));
+    const changed = (
+      await changeFirmware({ version: 1, firmwareVersion: "9.9", confirmation: plan.confirmation }).expect(200)
+    ).body as { secretsSet: string[] };
+    assert.deepEqual(changed.secretsSet, []);
+    const row = await database.meshtasticConfiguration.findUniqueOrThrow({ where: { eventId } });
+    assert.equal(row.secretsEnvelope, null);
   });
 
   void it("raises the minimum patch directly and unlocks fields added in that patch", async () => {

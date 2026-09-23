@@ -629,6 +629,9 @@ model MeshtasticConfiguration {
   firmwareVersion String
   /// Values of the profile's editable fields, keyed by field key and validated on every write.
   settings        Json
+  /// Write-only secret field values (Wi-Fi password, MQTT password, ...) as one encrypted JSON
+  /// envelope bound to the event. Never part of settings, snapshots or normal responses.
+  secretsEnvelope String?
   version         Int      @default(1)
   event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())

@@ -20,12 +20,14 @@ import type {
   FirmwareChangePreviewDto,
   MeshtasticConfigurationDto,
   PreviewFirmwareChangeRequest,
+  UpdateMeshtasticSecretsRequest,
   UpdateMeshtasticSettingsRequest,
 } from "./meshtastic-configuration.dto.js";
 import {
   changeFirmware,
   getMeshtasticConfiguration,
   previewFirmwareChange,
+  updateMeshtasticSecrets,
   updateMeshtasticSettings,
 } from "./meshtastic-configuration.service.js";
 
@@ -62,6 +64,23 @@ export class MeshtasticConfigurationController extends Controller {
     @Body() body: UpdateMeshtasticSettingsRequest,
   ): Promise<MeshtasticConfigurationDto> {
     return updateMeshtasticSettings(requestContext(request), eventId, body);
+  }
+
+  /**
+   * Sets or clears write-only secrets such as the Wi-Fi or MQTT password. Values are never
+   * returned; `secretsSet` only says which secrets hold a value. Requires the current `version`.
+   */
+  @Put("secrets")
+  @SuccessResponse(200, "Secrets updated")
+  @Response<ProblemDetails>(403, "Access denied")
+  @Response<ProblemDetails>(409, "Version conflict or event archived")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async updateMeshtasticSecrets(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Body() body: UpdateMeshtasticSecretsRequest,
+  ): Promise<MeshtasticConfigurationDto> {
+    return updateMeshtasticSecrets(requestContext(request), eventId, body);
   }
 
   /** Reports which settings a firmware change would keep, drop, invalidate or add. */
