@@ -126,6 +126,26 @@ void describe("Meshtastic device profiles", () => {
     assert.equal(profile.moduleConfig?.tak?.role, 1, "Team Member from the group");
   });
 
+  void it("lets an event role override the group's TAK role after publishing", async () => {
+    const created = await request(app)
+      .post(`/api/v1/events/${eventId}/roles`)
+      .set("Cookie", admin.cookie)
+      .send({ name: "Platoon leader", slug: "platoon-leader", takRoleOverride: "Team Lead" })
+      .expect(201);
+    assert.equal((created.body as { takRoleOverride: string }).takRoleOverride, "Team Lead");
+    await database.eventMember.update({
+      where: { id: holderMemberId },
+      data: { eventRoleId: (created.body as { id: string }).id },
+    });
+    await request(app).post(`/api/v1/events/${eventId}/configuration-revisions`).set("Cookie", admin.cookie).expect(200);
+
+    const { profile } = await download(holder, holderMemberId);
+    assert.equal(profile.moduleConfig?.tak?.role, 2, "Team Lead from the event role");
+    assert.equal(profile.moduleConfig?.tak?.team, 10, "still the group's team color");
+    const other = await download(member, memberId);
+    assert.equal(other.profile.moduleConfig?.tak?.role, 1, "other roles keep the group's TAK role");
+  });
+
   void it("refuses callsigns longer than a device profile allows", async () => {
     await database.eventMember.update({ where: { id: memberId }, data: { callsign: "Peter with a very long callsign" } });
     const response = await request(app).get(deviceProfileUrl(memberId)).set("Cookie", member.cookie).expect(409);

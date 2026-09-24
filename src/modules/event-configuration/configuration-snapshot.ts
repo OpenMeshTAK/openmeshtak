@@ -1,3 +1,4 @@
+import type { TakRole } from "../event-groups/provisioning-values.js";
 import { createHash } from "node:crypto";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { toGroupProvisioning, type GroupProvisioning } from "../event-groups/group-provisioning.js";
@@ -13,6 +14,8 @@ export interface SnapshotRole {
   id: string;
   slug: string;
   name: string;
+  /** `null` when the role keeps the group's TAK role, and in revisions before version 5. */
+  takRoleOverride: TakRole | null;
 }
 
 export interface SnapshotGroup {
@@ -60,7 +63,7 @@ export type SnapshotTak = CurrentTakConfiguration;
  * added `meshtastic`; version 4 added `tak`.
  */
 export interface ConfigurationSnapshot {
-  schemaVersion: 1 | 2 | 3 | 4;
+  schemaVersion: 1 | 2 | 3 | 4 | 5;
   roles: SnapshotRole[];
   groups: SnapshotGroup[];
   channels: SnapshotChannel[];
@@ -81,7 +84,7 @@ export async function buildConfigurationSnapshot(
     transaction.eventRole.findMany({
       where: { eventId },
       orderBy: { slug: "asc" },
-      select: { id: true, slug: true, name: true },
+      select: { id: true, slug: true, name: true, takRoleOverride: true },
     }),
     transaction.eventGroup.findMany({ where: { eventId }, orderBy: { slug: "asc" } }),
     transaction.meshtasticChannel.findMany({
@@ -95,8 +98,8 @@ export async function buildConfigurationSnapshot(
   const { firmware } = meshtastic;
 
   return {
-    schemaVersion: 4,
-    roles,
+    schemaVersion: 5,
+    roles: roles.map((role) => ({ ...role, takRoleOverride: role.takRoleOverride as TakRole | null })),
     groups: groups.map((group) => ({
       id: group.id,
       slug: group.slug,
@@ -146,6 +149,7 @@ export function parseConfigurationSnapshot(value: Prisma.JsonValue): Configurati
   };
   return {
     ...snapshot,
+    roles: snapshot.roles.map((role) => ({ ...role, takRoleOverride: role.takRoleOverride ?? null })),
     channels: snapshot.channels ?? [],
     meshtastic: snapshot.meshtastic ?? null,
     tak: snapshot.tak ?? null,

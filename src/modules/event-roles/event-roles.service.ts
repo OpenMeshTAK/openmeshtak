@@ -17,6 +17,7 @@ import {
   decodeCursor,
   toPage,
 } from "../../shared/pagination/cursor.js";
+import type { TakRole } from "../event-groups/provisioning-values.js";
 import { requireMutableEvent, requireReadableEvent } from "../events/event-access.js";
 import type {
   CreateEventRoleRequest,
@@ -32,6 +33,7 @@ function toDto(row: EventRole): EventRoleDto {
     name: row.name,
     slug: row.slug,
     description: row.description,
+    takRoleOverride: row.takRoleOverride as TakRole | null,
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -108,6 +110,7 @@ export async function createEventRole(
             name: input.name,
             slug: input.slug,
             description: input.description ?? null,
+            takRoleOverride: input.takRoleOverride ?? null,
           },
         });
         await recordAudit(audit(actor, "event-role.created", row), transaction);
@@ -139,6 +142,7 @@ export async function updateEventRole(
           name: input.name,
           slug: input.slug,
           description: input.description,
+          ...(input.takRoleOverride === undefined ? {} : { takRoleOverride: input.takRoleOverride }),
           version: { increment: 1 },
         },
       });

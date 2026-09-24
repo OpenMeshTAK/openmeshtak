@@ -2381,6 +2381,15 @@
 						"type": "string",
 						"nullable": true
 					},
+					"takRoleOverride": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakRole"
+							}
+						],
+						"nullable": true,
+						"description": "ATAK role for members of this role, replacing their event group's default TAK role, e.g.\n`Team Lead` for platoon leaders. `null` keeps the group's role."
+					},
 					"version": {
 						"type": "number",
 						"format": "double",
@@ -2401,6 +2410,7 @@
 					"name",
 					"slug",
 					"description",
+					"takRoleOverride",
 					"version",
 					"createdAt",
 					"updatedAt"
@@ -2441,6 +2451,14 @@
 						"type": "string",
 						"nullable": true,
 						"maxLength": 500
+					},
+					"takRoleOverride": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakRole"
+							}
+						],
+						"nullable": true
 					}
 				},
 				"required": [
@@ -2470,6 +2488,15 @@
 						"type": "string",
 						"nullable": true,
 						"maxLength": 500
+					},
+					"takRoleOverride": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakRole"
+							}
+						],
+						"nullable": true,
+						"description": "Omit to keep the current override; `null` removes it."
 					}
 				},
 				"required": [
@@ -3136,12 +3163,22 @@
 					},
 					"name": {
 						"type": "string"
+					},
+					"takRoleOverride": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakRole"
+							}
+						],
+						"nullable": true,
+						"description": "`null` when the role keeps the group's TAK role, and in revisions before version 5."
 					}
 				},
 				"required": [
 					"id",
 					"slug",
-					"name"
+					"name",
+					"takRoleOverride"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -3276,7 +3313,8 @@
 							1,
 							2,
 							3,
-							4
+							4,
+							5
 						]
 					},
 					"roles": {

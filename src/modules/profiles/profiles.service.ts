@@ -160,7 +160,7 @@ async function loadMemberProfile(
 
   const profile = resolveProfile({
     member,
-    role: { slug: role.slug, name: role.name },
+    role: { slug: role.slug, name: role.name, takRoleOverride: role.takRoleOverride },
     group,
     channels: snapshot.channels,
     liveChannels: await liveChannelStates(eventId),

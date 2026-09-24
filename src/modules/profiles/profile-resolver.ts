@@ -3,6 +3,7 @@ import type {
   SnapshotGroup,
   SnapshotTak,
 } from "../event-configuration/configuration-snapshot.js";
+import type { TakRole } from "../event-groups/provisioning-values.js";
 import { shortNameFor } from "../event-members/member-identity.js";
 import { resolveTakConnection } from "./profile-tak.js";
 import { resolveProfileChannels, type LiveChannelState } from "./profile-channels.js";
@@ -21,7 +22,7 @@ export interface ProfileMember {
 
 export interface ProfileInputs {
   member: ProfileMember;
-  role: ProfileAssignment;
+  role: ProfileAssignment & { takRoleOverride: TakRole | null };
   group: SnapshotGroup;
   channels: SnapshotChannel[];
   liveChannels: ReadonlyMap<string, LiveChannelState>;
@@ -35,7 +36,8 @@ export interface ProfileInputs {
  * and tests can rely on identical output for identical inputs.
  *
  * Callsign and short-name number are member identity and come from the member record; every other
- * setting comes from the group as captured in the configuration revision.
+ * setting comes from the group as captured in the configuration revision, except that the event
+ * role may override the TAK role.
  */
 export function resolveProfile({
   member,
@@ -62,12 +64,12 @@ export function resolveProfile({
     configurationRevision: revision,
     username: member.username,
     callsign: member.callsign,
-    eventRole: role,
+    eventRole: { slug: role.slug, name: role.name },
     group: { slug: group.slug, name: group.name },
     tak: {
       callsign: member.callsign,
       team: provisioning.tak.team,
-      role: provisioning.tak.role,
+      role: role.takRoleOverride ?? provisioning.tak.role,
       serverGroups: provisioning.tak.serverGroups,
       connection: resolveTakConnection(tak, memberChannels),
     },

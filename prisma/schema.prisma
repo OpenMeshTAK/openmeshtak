@@ -274,6 +274,8 @@ model EventRole {
   name              String
   slug              String
   description       String?
+  /// Optional ATAK role that replaces the event group's default TAK role for members of this role.
+  takRoleOverride   String?
   version           Int                         @default(1)
   event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   members           EventMember[]

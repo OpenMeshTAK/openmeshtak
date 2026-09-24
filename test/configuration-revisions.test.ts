@@ -98,7 +98,7 @@ void describe("event configuration revisions", () => {
     const detail = (
       await request(app).get(url(`/configuration-revisions/${id}`)).set("Cookie", admin.cookie).expect(200)
     ).body as RevisionBody;
-    assert.equal(detail.snapshot.schemaVersion, 4);
+    assert.equal(detail.snapshot.schemaVersion, 5);
     assert.deepEqual(detail.snapshot.roles.map(({ slug }) => slug), ["participant"]);
     assert.equal(detail.snapshot.groups[0]?.provisioning.tak.team, "Cyan");
   });
