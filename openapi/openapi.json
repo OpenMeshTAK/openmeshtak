@@ -161,6 +161,7 @@
 					"artifacts.download",
 					"member-artifacts.download",
 					"service-accounts.manage",
+					"tak-server.manage",
 					"audit.read"
 				]
 			},
@@ -321,6 +322,75 @@
 					"name",
 					"slug",
 					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakCertificateAuthorityDto": {
+				"description": "A TAK certificate authority. The certificate is public trust material; the key never leaves Core.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"origin": {
+						"type": "string",
+						"enum": [
+							"generated",
+							"imported"
+						]
+					},
+					"active": {
+						"type": "boolean",
+						"description": "Signs new client and server certificates."
+					},
+					"subject": {
+						"type": "string"
+					},
+					"fingerprintSha256": {
+						"type": "string",
+						"description": "SHA-256 of the DER certificate, lowercase hex, for comparing with what devices show."
+					},
+					"notBefore": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"notAfter": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"certificatePem": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"origin",
+					"active",
+					"subject",
+					"fingerprintSha256",
+					"notBefore",
+					"notAfter",
+					"certificatePem"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportTakCertificateAuthorityRequest": {
+				"properties": {
+					"certificatePem": {
+						"type": "string",
+						"description": "The CA certificate in PEM format.",
+						"maxLength": 20000
+					},
+					"privateKeyPem": {
+						"type": "string",
+						"description": "The unencrypted CA private key in PEM format (PKCS#8 or PKCS#1). It is encrypted at rest and\nnever returned.",
+						"maxLength": 20000
+					}
+				},
+				"required": [
+					"certificatePem",
+					"privateKeyPem"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5667,6 +5737,123 @@
 						}
 					}
 				]
+			}
+		},
+		"/tak-server/certificate-authorities": {
+			"get": {
+				"operationId": "ListTakCertificateAuthorities",
+				"responses": {
+					"200": {
+						"description": "Certificate authorities",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/TakCertificateAuthorityDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the active CA and older CAs that are still trusted. A new installation creates its own\nCA on the first call. Private keys are never returned.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/tak-server/certificate-authorities/import": {
+			"post": {
+				"operationId": "ImportTakCertificateAuthority",
+				"responses": {
+					"201": {
+						"description": "Certificate authority imported",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakCertificateAuthorityDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Imports an existing CA and makes it the active one. The previous CA stays trusted until it\nexpires. Requires a recent sign-in; the key is encrypted at rest and never returned.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ImportTakCertificateAuthorityRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/tak/configuration": {

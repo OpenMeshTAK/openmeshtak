@@ -672,3 +672,21 @@ model TakConfiguration {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 }
+
+/// Certificate authorities of the built-in TAK server. The active one signs new certificates;
+/// older ones stay trusted until they expire so issued client certificates keep working.
+model TakCertificateAuthority {
+  id                String   @id
+  /// "generated" by OpenMeshTak or "imported" by an administrator.
+  origin            String
+  certificatePem    String
+  /// PKCS#8 private key, encrypted with the deployment root key and bound to this row.
+  keyEnvelope       String
+  fingerprintSha256 String   @unique
+  subject           String
+  notBefore         DateTime
+  notAfter          DateTime
+  /// "active" on exactly one row; the unique constraint makes a concurrent second CA impossible.
+  activeSlot        String?  @unique
+  createdAt         DateTime @default(now())
+}
