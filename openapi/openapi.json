@@ -162,6 +162,7 @@
 					"member-artifacts.download",
 					"service-accounts.manage",
 					"tak-server.manage",
+					"tak-server.admin-access",
 					"audit.read"
 				]
 			},
@@ -485,6 +486,48 @@
 				"required": [
 					"certificateChainPem",
 					"privateKeyPem"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakEnrollmentDto": {
+				"description": "Everything a TAK app needs to enroll once. The token is a single-use password valid for a few\nminutes; it is shown only in this response.",
+				"properties": {
+					"username": {
+						"type": "string",
+						"description": "TAK user name: the stable OpenMeshTak user ID."
+					},
+					"token": {
+						"type": "string"
+					},
+					"expiresAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"hostName": {
+						"type": "string"
+					},
+					"enrollmentPort": {
+						"type": "number",
+						"format": "double"
+					},
+					"streamingPort": {
+						"type": "number",
+						"format": "double"
+					},
+					"atakEnrollmentUrl": {
+						"type": "string",
+						"description": "Link and QR code content for ATAK certificate enrollment."
+					}
+				},
+				"required": [
+					"username",
+					"token",
+					"expiresAt",
+					"hostName",
+					"enrollmentPort",
+					"streamingPort",
+					"atakEnrollmentUrl"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -6124,6 +6167,63 @@
 					}
 				},
 				"description": "Removes an added certificate; the server then uses one issued by the OpenMeshTak CA.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/me/tak-enrollments": {
+			"post": {
+				"operationId": "CreateTakEnrollment",
+				"responses": {
+					"201": {
+						"description": "Enrollment created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakEnrollmentDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "No TAK access",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "TAK server not enabled",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a single-use enrollment password for the signed-in user, valid for 15 minutes, with\nthe ATAK enrollment link. Members of active events and holders of `tak-server.admin-access`\nmay enroll. The account password is never used by TAK apps.",
 				"tags": [
 					"TAK server"
 				],

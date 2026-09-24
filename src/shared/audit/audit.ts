@@ -8,6 +8,8 @@ type AuditClient = Pick<Prisma.TransactionClient, "auditEvent">;
 
 export type AuditActor =
   | Principal
+  /** A user authenticated without a browser session, e.g. by a TAK enrollment token or certificate. */
+  | { type: "user"; id: string }
   | { type: "anonymous" }
   | { type: "system" };
 

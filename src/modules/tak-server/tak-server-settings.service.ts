@@ -1,4 +1,4 @@
-import type { TakServerCertificate, TakServerSettings } from "../../generated/prisma/client.js";
+import type { TakServerCertificate } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission, requireRecentAuthentication } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
@@ -11,30 +11,14 @@ import {
   type ProblemFieldError,
 } from "../../shared/errors/problem-error.js";
 import { activeServerCertificate, addServerCertificate, removeAddedServerCertificate } from "./server-certificate.js";
+import { takListeners } from "./tak-listeners.js";
+import { HOST_NAME, loadTakServerSettings, SETTINGS_ID } from "./tak-server-settings.js";
 import type {
   AddTakServerCertificateRequest,
   TakServerCertificateDto,
   TakServerSettingsDto,
   UpdateTakServerSettingsRequest,
 } from "./tak-server-settings.dto.js";
-
-const SETTINGS_ID = "tak-server";
-const DEFAULTS = {
-  enabled: false,
-  hostName: null,
-  enrollmentPort: 8446,
-  martiPort: 8443,
-  streamingPort: 8089,
-  clientCertificateDays: 365,
-};
-/** DNS name with at least one dot, or an IPv4 address; devices must be able to reach it. */
-const HOST_NAME =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$|^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
-
-export async function loadTakServerSettings(): Promise<TakServerSettings> {
-  const row = await database.takServerSettings.findUnique({ where: { id: SETTINGS_ID } });
-  return row ?? { id: SETTINGS_ID, ...DEFAULTS, version: 0, updatedAt: new Date(0) };
-}
 
 function certificateDto(certificate: TakServerCertificate | null): TakServerCertificateDto | null {
   return certificate === null
@@ -136,6 +120,7 @@ export async function updateTakServerSettings(
   }
   const { version, ...data } = normalized;
   await storeSettings(actor, version, data);
+  void takListeners.reload();
   return toDto();
 }
 
@@ -176,6 +161,7 @@ export async function addTakServerCertificate(
     fingerprintSha256: added.fingerprintSha256,
     notAfter: added.notAfter.toISOString(),
   });
+  void takListeners.reload();
   return toDto();
 }
 
@@ -185,5 +171,6 @@ export async function removeTakServerCertificate(actor: ActorContext): Promise<T
   requireRecentUser(actor);
   await removeAddedServerCertificate();
   await serverCertificateAudit(actor, "tak-server.server-certificate-removed", {});
+  void takListeners.reload();
   return toDto();
 }

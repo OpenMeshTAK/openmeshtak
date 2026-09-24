@@ -26,15 +26,7 @@ export async function hasPermission(
   const scopeKey = { in: acceptedScopeKeys(eventId) };
 
   if (principal.type === "user") {
-    const grant = await database.permissionGrant.findFirst({
-      where: {
-        permission,
-        scopeKey,
-        userGroup: { memberships: { some: { userId: principal.id } } },
-      },
-      select: { id: true },
-    });
-    return grant !== null;
+    return userHasPermission(principal.id, permission, eventId);
   }
 
   const grant = await database.serviceAccountPermissionGrant.findFirst({
@@ -42,6 +34,26 @@ export async function hasPermission(
       permission,
       scopeKey,
       serviceAccount: { id: principal.id, status: "active" },
+    },
+    select: { id: true },
+  });
+  return grant !== null;
+}
+
+/**
+ * The same check for a user known only by ID, such as a TAK client authenticated by certificate
+ * rather than by a browser session.
+ */
+export async function userHasPermission(
+  userId: string,
+  permission: Permission,
+  eventId: string | null = null,
+): Promise<boolean> {
+  const grant = await database.permissionGrant.findFirst({
+    where: {
+      permission,
+      scopeKey: { in: acceptedScopeKeys(eventId) },
+      userGroup: { memberships: { some: { userId } } },
     },
     select: { id: true },
   });

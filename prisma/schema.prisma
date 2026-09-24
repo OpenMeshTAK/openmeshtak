@@ -131,6 +131,8 @@ model DomainUser {
   createdApiKeys         ApiKey[]
   externalIdentities     ExternalIdentity[]
   eventMemberships       EventMember[]
+  takEnrollmentTokens    TakEnrollmentToken[]
+  takClientCertificates  TakClientCertificate[]
   createdAt              DateTime              @default(now())
   updatedAt              DateTime              @updatedAt
 }
@@ -724,4 +726,39 @@ model TakServerSettings {
   clientCertificateDays Int      @default(365)
   version               Int      @default(1)
   updatedAt             DateTime @updatedAt
+}
+
+/// Short-lived, single-use password for TAK certificate enrollment, so the account password never
+/// reaches a TAK app. Only the SHA-256 hash is stored.
+model TakEnrollmentToken {
+  id        String     @id
+  userId    String
+  tokenHash String     @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@index([userId])
+}
+
+/// Client certificate signed for a TAK app. Connections are accepted only while it is not revoked
+/// and its user still has TAK access.
+model TakClientCertificate {
+  id                String     @id
+  userId            String
+  caId              String
+  serialNumber      String     @unique
+  fingerprintSha256 String     @unique
+  commonName        String
+  /// Device UID the app sent during enrollment, if any.
+  clientUid         String?
+  notBefore         DateTime
+  notAfter          DateTime
+  revokedAt         DateTime?
+  revocationReason  String?
+  user              DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime   @default(now())
+
+  @@index([userId])
 }

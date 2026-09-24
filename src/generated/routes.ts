@@ -10,6 +10,8 @@ import { UserGroupsController } from './../modules/user-groups/user-groups.contr
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakServerSettingsController } from './../modules/tak-server/tak-server-settings.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakEnrollmentsController } from './../modules/tak-server/enrollment.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakCertificateAuthoritiesController } from './../modules/tak-server/certificate-authority.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakConfigurationController } from './../modules/tak-configuration/tak-configuration.controller.js';
@@ -148,7 +150,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Permission": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PermissionGrantDto": {
@@ -257,6 +259,20 @@ const models: TsoaRoute.Models = {
         "properties": {
             "certificateChainPem": {"dataType":"string","required":true,"validators":{"maxLength":{"value":50000}}},
             "privateKeyPem": {"dataType":"string","required":true,"validators":{"maxLength":{"value":20000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakEnrollmentDto": {
+        "dataType": "refObject",
+        "properties": {
+            "username": {"dataType":"string","required":true},
+            "token": {"dataType":"string","required":true},
+            "expiresAt": {"dataType":"string","required":true},
+            "hostName": {"dataType":"string","required":true},
+            "enrollmentPort": {"dataType":"double","required":true},
+            "streamingPort": {"dataType":"double","required":true},
+            "atakEnrollmentUrl": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -2381,6 +2397,37 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakEnrollmentsController_createTakEnrollment: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.post('/api/v1/me/tak-enrollments',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakEnrollmentsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakEnrollmentsController.prototype.createTakEnrollment)),
+
+            async function TakEnrollmentsController_createTakEnrollment(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakEnrollmentsController_createTakEnrollment, request, response });
+
+                const controller = new TakEnrollmentsController();
+
+              await templateService.apiHandler({
+                methodName: 'createTakEnrollment',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
               });
             } catch (err) {
                 return next(err);
