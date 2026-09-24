@@ -12,6 +12,10 @@ import { TakServerSettingsController } from './../modules/tak-server/tak-server-
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakEnrollmentsController } from './../modules/tak-server/enrollment.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakClientCertificatesController } from './../modules/tak-server/client-certificates.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MyTakCertificatesController } from './../modules/tak-server/client-certificates.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakCertificateAuthoritiesController } from './../modules/tak-server/certificate-authority.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakConfigurationController } from './../modules/tak-configuration/tak-configuration.controller.js';
@@ -273,6 +277,32 @@ const models: TsoaRoute.Models = {
             "enrollmentPort": {"dataType":"double","required":true},
             "streamingPort": {"dataType":"double","required":true},
             "atakEnrollmentUrl": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakClientCertificateDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "userId": {"ref":"Uuid","required":true},
+            "userDisplayName": {"dataType":"string","required":true},
+            "clientUid": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "serialNumber": {"dataType":"string","required":true},
+            "fingerprintSha256": {"dataType":"string","required":true},
+            "status": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["valid"]},{"dataType":"enum","enums":["expired"]},{"dataType":"enum","enums":["revoked"]}],"required":true},
+            "notBefore": {"dataType":"string","required":true},
+            "notAfter": {"dataType":"string","required":true},
+            "revokedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "revocationReason": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RevokeTakCertificateRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "reason": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":200}}},
         },
         "additionalProperties": false,
     },
@@ -2428,6 +2458,134 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakClientCertificatesController_listTakClientCertificates: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/tak-server/client-certificates',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakClientCertificatesController)),
+            ...(fetchMiddlewares<RequestHandler>(TakClientCertificatesController.prototype.listTakClientCertificates)),
+
+            async function TakClientCertificatesController_listTakClientCertificates(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakClientCertificatesController_listTakClientCertificates, request, response });
+
+                const controller = new TakClientCertificatesController();
+
+              await templateService.apiHandler({
+                methodName: 'listTakClientCertificates',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakClientCertificatesController_revokeTakClientCertificate: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                certificateId: {"in":"path","name":"certificateId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"RevokeTakCertificateRequest"},
+        };
+        app.post('/api/v1/tak-server/client-certificates/:certificateId/revoke',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakClientCertificatesController)),
+            ...(fetchMiddlewares<RequestHandler>(TakClientCertificatesController.prototype.revokeTakClientCertificate)),
+
+            async function TakClientCertificatesController_revokeTakClientCertificate(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakClientCertificatesController_revokeTakClientCertificate, request, response });
+
+                const controller = new TakClientCertificatesController();
+
+              await templateService.apiHandler({
+                methodName: 'revokeTakClientCertificate',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMyTakCertificatesController_listMyTakCertificates: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/me/tak-certificates',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MyTakCertificatesController)),
+            ...(fetchMiddlewares<RequestHandler>(MyTakCertificatesController.prototype.listMyTakCertificates)),
+
+            async function MyTakCertificatesController_listMyTakCertificates(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMyTakCertificatesController_listMyTakCertificates, request, response });
+
+                const controller = new MyTakCertificatesController();
+
+              await templateService.apiHandler({
+                methodName: 'listMyTakCertificates',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMyTakCertificatesController_revokeMyTakCertificate: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                certificateId: {"in":"path","name":"certificateId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"RevokeTakCertificateRequest"},
+        };
+        app.post('/api/v1/me/tak-certificates/:certificateId/revoke',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MyTakCertificatesController)),
+            ...(fetchMiddlewares<RequestHandler>(MyTakCertificatesController.prototype.revokeMyTakCertificate)),
+
+            async function MyTakCertificatesController_revokeMyTakCertificate(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMyTakCertificatesController_revokeMyTakCertificate, request, response });
+
+                const controller = new MyTakCertificatesController();
+
+              await templateService.apiHandler({
+                methodName: 'revokeMyTakCertificate',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

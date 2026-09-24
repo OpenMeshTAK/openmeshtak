@@ -532,6 +532,82 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakClientCertificateDto": {
+				"description": "A client certificate issued to a TAK app. Certificates are public; no key material exists here.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userDisplayName": {
+						"type": "string"
+					},
+					"clientUid": {
+						"type": "string",
+						"nullable": true,
+						"description": "Device UID the app sent during enrollment, if any."
+					},
+					"serialNumber": {
+						"type": "string"
+					},
+					"fingerprintSha256": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"valid",
+							"expired",
+							"revoked"
+						]
+					},
+					"notBefore": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"notAfter": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"revokedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"revocationReason": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"userId",
+					"userDisplayName",
+					"clientUid",
+					"serialNumber",
+					"fingerprintSha256",
+					"status",
+					"notBefore",
+					"notAfter",
+					"revokedAt",
+					"revocationReason"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RevokeTakCertificateRequest": {
+				"properties": {
+					"reason": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 200
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TakCertificateAuthorityDto": {
 				"description": "A TAK certificate authority. The certificate is public trust material; the key never leaves Core.",
 				"properties": {
@@ -6233,6 +6309,236 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/tak-server/client-certificates": {
+			"get": {
+				"operationId": "ListTakClientCertificates",
+				"responses": {
+					"200": {
+						"description": "Client certificates",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/TakClientCertificateDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The 500 newest certificates.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/tak-server/client-certificates/{certificateId}/revoke": {
+			"post": {
+				"operationId": "RevokeTakClientCertificate",
+				"responses": {
+					"200": {
+						"description": "Certificate revoked",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakClientCertificateDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Revokes a certificate; its TAK connections end immediately and it cannot reconnect.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "certificateId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RevokeTakCertificateRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/me/tak-certificates": {
+			"get": {
+				"operationId": "ListMyTakCertificates",
+				"responses": {
+					"200": {
+						"description": "Own certificates",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/TakClientCertificateDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/me/tak-certificates/{certificateId}/revoke": {
+			"post": {
+				"operationId": "RevokeMyTakCertificate",
+				"responses": {
+					"200": {
+						"description": "Certificate revoked",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakClientCertificateDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "certificateId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RevokeTakCertificateRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/tak-server/certificate-authorities": {
