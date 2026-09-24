@@ -1,0 +1,141 @@
+import assert from "node:assert/strict";
+import { X509Certificate } from "node:crypto";
+import { after, beforeEach, describe, it } from "node:test";
+import type { Express } from "express";
+import request from "supertest";
+import { createApp } from "../src/app.js";
+import { activeCertificateAuthority } from "../src/modules/tak-server/certificate-authority.js";
+import { addServerCertificate, currentServerCertificate } from "../src/modules/tak-server/server-certificate.js";
+import { exportPrivateKeyPem, generateRsaKeyPair, RSA_SIGNING, x509 } from "../src/modules/tak-server/x509.js";
+import { disconnectDatabase } from "../src/shared/database/database.js";
+import { clearDatabase, createUser, type TestUser } from "./support/identity.js";
+
+interface SettingsBody {
+  enabled: boolean;
+  hostName: string | null;
+  version: number;
+  serverCertificate: { source: string; hostName: string } | null;
+}
+
+let app: Express;
+let admin: TestUser;
+
+const settingsUrl = "/api/v1/tak-server/settings";
+
+function save(body: Record<string, unknown>): request.Test {
+  return request(app)
+    .put(settingsUrl)
+    .set("Cookie", admin.cookie)
+    .send({ enrollmentPort: 8446, martiPort: 8443, streamingPort: 8089, clientCertificateDays: 365, enabled: false, ...body });
+}
+
+type KeyPair = Awaited<ReturnType<typeof generateRsaKeyPair>>;
+
+async function signed(
+  subject: string,
+  keys: KeyPair,
+  issuer: { name: string; key: CryptoKey } | null,
+  extensions: x509.Extension[],
+): Promise<x509.X509Certificate> {
+  return x509.X509CertificateGenerator.create({
+    serialNumber: "0b",
+    subject,
+    issuer: issuer?.name ?? subject,
+    notBefore: new Date(Date.now() - 60_000),
+    notAfter: new Date(Date.now() + 90 * 86_400_000),
+    publicKey: keys.publicKey,
+    signingKey: issuer?.key ?? keys.privateKey,
+    signingAlgorithm: RSA_SIGNING,
+    extensions,
+  });
+}
+
+/** A root, an intermediate and a leaf for the host, shaped like a Let's Encrypt chain. */
+async function publicChain(hostName: string) {
+  const rootKeys = await generateRsaKeyPair();
+  const intermediateKeys = await generateRsaKeyPair();
+  const leafKeys = await generateRsaKeyPair();
+  const ca = [new x509.BasicConstraintsExtension(true, undefined, true)];
+  const root = await signed("CN=Test Public Root", rootKeys, null, ca);
+  const intermediate = await signed("CN=Test R10", intermediateKeys, { name: root.subject, key: rootKeys.privateKey }, ca);
+  const leaf = await signed(`CN=${hostName}`, leafKeys, { name: intermediate.subject, key: intermediateKeys.privateKey }, [
+    new x509.SubjectAlternativeNameExtension([{ type: "dns", value: hostName }]),
+  ]);
+  return {
+    rootPem: root.toString("pem"),
+    chainPem: leaf.toString("pem") + "\n" + intermediate.toString("pem"),
+    keyPem: await exportPrivateKeyPem(leafKeys.privateKey),
+  };
+}
+
+void describe("TAK server settings", () => {
+  beforeEach(async () => {
+    await clearDatabase();
+    app = createApp();
+    admin = await createUser("Admin", [{ permission: "tak-server.manage" }]);
+  });
+
+  after(async () => {
+    await clearDatabase();
+    await disconnectDatabase();
+  });
+
+  void it("validates and stores the settings", async () => {
+    const initial = (await request(app).get(settingsUrl).set("Cookie", admin.cookie).expect(200)).body as SettingsBody;
+    assert.deepEqual([initial.version, initial.enabled, initial.serverCertificate], [0, false, null]);
+
+    const invalid = await save({ version: 0, hostName: "not a host", enabled: true, martiPort: 8446 }).expect(422);
+    assert.deepEqual(
+      (invalid.body as { errors: Array<{ code: string }> }).errors.map(({ code }) => code).sort(),
+      ["DUPLICATE_PORT", "INVALID_HOST_NAME"],
+    );
+    await save({ version: 0, hostName: null, enabled: true }).expect(422);
+
+    const saved = (await save({ version: 0, hostName: " TAK.Example.org ", enabled: true }).expect(200)).body as SettingsBody;
+    assert.deepEqual([saved.hostName, saved.enabled, saved.version], ["tak.example.org", true, 1]);
+    await save({ version: 0, hostName: "tak.example.org" }).expect(409);
+  });
+
+  void it("issues the server certificate from the OpenMeshTak CA for the host name", async () => {
+    const issued = await currentServerCertificate("tak.example.org");
+    const authority = await activeCertificateAuthority();
+    const leaf = new X509Certificate(issued.certificateChainPem);
+    assert.equal(leaf.checkHost("tak.example.org"), "tak.example.org");
+    assert.ok(leaf.verify(new X509Certificate(authority.certificatePem).publicKey), "signed by the active CA");
+
+    assert.equal((await currentServerCertificate("tak.example.org")).id, issued.id, "reused while valid");
+    assert.notEqual((await currentServerCertificate("tak2.example.org")).id, issued.id, "reissued for a new host");
+  });
+
+  void it("uses an added publicly trusted certificate such as Let's Encrypt", async () => {
+    const chain = await publicChain("tak.example.org");
+    const added = await addServerCertificate(chain.chainPem, chain.keyPem, "tak.example.org", { trustedRoots: [chain.rootPem] });
+    assert.equal((await currentServerCertificate("tak.example.org")).id, added.id);
+
+    await assert.rejects(addServerCertificate(chain.chainPem, chain.keyPem, "other.example.org", { trustedRoots: [chain.rootPem] }));
+    const leafOnly = chain.chainPem.slice(0, chain.chainPem.indexOf("-----END CERTIFICATE-----") + 25);
+    await assert.rejects(addServerCertificate(leafOnly, chain.keyPem, "tak.example.org", { trustedRoots: [chain.rootPem] }));
+  });
+
+  void it("adds and removes the server certificate through the API", async () => {
+    await save({ version: 0, hostName: "tak.example.org" }).expect(200);
+    const chain = await publicChain("tak.example.org");
+    const rejected = await request(app)
+      .put("/api/v1/tak-server/server-certificate")
+      .set("Cookie", admin.cookie)
+      .send({ certificateChainPem: chain.chainPem, privateKeyPem: chain.keyPem })
+      .expect(422);
+    assert.match(JSON.stringify(rejected.body), /publicly trusted root/, "test roots are not public roots");
+
+    await addServerCertificate(chain.chainPem, chain.keyPem, "tak.example.org", { trustedRoots: [chain.rootPem] });
+    const removed = (await request(app).delete("/api/v1/tak-server/server-certificate").set("Cookie", admin.cookie).expect(200))
+      .body as SettingsBody;
+    assert.equal(removed.serverCertificate, null);
+    assert.equal((await currentServerCertificate("tak.example.org")).source, "issued");
+  });
+
+  void it("is only available to holders of tak-server.manage", async () => {
+    const other = await createUser("Editor", [{ permission: "events.manage" }]);
+    await request(app).get(settingsUrl).set("Cookie", other.cookie).expect(403);
+  });
+});

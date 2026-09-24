@@ -690,3 +690,38 @@ model TakCertificateAuthority {
   activeSlot        String?  @unique
   createdAt         DateTime @default(now())
 }
+
+/// The TLS certificate the TAK listeners present: issued by the OpenMeshTak CA, or added by an
+/// administrator as a publicly trusted certificate such as Let's Encrypt.
+model TakServerCertificate {
+  id                  String   @id
+  /// "issued" by the OpenMeshTak CA or "added" by an administrator.
+  source              String
+  hostName            String
+  /// CA that issued it; null for added certificates.
+  caId                String?
+  /// Leaf first, then intermediates (and the OpenMeshTak CA for issued certificates).
+  certificateChainPem String
+  /// PKCS#8 private key, encrypted with the deployment root key and bound to this row.
+  keyEnvelope         String
+  fingerprintSha256   String
+  subject             String
+  notAfter            DateTime
+  /// "active" on exactly one row.
+  activeSlot          String?  @unique
+  createdAt           DateTime @default(now())
+}
+
+/// Installation-wide settings of the built-in TAK server; a single row with id "tak-server".
+model TakServerSettings {
+  id                    String   @id
+  enabled               Boolean  @default(false)
+  /// Public host name or IP address clients connect to; required before the server can start.
+  hostName              String?
+  enrollmentPort        Int      @default(8446)
+  martiPort             Int      @default(8443)
+  streamingPort         Int      @default(8089)
+  clientCertificateDays Int      @default(365)
+  version               Int      @default(1)
+  updatedAt             DateTime @updatedAt
+}

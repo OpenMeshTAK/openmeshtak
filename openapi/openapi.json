@@ -326,6 +326,169 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakServerCertificateDto": {
+				"description": "The certificate the TAK listeners present. The private key is never returned.",
+				"properties": {
+					"source": {
+						"type": "string",
+						"enum": [
+							"issued",
+							"added"
+						],
+						"description": "`issued` by the OpenMeshTak CA, or `added` by an administrator, e.g. from Let's Encrypt."
+					},
+					"hostName": {
+						"type": "string"
+					},
+					"subject": {
+						"type": "string"
+					},
+					"fingerprintSha256": {
+						"type": "string"
+					},
+					"notAfter": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"source",
+					"hostName",
+					"subject",
+					"fingerprintSha256",
+					"notAfter"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakServerSettingsDto": {
+				"properties": {
+					"enabled": {
+						"type": "boolean",
+						"description": "Whether the TAK listeners run. Requires a host name."
+					},
+					"hostName": {
+						"type": "string",
+						"nullable": true,
+						"description": "Public host name or IPv4 address that ATAK and iTAK connect to."
+					},
+					"enrollmentPort": {
+						"type": "number",
+						"format": "double"
+					},
+					"martiPort": {
+						"type": "number",
+						"format": "double"
+					},
+					"streamingPort": {
+						"type": "number",
+						"format": "double"
+					},
+					"clientCertificateDays": {
+						"type": "number",
+						"format": "double",
+						"description": "Lifetime of newly enrolled client certificates."
+					},
+					"serverCertificate": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakServerCertificateDto"
+							}
+						],
+						"nullable": true,
+						"description": "`null` until the server first starts or a certificate is added."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until first saved."
+					}
+				},
+				"required": [
+					"enabled",
+					"hostName",
+					"enrollmentPort",
+					"martiPort",
+					"streamingPort",
+					"clientCertificateDays",
+					"serverCertificate",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateTakServerSettingsRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0
+					},
+					"enabled": {
+						"type": "boolean"
+					},
+					"hostName": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 253
+					},
+					"enrollmentPort": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 65535
+					},
+					"martiPort": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 65535
+					},
+					"streamingPort": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 65535
+					},
+					"clientCertificateDays": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 825
+					}
+				},
+				"required": [
+					"version",
+					"enabled",
+					"hostName",
+					"enrollmentPort",
+					"martiPort",
+					"streamingPort",
+					"clientCertificateDays"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AddTakServerCertificateRequest": {
+				"properties": {
+					"certificateChainPem": {
+						"type": "string",
+						"description": "Full chain in PEM format, server certificate first, e.g. the `fullchain.pem` of Let's Encrypt.",
+						"maxLength": 50000
+					},
+					"privateKeyPem": {
+						"type": "string",
+						"description": "Unencrypted private key in PEM format, e.g. the `privkey.pem` of Let's Encrypt. Encrypted at\nrest and never returned.",
+						"maxLength": 20000
+					}
+				},
+				"required": [
+					"certificateChainPem",
+					"privateKeyPem"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TakCertificateAuthorityDto": {
 				"description": "A TAK certificate authority. The certificate is public trust material; the key never leaves Core.",
 				"properties": {
@@ -5737,6 +5900,239 @@
 						}
 					}
 				]
+			}
+		},
+		"/tak-server/settings": {
+			"get": {
+				"operationId": "GetTakServerSettings",
+				"responses": {
+					"200": {
+						"description": "TAK server settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakServerSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateTakServerSettings",
+				"responses": {
+					"200": {
+						"description": "Settings updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakServerSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the settings. Requires the current `version` (0 before the first save).",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTakServerSettingsRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/tak-server/server-certificate": {
+			"put": {
+				"operationId": "AddTakServerCertificate",
+				"responses": {
+					"200": {
+						"description": "Server certificate added",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakServerSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Adds a publicly trusted server certificate for the TAK host name, e.g. the `fullchain.pem` and\n`privkey.pem` of Let's Encrypt, so devices trust the server without the OpenMeshTak CA.\nRequires a recent sign-in. Client certificates are still issued by the OpenMeshTak CA.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddTakServerCertificateRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "RemoveTakServerCertificate",
+				"responses": {
+					"200": {
+						"description": "Server certificate removed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakServerSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Removes an added certificate; the server then uses one issued by the OpenMeshTak CA.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
 			}
 		},
 		"/tak-server/certificate-authorities": {

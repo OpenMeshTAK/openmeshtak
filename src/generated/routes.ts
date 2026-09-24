@@ -8,6 +8,8 @@ import { UsersController } from './../modules/users/users.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { UserGroupsController } from './../modules/user-groups/user-groups.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakServerSettingsController } from './../modules/tak-server/tak-server-settings.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakCertificateAuthoritiesController } from './../modules/tak-server/certificate-authority.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakConfigurationController } from './../modules/tak-configuration/tak-configuration.controller.js';
@@ -205,6 +207,56 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "slug": {"ref":"Slug","required":true},
             "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true,"validators":{"maxItems":{"value":200}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakServerCertificateDto": {
+        "dataType": "refObject",
+        "properties": {
+            "source": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["issued"]},{"dataType":"enum","enums":["added"]}],"required":true},
+            "hostName": {"dataType":"string","required":true},
+            "subject": {"dataType":"string","required":true},
+            "fingerprintSha256": {"dataType":"string","required":true},
+            "notAfter": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakServerSettingsDto": {
+        "dataType": "refObject",
+        "properties": {
+            "enabled": {"dataType":"boolean","required":true},
+            "hostName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "enrollmentPort": {"dataType":"double","required":true},
+            "martiPort": {"dataType":"double","required":true},
+            "streamingPort": {"dataType":"double","required":true},
+            "clientCertificateDays": {"dataType":"double","required":true},
+            "serverCertificate": {"dataType":"union","subSchemas":[{"ref":"TakServerCertificateDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateTakServerSettingsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "enabled": {"dataType":"boolean","required":true},
+            "hostName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":253}}},
+            "enrollmentPort": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":65535}}},
+            "martiPort": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":65535}}},
+            "streamingPort": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":65535}}},
+            "clientCertificateDays": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":825}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AddTakServerCertificateRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "certificateChainPem": {"dataType":"string","required":true,"validators":{"maxLength":{"value":50000}}},
+            "privateKeyPem": {"dataType":"string","required":true,"validators":{"maxLength":{"value":20000}}},
         },
         "additionalProperties": false,
     },
@@ -2203,6 +2255,132 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakServerSettingsController_getTakServerSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/tak-server/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController.prototype.getTakServerSettings)),
+
+            async function TakServerSettingsController_getTakServerSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakServerSettingsController_getTakServerSettings, request, response });
+
+                const controller = new TakServerSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getTakServerSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakServerSettingsController_updateTakServerSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateTakServerSettingsRequest"},
+        };
+        app.put('/api/v1/tak-server/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController.prototype.updateTakServerSettings)),
+
+            async function TakServerSettingsController_updateTakServerSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakServerSettingsController_updateTakServerSettings, request, response });
+
+                const controller = new TakServerSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateTakServerSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakServerSettingsController_addTakServerCertificate: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"AddTakServerCertificateRequest"},
+        };
+        app.put('/api/v1/tak-server/server-certificate',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController.prototype.addTakServerCertificate)),
+
+            async function TakServerSettingsController_addTakServerCertificate(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakServerSettingsController_addTakServerCertificate, request, response });
+
+                const controller = new TakServerSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'addTakServerCertificate',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakServerSettingsController_removeTakServerCertificate: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.delete('/api/v1/tak-server/server-certificate',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController.prototype.removeTakServerCertificate)),
+
+            async function TakServerSettingsController_removeTakServerCertificate(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakServerSettingsController_removeTakServerCertificate, request, response });
+
+                const controller = new TakServerSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'removeTakServerCertificate',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

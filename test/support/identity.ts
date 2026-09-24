@@ -43,6 +43,8 @@ export async function clearDatabase(): Promise<void> {
     database.bootstrapChallenge.deleteMany(),
     database.event.deleteMany(),
     database.takCertificateAuthority.deleteMany(),
+    database.takServerCertificate.deleteMany(),
+    database.takServerSettings.deleteMany(),
   ]);
 }
 
