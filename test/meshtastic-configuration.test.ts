@@ -136,6 +136,7 @@ void describe("event Meshtastic configuration", () => {
     assert.deepEqual(saved.secretsSet.sort(), ["config.bluetooth.fixedPin", "config.network.wifiPsk"]);
     assert.equal(JSON.stringify(saved).includes(wifiPassword), false);
     assert.equal("config.network.wifiPsk" in saved.settings, false);
+    assert.ok((saved as unknown as { secretFields: string[] }).secretFields.includes("moduleConfig.mqtt.password"));
 
     const row = await database.meshtasticConfiguration.findUniqueOrThrow({ where: { eventId } });
     const audits = await database.auditEvent.findMany();

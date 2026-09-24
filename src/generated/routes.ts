@@ -574,6 +574,7 @@ const models: TsoaRoute.Models = {
             "profileId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "verified": {"dataType":"boolean","required":true},
             "settings": {"ref":"FirmwareSettingsDocument","required":true},
+            "secretFields": {"dataType":"array","array":{"dataType":"string"},"required":true},
             "secretsSet": {"dataType":"array","array":{"dataType":"string"},"required":true},
             "problems": {"dataType":"array","array":{"dataType":"refObject","ref":"ConfigurationProblemDto"},"required":true},
             "version": {"dataType":"double","required":true},

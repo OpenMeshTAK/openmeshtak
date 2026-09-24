@@ -21,6 +21,8 @@ export interface MeshtasticConfigurationDto {
   /** `false` when no tested patch reaches the effective minimum version. */
   verified: boolean;
   settings: FirmwareSettingsDocument;
+  /** Secret fields available for the event's firmware version, set through `PUT secrets`. */
+  secretFields: string[];
   /** Keys of secret fields that hold a value. The values themselves are never returned. */
   secretsSet: string[];
   /** Why the stored configuration is not valid for this Core release; empty when it is. */

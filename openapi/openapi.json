@@ -1460,6 +1460,13 @@
 					"settings": {
 						"$ref": "#/components/schemas/FirmwareSettingsDocument"
 					},
+					"secretFields": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Secret fields available for the event's firmware version, set through `PUT secrets`."
+					},
 					"secretsSet": {
 						"items": {
 							"type": "string"
@@ -1492,6 +1499,7 @@
 					"profileId",
 					"verified",
 					"settings",
+					"secretFields",
 					"secretsSet",
 					"problems",
 					"version",

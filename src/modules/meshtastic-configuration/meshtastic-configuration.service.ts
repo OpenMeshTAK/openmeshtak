@@ -53,6 +53,7 @@ function toDto(eventId: string, current: CurrentMeshtasticConfiguration): Meshta
     profileId: firmware?.profile.file.id ?? null,
     verified: firmware !== null && isVerified(firmware),
     settings: current.settings,
+    secretFields: firmware === null ? [] : secretFields(firmware).map(({ key }) => key),
     secretsSet: setSecretKeys(eventId, current),
     problems: current.problems,
     version: current.version,
