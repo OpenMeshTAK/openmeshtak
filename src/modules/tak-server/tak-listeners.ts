@@ -4,6 +4,7 @@ import { config } from "../../shared/config/config.js";
 import { logger } from "../../shared/logging/logger.js";
 import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { createEnrollmentApp } from "./enrollment-app.js";
+import { createMartiApp } from "./marti/marti-app.js";
 import { createStreamingServer } from "./streaming/streaming-server.js";
 import { currentServerCertificate, decryptServerKey } from "./server-certificate.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
@@ -62,12 +63,15 @@ class TakListeners {
     const ca = (await trustedCertificateAuthorities()).map(({ certificatePem }) => certificatePem);
 
     this.servers.push(await listen(createServer(tls, createEnrollmentApp()), settings.enrollmentPort, "enrollment"));
+    const mutualTls = { ...tls, ca, requestCert: true, rejectUnauthorized: true };
+    this.servers.push(await listen(createServer(mutualTls, createMartiApp()), settings.martiPort, "marti"));
     this.servers.push(await listen(createStreamingServer({ ...tls, ca }), settings.streamingPort, "streaming"));
     logger.info(
       {
         event: "tak_server_started",
         hostName: settings.hostName,
         enrollmentPort: settings.enrollmentPort,
+        martiPort: settings.martiPort,
         streamingPort: settings.streamingPort,
         certificateSource: certificate.source,
       },

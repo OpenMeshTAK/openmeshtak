@@ -45,7 +45,7 @@ async function canListFor(principal: Principal, eventId: string, member: MemberC
  * Published packages whose audience includes the member, each at its newest revision. Packages
  * outside the audience are absent, and drafts never reach participants.
  */
-async function receivedPackages(eventId: string, recipient: AudienceRecipient) {
+export async function receivedPackages(eventId: string, recipient: AudienceRecipient) {
   const packages = await database.dataPackage.findMany({
     where: { eventId, revisions: { some: {} } },
     orderBy: { name: "asc" },
