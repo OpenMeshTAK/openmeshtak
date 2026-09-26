@@ -12,6 +12,8 @@ import { TakServerSettingsController } from './../modules/tak-server/tak-server-
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakEnrollmentsController } from './../modules/tak-server/enrollment.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakConnectionPackageController } from './../modules/tak-server/enrollment.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakClientCertificatesController } from './../modules/tak-server/client-certificates.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MyTakCertificatesController } from './../modules/tak-server/client-certificates.controller.js';
@@ -2454,6 +2456,37 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakConnectionPackageController_getTakConnectionPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/me/tak-connection-package',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakConnectionPackageController)),
+            ...(fetchMiddlewares<RequestHandler>(TakConnectionPackageController.prototype.getTakConnectionPackage)),
+
+            async function TakConnectionPackageController_getTakConnectionPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakConnectionPackageController_getTakConnectionPackage, request, response });
+
+                const controller = new TakConnectionPackageController();
+
+              await templateService.apiHandler({
+                methodName: 'getTakConnectionPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

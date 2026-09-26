@@ -16,6 +16,8 @@ const allowedLicenses = new Set([
   "MIT and ISC",
   "(BSD-2-Clause OR MIT OR Apache-2.0)",
   "(MIT OR WTFPL)",
+  // node-forge: OpenMeshTak relies on the BSD-3-Clause option (TAK truststore PKCS#12 files).
+  "(BSD-3-Clause OR GPL-2.0)",
 ]);
 
 const reviewedExceptions = new Map<string, Set<string>>([

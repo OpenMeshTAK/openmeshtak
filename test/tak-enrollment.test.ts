@@ -4,6 +4,9 @@ import { after, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../src/app.js";
+import { unzipSync, strFromU8 } from "fflate";
+import forge from "node-forge";
+import { activeCertificateAuthority } from "../src/modules/tak-server/certificate-authority.js";
 import { createEnrollmentApp } from "../src/modules/tak-server/enrollment-app.js";
 import { generateRsaKeyPair, RSA_SIGNING, x509 } from "../src/modules/tak-server/x509.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
@@ -126,6 +129,37 @@ void describe("TAK certificate enrollment", () => {
 
     const config = await request(enrollment).get("/Marti/api/tls/config").expect(200);
     assert.match(config.text, /nameEntry name="O" value="OpenMeshTak"/);
+  });
+
+  void it("offers a connection package that trusts the OpenMeshTak CA and holds no secrets", async () => {
+    await request(app).get("/api/v1/me/tak-connection-package").set("Cookie", member.cookie).expect(409);
+    await enableServer();
+    await request(app).get("/api/v1/me/tak-connection-package").set("Cookie", outsider.cookie).expect(403);
+    const response = await request(app)
+      .get("/api/v1/me/tak-connection-package")
+      .set("Cookie", member.cookie)
+      .buffer(true)
+      .parse((res, callback) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => callback(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const files = unzipSync(new Uint8Array(response.body as Buffer));
+    const preferences = strFromU8(files["config.pref"] ?? new Uint8Array());
+    assert.match(preferences, /tak.example.org:8089:ssl/);
+    assert.match(preferences, /enrollForCertificateWithTrust0[^>]*>true</);
+    assert.ok(files["MANIFEST/manifest.xml"]);
+
+    const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(forge.util.binary.raw.encode(files["certs/openmeshtak-truststore.p12"] ?? new Uint8Array())), "openmeshtak");
+    const certBag = forge.pki.oids.certBag ?? "";
+    const keyBag = forge.pki.oids.pkcs8ShroudedKeyBag ?? "";
+    const bags = p12.getBags({ bagType: certBag })[certBag] ?? [];
+    const authority = await activeCertificateAuthority();
+    assert.equal(bags.length, 1);
+    const truststoreCertificate = forge.pki.certificateToPem(bags[0]?.cert as forge.pki.Certificate);
+    assert.equal(new X509Certificate(truststoreCertificate).fingerprint256, new X509Certificate(authority.certificatePem).fingerprint256);
+    assert.equal(p12.getBags({ bagType: keyBag })[keyBag]?.length ?? 0, 0, "no key");
   });
 
   void it("refuses enrollment when the member left before signing", async () => {

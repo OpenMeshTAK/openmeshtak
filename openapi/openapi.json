@@ -6342,6 +6342,64 @@
 				"parameters": []
 			}
 		},
+		"/me/tak-connection-package": {
+			"get": {
+				"operationId": "GetTakConnectionPackage",
+				"responses": {
+					"200": {
+						"description": "Connection Data Package",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "No TAK access",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "TAK server not enabled",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "A TAK Data Package with the server address and the CA to trust, for TAK apps that enroll by\nimporting a package instead of scanning the enrollment code. It contains no key or password;\nthe app asks for the enrollment user name and password.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
 		"/tak-server/client-certificates": {
 			"get": {
 				"operationId": "ListTakClientCertificates",
