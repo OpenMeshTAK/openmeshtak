@@ -11,7 +11,7 @@ import { getRootKey } from "./root-key.js";
  * key ID fingerprints the root key so a later rotation can tell old and new values apart.
  */
 
-export type SecretPurpose = "meshtastic-channel-psk" | "meshtastic-secret-settings" | "tak-ca-key" | "tak-server-key";
+export type SecretPurpose = "meshtastic-channel-psk" | "meshtastic-secret-settings" | "tak-ca-key" | "tak-server-key" | "smtp-password";
 
 const ENVELOPE_VERSION = "v1";
 const IV_BYTES = 12;

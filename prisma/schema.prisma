@@ -765,3 +765,20 @@ model TakClientCertificate {
 
   @@index([userId])
 }
+
+/// SMTP delivery for account emails; a single row with id "email". The password is write-only.
+model EmailSettings {
+  id                String   @id
+  enabled           Boolean  @default(false)
+  host              String?
+  port              Int      @default(587)
+  /// "starttls", "tls" (implicit TLS) or "none" (only for local relays).
+  security          String   @default("starttls")
+  username          String?
+  /// Encrypted with the deployment root key; never returned.
+  passwordEnvelope  String?
+  fromAddress       String?
+  fromName          String   @default("OpenMeshTak")
+  version           Int      @default(1)
+  updatedAt         DateTime @updatedAt
+}

@@ -33,6 +33,8 @@ const reviewedExceptions = new Map<string, Set<string>>([
   ],
   ["CC-BY-4.0", new Set(["caniuse-lite@1.0.30001814"])],
   ["0BSD", new Set(["tslib@1.14.1", "tslib@2.8.1"])],
+  // MIT without the attribution clause; more permissive than MIT. Pending owner confirmation.
+  ["MIT-0", new Set(["nodemailer@10.0.15"])],
   ["EPL-2.0", new Set(["elkjs@0.11.1"])],
   ["Unlicense", new Set(["postgres@3.4.7", "robust-predicates@3.0.3"])],
   // Both terms are individually allowlisted; the package requires both together.

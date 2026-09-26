@@ -64,6 +64,8 @@ import { EventGroupsController } from './../modules/event-groups/event-groups.co
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ConfigurationRevisionsController } from './../modules/event-configuration/configuration-revisions.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { EmailSettingsController } from './../modules/email/email-settings.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageRevisionsController } from './../modules/data-packages/package-revisions.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageOrderController } from './../modules/data-packages/package-order.controller.js';
@@ -167,7 +169,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Permission": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PermissionGrantDto": {
@@ -1435,6 +1437,51 @@ const models: TsoaRoute.Models = {
         "properties": {
             "created": {"dataType":"boolean","required":true},
             "revision": {"ref":"ConfigurationRevisionDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SmtpSecurity": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["starttls"]},{"dataType":"enum","enums":["tls"]},{"dataType":"enum","enums":["none"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "EmailSettingsDto": {
+        "dataType": "refObject",
+        "properties": {
+            "enabled": {"dataType":"boolean","required":true},
+            "host": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "port": {"dataType":"double","required":true},
+            "security": {"ref":"SmtpSecurity","required":true},
+            "username": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "passwordSet": {"dataType":"boolean","required":true},
+            "fromAddress": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "fromName": {"dataType":"string","required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateEmailSettingsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "enabled": {"dataType":"boolean","required":true},
+            "host": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":253}}},
+            "port": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":65535}}},
+            "security": {"ref":"SmtpSecurity","required":true},
+            "username": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":200}}},
+            "password": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":500}}},
+            "fromAddress": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":254},"pattern":{"value":"^[^\\s@]+@[^\\s@]+$"}}},
+            "fromName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SendTestEmailRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "to": {"dataType":"string","required":true,"validators":{"maxLength":{"value":254},"pattern":{"value":"^[^\\s@]+@[^\\s@]+$"}}},
         },
         "additionalProperties": false,
     },
@@ -5023,6 +5070,101 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEmailSettingsController_getEmailSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/email/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(EmailSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(EmailSettingsController.prototype.getEmailSettings)),
+
+            async function EmailSettingsController_getEmailSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEmailSettingsController_getEmailSettings, request, response });
+
+                const controller = new EmailSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getEmailSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEmailSettingsController_updateEmailSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateEmailSettingsRequest"},
+        };
+        app.put('/api/v1/email/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(EmailSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(EmailSettingsController.prototype.updateEmailSettings)),
+
+            async function EmailSettingsController_updateEmailSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEmailSettingsController_updateEmailSettings, request, response });
+
+                const controller = new EmailSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateEmailSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEmailSettingsController_sendTestEmail: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"SendTestEmailRequest"},
+        };
+        app.post('/api/v1/email/settings/test',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(EmailSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(EmailSettingsController.prototype.sendTestEmail)),
+
+            async function EmailSettingsController_sendTestEmail(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEmailSettingsController_sendTestEmail, request, response });
+
+                const controller = new EmailSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'sendTestEmail',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
               });
             } catch (err) {
                 return next(err);

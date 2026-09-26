@@ -194,6 +194,7 @@
 					"service-accounts.manage",
 					"tak-server.manage",
 					"tak-server.admin-access",
+					"email.manage",
 					"audit.read"
 				]
 			},
@@ -3826,6 +3827,140 @@
 				"required": [
 					"created",
 					"revision"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SmtpSecurity": {
+				"type": "string",
+				"enum": [
+					"starttls",
+					"tls",
+					"none"
+				]
+			},
+			"EmailSettingsDto": {
+				"description": "SMTP settings without the password, which is write-only.",
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"host": {
+						"type": "string",
+						"nullable": true
+					},
+					"port": {
+						"type": "number",
+						"format": "double"
+					},
+					"security": {
+						"$ref": "#/components/schemas/SmtpSecurity"
+					},
+					"username": {
+						"type": "string",
+						"nullable": true
+					},
+					"passwordSet": {
+						"type": "boolean",
+						"description": "Whether a password is stored. The password itself is never returned."
+					},
+					"fromAddress": {
+						"type": "string",
+						"nullable": true
+					},
+					"fromName": {
+						"type": "string"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until first saved."
+					}
+				},
+				"required": [
+					"enabled",
+					"host",
+					"port",
+					"security",
+					"username",
+					"passwordSet",
+					"fromAddress",
+					"fromName",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateEmailSettingsRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0
+					},
+					"enabled": {
+						"type": "boolean"
+					},
+					"host": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 253
+					},
+					"port": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 65535
+					},
+					"security": {
+						"$ref": "#/components/schemas/SmtpSecurity"
+					},
+					"username": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 200
+					},
+					"password": {
+						"type": "string",
+						"nullable": true,
+						"description": "Omit to keep the stored password, `null` to remove it.",
+						"maxLength": 500
+					},
+					"fromAddress": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 254,
+						"pattern": "^[^\\s@]+@[^\\s@]+$"
+					},
+					"fromName": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					}
+				},
+				"required": [
+					"version",
+					"enabled",
+					"host",
+					"port",
+					"security",
+					"username",
+					"fromAddress",
+					"fromName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SendTestEmailRequest": {
+				"properties": {
+					"to": {
+						"type": "string",
+						"maxLength": 254,
+						"pattern": "^[^\\s@]+@[^\\s@]+$"
+					}
+				},
+				"required": [
+					"to"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -12459,6 +12594,187 @@
 						}
 					}
 				]
+			}
+		},
+		"/email/settings": {
+			"get": {
+				"operationId": "GetEmailSettings",
+				"responses": {
+					"200": {
+						"description": "Email settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EmailSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Email"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateEmailSettings",
+				"responses": {
+					"200": {
+						"description": "Email settings updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EmailSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces the settings. The SMTP password is write-only: omit it to keep the stored one.",
+				"tags": [
+					"Email"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateEmailSettingsRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/email/settings/test": {
+			"post": {
+				"operationId": "SendTestEmail",
+				"responses": {
+					"204": {
+						"description": "Test email sent"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"502": {
+						"description": "Delivery failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Sends a test email with the stored settings.",
+				"tags": [
+					"Email"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SendTestEmailRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/data-packages/{packageId}/revisions": {
