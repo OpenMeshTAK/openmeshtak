@@ -13,7 +13,7 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import type { UserPage } from "../users/user.dto.js";
-import { toUserDto } from "../users/users.service.js";
+import { toUserDto, userSelection } from "../users/users.service.js";
 import { findUserGroupRow, systemGroupProtected } from "./user-groups.service.js";
 
 async function requireUser(userId: string): Promise<void> {
@@ -38,12 +38,7 @@ export async function listUserGroupMembers(
     where: { memberships: { some: { userGroupId } }, ...afterCursor(position) },
     orderBy: [...CURSOR_ORDER],
     take: limit + 1,
-    select: {
-      id: true,
-      displayName: true,
-      createdAt: true,
-      authSubject: { select: { email: true } },
-    },
+    select: userSelection,
   });
   return toPage(context, rows, limit, toUserDto);
 }

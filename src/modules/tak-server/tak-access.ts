@@ -13,6 +13,10 @@ export interface TakAccess {
 }
 
 export async function takAccessFor(userId: string): Promise<TakAccess> {
+  const user = await database.domainUser.findUnique({ where: { id: userId }, select: { disabledAt: true } });
+  if (user === null || user.disabledAt !== null) {
+    return { admin: false, eventIds: [] };
+  }
   const admin = await userHasPermission(userId, "tak-server.admin-access");
   const events = await database.event.findMany({
     where: admin ? { status: "active" } : { status: "active", members: { some: { userId } } },

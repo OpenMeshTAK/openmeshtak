@@ -1,6 +1,7 @@
 import { passkey } from "@better-auth/passkey";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
@@ -30,6 +31,23 @@ export const auth = betterAuth({
     passkey({ rpID: publicOrigin.hostname, rpName: "OpenMeshTak", origin: publicOrigin.origin }),
   ],
   hooks: { after: passkeyAuditHook },
+  databaseHooks: {
+    session: {
+      create: {
+        // Every way to sign in (password, passkey, access link) ends in a new session, so this one
+        // check keeps disabled accounts out everywhere.
+        before: async (session) => {
+          const user = await database.domainUser.findUnique({
+            where: { authSubjectId: session.userId },
+            select: { disabledAt: true },
+          });
+          if (user?.disabledAt != null) {
+            throw new APIError("FORBIDDEN", { message: "This account is disabled." });
+          }
+        },
+      },
+    },
+  },
   session: {
     // Better Auth asks for a fresh session before credential changes such as registering a
     // passkey. Align it with the step-up window used for API keys.

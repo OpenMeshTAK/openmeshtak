@@ -124,6 +124,9 @@ model Verification {
 model DomainUser {
   id                     String                @id
   displayName            String
+  /// Set while an administrator has disabled the account: no sign-in, no sessions, no TAK access.
+  disabledAt             DateTime?
+  version                Int                   @default(1)
   authSubjectId          String?               @unique
   authSubject            User?                 @relation(fields: [authSubjectId], references: [id], onDelete: SetNull)
   memberships            UserGroupMembership[]

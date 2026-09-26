@@ -51,10 +51,12 @@ async function authenticateSession(request: Request): Promise<UserPrincipal> {
     },
     select: {
       id: true,
+      disabledAt: true,
     },
   });
 
-  if (domainUser === null) {
+  // Sessions are deleted when an account is disabled; this also covers any that slipped through.
+  if (domainUser === null || domainUser.disabledAt !== null) {
     throw authenticationRequired();
   }
 
