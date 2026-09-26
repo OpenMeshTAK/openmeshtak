@@ -4,6 +4,7 @@ import { requirePermission, requireRecentAuthentication } from "../../shared/aut
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { notFoundProblem } from "../../shared/errors/problem-error.js";
 import { importCertificateAuthority, trustedCertificateAuthorities } from "./certificate-authority.js";
+import { takListeners } from "./tak-listeners.js";
 import type {
   ImportTakCertificateAuthorityRequest,
   TakCertificateAuthorityDto,
@@ -49,5 +50,7 @@ export async function importTakCertificateAuthority(
     traceId: actor.traceId,
     metadata: { subject: imported.subject, fingerprintSha256: imported.fingerprintSha256 },
   });
+  // New client certificates come from the imported CA; the listeners must trust it right away.
+  void takListeners.reload();
   return toDto(imported);
 }
