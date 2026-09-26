@@ -7,7 +7,8 @@ import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
 import { RECENT_AUTHENTICATION_MAX_AGE_SECONDS } from "../../shared/auth/permission-check.js";
 import { claimSessionPlugin } from "./claim-session.plugin.js";
-import { passkeyAuditHook } from "./passkey-audit.js";
+import { sendPasswordResetEmail, sendSecurityNotice, sendVerificationEmail } from "./account-emails.js";
+import { credentialChangeHook } from "./credential-change-hook.js";
 
 export const AUTH_BASE_PATH = "/api/auth";
 
@@ -24,13 +25,28 @@ export const auth = betterAuth({
     autoSignIn: true,
     enabled: true,
     minPasswordLength: 12,
+    sendResetPassword: sendPasswordResetEmail,
+    resetPasswordTokenExpiresIn: 30 * 60,
+    // A reset proves control of the email, not of the sessions; end them all.
+    revokeSessionsOnPasswordReset: true,
+    onPasswordReset: async ({ user }) => {
+      await sendSecurityNotice(user.id, "password.reset");
+    },
+  },
+  emailVerification: {
+    sendVerificationEmail,
+    expiresIn: 24 * 60 * 60,
+  },
+  user: {
+    // Changing the address sends a verification link to the new address (see account-emails).
+    changeEmail: { enabled: true },
   },
   plugins: [
     claimSessionPlugin(),
     // WebAuthn binds credentials to the public origin; behind Caddy this is the HTTPS hostname.
     passkey({ rpID: publicOrigin.hostname, rpName: "OpenMeshTak", origin: publicOrigin.origin }),
   ],
-  hooks: { after: passkeyAuditHook },
+  hooks: { after: credentialChangeHook },
   databaseHooks: {
     session: {
       create: {

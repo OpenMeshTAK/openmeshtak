@@ -19,7 +19,7 @@ import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { UpdateUserRequest, UserDto, UserPage } from "./user.dto.js";
-import { getUser, listUsers, revokeUserSessions, setUserDisabled, updateUser } from "./users.service.js";
+import { getUser, listUsers, revokeUserSessions, sendUserPasswordReset, setUserDisabled, updateUser } from "./users.service.js";
 
 /** Global OpenMeshTak users. Event participation is managed separately per event. */
 @Route("users")
@@ -84,6 +84,18 @@ export class UsersController extends Controller {
   @Response<ProblemDetails>(404, "Not found")
   public async enableUser(@Request() request: unknown, @Path() userId: Uuid): Promise<UserDto> {
     return setUserDisabled(requestContext(request), userId, false);
+  }
+
+  /**
+   * Emails the user a single-use password-reset link if their address is verified. Administrators
+   * never see or set passwords. Requires `users.manage`.
+   */
+  @Post("{userId}/password-reset")
+  @SuccessResponse(202, "Reset email requested")
+  @Response<ProblemDetails>(404, "Not found")
+  public async sendUserPasswordReset(@Request() request: unknown, @Path() userId: Uuid): Promise<void> {
+    await sendUserPasswordReset(requestContext(request), userId);
+    this.setStatus(202);
   }
 
   /** Signs the user out everywhere. Requires `users.manage`. */

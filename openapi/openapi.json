@@ -5858,6 +5858,68 @@
 				]
 			}
 		},
+		"/users/{userId}/password-reset": {
+			"post": {
+				"operationId": "SendUserPasswordReset",
+				"responses": {
+					"202": {
+						"description": "Reset email requested"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Emails the user a single-use password-reset link if their address is verified. Administrators\nnever see or set passwords. Requires `users.manage`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "userId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
 		"/users/{userId}/revoke-sessions": {
 			"post": {
 				"operationId": "RevokeUserSessions",

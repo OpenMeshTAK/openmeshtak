@@ -1,4 +1,6 @@
+import { auth } from "../auth/auth.js";
 import { isPlaceholderEmail } from "../auth/claim-session.plugin.js";
+import { config } from "../../shared/config/config.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
@@ -164,4 +166,21 @@ export async function setUserDisabled(actor: ActorContext, id: string, disabled:
     await recordAudit(auditEntry(actor, disabled ? "user.disabled" : "user.enabled", id), transaction);
   });
   return toUserDto(await findForUpdate(id));
+}
+
+/** Where reset links lead in the Web app; Better Auth appends the token. */
+export const PASSWORD_RESET_PAGE = new URL("/reset-password", config.publicOrigin).href;
+
+/**
+ * Sends the user a password-reset email. Administrators never see or set a password; the email
+ * goes only to a verified address, otherwise nothing is sent and the response stays the same.
+ */
+export async function sendUserPasswordReset(actor: ActorContext, id: string): Promise<void> {
+  await requirePermission(actor.principal, "users.manage");
+  const user = await findForUpdate(id);
+  const email = user.authSubject?.email;
+  if (email !== undefined && !isPlaceholderEmail(email)) {
+    await auth.api.requestPasswordReset({ body: { email, redirectTo: PASSWORD_RESET_PAGE } });
+  }
+  await recordAudit(auditEntry(actor, "user.password-reset-requested", id));
 }
