@@ -5,8 +5,9 @@ import type { Uuid } from "../../shared/http/uuid.js";
  * - `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and
  *   connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so
  *   OpenMeshTak provides guidance and settings, not a ready-made connection package.
+ * - `built-in-server`: participants enroll ATAK/iTAK with the built-in OpenMeshTak TAK server.
  */
-export type TakConnectionMode = "none" | "meshtastic-local-server";
+export type TakConnectionMode = "none" | "meshtastic-local-server" | "built-in-server";
 
 export interface TakConfigurationDto {
   eventId: Uuid;

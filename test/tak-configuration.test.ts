@@ -7,6 +7,7 @@ import { createApp } from "../src/app.js";
 import { PERMISSIONS } from "../src/shared/auth/permissions.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser, type TestUser } from "./support/identity.js";
+import { enableTakServer } from "./support/tak.js";
 
 interface ProfileBody {
   tak: { connection: { mode: string; meshChannel: { name: string; slot: number } | null } | null };
@@ -94,6 +95,18 @@ void describe("TAK configuration", () => {
     });
     // Charlie does not receive the TAK channel, so the app falls back to the primary channel.
     assert.deepEqual(await connection(charlieMemberId), { mode: "meshtastic-local-server", meshChannel: null });
+  });
+
+  void it("points members to the built-in TAK server once it is enabled", async () => {
+    await request(app)
+      .put(url("/tak/configuration"))
+      .set("Cookie", admin.cookie)
+      .send({ version: 0, mode: "built-in-server", meshChannelId: null })
+      .expect(200);
+    assert.deepEqual(await connection(bravoMemberId), { mode: "built-in-server", hostName: null, streamingPort: 8089 });
+
+    await enableTakServer(app, admin);
+    assert.deepEqual(await connection(bravoMemberId), { mode: "built-in-server", hostName: "tak.example.org", streamingPort: 8089 });
   });
 
   void it("rejects channels of other events and stale versions", async () => {

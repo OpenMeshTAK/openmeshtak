@@ -1,6 +1,12 @@
 import type { SnapshotTak } from "../event-configuration/configuration-snapshot.js";
 import type { ProfileChannel, ProfileTakConnection } from "./profile.dto.js";
 
+/** Where the built-in TAK server is reached; the host name is `null` while it is disabled. */
+export interface TakServerAddress {
+  hostName: string | null;
+  streamingPort: number;
+}
+
 /**
  * Channels in the order the member's device holds them after importing their device profile:
  * the included channels, but only when the primary channel is among them (the generator leaves
@@ -19,7 +25,11 @@ export function deviceChannels(channels: readonly ProfileChannel[]): ProfileChan
 export function resolveTakConnection(
   tak: SnapshotTak | null,
   channels: readonly ProfileChannel[],
+  takServer: TakServerAddress,
 ): ProfileTakConnection | null {
+  if (tak?.mode === "built-in-server") {
+    return { mode: "built-in-server", ...takServer };
+  }
   if (tak === null || tak.mode !== "meshtastic-local-server") {
     return null;
   }

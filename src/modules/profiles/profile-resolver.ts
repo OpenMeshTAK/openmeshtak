@@ -5,7 +5,7 @@ import type {
 } from "../event-configuration/configuration-snapshot.js";
 import type { TakRole } from "../event-groups/provisioning-values.js";
 import { shortNameFor } from "../event-members/member-identity.js";
-import { resolveTakConnection } from "./profile-tak.js";
+import { resolveTakConnection, type TakServerAddress } from "./profile-tak.js";
 import { resolveProfileChannels, type LiveChannelState } from "./profile-channels.js";
 import type { ProfileAssignment, ProfileFirmware, ResolvedProfileDto } from "./profile.dto.js";
 
@@ -28,6 +28,7 @@ export interface ProfileInputs {
   liveChannels: ReadonlyMap<string, LiveChannelState>;
   firmware: ProfileFirmware | null;
   tak: SnapshotTak | null;
+  takServer: TakServerAddress;
   revision: { id: string; number: number } | null;
 }
 
@@ -47,6 +48,7 @@ export function resolveProfile({
   liveChannels,
   firmware,
   tak,
+  takServer,
   revision,
 }: ProfileInputs): ResolvedProfileDto {
   const { provisioning } = group;
@@ -71,7 +73,7 @@ export function resolveProfile({
       team: provisioning.tak.team,
       role: role.takRoleOverride ?? provisioning.tak.role,
       serverGroups: provisioning.tak.serverGroups,
-      connection: resolveTakConnection(tak, memberChannels),
+      connection: resolveTakConnection(tak, memberChannels, takServer),
     },
     meshtastic: {
       longName: member.callsign,

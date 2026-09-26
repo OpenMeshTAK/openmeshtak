@@ -681,9 +681,10 @@
 				"type": "string",
 				"enum": [
 					"none",
-					"meshtastic-local-server"
+					"meshtastic-local-server",
+					"built-in-server"
 				],
-				"description": "- `none`: OpenMeshTak gives no TAK connection guidance.\n- `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and\n  connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so\n  OpenMeshTak provides guidance and settings, not a ready-made connection package."
+				"description": "- `none`: OpenMeshTak gives no TAK connection guidance.\n- `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and\n  connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so\n  OpenMeshTak provides guidance and settings, not a ready-made connection package.\n- `built-in-server`: participants enroll ATAK/iTAK with the built-in OpenMeshTak TAK server."
 			},
 			"TakConfigurationDto": {
 				"properties": {
@@ -1135,39 +1136,69 @@
 				"description": "ATAK member roles from the upstream Meshtastic `atak.proto` `MemberRole` enum."
 			},
 			"ProfileTakConnection": {
-				"description": "Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the\napp's \"TAK Mesh Channel\": the channel's slot on this member's device, or `null` while that\nchannel has not reached the device yet (then the primary channel is used).",
-				"properties": {
-					"mode": {
-						"type": "string",
-						"enum": [
-							"meshtastic-local-server"
-						],
-						"nullable": false
-					},
-					"meshChannel": {
+				"anyOf": [
+					{
 						"properties": {
-							"slot": {
-								"type": "number",
-								"format": "double"
+							"meshChannel": {
+								"properties": {
+									"slot": {
+										"type": "number",
+										"format": "double"
+									},
+									"name": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"slot",
+									"name"
+								],
+								"type": "object",
+								"nullable": true
 							},
-							"name": {
-								"type": "string"
+							"mode": {
+								"type": "string",
+								"enum": [
+									"meshtastic-local-server"
+								],
+								"nullable": false
 							}
 						},
 						"required": [
-							"slot",
-							"name"
+							"meshChannel",
+							"mode"
 						],
-						"type": "object",
-						"nullable": true
+						"type": "object"
+					},
+					{
+						"properties": {
+							"streamingPort": {
+								"type": "number",
+								"format": "double"
+							},
+							"hostName": {
+								"type": "string",
+								"nullable": true,
+								"description": "`null` while the TAK server is not enabled."
+							},
+							"mode": {
+								"type": "string",
+								"enum": [
+									"built-in-server"
+								],
+								"nullable": false,
+								"description": "Enroll with the built-in TAK server from the dashboard."
+							}
+						},
+						"required": [
+							"streamingPort",
+							"hostName",
+							"mode"
+						],
+						"type": "object"
 					}
-				},
-				"required": [
-					"mode",
-					"meshChannel"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"description": "Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the\napp's \"TAK Mesh Channel\": the channel's slot on this member's device, or `null` while that\nchannel has not reached the device yet (then the primary channel is used)."
 			},
 			"ProfileChannel": {
 				"description": "A channel the member receives. `included` channels come with the member's channel set;\n`on-site` channels are secret and handed out on site by a key holder before their release.",

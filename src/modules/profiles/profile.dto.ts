@@ -25,10 +25,18 @@ export interface ProfileChannel {
  * app's "TAK Mesh Channel": the channel's slot on this member's device, or `null` while that
  * channel has not reached the device yet (then the primary channel is used).
  */
-export interface ProfileTakConnection {
-  mode: "meshtastic-local-server";
-  meshChannel: { name: string; slot: number } | null;
-}
+export type ProfileTakConnection =
+  | {
+      mode: "meshtastic-local-server";
+      meshChannel: { name: string; slot: number } | null;
+    }
+  | {
+      /** Enroll with the built-in TAK server from the dashboard. */
+      mode: "built-in-server";
+      /** `null` while the TAK server is not enabled. */
+      hostName: string | null;
+      streamingPort: number;
+    };
 
 /** The Meshtastic firmware a participant must flash before importing OpenMeshTak settings. */
 export interface ProfileFirmware {

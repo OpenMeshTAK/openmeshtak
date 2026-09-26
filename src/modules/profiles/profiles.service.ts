@@ -18,6 +18,8 @@ import type { MyEventMembershipDto, ResolvedProfileDto } from "./profile.dto.js"
 import type { LiveChannelState } from "./profile-channels.js";
 import { resolveProfileFirmware } from "./profile-firmware.js";
 import { resolveProfile } from "./profile-resolver.js";
+import type { TakServerAddress } from "./profile-tak.js";
+import { loadTakServerSettings } from "../tak-server/tak-server-settings.js";
 
 const memberSelection = {
   id: true,
@@ -68,6 +70,12 @@ async function requireProfileAccess(
     return "on-behalf";
   }
   throw (await hasAnyGrantForEvent(principal, event.id)) ? forbidden() : notFoundProblem();
+}
+
+/** Read live: the server address is installation-wide and not part of event revisions. */
+async function takServerAddress(): Promise<TakServerAddress> {
+  const settings = await loadTakServerSettings();
+  return { hostName: settings.enabled ? settings.hostName : null, streamingPort: settings.streamingPort };
 }
 
 async function liveChannelStates(eventId: string): Promise<Map<string, LiveChannelState>> {
@@ -166,6 +174,7 @@ async function loadMemberProfile(
     liveChannels: await liveChannelStates(eventId),
     firmware: await resolveProfileFirmware(snapshot.meshtastic),
     tak: snapshot.tak,
+    takServer: await takServerAddress(),
     revision,
   });
   return { profile, access };

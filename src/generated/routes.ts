@@ -333,7 +333,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TakConnectionMode": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["none"]},{"dataType":"enum","enums":["meshtastic-local-server"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["none"]},{"dataType":"enum","enums":["meshtastic-local-server"]},{"dataType":"enum","enums":["built-in-server"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TakConfigurationDto": {
@@ -504,12 +504,8 @@ const models: TsoaRoute.Models = {
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ProfileTakConnection": {
-        "dataType": "refObject",
-        "properties": {
-            "mode": {"dataType":"enum","enums":["meshtastic-local-server"],"required":true},
-            "meshChannel": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"slot":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
-        },
-        "additionalProperties": false,
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"meshChannel":{"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"slot":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},"mode":{"dataType":"enum","enums":["meshtastic-local-server"],"required":true}}},{"dataType":"nestedObjectLiteral","nestedProperties":{"streamingPort":{"dataType":"double","required":true},"hostName":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"mode":{"dataType":"enum","enums":["built-in-server"],"required":true}}}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ProfileChannel": {
