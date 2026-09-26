@@ -83,6 +83,13 @@ void describe("TAK certificate authorities", () => {
     await request(app).post(`${url}/import`).set("Cookie", admin.cookie).send(external).expect(422);
   });
 
+  void it("rotates to a new generated CA and keeps the old one trusted", async () => {
+    const [first] = await list();
+    const rotated = (await request(app).post(`${url}/rotate`).set("Cookie", admin.cookie).expect(201)).body as AuthorityBody;
+    assert.notEqual(rotated.id, first?.id);
+    assert.deepEqual((await list()).map(({ id, active }) => [id, active]), [[rotated.id, true], [first?.id, false]]);
+  });
+
   void it("rejects certificates that are no CA and keys that do not match", async () => {
     const notCa = await externalAuthority(false);
     await request(app).post(`${url}/import`).set("Cookie", admin.cookie).send(notCa).expect(422);

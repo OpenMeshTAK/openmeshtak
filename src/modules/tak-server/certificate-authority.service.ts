@@ -3,7 +3,11 @@ import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission, requireRecentAuthentication } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { notFoundProblem } from "../../shared/errors/problem-error.js";
-import { importCertificateAuthority, trustedCertificateAuthorities } from "./certificate-authority.js";
+import {
+  importCertificateAuthority,
+  rotateCertificateAuthority,
+  trustedCertificateAuthorities,
+} from "./certificate-authority.js";
 import { takListeners } from "./tak-listeners.js";
 import type {
   ImportTakCertificateAuthorityRequest,
@@ -27,6 +31,27 @@ function toDto(row: TakCertificateAuthority): TakCertificateAuthorityDto {
 export async function listCertificateAuthorities(principal: Principal): Promise<TakCertificateAuthorityDto[]> {
   await requirePermission(principal, "tak-server.manage");
   return (await trustedCertificateAuthorities()).map(toDto);
+}
+
+/** Generates a new active CA; requires a recent sign-in like an import. */
+export async function rotateTakCertificateAuthority(actor: ActorContext): Promise<TakCertificateAuthorityDto> {
+  await requirePermission(actor.principal, "tak-server.manage");
+  if (actor.principal.type !== "user") {
+    throw notFoundProblem();
+  }
+  requireRecentAuthentication(actor.principal);
+  const created = await rotateCertificateAuthority();
+  await recordAudit({
+    actor: actor.principal,
+    action: "tak-server.certificate-authority-rotated",
+    targetType: "tak-certificate-authority",
+    targetId: created.id,
+    result: "success",
+    traceId: actor.traceId,
+    metadata: { subject: created.subject, fingerprintSha256: created.fingerprintSha256 },
+  });
+  void takListeners.reload();
+  return toDto(created);
 }
 
 /** Replacing the CA changes what every TAK client must trust, so it needs a recent sign-in. */

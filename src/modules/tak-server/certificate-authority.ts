@@ -92,6 +92,18 @@ export async function activeCertificateAuthority(): Promise<TakCertificateAuthor
   }
 }
 
+/**
+ * Replaces the active CA with a freshly generated one, e.g. on a schedule or after a suspected
+ * leak. The old CA stays trusted until it expires; revoke its certificates to cut them off sooner.
+ */
+export async function rotateCertificateAuthority(): Promise<TakCertificateAuthority> {
+  const row = await generateAuthority(randomUUID());
+  return database.$transaction(async (transaction) => {
+    await transaction.takCertificateAuthority.updateMany({ where: { activeSlot: ACTIVE }, data: { activeSlot: null } });
+    return transaction.takCertificateAuthority.create({ data: { ...row, activeSlot: ACTIVE } });
+  });
+}
+
 /** Every CA clients should still trust: the active one and older ones that have not expired. */
 export async function trustedCertificateAuthorities(now = new Date()): Promise<TakCertificateAuthority[]> {
   await activeCertificateAuthority();

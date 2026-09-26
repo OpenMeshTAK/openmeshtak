@@ -6680,6 +6680,53 @@
 				"parameters": []
 			}
 		},
+		"/tak-server/certificate-authorities/rotate": {
+			"post": {
+				"operationId": "RotateTakCertificateAuthority",
+				"responses": {
+					"201": {
+						"description": "Certificate authority created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakCertificateAuthorityDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Generates a new CA and makes it the active one. The previous CA stays trusted until it\nexpires. Requires a recent sign-in.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
 		"/tak-server/certificate-authorities/import": {
 			"post": {
 				"operationId": "ImportTakCertificateAuthority",

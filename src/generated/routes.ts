@@ -2652,6 +2652,37 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakCertificateAuthoritiesController_rotateTakCertificateAuthority: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.post('/api/v1/tak-server/certificate-authorities/rotate',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakCertificateAuthoritiesController)),
+            ...(fetchMiddlewares<RequestHandler>(TakCertificateAuthoritiesController.prototype.rotateTakCertificateAuthority)),
+
+            async function TakCertificateAuthoritiesController_rotateTakCertificateAuthority(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakCertificateAuthoritiesController_rotateTakCertificateAuthority, request, response });
+
+                const controller = new TakCertificateAuthoritiesController();
+
+              await templateService.apiHandler({
+                methodName: 'rotateTakCertificateAuthority',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsTakCertificateAuthoritiesController_importTakCertificateAuthority: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 body: {"in":"body","name":"body","required":true,"ref":"ImportTakCertificateAuthorityRequest"},

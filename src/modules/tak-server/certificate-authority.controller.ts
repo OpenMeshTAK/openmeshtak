@@ -5,7 +5,11 @@ import type {
   ImportTakCertificateAuthorityRequest,
   TakCertificateAuthorityDto,
 } from "./certificate-authority.dto.js";
-import { importTakCertificateAuthority, listCertificateAuthorities } from "./certificate-authority.service.js";
+import {
+  importTakCertificateAuthority,
+  listCertificateAuthorities,
+  rotateTakCertificateAuthority,
+} from "./certificate-authority.service.js";
 
 /** Certificate authorities of the built-in TAK server. Requires `tak-server.manage`. */
 @Route("tak-server/certificate-authorities")
@@ -22,6 +26,17 @@ export class TakCertificateAuthoritiesController extends Controller {
   @SuccessResponse(200, "Certificate authorities")
   public async listTakCertificateAuthorities(@Request() request: unknown): Promise<TakCertificateAuthorityDto[]> {
     return listCertificateAuthorities(requestContext(request).principal);
+  }
+
+  /**
+   * Generates a new CA and makes it the active one. The previous CA stays trusted until it
+   * expires. Requires a recent sign-in.
+   */
+  @Post("rotate")
+  @SuccessResponse(201, "Certificate authority created")
+  public async rotateTakCertificateAuthority(@Request() request: unknown): Promise<TakCertificateAuthorityDto> {
+    this.setStatus(201);
+    return rotateTakCertificateAuthority(requestContext(request));
   }
 
   /**
