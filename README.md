@@ -30,6 +30,18 @@ Run all current verification with:
 pnpm check
 ```
 
+## Docker deployment
+
+`deploy/compose.yaml` runs Core and the Web app (`openmeshtak-web`, checked out next to this repository) behind Caddy:
+
+1. Point DNS for your host name at the server and open ports 80, 443, 8446, 8443 and 8089.
+2. `cp deploy/.env.example deploy/.env` and set `PUBLIC_HOST` and `BETTER_AUTH_SECRET`.
+3. Create the root encryption key once and back it up separately: `openssl rand -base64 32 > deploy/secrets/root_encryption_key`. Without it, stored secrets such as channel keys and the TAK CA key cannot be decrypted.
+4. `docker compose -f deploy/compose.yaml --env-file deploy/.env up -d --build`
+5. Open `https://<PUBLIC_HOST>` and complete setup with the bootstrap token from `docker compose -f deploy/compose.yaml logs core`.
+
+Runtime data (SQLite database and stored files) lives in the `core-data` volume at `/server/data`.
+
 ## License
 
 OpenMeshTak Core is licensed under `AGPL-3.0-only`.
