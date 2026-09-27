@@ -21,13 +21,13 @@ ENV NODE_ENV=production \
     TRUST_PROXY=true
 WORKDIR /app
 # The Prisma CLI and tsx stay installed: migrations run on every start, before the server.
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package.json /app/prisma7.config.ts ./
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/scripts ./scripts
-COPY --from=build /app/openapi ./openapi
-COPY --from=build /app/firmware-profiles ./firmware-profiles
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/dist ./dist
+COPY --from=build --chown=node:node /app/package.json /app/prisma7.config.ts ./
+COPY --from=build --chown=node:node /app/prisma ./prisma
+COPY --from=build --chown=node:node /app/scripts ./scripts
+COPY --from=build --chown=node:node /app/openapi ./openapi
+COPY --from=build --chown=node:node /app/firmware-profiles ./firmware-profiles
 COPY deploy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh && mkdir -p /server/data && chown -R node:node /server/data
 USER node
