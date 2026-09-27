@@ -19,6 +19,13 @@ export interface CotEvent {
   isPing: boolean;
   /** Self-reported position and identity (the app's "SA" beacon), kept for late joiners. */
   isSituationalAwareness: boolean;
+  /** WGS84 position of the point. */
+  lat: number;
+  lon: number;
+  /** Display name from `detail/contact` for positions, or from `detail/contact` of markers when set. */
+  callsign: string | null;
+  time: Date;
+  stale: Date;
   xml: string;
 }
 
@@ -74,12 +81,18 @@ export function parseCotEvent(xml: string): CotEvent | null {
     return null;
   }
   const detail = event.detail as XmlNode | undefined;
-  const hasContact = typeof detail === "object" && detail !== null && "contact" in detail;
+  const contact = typeof detail === "object" && detail !== null ? (detail.contact as XmlNode | undefined) : undefined;
+  const hasContact = typeof contact === "object" && contact !== null;
   return {
     uid,
     type,
     isPing: type === "t-x-c-t",
     isSituationalAwareness: hasContact && type.startsWith("a-"),
+    lat: Number(attribute(point, "lat")),
+    lon: Number(attribute(point, "lon")),
+    callsign: hasContact ? (attribute(contact, "callsign")?.slice(0, 100) ?? null) : null,
+    time: new Date(attribute(event, "time") ?? ""),
+    stale: new Date(attribute(event, "stale") ?? ""),
     xml,
   };
 }

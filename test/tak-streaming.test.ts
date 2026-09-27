@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import { connect, type Server, type TLSSocket } from "node:tls";
 import { after, afterEach, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
+import request from "supertest";
 import { createApp } from "../src/app.js";
 import { trustedCertificateAuthorities } from "../src/modules/tak-server/certificate-authority.js";
 import { decryptServerKey, currentServerCertificate } from "../src/modules/tak-server/server-certificate.js";
@@ -20,8 +21,9 @@ const sockets: TLSSocket[] = [];
 
 function positionEvent(uid: string, type = "a-f-G-U-C"): string {
   const now = new Date().toISOString();
+  const stale = new Date(Date.now() + 300_000).toISOString();
   return (
-    `<?xml version="1.0" encoding="UTF-8"?><event version="2.0" uid="${uid}" type="${type}" how="m-g" time="${now}" start="${now}" stale="${now}">` +
+    `<?xml version="1.0" encoding="UTF-8"?><event version="2.0" uid="${uid}" type="${type}" how="m-g" time="${now}" start="${now}" stale="${stale}">` +
     `<point lat="52.4" lon="11.6" hae="50" ce="10" le="10"/><detail><contact callsign="${uid}"/></detail></event>`
   );
 }
@@ -124,6 +126,26 @@ void describe("TAK CoT streaming", () => {
     assert.ok(await beta.next((xml) => xml.includes('uid="ALPHA-1"')), "same event receives it");
     assert.equal(await stranger.next((xml) => xml.includes('uid="ALPHA-1"'), 300), null, "other event does not");
     assert.equal(await alpha.next((xml) => xml.includes('uid="ALPHA-1"'), 200), null, "no echo to the sender");
+  });
+
+  void it("shows an event's connections and positions in the live view, only with tak-traffic.view", async () => {
+    const bravo = await activeEvent();
+    const other = await activeEvent();
+    const alpha = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha")));
+    alpha.socket.write(positionEvent("ALPHA-LIVE"));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.view", eventId: bravo.eventId }]);
+    const live = (await request(app).get(`/api/v1/events/${bravo.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(200)).body as {
+      connections: Array<{ callsign: string | null; userDisplayName: string }>;
+      items: Array<{ uid: string; lat: number; callsign: string | null }>;
+    };
+    assert.deepEqual(live.connections.map(({ callsign, userDisplayName }) => [callsign, userDisplayName]), [["ALPHA-LIVE", "Alpha"]]);
+    assert.deepEqual(live.items.map(({ uid, lat }) => [uid, lat]), [["ALPHA-LIVE", 52.4]]);
+
+    await request(app).get(`/api/v1/events/${other.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(404);
+    const reader = await createUser("Reader", [{ permission: "events.read", eventId: bravo.eventId }]);
+    await request(app).get(`/api/v1/events/${bravo.eventId}/tak-traffic`).set("Cookie", reader.cookie).expect(403);
   });
 
   void it("answers pings, replays positions to late joiners and lets administrators see all events", async () => {

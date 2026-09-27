@@ -5,7 +5,7 @@ import { authenticateTakClient, type AuthenticatedTakClient } from "../client-au
 import { takConnections } from "../tak-connections.js";
 import { parseCotEvent, pongFor } from "./cot-event.js";
 import { CotFrameError, CotFrameReader } from "./cot-frames.js";
-import { CotRouter, type CotPeer } from "./cot-router.js";
+import { cotRouter, type CotPeer, type CotRouter } from "./cot-router.js";
 import { cotScopeFor } from "./cot-scope.js";
 
 /** Sustained events per second a client may send; bursts up to the bucket size are fine. */
@@ -52,6 +52,12 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
     scope: await cotScopeFor(client.userId, client.access),
     send: (xml) => sendTo(socket, xml),
     lastSituationalAwareness: null,
+    userId: client.userId,
+    certificateId: client.certificate.id,
+    callsign: null,
+    connectedAt: new Date(),
+    lastSeenAt: new Date(),
+    items: new Map(),
   };
   const updateScope = (current: AuthenticatedTakClient): void => {
     void cotScopeFor(current.userId, current.access).then((scope) => {
@@ -82,13 +88,24 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
       if (event === null || !limiter.allow()) {
         continue;
       }
+      peer.lastSeenAt = new Date();
       if (event.isPing) {
         sendTo(socket, pongFor(event));
         continue;
       }
       if (event.isSituationalAwareness) {
         peer.lastSituationalAwareness = event.xml;
+        peer.callsign = event.callsign ?? peer.callsign;
       }
+      router.remember(peer, {
+        uid: event.uid,
+        type: event.type,
+        callsign: event.callsign,
+        lat: event.lat,
+        lon: event.lon,
+        time: event.time,
+        stale: event.stale,
+      });
       router.publish(peer, event.xml);
     }
   });
@@ -102,7 +119,7 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
  * OpenMeshTak CAs; Core then checks that certificate against its records and the user's current
  * access before any event is accepted or delivered.
  */
-export function createStreamingServer(tls: TlsOptions, router = new CotRouter()): Server {
+export function createStreamingServer(tls: TlsOptions, router: CotRouter = cotRouter): Server {
   const server = createServer({ ...tls, requestCert: true, rejectUnauthorized: true }, (socket) => {
     socket.on("error", () => {
       socket.destroy();

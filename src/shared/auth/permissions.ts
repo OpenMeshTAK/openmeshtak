@@ -17,6 +17,7 @@ export const PERMISSIONS = [
   "artifacts.generate",
   "artifacts.download",
   "member-artifacts.download",
+  "tak-traffic.view",
   "service-accounts.manage",
   "tak-server.manage",
   "tak-server.admin-access",

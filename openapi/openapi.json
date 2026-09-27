@@ -191,6 +191,7 @@
 					"artifacts.generate",
 					"artifacts.download",
 					"member-artifacts.download",
+					"tak-traffic.view",
 					"service-accounts.manage",
 					"tak-server.manage",
 					"tak-server.admin-access",
@@ -518,6 +519,108 @@
 				"required": [
 					"certificateChainPem",
 					"privateKeyPem"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LiveTakConnectionDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userDisplayName": {
+						"type": "string"
+					},
+					"callsign": {
+						"type": "string",
+						"nullable": true,
+						"description": "The app's callsign once it reported its position."
+					},
+					"connectedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"lastSeenAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"userId",
+					"userDisplayName",
+					"callsign",
+					"connectedAt",
+					"lastSeenAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LiveTakItemDto": {
+				"description": "The newest state of one CoT item, such as a member's position or a marker they placed.",
+				"properties": {
+					"uid": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"description": "CoT type, e.g. `a-f-G-U-C` for a friendly ground unit."
+					},
+					"callsign": {
+						"type": "string",
+						"nullable": true
+					},
+					"lat": {
+						"type": "number",
+						"format": "double"
+					},
+					"lon": {
+						"type": "number",
+						"format": "double"
+					},
+					"time": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"stale": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"uid",
+					"type",
+					"callsign",
+					"lat",
+					"lon",
+					"time",
+					"stale"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LiveTakTrafficDto": {
+				"description": "Current TAK traffic of one event, held in memory only; nothing of it is stored.",
+				"properties": {
+					"connections": {
+						"items": {
+							"$ref": "#/components/schemas/LiveTakConnectionDto"
+						},
+						"type": "array"
+					},
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/LiveTakItemDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"connections",
+					"items"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -6889,6 +6992,72 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/events/{eventId}/tak-traffic": {
+			"get": {
+				"operationId": "GetLiveTakTraffic",
+				"responses": {
+					"200": {
+						"description": "Live TAK traffic",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/LiveTakTrafficDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Connected TAK apps of the event and their current positions and markers, from the built-in\nTAK server's memory. Requires `tak-traffic.view` for the event.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/me/tak-enrollments": {
