@@ -3219,6 +3219,10 @@
 						},
 						"type": "array",
 						"description": "Every member of the group exactly once, in the new short-name order (first becomes 1)."
+					},
+					"notifyMembers": {
+						"type": "boolean",
+						"description": "Emails members whose short name changed, if they have a confirmed address, asking them to set\nup their radio again. Otherwise the change is only shown to the administrator."
 					}
 				},
 				"required": [

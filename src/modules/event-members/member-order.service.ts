@@ -2,6 +2,8 @@ import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
+import { isPlaceholderEmail } from "../auth/claim-session.plugin.js";
+import { sendEmailInBackground } from "../email/mailer.js";
 import { eventArchivedProblem, requireEventPermission } from "../events/event-access.js";
 import type { EventMemberDto } from "./event-member.dto.js";
 import { eventMemberSelection, toEventMemberDto } from "./event-member.mapper.js";
@@ -10,6 +12,45 @@ import { memberIdentityConflictProblem, shortNameFits } from "./member-identity.
 export interface ReorderGroupMembersRequest {
   /** Every member of the group exactly once, in the new short-name order (first becomes 1). */
   memberIds: string[];
+  /**
+   * Emails members whose short name changed, if they have a confirmed address, asking them to set
+   * up their radio again. Otherwise the change is only shown to the administrator.
+   */
+  notifyMembers?: boolean;
+}
+
+interface Renumbering {
+  memberId: string;
+  from: number | undefined;
+  to: number;
+}
+
+/** Tells affected members their new short name; the radio keeps the old one until re-provisioned. */
+async function notifyRenumbered(eventId: string, prefix: string | null, changes: Renumbering[]): Promise<void> {
+  const event = await database.event.findUnique({ where: { id: eventId }, select: { name: true } });
+  const members = await database.eventMember.findMany({
+    where: { id: { in: changes.map(({ memberId }) => memberId) } },
+    select: { id: true, callsign: true, user: { select: { authSubject: { select: { email: true, emailVerified: true } } } } },
+  });
+  for (const member of members) {
+    const change = changes.find(({ memberId }) => memberId === member.id);
+    const address = member.user.authSubject;
+    if (change === undefined || address === null || !address.emailVerified || isPlaceholderEmail(address.email)) {
+      continue;
+    }
+    const before = change.from === undefined ? "" : ` from ${prefix ?? ""}${String(change.from)}`;
+    sendEmailInBackground(
+      {
+        to: address.email,
+        subject: `Your Meshtastic short name for ${event?.name ?? "your event"} changed`,
+        text: `Hello ${member.callsign},
+
+your Meshtastic short name changed${before} to ${prefix ?? ""}${String(change.to)}. Your radio keeps the old short name until you download your settings file again from the OpenMeshTak dashboard and import it.
+`,
+      },
+      "short-name-changed",
+    );
+  }
 }
 
 function staleOrder(): ProblemError {
@@ -48,7 +89,7 @@ export async function reorderGroupMembers(
     ]);
   }
 
-  await database.$transaction(async (transaction) => {
+  const changes = await database.$transaction(async (transaction) => {
     const members = await transaction.eventMember.findMany({ where: { eventGroupId: groupId }, select: { id: true, shortNameNumber: true } });
     const current = new Set(members.map(({ id }) => id));
     const requested = new Set(input.memberIds);
@@ -62,6 +103,10 @@ export async function reorderGroupMembers(
     for (const [index, id] of input.memberIds.entries()) {
       await transaction.eventMember.update({ where: { id }, data: { shortNameNumber: index + 1, version: { increment: 1 } } });
     }
+    const renumbered: Renumbering[] = input.memberIds.flatMap((id, index) => {
+      const before = members.find((member) => member.id === id)?.shortNameNumber;
+      return before === index + 1 ? [] : [{ memberId: id, from: before, to: index + 1 }];
+    });
     await recordAudit(
       {
         actor: actor.principal,
@@ -70,17 +115,15 @@ export async function reorderGroupMembers(
         targetId: groupId,
         result: "success",
         traceId: actor.traceId,
-        metadata: {
-          eventId,
-          changes: input.memberIds.flatMap((id, index) => {
-            const before = members.find((member) => member.id === id)?.shortNameNumber;
-            return before === index + 1 ? [] : [{ memberId: id, from: before, to: index + 1 }];
-          }),
-        },
+        metadata: { eventId, changes: renumbered, notifyMembers: input.notifyMembers === true },
       },
       transaction,
     );
+    return renumbered;
   });
+  if (input.notifyMembers === true && changes.length > 0) {
+    await notifyRenumbered(eventId, group.shortNamePrefix, changes);
+  }
 
   const rows = await database.eventMember.findMany({
     where: { eventGroupId: groupId },

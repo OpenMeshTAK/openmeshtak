@@ -1208,6 +1208,7 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "memberIds": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "notifyMembers": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },

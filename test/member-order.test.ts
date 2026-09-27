@@ -4,6 +4,7 @@ import { after, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../src/app.js";
+import { setEmailDeliveryForTests, type OutgoingEmail } from "../src/modules/email/mailer.js";
 import { PERMISSIONS } from "../src/shared/auth/permissions.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser, type TestUser } from "./support/identity.js";
@@ -52,6 +53,30 @@ void describe("group member order", () => {
     const profile = await request(app).get(`/api/v1/events/${eventId}/members/${carl}/profile`).set("Cookie", admin.cookie).expect(200);
     assert.equal((profile.body as { meshtastic: { shortName: string } }).meshtastic.shortName, "B1");
     assert.equal(await database.auditEvent.count({ where: { action: "event-group.members-renumbered" } }), 1);
+  });
+
+  void it("emails members with a confirmed address about their new short name when asked", async () => {
+    const [anna, ben, carl] = memberIds as [string, string, string];
+    await database.emailSettings.create({ data: { id: "email", enabled: true, host: "smtp.example.org", fromAddress: "noreply@example.org" } });
+    const carlUser = await database.eventMember.findUniqueOrThrow({ where: { id: carl }, select: { user: { select: { authSubjectId: true } } } });
+    await database.user.update({ where: { id: carlUser.user.authSubjectId ?? "" }, data: { emailVerified: true } });
+    const outbox: OutgoingEmail[] = [];
+    setEmailDeliveryForTests((_settings, message) => {
+      outbox.push(message);
+      return Promise.resolve();
+    });
+    try {
+      await request(app)
+        .put(`/api/v1/events/${eventId}/groups/${groupId}/member-order`)
+        .set("Cookie", admin.cookie)
+        .send({ memberIds: [carl, anna, ben], notifyMembers: true })
+        .expect(200);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      assert.equal(outbox.length, 1, "only the member with a confirmed address");
+      assert.match(outbox[0]?.text ?? "", /from B3 to B1/);
+    } finally {
+      setEmailDeliveryForTests(null);
+    }
   });
 
   void it("refuses stale or incomplete orders and callers without members.manage", async () => {
