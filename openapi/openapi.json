@@ -3211,6 +3211,22 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ReorderGroupMembersRequest": {
+				"properties": {
+					"memberIds": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Every member of the group exactly once, in the new short-name order (first becomes 1)."
+					}
+				},
+				"required": [
+					"memberIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ExternalProvider": {
 				"type": "string",
 				"description": "Opaque lowercase namespace of the external system, e.g. `discord`. It is not a login provider.",
@@ -11420,6 +11436,106 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/RetrySyncIssueRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/groups/{groupId}/member-order": {
+			"put": {
+				"operationId": "ReorderGroupMembers",
+				"responses": {
+					"200": {
+						"description": "Members in their new order",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/EventMemberDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Members changed meanwhile, short name too long or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Renumbers the group's short names `1..n` in the given order. Send every current member of\nthe group exactly once. Requires `members.manage`. Devices keep their old short name until\nthe member is provisioned again.",
+				"tags": [
+					"Event members"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "groupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ReorderGroupMembersRequest"
 							}
 						}
 					}

@@ -56,6 +56,8 @@ import { EventRolesController } from './../modules/event-roles/event-roles.contr
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SyncIssuesController } from './../modules/event-members/sync-issues.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { GroupMemberOrderController } from './../modules/event-members/member-order.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ExternalMembersController } from './../modules/event-members/external-members.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EventMembersController } from './../modules/event-members/event-members.controller.js';
@@ -1198,6 +1200,14 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "callsignOverride": {"dataType":"string","validators":{"minLength":{"value":1},"maxLength":{"value":39}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ReorderGroupMembersRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "memberIds": {"dataType":"array","array":{"dataType":"string"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -4629,6 +4639,40 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'retrySyncIssue',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGroupMemberOrderController_reorderGroupMembers: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                groupId: {"in":"path","name":"groupId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"ReorderGroupMembersRequest"},
+        };
+        app.put('/api/v1/events/:eventId/groups/:groupId/member-order',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(GroupMemberOrderController)),
+            ...(fetchMiddlewares<RequestHandler>(GroupMemberOrderController.prototype.reorderGroupMembers)),
+
+            async function GroupMemberOrderController_reorderGroupMembers(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGroupMemberOrderController_reorderGroupMembers, request, response });
+
+                const controller = new GroupMemberOrderController();
+
+              await templateService.apiHandler({
+                methodName: 'reorderGroupMembers',
                 controller,
                 response,
                 next,
