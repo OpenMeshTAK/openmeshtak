@@ -20,6 +20,24 @@ export interface UpdatePackageAudienceRequest {
   audience: PackageAudience;
 }
 
+/** When the built-in TAK server installs the package on members' TAK apps by itself. */
+export interface PackageTakDelivery {
+  /** Right after a member enrolls a TAK app. */
+  onEnrollment: boolean;
+  /** Whenever a member's TAK app connects, if a newer revision exists. */
+  onConnection: boolean;
+}
+
+export interface UpdatePackageTakDeliveryRequest {
+  /**
+   * Version the client last read.
+   * @isInt
+   * @minimum 1
+   */
+  version: number;
+  takDelivery: PackageTakDelivery;
+}
+
 export interface DataPackageDto {
   id: Uuid;
   eventId: Uuid;
@@ -30,6 +48,7 @@ export interface DataPackageDto {
   /** Published package revisions whose content was copied into this package's initial draft. */
   sources: DataPackageSourceDto[];
   audience: PackageAudience;
+  takDelivery: PackageTakDelivery;
   /** Drawing order within the event; lower values are drawn first, below higher ones. */
   sortOrder: number;
   /** Optimistic-concurrency version; send it back unchanged with updates. */

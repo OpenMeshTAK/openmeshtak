@@ -5,7 +5,7 @@ import { database } from "../../shared/database/database.js";
 import { notFoundProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
 import { audienceSelectors, EMPTY_AUDIENCE, validateAudience } from "../event-audience/event-audience.js";
 import { requireDataPackage, requireEditableEvent } from "./data-package-access.js";
-import type { DataPackageDto, UpdatePackageAudienceRequest } from "./data-package.dto.js";
+import type { DataPackageDto, UpdatePackageAudienceRequest, UpdatePackageTakDeliveryRequest } from "./data-package.dto.js";
 import { loadDto } from "./data-packages.service.js";
 
 /**
@@ -56,6 +56,50 @@ export async function updatePackageAudience(
           roles: stored.roleIds.length,
           members: stored.memberIds.length,
         },
+      },
+      transaction,
+    );
+  });
+  return loadDto(packageId);
+}
+
+/**
+ * Chooses whether the built-in TAK server installs the package by itself on enrollment, on every
+ * connection, both or neither. Like the audience it is a publishing decision.
+ */
+export async function updatePackageTakDelivery(
+  actor: ActorContext,
+  eventId: string,
+  packageId: string,
+  input: UpdatePackageTakDeliveryRequest,
+): Promise<DataPackageDto> {
+  const { event, dataPackage } = await requireDataPackage(actor.principal, eventId, packageId, "data-packages.publish");
+  requireEditableEvent(event);
+  if (dataPackage.version !== input.version) {
+    throw versionConflictProblem(dataPackage.version);
+  }
+  await database.$transaction(async (transaction) => {
+    const updated = await transaction.dataPackage.updateMany({
+      where: { id: packageId, eventId, version: input.version },
+      data: {
+        installOnEnrollment: input.takDelivery.onEnrollment,
+        installOnConnection: input.takDelivery.onConnection,
+        version: { increment: 1 },
+      },
+    });
+    if (updated.count !== 1) {
+      const latest = await transaction.dataPackage.findUnique({ where: { id: packageId }, select: { version: true } });
+      throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
+    }
+    await recordAudit(
+      {
+        actor: actor.principal,
+        action: "data-package.tak-delivery-updated",
+        targetType: "data-package",
+        targetId: packageId,
+        result: "success",
+        traceId: actor.traceId,
+        metadata: { eventId, ...input.takDelivery },
       },
       transaction,
     );

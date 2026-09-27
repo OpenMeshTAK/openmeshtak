@@ -5,6 +5,7 @@ import type { AddressInfo } from "node:net";
 import { after, afterEach, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
+import { unzipSync } from "fflate";
 import { createApp } from "../src/app.js";
 import { trustedCertificateAuthorities } from "../src/modules/tak-server/certificate-authority.js";
 import { createMartiApp } from "../src/modules/tak-server/marti/marti-app.js";
@@ -52,7 +53,7 @@ function get(client: EnrolledClient | null, path: string, caPems: string[]): Pro
   });
 }
 
-async function publishPackage(name: string, groupIds: string[] | null): Promise<void> {
+async function publishPackage(name: string, groupIds: string[] | null, takDelivery?: { onEnrollment: boolean; onConnection: boolean }): Promise<void> {
   const url = `/api/v1/events/${eventId}/data-packages`;
   const created = (await request(app).post(url).set("Cookie", admin.cookie).send({ name }).expect(201)).body as { id: string; version: number };
   if (groupIds !== null) {
@@ -62,7 +63,19 @@ async function publishPackage(name: string, groupIds: string[] | null): Promise<
       .send({ version: created.version, audience: { allMembers: false, ...none, groupIds } })
       .expect(200);
   }
+  if (takDelivery !== undefined) {
+    const current = (await request(app).get(`${url}/${created.id}`).set("Cookie", admin.cookie).expect(200)).body as { version: number };
+    await request(app)
+      .put(`${url}/${created.id}/tak-delivery`)
+      .set("Cookie", admin.cookie)
+      .send({ version: current.version, takDelivery })
+      .expect(200);
+  }
   await request(app).post(`${url}/${created.id}/revisions`).set("Cookie", admin.cookie).expect(200);
+}
+
+function zipEntries(body: Buffer): string[] {
+  return Object.keys(unzipSync(new Uint8Array(body)));
 }
 
 async function memberOf(groupId: string, name: string): Promise<TestUser> {
@@ -143,6 +156,23 @@ void describe("TAK Marti Data Package API", () => {
 
     const audit = await database.auditEvent.findFirstOrThrow({ where: { action: "data-package.downloaded" } });
     assert.equal((audit.metadata as { via: string }).via, "tak-server");
+  });
+
+  void it("delivers packages chosen for connections, only when they changed since the last sync", async () => {
+    await publishPackage("Live map", null, { onEnrollment: false, onConnection: true });
+    await publishPackage("Manual only", null);
+    const bravo = await enrollTakClient(app, await memberOf(bravoId, "Peter"));
+
+    const profile = await get(bravo, "/Marti/api/device/profile/connection?syncSecago=-1&clientUid=TEST", bravo.caPems);
+    assert.equal(profile.status, 200);
+    const entries = zipEntries(profile.body);
+    assert.ok(entries.some((entry) => entry.endsWith("Live_map-r1.zip")));
+    assert.ok(!entries.some((entry) => entry.includes("Manual_only")));
+    assert.ok(entries.includes("MANIFEST/manifest.xml"));
+
+    await database.packageRevision.updateMany({ data: { createdAt: new Date(Date.now() - 3_600_000) } });
+    const unchanged = await get(bravo, "/Marti/api/device/profile/connection?syncSecago=60", bravo.caPems);
+    assert.equal(unchanged.status, 204, "nothing new since the last sync a minute ago");
   });
 
   void it("refuses clients without a certificate and revoked certificates", async () => {

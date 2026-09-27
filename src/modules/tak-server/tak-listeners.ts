@@ -62,7 +62,9 @@ class TakListeners {
     // Client certificates from every still trusted CA are accepted; Core then checks its records.
     const ca = (await trustedCertificateAuthorities()).map(({ certificatePem }) => certificatePem);
 
-    this.servers.push(await listen(createServer(tls, createEnrollmentApp()), settings.enrollmentPort, "enrollment"));
+    // Enrollment accepts an optional client certificate, so enrolled apps can fetch their profile.
+    const optionalClientTls = { ...tls, ca, requestCert: true, rejectUnauthorized: false };
+    this.servers.push(await listen(createServer(optionalClientTls, createEnrollmentApp()), settings.enrollmentPort, "enrollment"));
     const mutualTls = { ...tls, ca, requestCert: true, rejectUnauthorized: true };
     this.servers.push(await listen(createServer(mutualTls, createMartiApp()), settings.martiPort, "marti"));
     this.servers.push(await listen(createStreamingServer({ ...tls, ca }), settings.streamingPort, "streaming"));

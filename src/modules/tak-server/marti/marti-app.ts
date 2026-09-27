@@ -5,6 +5,7 @@ import { logger } from "../../../shared/logging/logger.js";
 import { buildAtakExport } from "../../data-packages/package-atak.service.js";
 import { authenticateTakClient, type AuthenticatedTakClient } from "../client-authentication.js";
 import { loadTakServerSettings } from "../tak-server-settings.js";
+import { sendDeviceProfile } from "./profile-response.js";
 import { exportSummary, visiblePackagesFor, type VisiblePackage } from "./visible-packages.js";
 
 const NODE_ID = "openmeshtak";
@@ -94,6 +95,17 @@ async function missionQuery(request: Request, response: Response<unknown, Locals
   response.status(item === null ? 404 : 200).end();
 }
 
+/**
+ * Called by ATAK on every connection when device profiles are enabled. `syncSecago` is how many
+ * seconds ago the app last synced; only packages published since then are delivered.
+ */
+async function connectionProfile(request: Request, response: Response<unknown, Locals>): Promise<void> {
+  const { client } = response.locals;
+  const seconds = Number(request.query.syncSecago);
+  const changedSince = Number.isFinite(seconds) && seconds > 0 ? new Date(Date.now() - seconds * 1000) : null;
+  await sendDeviceProfile(response, client.userId, client.access, "connection", changedSince);
+}
+
 async function versionConfig(_request: Request, response: Response): Promise<void> {
   const { hostName } = await loadTakServerSettings();
   response.json({ version: "3", type: "ServerConfig", data: { version: SERVER_VERSION, api: "3", hostname: hostName }, nodeId: NODE_ID });
@@ -124,6 +136,7 @@ export function createMartiApp(): Express {
   app.get("/Marti/api/clientEndPoints", (_request, response) => {
     response.json({ version: "3", type: "com.bbn.marti.remote.ClientEndpoint", data: [], nodeId: NODE_ID });
   });
+  app.get("/Marti/api/device/profile/connection", wrap(connectionProfile));
   app.get("/Marti/sync/search", wrap(search));
   // Express also routes HEAD here; the handler answers it without a body.
   app.get("/Marti/sync/content", wrap(content));

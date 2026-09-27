@@ -4528,6 +4528,25 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"PackageTakDelivery": {
+				"description": "When the built-in TAK server installs the package on members' TAK apps by itself.",
+				"properties": {
+					"onEnrollment": {
+						"type": "boolean",
+						"description": "Right after a member enrolls a TAK app."
+					},
+					"onConnection": {
+						"type": "boolean",
+						"description": "Whenever a member's TAK app connects, if a newer revision exists."
+					}
+				},
+				"required": [
+					"onEnrollment",
+					"onConnection"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"DataPackageDto": {
 				"properties": {
 					"id": {
@@ -4559,6 +4578,9 @@
 					"audience": {
 						"$ref": "#/components/schemas/PackageAudience"
 					},
+					"takDelivery": {
+						"$ref": "#/components/schemas/PackageTakDelivery"
+					},
 					"sortOrder": {
 						"type": "number",
 						"format": "double",
@@ -4586,6 +4608,7 @@
 					"latestRevision",
 					"sources",
 					"audience",
+					"takDelivery",
 					"sortOrder",
 					"version",
 					"createdAt",
@@ -5324,6 +5347,25 @@
 				"required": [
 					"version",
 					"audience"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdatePackageTakDeliveryRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"takDelivery": {
+						"$ref": "#/components/schemas/PackageTakDelivery"
+					}
+				},
+				"required": [
+					"version",
+					"takDelivery"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -16013,6 +16055,103 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/UpdatePackageAudienceRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/tak-delivery": {
+			"put": {
+				"operationId": "UpdateDataPackageTakDelivery",
+				"responses": {
+					"200": {
+						"description": "TAK delivery updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DataPackageDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Chooses whether the built-in TAK server installs the package by itself on enrollment and/or\non every connection. Requires `data-packages.publish` and the current `version`.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"serviceAccountBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdatePackageTakDeliveryRequest"
 							}
 						}
 					}

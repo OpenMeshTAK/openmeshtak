@@ -1,7 +1,16 @@
+import type { TLSSocket } from "node:tls";
 import express, { type Express, type Request, type Response } from "express";
 import { rateLimit } from "express-rate-limit";
 import { logger } from "../../shared/logging/logger.js";
-import { CertificateRequestError, EnrollmentAuthenticationError, signEnrollmentRequest, type SignedEnrollment } from "./enrollment.service.js";
+import {
+  authenticateProfileRequest,
+  CertificateRequestError,
+  EnrollmentAuthenticationError,
+  signEnrollmentRequest,
+  type SignedEnrollment,
+} from "./enrollment.service.js";
+import { sendDeviceProfile } from "./marti/profile-response.js";
+import { takAccessFor } from "./tak-access.js";
 
 /** Escapes text for the small XML documents below; values are base64 or fixed strings anyway. */
 function xmlText(value: string): string {
@@ -63,6 +72,26 @@ async function signClient(request: Request, response: Response): Promise<void> {
   }
 }
 
+/** The certificate a client presented, if the TLS layer verified it against a trusted CA. */
+function verifiedPeerCertificate(request: Request): Buffer | undefined {
+  const socket = request.socket as TLSSocket;
+  return socket.authorized === true ? (socket.getPeerCertificate().raw) : undefined;
+}
+
+async function enrollmentProfile(request: Request, response: Response): Promise<void> {
+  try {
+    const userId = await authenticateProfileRequest(request.get("Authorization"), verifiedPeerCertificate(request));
+    if (userId === null) {
+      response.set("WWW-Authenticate", 'Basic realm="OpenMeshTak TAK enrollment"').status(401).end();
+      return;
+    }
+    await sendDeviceProfile(response, userId, await takAccessFor(userId), "enrollment", null);
+  } catch (error: unknown) {
+    logger.error({ error, event: "tak_enrollment_profile_failed" }, "TAK enrollment profile failed");
+    response.status(500).end();
+  }
+}
+
 /**
  * The enrollment endpoints a TAK app calls on the enrollment port. They are served over TLS with
  * the TAK server certificate and authenticate with the single-use enrollment token, never with
@@ -80,10 +109,7 @@ export function createEnrollmentApp(): Express {
     express.text({ type: () => true, limit: "16kb" }),
     (request, response) => void signClient(request, response),
   );
-  // No enrollment profile yet; 204 tells the app there is nothing to install.
-  app.get("/Marti/api/tls/profile/enrollment", (_request, response) => {
-    response.status(204).end();
-  });
+  app.get("/Marti/api/tls/profile/enrollment", (request, response) => void enrollmentProfile(request, response));
   app.use((_request, response) => {
     response.status(404).end();
   });

@@ -451,6 +451,10 @@ model DataPackage {
   /// Distribution: every member of the event, or only the members the audience selects.
   audienceAll Boolean               @default(true)
   audience    DataPackageAudience[]
+  /// The built-in TAK server installs the package right after a member enrolls.
+  installOnEnrollment Boolean       @default(false)
+  /// The built-in TAK server delivers new or changed revisions whenever a member connects.
+  installOnConnection Boolean       @default(false)
   event       Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
   layers      PackageLayer[]
   objects     PackageObject[]

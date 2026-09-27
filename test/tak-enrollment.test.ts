@@ -162,6 +162,27 @@ void describe("TAK certificate enrollment", () => {
     assert.equal(p12.getBags({ bagType: keyBag })[keyBag]?.length ?? 0, 0, "no key");
   });
 
+  void it("serves the enrollment profile only after the token produced a certificate", async () => {
+    await enableServer();
+    const credentials = await enroll(member);
+    const profileUrl = "/Marti/api/tls/profile/enrollment?clientUid=ANDROID-1234";
+    await request(enrollment).get(profileUrl).auth(credentials.username, credentials.token).expect(401);
+
+    await signClient(credentials, await csrFor(member.id)).expect(200);
+    const profile = await request(enrollment)
+      .get(profileUrl)
+      .auth(credentials.username, credentials.token)
+      .buffer(true)
+      .parse((res, callback) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => callback(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const files = unzipSync(new Uint8Array(profile.body as Buffer));
+    assert.match(strFromU8(files["preferences/preference.pref"] ?? new Uint8Array()), /deviceProfileEnableOnConnect/);
+  });
+
   void it("refuses enrollment when the member left before signing", async () => {
     await enableServer();
     const credentials = await enroll(member);

@@ -1702,6 +1702,15 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageTakDelivery": {
+        "dataType": "refObject",
+        "properties": {
+            "onEnrollment": {"dataType":"boolean","required":true},
+            "onConnection": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DataPackageDto": {
         "dataType": "refObject",
         "properties": {
@@ -1712,6 +1721,7 @@ const models: TsoaRoute.Models = {
             "latestRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
             "sources": {"dataType":"array","array":{"dataType":"refObject","ref":"DataPackageSourceDto"},"required":true},
             "audience": {"ref":"PackageAudience","required":true},
+            "takDelivery": {"ref":"PackageTakDelivery","required":true},
             "sortOrder": {"dataType":"double","required":true},
             "version": {"dataType":"double","required":true},
             "createdAt": {"dataType":"string","required":true},
@@ -1977,6 +1987,15 @@ const models: TsoaRoute.Models = {
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
             "audience": {"ref":"PackageAudience","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdatePackageTakDeliveryRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "takDelivery": {"ref":"PackageTakDelivery","required":true},
         },
         "additionalProperties": false,
     },
@@ -6296,6 +6315,40 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'updateDataPackageAudience',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDataPackagesController_updateDataPackageTakDelivery: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageTakDeliveryRequest"},
+        };
+        app.put('/api/v1/events/:eventId/data-packages/:packageId/tak-delivery',
+            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.updateDataPackageTakDelivery)),
+
+            async function DataPackagesController_updateDataPackageTakDelivery(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDataPackagesController_updateDataPackageTakDelivery, request, response });
+
+                const controller = new DataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'updateDataPackageTakDelivery',
                 controller,
                 response,
                 next,

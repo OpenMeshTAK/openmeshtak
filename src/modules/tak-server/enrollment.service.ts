@@ -4,6 +4,7 @@ import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { forbidden } from "../../shared/auth/permission-check.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
+import { authenticateTakClient } from "./client-authentication.js";
 import { CertificateRequestError, issueClientCertificate, validateCertificateRequest } from "./client-certificates.js";
 import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
@@ -147,3 +148,31 @@ export async function signEnrollmentRequest(
 }
 
 export { CertificateRequestError };
+
+/**
+ * Who asks for the enrollment profile. Apps call it right after `signClient`, either with their new
+ * client certificate or again with the enrollment credentials, whose token is already used up by
+ * then. A used token is therefore accepted here until it expires, but only for this read-only
+ * profile and only once it produced a certificate.
+ */
+export async function authenticateProfileRequest(
+  authorization: string | undefined,
+  certificateDer: Buffer | undefined,
+  now = new Date(),
+): Promise<string | null> {
+  if (certificateDer !== undefined) {
+    const client = await authenticateTakClient(certificateDer, now);
+    if (client !== null) {
+      return client.userId;
+    }
+  }
+  const credentials = parseBasic(authorization);
+  if (credentials === null) {
+    return null;
+  }
+  const token = await database.takEnrollmentToken.findUnique({ where: { tokenHash: hashToken(credentials.password) } });
+  if (token === null || token.userId !== credentials.username || token.usedAt === null || token.expiresAt <= now) {
+    return null;
+  }
+  return hasAnyTakAccess(await takAccessFor(token.userId)) ? token.userId : null;
+}

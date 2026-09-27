@@ -25,9 +25,10 @@ import type {
   DataPackagePage,
   UpdateDataPackageRequest,
   UpdatePackageAudienceRequest,
+  UpdatePackageTakDeliveryRequest,
 } from "./data-package.dto.js";
 import { createDataPackage, deleteDataPackage, getDataPackage, listDataPackages, updateDataPackage } from "./data-packages.service.js";
-import { updatePackageAudience } from "./package-audience.service.js";
+import { updatePackageAudience, updatePackageTakDelivery } from "./package-audience.service.js";
 
 /**
  * Data packages hold an event's editable map content. Reads need `data-packages.read`, changes
@@ -128,5 +129,22 @@ export class DataPackagesController extends Controller {
     @Body() body: UpdatePackageAudienceRequest,
   ): Promise<DataPackageDto> {
     return updatePackageAudience(requestContext(request), eventId, packageId, body);
+  }
+
+  /**
+   * Chooses whether the built-in TAK server installs the package by itself on enrollment and/or
+   * on every connection. Requires `data-packages.publish` and the current `version`.
+   */
+  @Put("{packageId}/tak-delivery")
+  @SuccessResponse(200, "TAK delivery updated")
+  @Response<ProblemDetails>(403, "Access denied")
+  @Response<ProblemDetails>(409, "Version conflict or event archived")
+  public async updateDataPackageTakDelivery(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Path() packageId: Uuid,
+    @Body() body: UpdatePackageTakDeliveryRequest,
+  ): Promise<DataPackageDto> {
+    return updatePackageTakDelivery(requestContext(request), eventId, packageId, body);
   }
 }
