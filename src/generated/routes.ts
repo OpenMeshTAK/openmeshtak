@@ -22,6 +22,8 @@ import { MyTakCertificatesController } from './../modules/tak-server/client-cert
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakCertificateAuthoritiesController } from './../modules/tak-server/certificate-authority.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakAcmeSettingsController } from './../modules/tak-server/acme-settings.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakConfigurationController } from './../modules/tak-configuration/tak-configuration.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SetupController } from './../modules/setup/setup.controller.js';
@@ -239,7 +241,7 @@ const models: TsoaRoute.Models = {
     "TakServerCertificateDto": {
         "dataType": "refObject",
         "properties": {
-            "source": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["issued"]},{"dataType":"enum","enums":["added"]}],"required":true},
+            "source": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["issued"]},{"dataType":"enum","enums":["added"]},{"dataType":"enum","enums":["acme"]}],"required":true},
             "hostName": {"dataType":"string","required":true},
             "subject": {"dataType":"string","required":true},
             "fingerprintSha256": {"dataType":"string","required":true},
@@ -382,6 +384,49 @@ const models: TsoaRoute.Models = {
         "properties": {
             "certificatePem": {"dataType":"string","required":true,"validators":{"maxLength":{"value":20000}}},
             "privateKeyPem": {"dataType":"string","required":true,"validators":{"maxLength":{"value":20000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AcmeSolverDto": {
+        "dataType": "refObject",
+        "properties": {
+            "challengeType": {"dataType":"string","required":true},
+            "provider": {"dataType":"string","required":true},
+            "label": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakAcmeSettingsDto": {
+        "dataType": "refObject",
+        "properties": {
+            "enabled": {"dataType":"boolean","required":true},
+            "email": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "challengeType": {"dataType":"string","required":true},
+            "provider": {"dataType":"string","required":true},
+            "cloudflareZoneId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "apiTokenSet": {"dataType":"boolean","required":true},
+            "availableSolvers": {"dataType":"array","array":{"dataType":"refObject","ref":"AcmeSolverDto"},"required":true},
+            "running": {"dataType":"boolean","required":true},
+            "lastAttemptAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "lastSuccessAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "lastError": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateTakAcmeSettingsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "enabled": {"dataType":"boolean","required":true},
+            "email": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":254}}},
+            "challengeType": {"dataType":"string","required":true,"validators":{"maxLength":{"value":30}}},
+            "provider": {"dataType":"string","required":true,"validators":{"maxLength":{"value":50}}},
+            "cloudflareZoneId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":64}}},
+            "apiToken": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":500}}},
         },
         "additionalProperties": false,
     },
@@ -3029,6 +3074,100 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakAcmeSettingsController_getSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/tak-server/acme',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakAcmeSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakAcmeSettingsController.prototype.getSettings)),
+
+            async function TakAcmeSettingsController_getSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakAcmeSettingsController_getSettings, request, response });
+
+                const controller = new TakAcmeSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakAcmeSettingsController_updateSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateTakAcmeSettingsRequest"},
+        };
+        app.put('/api/v1/tak-server/acme',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakAcmeSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakAcmeSettingsController.prototype.updateSettings)),
+
+            async function TakAcmeSettingsController_updateSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakAcmeSettingsController_updateSettings, request, response });
+
+                const controller = new TakAcmeSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakAcmeSettingsController_renew: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.post('/api/v1/tak-server/acme/renew',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakAcmeSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakAcmeSettingsController.prototype.renew)),
+
+            async function TakAcmeSettingsController_renew(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakAcmeSettingsController_renew, request, response });
+
+                const controller = new TakAcmeSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'renew',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

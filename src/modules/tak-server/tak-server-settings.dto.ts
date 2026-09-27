@@ -1,7 +1,7 @@
 /** The certificate the TAK listeners present. The private key is never returned. */
 export interface TakServerCertificateDto {
-  /** `issued` by the OpenMeshTak CA, or `added` by an administrator, e.g. from Let's Encrypt. */
-  source: "issued" | "added";
+  /** OpenMeshTak-issued, administrator-added, or obtained automatically through ACME. */
+  source: "issued" | "added" | "acme";
   hostName: string;
   subject: string;
   fingerprintSha256: string;

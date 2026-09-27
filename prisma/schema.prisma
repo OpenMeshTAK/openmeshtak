@@ -704,7 +704,7 @@ model TakCertificateAuthority {
 /// administrator as a publicly trusted certificate such as Let's Encrypt.
 model TakServerCertificate {
   id                  String   @id
-  /// "issued" by the OpenMeshTak CA or "added" by an administrator.
+  /// "issued" by OpenMeshTak, "added" by an administrator or obtained through "acme".
   source              String
   hostName            String
   /// CA that issued it; null for added certificates.
@@ -719,6 +719,24 @@ model TakServerCertificate {
   /// "active" on exactly one row.
   activeSlot          String?  @unique
   createdAt           DateTime @default(now())
+}
+
+/// Automatic public certificate issuance for the TAK listeners. Provider credentials and the
+/// ACME account key are encrypted with the deployment root key and never returned by the API.
+model TakAcmeSettings {
+  id                 String    @id
+  enabled            Boolean   @default(false)
+  email              String?
+  challengeType      String    @default("dns-01")
+  provider           String    @default("cloudflare")
+  cloudflareZoneId   String?
+  apiTokenEnvelope   String?
+  accountKeyEnvelope String?
+  lastAttemptAt      DateTime?
+  lastSuccessAt      DateTime?
+  lastError          String?
+  version            Int       @default(1)
+  updatedAt          DateTime  @updatedAt
 }
 
 /// Installation-wide settings of the built-in TAK server; a single row with id "tak-server".

@@ -49,6 +49,7 @@
     "@simplewebauthn/server": "13.3.3",
     "@tsoa/runtime": "6.6.0",
     "@turf/kinks": "7.4.0",
+    "acme-client": "5.4.0",
     "better-auth": "1.7.7",
     "better-sqlite3": "12.11.1",
     "dotenv": "18.0.5",

@@ -44,6 +44,7 @@ export async function clearDatabase(): Promise<void> {
     database.event.deleteMany(),
     database.takCertificateAuthority.deleteMany(),
     database.takServerCertificate.deleteMany(),
+    database.takAcmeSettings.deleteMany(),
     database.takServerSettings.deleteMany(),
     database.takEnrollmentToken.deleteMany(),
     database.takClientCertificate.deleteMany(),

@@ -19,6 +19,7 @@ import type {
   TakServerSettingsDto,
   UpdateTakServerSettingsRequest,
 } from "./tak-server-settings.dto.js";
+import { disableTakAcmeAutomation } from "./acme-settings.service.js";
 
 function certificateDto(certificate: TakServerCertificate | null): TakServerCertificateDto | null {
   return certificate === null
@@ -155,6 +156,7 @@ export async function addTakServerCertificate(
     throw validationProblem([{ field: "hostName", code: "HOST_NAME_REQUIRED", message: "Save the TAK host name first." }]);
   }
   const added = await addServerCertificate(input.certificateChainPem, input.privateKeyPem, hostName);
+  await disableTakAcmeAutomation();
   await serverCertificateAudit(actor, "tak-server.server-certificate-added", {
     hostName,
     subject: added.subject,

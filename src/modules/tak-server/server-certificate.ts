@@ -19,6 +19,8 @@ interface AddOptions {
   now: Date;
   /** Public roots devices trust; Node's bundled Mozilla store unless a test supplies its own. */
   trustedRoots: readonly string[];
+  /** `added` for administrator uploads or `acme` for a certificate obtained by Core. */
+  source?: "added" | "acme";
 }
 
 function encryptServerKey(id: string, privateKeyPem: string): string {
@@ -129,7 +131,7 @@ export async function addServerCertificate(
   const id = randomUUID();
   return activate({
     id,
-    source: "added",
+    source: options.source ?? "added",
     hostName,
     caId: null,
     certificateChainPem: chain.map((certificate) => certificate.toString()).join(""),
@@ -195,7 +197,7 @@ function issuedStillValid(certificate: TakServerCertificate, hostName: string, c
  */
 export async function currentServerCertificate(hostName: string, now = new Date()): Promise<TakServerCertificate> {
   const active = await database.takServerCertificate.findUnique({ where: { activeSlot: ACTIVE } });
-  if (active?.source === "added" && active.hostName === hostName && active.notAfter > now) {
+  if ((active?.source === "added" || active?.source === "acme") && active.hostName === hostName && active.notAfter > now) {
     return active;
   }
   const authority = await activeCertificateAuthority();

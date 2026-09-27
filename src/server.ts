@@ -5,6 +5,7 @@ import { config } from "./shared/config/config.js";
 import { getRootKey } from "./shared/crypto/root-key.js";
 import { firmwareProfiles } from "./modules/meshtastic-firmware/firmware-profiles.js";
 import { takListeners } from "./modules/tak-server/tak-listeners.js";
+import { takAcmeManager } from "./modules/tak-server/acme-manager.js";
 import { connectDatabase, disconnectDatabase } from "./shared/database/database.js";
 import { logger } from "./shared/logging/logger.js";
 import { writeBootstrapOperatorNotice } from "./shared/logging/operator-output.js";
@@ -36,10 +37,12 @@ async function startServer(): Promise<void> {
   });
 
   void takListeners.start();
+  takAcmeManager.start();
 
   const shutdown = (signal: NodeJS.Signals): void => {
     logger.info({ event: "server_shutdown_started", signal }, "Server shutdown started");
     void takListeners.stop();
+    takAcmeManager.stop();
 
     server.close(() => {
       void disconnectDatabase()

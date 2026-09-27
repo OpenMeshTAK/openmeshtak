@@ -367,9 +367,10 @@
 						"type": "string",
 						"enum": [
 							"issued",
-							"added"
+							"added",
+							"acme"
 						],
-						"description": "`issued` by the OpenMeshTak CA, or `added` by an administrator, e.g. from Let's Encrypt."
+						"description": "OpenMeshTak-issued, administrator-added, or obtained automatically through ACME."
 					},
 					"hostName": {
 						"type": "string"
@@ -808,6 +809,141 @@
 				"required": [
 					"certificatePem",
 					"privateKeyPem"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AcmeSolverDto": {
+				"properties": {
+					"challengeType": {
+						"type": "string"
+					},
+					"provider": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"challengeType",
+					"provider",
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakAcmeSettingsDto": {
+				"description": "ACME settings and renewal status. Provider tokens and the account key are never returned.",
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"email": {
+						"type": "string",
+						"nullable": true
+					},
+					"challengeType": {
+						"type": "string"
+					},
+					"provider": {
+						"type": "string"
+					},
+					"cloudflareZoneId": {
+						"type": "string",
+						"nullable": true
+					},
+					"apiTokenSet": {
+						"type": "boolean"
+					},
+					"availableSolvers": {
+						"items": {
+							"$ref": "#/components/schemas/AcmeSolverDto"
+						},
+						"type": "array"
+					},
+					"running": {
+						"type": "boolean"
+					},
+					"lastAttemptAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"lastSuccessAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"lastError": {
+						"type": "string",
+						"nullable": true
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until first saved."
+					}
+				},
+				"required": [
+					"enabled",
+					"email",
+					"challengeType",
+					"provider",
+					"cloudflareZoneId",
+					"apiTokenSet",
+					"availableSolvers",
+					"running",
+					"lastAttemptAt",
+					"lastSuccessAt",
+					"lastError",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateTakAcmeSettingsRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0
+					},
+					"enabled": {
+						"type": "boolean"
+					},
+					"email": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 254
+					},
+					"challengeType": {
+						"type": "string",
+						"maxLength": 30
+					},
+					"provider": {
+						"type": "string",
+						"maxLength": 50
+					},
+					"cloudflareZoneId": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 64
+					},
+					"apiToken": {
+						"type": "string",
+						"nullable": true,
+						"description": "Omit to keep the stored token, `null` to remove it. The token is encrypted and write-only.",
+						"maxLength": 500
+					}
+				},
+				"required": [
+					"version",
+					"enabled",
+					"email",
+					"challengeType",
+					"provider",
+					"cloudflareZoneId"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -7567,6 +7703,194 @@
 						}
 					}
 				}
+			}
+		},
+		"/tak-server/acme": {
+			"get": {
+				"operationId": "GetSettings",
+				"responses": {
+					"200": {
+						"description": "ACME settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakAcmeSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateSettings",
+				"responses": {
+					"200": {
+						"description": "ACME settings updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakAcmeSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces settings. The provider token is write-only; omit it to keep the stored value.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTakAcmeSettingsRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/tak-server/acme/renew": {
+			"post": {
+				"operationId": "Renew",
+				"responses": {
+					"200": {
+						"description": "Certificate renewed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakAcmeSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "ACME is disabled",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"502": {
+						"description": "ACME renewal failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Immediately obtains or renews the public certificate with the configured solver.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
 			}
 		},
 		"/events/{eventId}/tak/configuration": {
