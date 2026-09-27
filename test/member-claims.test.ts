@@ -132,6 +132,14 @@ void describe("participant claims", () => {
     assert.equal((response.body as ProblemBody).code, "SIGN_IN_REQUIRED");
   });
 
+  void it("refuses access links of disabled users", async () => {
+    const { token } = await issueClaim();
+    await database.domainUser.update({ where: { id: peterUserId }, data: { disabledAt: new Date() } });
+    const response = await exchange(token);
+    assert.notEqual(response.status, 200);
+    assert.equal(response.headers["set-cookie"], undefined, "no session cookie");
+  });
+
   void it("issues a one-time token that is stored only as a hash", async () => {
     const created = await issueClaim();
 

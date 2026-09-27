@@ -79,7 +79,7 @@ async function consumeClaim(token: string, traceId: string): Promise<ConsumedCla
         revokedAt: true,
         expiresAt: true,
         event: { select: { status: true } },
-        member: { select: { user: { select: { id: true, displayName: true, authSubjectId: true } } } },
+        member: { select: { user: { select: { id: true, displayName: true, authSubjectId: true, disabledAt: true } } } },
       },
     });
     if (claim === null) {
@@ -90,7 +90,10 @@ async function consumeClaim(token: string, traceId: string): Promise<ConsumedCla
       return { claim, consumed: false, signInRequired: true };
     }
 
+    // A disabled account fails like any invalid claim; the session hook cannot catch the first
+    // claim, whose Better Auth user does not exist yet.
     const usable =
+      claim.member.user.disabledAt === null &&
       claim.consumedAt === null &&
       claim.revokedAt === null &&
       claim.expiresAt > now &&
