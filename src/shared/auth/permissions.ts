@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   "tak-server.manage",
   "tak-server.admin-access",
   "email.manage",
+  "settings.manage",
   "audit.read",
 ] as const;
 
@@ -40,6 +41,7 @@ const INSTANCE_ONLY_PERMISSIONS: ReadonlySet<Permission> = new Set<Permission>([
   "tak-server.manage",
   "tak-server.admin-access",
   "email.manage",
+  "settings.manage",
   "audit.read",
 ]);
 

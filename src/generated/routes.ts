@@ -54,6 +54,8 @@ import { MemberClaimsController } from './../modules/member-claims/member-claims
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ClaimExchangeController } from './../modules/member-claims/claim-exchange.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MapSettingsController } from './../modules/map-settings/map-settings.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { HealthController } from './../modules/health/health.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EventsController } from './../modules/events/events.controller.js';
@@ -177,7 +179,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Permission": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["tak-traffic.view"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["tak-traffic.view"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["settings.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PermissionGrantDto": {
@@ -1078,6 +1080,30 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "token": {"dataType":"string","required":true,"validators":{"maxLength":{"value":200}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MapSettingsDto": {
+        "dataType": "refObject",
+        "properties": {
+            "providerName": {"dataType":"string","required":true},
+            "tileUrlTemplate": {"dataType":"string","required":true},
+            "attribution": {"dataType":"string","required":true},
+            "maxZoom": {"dataType":"double","required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateMapSettingsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "providerName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "tileUrlTemplate": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":500}}},
+            "attribution": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":300}}},
+            "maxZoom": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":22}}},
         },
         "additionalProperties": false,
     },
@@ -4493,6 +4519,69 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'exchangeClaim',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMapSettingsController_getMapSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/map/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MapSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(MapSettingsController.prototype.getMapSettings)),
+
+            async function MapSettingsController_getMapSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMapSettingsController_getMapSettings, request, response });
+
+                const controller = new MapSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getMapSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMapSettingsController_updateMapSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateMapSettingsRequest"},
+        };
+        app.put('/api/v1/map/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MapSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(MapSettingsController.prototype.updateMapSettings)),
+
+            async function MapSettingsController_updateMapSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMapSettingsController_updateMapSettings, request, response });
+
+                const controller = new MapSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateMapSettings',
                 controller,
                 response,
                 next,

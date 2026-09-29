@@ -51,6 +51,7 @@ export async function clearDatabase(): Promise<void> {
     database.emailSettings.deleteMany(),
     database.takTrafficItem.deleteMany(),
     database.takTrafficRecording.deleteMany(),
+    database.mapSettings.deleteMany(),
   ]);
 }
 

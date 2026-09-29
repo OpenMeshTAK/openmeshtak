@@ -836,3 +836,16 @@ model TakTrafficItem {
 
   @@index([eventId, receivedAt])
 }
+
+/// The online base map of the Web editor; a single row with id "map". Defaults to OpenStreetMap.
+model MapSettings {
+  id              String   @id
+  providerName    String
+  /// XYZ tile URL with {z}, {x} and {y}, e.g. https://tile.openstreetmap.org/{z}/{x}/{y}.png
+  tileUrlTemplate String
+  /// Plain-text attribution the provider requires, shown on every map.
+  attribution     String
+  maxZoom         Int      @default(19)
+  version         Int      @default(1)
+  updatedAt       DateTime @updatedAt
+}

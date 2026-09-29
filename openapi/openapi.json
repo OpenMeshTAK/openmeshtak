@@ -196,6 +196,7 @@
 					"tak-server.manage",
 					"tak-server.admin-access",
 					"email.manage",
+					"settings.manage",
 					"audit.read"
 				]
 			},
@@ -2861,6 +2862,79 @@
 				},
 				"required": [
 					"token"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MapSettingsDto": {
+				"description": "The Web map's online base map. Defaults to OpenStreetMap until an administrator changes it.",
+				"properties": {
+					"providerName": {
+						"type": "string"
+					},
+					"tileUrlTemplate": {
+						"type": "string",
+						"description": "XYZ tile URL with `{z}`, `{x}` and `{y}`; `{a-c}` selects subdomains."
+					},
+					"attribution": {
+						"type": "string",
+						"description": "Plain-text attribution the provider requires; the Web app shows it on every map."
+					},
+					"maxZoom": {
+						"type": "number",
+						"format": "double"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 while the default is in use."
+					}
+				},
+				"required": [
+					"providerName",
+					"tileUrlTemplate",
+					"attribution",
+					"maxZoom",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateMapSettingsRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0
+					},
+					"providerName": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"tileUrlTemplate": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 500
+					},
+					"attribution": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 300
+					},
+					"maxZoom": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 22
+					}
+				},
+				"required": [
+					"version",
+					"providerName",
+					"tileUrlTemplate",
+					"attribution",
+					"maxZoom"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -11007,6 +11081,118 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/ClaimExchangeRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/map/settings": {
+			"get": {
+				"operationId": "GetMapSettings",
+				"responses": {
+					"200": {
+						"description": "Map settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MapSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The base map the Web app shows. Readable by every signed-in user.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateMapSettings",
+				"responses": {
+					"200": {
+						"description": "Map settings updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MapSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Changes the base map for everyone. Requires instance-wide `settings.manage`.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateMapSettingsRequest"
 							}
 						}
 					}
