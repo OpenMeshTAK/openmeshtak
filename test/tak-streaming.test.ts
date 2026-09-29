@@ -9,6 +9,7 @@ import { createApp } from "../src/app.js";
 import { trustedCertificateAuthorities } from "../src/modules/tak-server/certificate-authority.js";
 import { decryptServerKey, currentServerCertificate } from "../src/modules/tak-server/server-certificate.js";
 import { CotFrameReader } from "../src/modules/tak-server/streaming/cot-frames.js";
+import { purgeExpiredTraffic } from "../src/modules/tak-server/traffic-recording.js";
 import { createStreamingServer } from "../src/modules/tak-server/streaming/streaming-server.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser, type TestUser } from "./support/identity.js";
@@ -160,6 +161,34 @@ void describe("TAK CoT streaming", () => {
     await request(app).get(`/api/v1/events/${other.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(404);
     const reader = await createUser("Reader", [{ permission: "events.read", eventId: bravo.eventId }]);
     await request(app).get(`/api/v1/events/${bravo.eventId}/tak-traffic`).set("Cookie", reader.cookie).expect(403);
+  });
+
+  void it("records an event's traffic only when the event opted in, and deletes it after the retention", async () => {
+    const bravo = await activeEvent();
+    const alpha = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha")));
+    alpha.socket.write(positionEvent("ALPHA-OFF"));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    assert.equal(await database.takTrafficItem.count(), 0, "nothing is stored by default");
+
+    const manager = await createUser("Manager", [
+      { permission: "events.manage", eventId: bravo.eventId },
+      { permission: "tak-traffic.view", eventId: bravo.eventId },
+    ]);
+    const url = `/api/v1/events/${bravo.eventId}/tak-traffic/recording`;
+    await request(app).put(url).set("Cookie", manager.cookie).send({ version: 0, enabled: true, retentionDays: 7 }).expect(200);
+    alpha.socket.write(positionEvent("ALPHA-ON"));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const exported = (await request(app).get(`${url}/export`).set("Cookie", manager.cookie).expect(200)).body as {
+      features: Array<{ properties: { uid: string } }>;
+    };
+    assert.deepEqual(exported.features.map(({ properties }) => properties.uid), ["ALPHA-ON"]);
+    assert.equal(await database.auditEvent.count({ where: { action: "tak-traffic.exported" } }), 1);
+
+    await database.takTrafficItem.updateMany({ data: { receivedAt: new Date(Date.now() - 8 * 86_400_000) } });
+    assert.equal(await purgeExpiredTraffic(), 1);
+    const reader = await createUser("Reader", [{ permission: "tak-traffic.view", eventId: bravo.eventId }]);
+    await request(app).put(url).set("Cookie", reader.cookie).send({ version: 1, enabled: false, retentionDays: 7 }).expect(403);
   });
 
   void it("answers pings, replays positions to late joiners and lets administrators see all events", async () => {

@@ -3,6 +3,7 @@ import { createServer, type Server, type TLSSocket, type TlsOptions } from "node
 import { logger } from "../../../shared/logging/logger.js";
 import { authenticateTakClient, type AuthenticatedTakClient } from "../client-authentication.js";
 import { takConnections } from "../tak-connections.js";
+import { trafficRecorder } from "../traffic-recording.js";
 import { parseCotEvent, pongFor } from "./cot-event.js";
 import { CotFrameError, CotFrameReader } from "./cot-frames.js";
 import { cotRouter, type CotPeer, type CotRouter } from "./cot-router.js";
@@ -95,7 +96,7 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
         peer.lastSituationalAwareness = event.xml;
         peer.callsign = event.callsign ?? peer.callsign;
       }
-      router.remember(peer, {
+      const item = {
         uid: event.uid,
         type: event.type,
         callsign: event.callsign,
@@ -103,7 +104,9 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
         lon: event.lon,
         time: event.time,
         stale: event.stale,
-      });
+      };
+      router.remember(peer, item);
+      trafficRecorder.record(peer.userId, peer.scope, item);
       router.publish(peer, event.xml);
     }
   });

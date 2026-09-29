@@ -360,6 +360,62 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakTrafficRecordingDto": {
+				"description": "Whether an event stores its TAK traffic, and for how long. Off by default.",
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"retentionDays": {
+						"type": "number",
+						"format": "double",
+						"description": "Recorded positions and markers are deleted after this many days."
+					},
+					"storedItems": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of items currently stored for the event."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until first saved."
+					}
+				},
+				"required": [
+					"enabled",
+					"retentionDays",
+					"storedItems",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateTakTrafficRecordingRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0
+					},
+					"enabled": {
+						"type": "boolean"
+					},
+					"retentionDays": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 365
+					}
+				},
+				"required": [
+					"version",
+					"enabled",
+					"retentionDays"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TakServerCertificateDto": {
 				"description": "The certificate the TAK listeners present. The private key is never returned.",
 				"properties": {
@@ -6889,6 +6945,230 @@
 					{
 						"in": "path",
 						"name": "userId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/tak-traffic/recording": {
+			"get": {
+				"operationId": "GetTakTrafficRecording",
+				"responses": {
+					"200": {
+						"description": "Recording settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakTrafficRecordingDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Requires `tak-traffic.view` for the event.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateTakTrafficRecording",
+				"responses": {
+					"200": {
+						"description": "Recording settings updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakTrafficRecordingDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Turns recording on or off and sets the retention in days. Requires `events.manage`.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTakTrafficRecordingRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak-traffic/recording/export": {
+			"get": {
+				"operationId": "ExportTakTraffic",
+				"responses": {
+					"200": {
+						"description": "Recorded traffic as GeoJSON",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The recorded positions and markers as a GeoJSON FeatureCollection, oldest first, at most\n50,000 items. Requires `tak-traffic.view`; every export is audited.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"

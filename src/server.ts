@@ -5,6 +5,7 @@ import { config } from "./shared/config/config.js";
 import { getRootKey } from "./shared/crypto/root-key.js";
 import { firmwareProfiles } from "./modules/meshtastic-firmware/firmware-profiles.js";
 import { takListeners } from "./modules/tak-server/tak-listeners.js";
+import { scheduleTrafficCleanup } from "./modules/tak-server/traffic-recording.js";
 import { takAcmeManager } from "./modules/tak-server/acme-manager.js";
 import { connectDatabase, disconnectDatabase } from "./shared/database/database.js";
 import { logger } from "./shared/logging/logger.js";
@@ -37,6 +38,7 @@ async function startServer(): Promise<void> {
   });
 
   void takListeners.start();
+  scheduleTrafficCleanup();
   takAcmeManager.start();
 
   const shutdown = (signal: NodeJS.Signals): void => {

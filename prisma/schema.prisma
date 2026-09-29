@@ -28,6 +28,8 @@ model Event {
   serviceAccountGrants    ServiceAccountPermissionGrant[]
   roles                   EventRole[]
   groups                  EventGroup[]
+  takTrafficRecording TakTrafficRecording?
+  takTrafficItems     TakTrafficItem[]
   members                 EventMember[]
   syncIssues              SyncIssue[]
   memberClaims            MemberClaim[]
@@ -803,4 +805,34 @@ model EmailSettings {
   fromName          String   @default("OpenMeshTak")
   version           Int      @default(1)
   updatedAt         DateTime @updatedAt
+}
+
+/// Opt-in recording of an event's TAK traffic. Off by default, because positions are personal data.
+model TakTrafficRecording {
+  eventId       String   @id
+  enabled       Boolean  @default(false)
+  /// Recorded items older than this are deleted by the daily cleanup.
+  retentionDays Int      @default(30)
+  version       Int      @default(1)
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  updatedAt     DateTime @updatedAt
+}
+
+/// One recorded CoT state (position or marker) of an event, kept for the retention period.
+model TakTrafficItem {
+  id         String   @id
+  eventId    String
+  uid        String
+  type       String
+  callsign   String?
+  lat        Float
+  lon        Float
+  time       DateTime
+  stale      DateTime
+  /// The OpenMeshTak user whose TAK app sent it.
+  userId     String
+  receivedAt DateTime @default(now())
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, receivedAt])
 }

@@ -8,6 +8,8 @@ import { UsersController } from './../modules/users/users.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { UserGroupsController } from './../modules/user-groups/user-groups.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakTrafficRecordingController } from './../modules/tak-server/traffic-recording.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakServerSettingsController } from './../modules/tak-server/tak-server-settings.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { LiveTakTrafficController } from './../modules/tak-server/live-traffic.controller.js';
@@ -234,6 +236,27 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "slug": {"ref":"Slug","required":true},
             "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true,"validators":{"maxItems":{"value":200}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrafficRecordingDto": {
+        "dataType": "refObject",
+        "properties": {
+            "enabled": {"dataType":"boolean","required":true},
+            "retentionDays": {"dataType":"double","required":true},
+            "storedItems": {"dataType":"double","required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateTakTrafficRecordingRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "enabled": {"dataType":"boolean","required":true},
+            "retentionDays": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":365}}},
         },
         "additionalProperties": false,
     },
@@ -2632,6 +2655,103 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakTrafficRecordingController_getTakTrafficRecording: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/tak-traffic/recording',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficRecordingController)),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficRecordingController.prototype.getTakTrafficRecording)),
+
+            async function TakTrafficRecordingController_getTakTrafficRecording(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakTrafficRecordingController_getTakTrafficRecording, request, response });
+
+                const controller = new TakTrafficRecordingController();
+
+              await templateService.apiHandler({
+                methodName: 'getTakTrafficRecording',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakTrafficRecordingController_updateTakTrafficRecording: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateTakTrafficRecordingRequest"},
+        };
+        app.put('/api/v1/events/:eventId/tak-traffic/recording',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficRecordingController)),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficRecordingController.prototype.updateTakTrafficRecording)),
+
+            async function TakTrafficRecordingController_updateTakTrafficRecording(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakTrafficRecordingController_updateTakTrafficRecording, request, response });
+
+                const controller = new TakTrafficRecordingController();
+
+              await templateService.apiHandler({
+                methodName: 'updateTakTrafficRecording',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakTrafficRecordingController_exportTakTraffic: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/tak-traffic/recording/export',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficRecordingController)),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficRecordingController.prototype.exportTakTraffic)),
+
+            async function TakTrafficRecordingController_exportTakTraffic(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakTrafficRecordingController_exportTakTraffic, request, response });
+
+                const controller = new TakTrafficRecordingController();
+
+              await templateService.apiHandler({
+                methodName: 'exportTakTraffic',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);
