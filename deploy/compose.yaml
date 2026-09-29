@@ -32,6 +32,7 @@ services:
     restart: unless-stopped
     environment:
       PUBLIC_HOST: ${PUBLIC_HOST}
+      SITE_ADDRESS: ${PUBLIC_HOST}
       CORE_ADDRESS: core:3000
     depends_on:
       - core
