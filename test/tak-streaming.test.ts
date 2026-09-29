@@ -128,6 +128,20 @@ void describe("TAK CoT streaming", () => {
     assert.equal(await alpha.next((xml) => xml.includes('uid="ALPHA-1"'), 200), null, "no echo to the sender");
   });
 
+  void it("does not filter by event group or TAK server group within an event", async () => {
+    const bravo = await activeEvent();
+    const charlieId = randomUUID();
+    await database.eventGroup.update({ where: { id: bravo.groupId }, data: { takServerGroups: ["Blue"] } });
+    await database.eventGroup.create({
+      data: { id: charlieId, eventId: bravo.eventId, name: "Charlie", slug: "charlie", shortNamePrefix: "C", takServerGroups: ["Red"] },
+    });
+    const alpha = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha")));
+    const charlie = await open(await enrollTakClient(app, await member(bravo.eventId, charlieId, bravo.roleId, "Charlie")));
+
+    alpha.socket.write(positionEvent("ALPHA-GROUPS"));
+    assert.ok(await charlie.next((xml) => xml.includes('uid="ALPHA-GROUPS"')), "other group of the same event receives it");
+  });
+
   void it("shows an event's connections and positions in the live view, only with tak-traffic.view", async () => {
     const bravo = await activeEvent();
     const other = await activeEvent();

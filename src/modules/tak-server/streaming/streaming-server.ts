@@ -49,7 +49,7 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
 
   const peer: CotPeer = {
     id: randomUUID(),
-    scope: await cotScopeFor(client.userId, client.access),
+    scope: cotScopeFor(client.access),
     send: (xml) => sendTo(socket, xml),
     lastSituationalAwareness: null,
     userId: client.userId,
@@ -60,9 +60,7 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
     items: new Map(),
   };
   const updateScope = (current: AuthenticatedTakClient): void => {
-    void cotScopeFor(current.userId, current.access).then((scope) => {
-      peer.scope = scope;
-    });
+    peer.scope = cotScopeFor(current.access);
   };
   takConnections.track({ socket, certificateDer, client, onAccessChanged: updateScope });
   router.join(peer);
