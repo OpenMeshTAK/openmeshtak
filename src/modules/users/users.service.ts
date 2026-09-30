@@ -14,6 +14,7 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import type { UpdateUserRequest, UserDto, UserPage } from "./user.dto.js";
+import { invalidUsernameProblem, isValidUsername, normalizeUsername, usernameTakenProblem } from "./usernames.js";
 
 const LIST_CONTEXT = "users";
 
@@ -23,7 +24,7 @@ export const userSelection = {
   disabledAt: true,
   version: true,
   createdAt: true,
-  authSubject: { select: { email: true } },
+  authSubject: { select: { email: true, username: true } },
 } as const;
 
 interface UserRow {
@@ -32,13 +33,14 @@ interface UserRow {
   disabledAt: Date | null;
   version: number;
   createdAt: Date;
-  authSubject: { email: string } | null;
+  authSubject: { email: string; username: string | null } | null;
 }
 
 export function toUserDto(row: UserRow): UserDto {
   return {
     id: row.id,
     displayName: row.displayName,
+    username: row.authSubject?.username ?? null,
     // Claim placeholders are internal Better Auth requirements, not real addresses.
     email:
       row.authSubject === null || isPlaceholderEmail(row.authSubject.email)
@@ -107,11 +109,30 @@ function auditEntry(actor: ActorContext, action: string, userId: string, metadat
   };
 }
 
-/** Renames a user. Requires instance-wide `users.manage`. */
+async function checkUsernameChange(authSubjectId: string | null, username: string | undefined): Promise<string | null> {
+  if (username === undefined) {
+    return null;
+  }
+  const normalized = normalizeUsername(username);
+  if (authSubjectId === null || !isValidUsername(normalized)) {
+    throw invalidUsernameProblem();
+  }
+  const owner = await database.user.findUnique({ where: { username: normalized }, select: { id: true } });
+  if (owner !== null && owner.id !== authSubjectId) {
+    throw usernameTakenProblem();
+  }
+  return normalized;
+}
+
+/** Renames a user and optionally changes the username. Requires instance-wide `users.manage`. */
 export async function updateUser(actor: ActorContext, id: string, input: UpdateUserRequest): Promise<UserDto> {
   await requirePermission(actor.principal, "users.manage");
-  await findForUpdate(id);
+  const current = await findForUpdate(id);
+  const username = await checkUsernameChange(current.authSubjectId, input.username);
   await database.$transaction(async (transaction) => {
+    if (username !== null && current.authSubjectId !== null && username !== current.authSubject?.username) {
+      await transaction.user.update({ where: { id: current.authSubjectId }, data: { username, displayUsername: username } });
+    }
     const updated = await transaction.domainUser.updateMany({
       where: { id, version: input.version },
       data: { displayName: input.displayName, version: { increment: 1 } },
@@ -119,7 +140,10 @@ export async function updateUser(actor: ActorContext, id: string, input: UpdateU
     if (updated.count !== 1) {
       throw versionConflictProblem((await findForUpdate(id)).version);
     }
-    await recordAudit(auditEntry(actor, "user.updated", id), transaction);
+    await recordAudit(
+      auditEntry(actor, "user.updated", id, username !== null && username !== current.authSubject?.username ? { usernameChanged: true } : {}),
+      transaction,
+    );
   });
   return toUserDto(await findForUpdate(id));
 }

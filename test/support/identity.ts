@@ -3,6 +3,7 @@ import { auth } from "../../src/modules/auth/auth.js";
 import { generateApiKey } from "../../src/modules/service-accounts/api-key-secret.js";
 import { scopeKeyFor, type Permission } from "../../src/shared/auth/permissions.js";
 import { database } from "../../src/shared/database/database.js";
+import { assignMissingUsername } from "../../src/modules/users/usernames.js";
 
 export interface TestGrant {
   permission: Permission;
@@ -73,6 +74,7 @@ export async function createUser(
     returnHeaders: true,
   });
 
+  await assignMissingUsername(signUp.response.user.id);
   const id = randomUUID();
   await database.domainUser.create({
     data: { id, displayName: name, authSubjectId: signUp.response.user.id },

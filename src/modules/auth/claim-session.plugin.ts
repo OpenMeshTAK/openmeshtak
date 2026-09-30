@@ -2,6 +2,7 @@ import type { BetterAuthPlugin } from "better-auth";
 import { createAuthEndpoint } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { z } from "zod";
+import { assignMissingUsername } from "../users/usernames.js";
 
 /**
  * Participants created by synchronization have no email address. Better Auth requires one, so a
@@ -51,6 +52,8 @@ export function claimSessionPlugin() {
               { email: placeholderEmail, name, emailVerified: false },
               { method: "openmeshtak-claim" },
             ));
+          // A participant needs a username to sign in later and to log in to TAK.
+          await assignMissingUsername(user.id);
           const session = await adapter.createSession(user.id);
 
           await setSessionCookie(ctx, { session, user });

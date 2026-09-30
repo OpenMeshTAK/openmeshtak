@@ -45,6 +45,9 @@ model User {
   name          String
   email         String      @unique
   emailVerified Boolean     @default(false)
+  /// Lowercase sign-in and TAK login name (Better Auth username plugin). Set for every account.
+  username        String?   @unique
+  displayUsername String?
   image         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt

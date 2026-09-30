@@ -8,6 +8,8 @@ export interface PrincipalDto {
   /** @format uuid */
   id: string;
   name: string;
+  /** Sign-in and TAK login name of a user; `null` for service accounts. */
+  username: string | null;
   /** Effective grants, deduplicated across all sources. */
   permissions: PermissionGrantDto[];
 }
@@ -41,7 +43,7 @@ export async function describePrincipal(principal: Principal): Promise<Principal
     const [user, grants] = await Promise.all([
       database.domainUser.findUniqueOrThrow({
         where: { id: principal.id },
-        select: { displayName: true },
+        select: { displayName: true, authSubject: { select: { username: true } } },
       }),
       database.permissionGrant.findMany({
         where: { userGroup: { memberships: { some: { userId: principal.id } } } },
@@ -49,7 +51,13 @@ export async function describePrincipal(principal: Principal): Promise<Principal
         orderBy: grantOrder,
       }),
     ]);
-    return { type: "user", id: principal.id, name: user.displayName, permissions: uniqueGrants(grants) };
+    return {
+      type: "user",
+      id: principal.id,
+      name: user.displayName,
+      username: user.authSubject?.username ?? null,
+      permissions: uniqueGrants(grants),
+    };
   }
 
   const account = await database.serviceAccount.findUniqueOrThrow({
@@ -63,6 +71,7 @@ export async function describePrincipal(principal: Principal): Promise<Principal
     type: "service-account",
     id: principal.id,
     name: account.name,
+    username: null,
     permissions: uniqueGrants(account.permissionGrants),
   };
 }

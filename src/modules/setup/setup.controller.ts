@@ -19,6 +19,11 @@ export interface SetupRequest {
   email: string;
   /** @minLength 1 @maxLength 100 */
   name: string;
+  /**
+   * Sign-in and TAK login name: 3 to 32 lowercase letters, digits, dots, underscores or hyphens.
+   * @pattern ^[a-z0-9._-]{3,32}$
+   */
+  username: string;
   /** @minLength 12 @maxLength 128 */
   password: string;
   /** @minLength 48 @maxLength 128 */
@@ -34,6 +39,7 @@ export interface SetupResponse {
   user: {
     id: string;
     name: string;
+    username: string;
     email: string;
   };
 }
@@ -72,6 +78,7 @@ export class SetupController extends Controller {
       user: {
         id: result.id,
         name: result.name,
+        username: result.username,
         email: result.email,
       },
     };

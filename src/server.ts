@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { rotateBootstrapChallenge } from "./modules/setup/bootstrap.service.js";
 import { ensureAdministratorGrants } from "./modules/user-groups/system-groups.js";
+import { backfillUsernames } from "./modules/users/usernames.js";
 import { config } from "./shared/config/config.js";
 import { getRootKey } from "./shared/crypto/root-key.js";
 import { firmwareProfiles } from "./modules/meshtastic-firmware/firmware-profiles.js";
@@ -18,6 +19,7 @@ async function startServer(): Promise<void> {
   await firmwareProfiles();
   await connectDatabase();
   await ensureAdministratorGrants();
+  await backfillUsernames();
 
   const bootstrapChallenge = await rotateBootstrapChallenge();
   if (bootstrapChallenge !== null) {

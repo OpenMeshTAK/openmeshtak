@@ -21,6 +21,7 @@ interface SessionBody {
 interface SetupBody {
   user?: {
     email?: unknown;
+    username?: unknown;
   };
 }
 
@@ -68,6 +69,7 @@ void describe("first-administrator setup", () => {
       .send({
         email: "bypass@example.test",
         name: "Bypass",
+        username: "bypass",
         password: "ThisIsNotAllowed123!",
       })
       .expect(404);
@@ -85,6 +87,7 @@ void describe("first-administrator setup", () => {
       .send({
         email: "admin@example.test",
         name: "Initial Admin",
+        username: "admin",
         password: "A-secure-test-password-123!",
         token: `omtk_bootstrap_${"B".repeat(43)}`,
       })
@@ -105,6 +108,7 @@ void describe("first-administrator setup", () => {
       .send({
         email: "admin@example.test",
         name: "Initial Admin",
+        username: "admin",
         password: "A-secure-test-password-123!",
         token: bootstrapToken,
       })
@@ -114,6 +118,7 @@ void describe("first-administrator setup", () => {
     assert.ok(setupResponse.headers["set-cookie"]);
     const setupBody = setupResponse.body as SetupBody;
     assert.equal(setupBody.user?.email, "admin@example.test");
+    assert.equal(setupBody.user?.username, "admin");
 
     const domainUser = await database.domainUser.findFirstOrThrow({
       include: {
@@ -158,6 +163,7 @@ void describe("first-administrator setup", () => {
       .send({
         email: "second@example.test",
         name: "Second Admin",
+        username: "second",
         password: "Another-secure-password-123!",
         token: bootstrapToken,
       })
@@ -178,6 +184,7 @@ void describe("first-administrator setup", () => {
       .send({
         email: "admin@example.test",
         name: "Initial Admin",
+        username: "admin",
         password: "A-secure-test-password-123!",
         token: bootstrapToken,
       })
@@ -196,6 +203,7 @@ void describe("first-administrator setup", () => {
       const response = await request(app).post("/api/v1/setup").send({
         email: "admin@example.test",
         name: "Initial Admin",
+        username: "admin",
         password: "A-secure-test-password-123!",
         token: `omtk_bootstrap_${"C".repeat(43)}`,
       });

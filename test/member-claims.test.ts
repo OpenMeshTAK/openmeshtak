@@ -167,6 +167,8 @@ void describe("participant claims", () => {
     assert.equal(principal.type, "user");
     assert.equal(principal.id, peterUserId);
     assert.deepEqual(principal.permissions, []);
+    // The claimed account gets a username right away, for later sign-in and the TAK login.
+    assert.match(String((principal as { username?: unknown }).username), /^[a-z0-9._-]{3,32}$/);
 
     const peter = await database.domainUser.findUniqueOrThrow({
       where: { id: peterUserId },

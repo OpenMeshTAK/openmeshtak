@@ -25,6 +25,7 @@ export interface BootstrapChallengeNotice {
 export interface CreateInitialAdministratorInput {
   token: string;
   name: string;
+  username: string;
   email: string;
   password: string;
 }
@@ -32,6 +33,7 @@ export interface CreateInitialAdministratorInput {
 export interface InitialAdministratorResult {
   id: string;
   name: string;
+  username: string;
   email: string;
   responseHeaders: Headers;
 }
@@ -182,6 +184,7 @@ export async function createInitialAdministrator(
       body: {
         email: input.email,
         name: input.name,
+        username: input.username,
         password: input.password,
       },
       returnHeaders: true,
@@ -259,6 +262,7 @@ export async function createInitialAdministrator(
     return {
       id: domainUserId,
       name: input.name,
+      username: input.username,
       email: input.email,
       responseHeaders: signUp.headers,
     };

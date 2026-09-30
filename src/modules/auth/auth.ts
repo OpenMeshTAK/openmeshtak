@@ -2,6 +2,7 @@ import { passkey } from "@better-auth/passkey";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
+import { username } from "better-auth/plugins";
 import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
@@ -9,6 +10,7 @@ import { RECENT_AUTHENTICATION_MAX_AGE_SECONDS } from "../../shared/auth/permiss
 import { claimSessionPlugin } from "./claim-session.plugin.js";
 import { sendPasswordResetEmail, sendSecurityNotice, sendVerificationEmail } from "./account-emails.js";
 import { credentialChangeHook } from "./credential-change-hook.js";
+import { isValidUsername, USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from "../users/usernames.js";
 
 export const AUTH_BASE_PATH = "/api/auth";
 
@@ -43,6 +45,12 @@ export const auth = betterAuth({
   },
   plugins: [
     claimSessionPlugin(),
+    // Sign-in by username; the plugin lowercases it, so "Peter" and "peter" are the same account.
+    username({
+      minUsernameLength: USERNAME_MIN_LENGTH,
+      maxUsernameLength: USERNAME_MAX_LENGTH,
+      usernameValidator: (value) => isValidUsername(value.toLowerCase()),
+    }),
     // WebAuthn binds credentials to the public origin; behind Caddy this is the HTTPS hostname.
     passkey({ rpID: publicOrigin.hostname, rpName: "OpenMeshTak", origin: publicOrigin.origin }),
   ],
