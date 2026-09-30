@@ -19,6 +19,8 @@ const PUBLIC_OPERATIONS = new Set([
   "GET /setup",
   "POST /setup",
   "POST /auth/claims/exchange",
+  // The short-lived, hashed link token is the credential (download grants).
+  "GET /downloads/{token}",
 ]);
 
 const document = JSON.parse(readFileSync("openapi/openapi.json", "utf8")) as OpenApiDocument;

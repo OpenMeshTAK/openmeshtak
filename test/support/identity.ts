@@ -53,6 +53,7 @@ export async function clearDatabase(): Promise<void> {
     database.takTrafficItem.deleteMany(),
     database.takTrafficRecording.deleteMany(),
     database.mapSettings.deleteMany(),
+    database.downloadGrant.deleteMany(),
   ]);
 }
 

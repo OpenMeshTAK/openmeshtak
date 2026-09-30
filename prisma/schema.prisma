@@ -141,6 +141,7 @@ model DomainUser {
   eventMemberships       EventMember[]
   takEnrollmentTokens    TakEnrollmentToken[]
   takClientCertificates  TakClientCertificate[]
+  downloadGrants         DownloadGrant[]
   createdAt              DateTime              @default(now())
   updatedAt              DateTime              @updatedAt
 }
@@ -851,4 +852,24 @@ model MapSettings {
   maxZoom         Int      @default(19)
   version         Int      @default(1)
   updatedAt       DateTime @updatedAt
+}
+
+/// Short-lived link to one generated artifact, so a phone can download it without a browser
+/// session, e.g. after scanning a QR code. Only the hash of the link token is stored.
+model DownloadGrant {
+  id         String    @id
+  tokenHash  String    @unique
+  /// The user the artifact is generated for and whose access is checked again on download.
+  userId     String
+  /// "device-profile", "member-data-package" or "tak-connection-package".
+  kind       String
+  eventId    String?
+  memberId   String?
+  packageId  String?
+  expiresAt  DateTime
+  uses       Int       @default(0)
+  user       DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
 }

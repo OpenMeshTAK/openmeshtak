@@ -76,6 +76,10 @@ import { ConfigurationRevisionsController } from './../modules/event-configurati
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EmailSettingsController } from './../modules/email/email-settings.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { DownloadGrantsController } from './../modules/download-grants/download-grants.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { GrantedDownloadsController } from './../modules/download-grants/download-grants.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageRevisionsController } from './../modules/data-packages/package-revisions.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageOrderController } from './../modules/data-packages/package-order.controller.js';
@@ -1633,6 +1637,31 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "to": {"dataType":"string","required":true,"validators":{"maxLength":{"value":254},"pattern":{"value":"^[^\\s@]+@[^\\s@]+$"}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DownloadGrantDto": {
+        "dataType": "refObject",
+        "properties": {
+            "url": {"dataType":"string","required":true},
+            "expiresAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DownloadGrantKind": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["device-profile"]},{"dataType":"enum","enums":["member-data-package"]},{"dataType":"enum","enums":["tak-connection-package"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateDownloadGrantRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "kind": {"ref":"DownloadGrantKind","required":true},
+            "eventId": {"ref":"Uuid"},
+            "memberId": {"ref":"Uuid"},
+            "packageId": {"ref":"Uuid"},
         },
         "additionalProperties": false,
     },
@@ -5695,6 +5724,69 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDownloadGrantsController_createDownloadGrant: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateDownloadGrantRequest"},
+        };
+        app.post('/api/v1/me/download-grants',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DownloadGrantsController)),
+            ...(fetchMiddlewares<RequestHandler>(DownloadGrantsController.prototype.createDownloadGrant)),
+
+            async function DownloadGrantsController_createDownloadGrant(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDownloadGrantsController_createDownloadGrant, request, response });
+
+                const controller = new DownloadGrantsController();
+
+              await templateService.apiHandler({
+                methodName: 'createDownloadGrant',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsGrantedDownloadsController_downloadWithGrant: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                token: {"in":"path","name":"token","required":true,"dataType":"string"},
+        };
+        app.get('/api/v1/downloads/:token',
+            ...(fetchMiddlewares<RequestHandler>(GrantedDownloadsController)),
+            ...(fetchMiddlewares<RequestHandler>(GrantedDownloadsController.prototype.downloadWithGrant)),
+
+            async function GrantedDownloadsController_downloadWithGrant(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsGrantedDownloadsController_downloadWithGrant, request, response });
+
+                const controller = new GrantedDownloadsController();
+
+              await templateService.apiHandler({
+                methodName: 'downloadWithGrant',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

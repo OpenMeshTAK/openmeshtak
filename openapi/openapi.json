@@ -73,7 +73,7 @@
 			"Uuid": {
 				"type": "string",
 				"format": "uuid",
-				"description": "Opaque resource identifier. The pattern makes tsoa reject malformed IDs before they reach a\r\ndatabase query.",
+				"description": "Opaque resource identifier. The pattern makes tsoa reject malformed IDs before they reach a\ndatabase query.",
 				"pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 			},
 			"UserDto": {
@@ -170,7 +170,7 @@
 					},
 					"username": {
 						"type": "string",
-						"description": "New sign-in and TAK login name; only for users with a local login. Apps enrolled with the old\r\nname keep working, because client certificates name the user ID.",
+						"description": "New sign-in and TAK login name; only for users with a local login. Apps enrolled with the old\nname keep working, because client certificates name the user ID.",
 						"pattern": "^[a-z0-9._-]{3,32}$"
 					}
 				},
@@ -246,7 +246,7 @@
 					},
 					"system": {
 						"type": "boolean",
-						"description": "Protected group managed by the server, such as the setup Admin group. It cannot be deleted,\r\nits permissions cannot change and it always keeps at least one member."
+						"description": "Protected group managed by the server, such as the setup Admin group. It cannot be deleted,\nits permissions cannot change and it always keeps at least one member."
 					},
 					"version": {
 						"type": "number",
@@ -581,7 +581,7 @@
 					},
 					"privateKeyPem": {
 						"type": "string",
-						"description": "Unencrypted private key in PEM format, e.g. the `privkey.pem` of Let's Encrypt. Encrypted at\r\nrest and never returned.",
+						"description": "Unencrypted private key in PEM format, e.g. the `privkey.pem` of Let's Encrypt. Encrypted at\nrest and never returned.",
 						"maxLength": 20000
 					}
 				},
@@ -867,7 +867,7 @@
 					},
 					"privateKeyPem": {
 						"type": "string",
-						"description": "The unencrypted CA private key in PEM format (PKCS#8 or PKCS#1). It is encrypted at rest and\r\nnever returned.",
+						"description": "The unencrypted CA private key in PEM format (PKCS#8 or PKCS#1). It is encrypted at rest and\nnever returned.",
 						"maxLength": 20000
 					}
 				},
@@ -1020,7 +1020,7 @@
 					"meshtastic-local-server",
 					"built-in-server"
 				],
-				"description": "- `none`: OpenMeshTak gives no TAK connection guidance.\r\n- `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and\r\n  connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so\r\n  OpenMeshTak provides guidance and settings, not a ready-made connection package.\r\n- `built-in-server`: participants enroll ATAK/iTAK with the built-in OpenMeshTak TAK server."
+				"description": "- `none`: OpenMeshTak gives no TAK connection guidance.\n- `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and\n  connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so\n  OpenMeshTak provides guidance and settings, not a ready-made connection package.\n- `built-in-server`: participants enroll ATAK/iTAK with the built-in OpenMeshTak TAK server."
 			},
 			"TakConfigurationDto": {
 				"properties": {
@@ -1465,7 +1465,7 @@
 					"Dark Green",
 					"Brown"
 				],
-				"description": "ATAK team colors as listed by the upstream Meshtastic `atak.proto` `Team` enum, using the\r\ndisplay names ATAK writes into CoT `__group` elements. Verified 2026-10-04."
+				"description": "ATAK team colors as listed by the upstream Meshtastic `atak.proto` `Team` enum, using the\ndisplay names ATAK writes into CoT `__group` elements. Verified 2026-10-04."
 			},
 			"TakRole": {
 				"type": "string",
@@ -1544,10 +1544,10 @@
 						"type": "object"
 					}
 				],
-				"description": "Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the\r\napp's \"TAK Mesh Channel\": the channel's slot on this member's device, or `null` while that\r\nchannel has not reached the device yet (then the primary channel is used)."
+				"description": "Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the\napp's \"TAK Mesh Channel\": the channel's slot on this member's device, or `null` while that\nchannel has not reached the device yet (then the primary channel is used)."
 			},
 			"ProfileChannel": {
-				"description": "A channel the member receives. `included` channels come with the member's channel set;\r\n`on-site` channels are secret and handed out on site by a key holder before their release.",
+				"description": "A channel the member receives. `included` channels come with the member's channel set;\n`on-site` channels are secret and handed out on site by a key holder before their release.",
 				"properties": {
 					"id": {
 						"$ref": "#/components/schemas/Uuid"
@@ -1640,7 +1640,7 @@
 				"additionalProperties": false
 			},
 			"ResolvedProfileDto": {
-				"description": "The single resolved provisioning identity of one member in one event. Every TAK, Meshtastic and\r\nmission output is derived from this shape.",
+				"description": "The single resolved provisioning identity of one member in one event. Every TAK, Meshtastic and\nmission output is derived from this shape.",
 				"properties": {
 					"eventId": {
 						"$ref": "#/components/schemas/Uuid"
@@ -1657,7 +1657,7 @@
 							"published",
 							"preview"
 						],
-						"description": "`published` profiles use the event's latest configuration revision. `preview` profiles of\r\ndraft events use the current, unpublished configuration and are visible to administrators only."
+						"description": "`published` profiles use the event's latest configuration revision. `preview` profiles of\ndraft events use the current, unpublished configuration and are visible to administrators only."
 					},
 					"configurationRevision": {
 						"properties": {
@@ -1809,7 +1809,7 @@
 				"additionalProperties": false
 			},
 			"ChannelHandoutDto": {
-				"description": "A secret-bearing Meshtastic channel handout. It is returned only to the signed-in key holder,\r\nmust not be persisted by clients and becomes obsolete as soon as the channel key rotates.",
+				"description": "A secret-bearing Meshtastic channel handout. It is returned only to the signed-in key holder,\nmust not be persisted by clients and becomes obsolete as soon as the channel key rotates.",
 				"properties": {
 					"channelId": {
 						"$ref": "#/components/schemas/Uuid"
@@ -2358,7 +2358,7 @@
 					"confirmation": {
 						"type": "string",
 						"nullable": true,
-						"description": "Token to send with the change when it needs confirmation; `null` when only the minimum patch\r\nwithin the same line is raised, which never drops values."
+						"description": "Token to send with the change when it needs confirmation; `null` when only the minimum patch\nwithin the same line is raised, which never drops values."
 					}
 				},
 				"required": [
@@ -2416,7 +2416,7 @@
 					"aes128",
 					"aes256"
 				],
-				"description": "How a channel encrypts traffic, derived from the PSK length as defined by upstream\r\n`channel.proto`: no key disables encryption, one byte selects a well-known default key, and 16\r\nor 32 bytes are AES-128 or AES-256 keys."
+				"description": "How a channel encrypts traffic, derived from the PSK length as defined by upstream\n`channel.proto`: no key disables encryption, one byte selects a well-known default key, and 16\nor 32 bytes are AES-128 or AES-256 keys."
 			},
 			"ChannelPskInfo": {
 				"description": "Describes the stored key without revealing it.",
@@ -2444,7 +2444,7 @@
 				"additionalProperties": false
 			},
 			"EventAudience": {
-				"description": "A selection of event members: everyone who matches any listed group, role or member. Used by\r\nMeshtastic channels and Data Packages so both decide \"who receives this\" the same way.",
+				"description": "A selection of event members: everyone who matches any listed group, role or member. Used by\nMeshtastic channels and Data Packages so both decide \"who receives this\" the same way.",
 				"properties": {
 					"groupIds": {
 						"items": {
@@ -2514,7 +2514,7 @@
 					},
 					"secret": {
 						"type": "boolean",
-						"description": "Secret channels withhold their key from every participant view and artifact except those of\r\nkey holders until the channel is released."
+						"description": "Secret channels withhold their key from every participant view and artifact except those of\nkey holders until the channel is released."
 					},
 					"releasedAt": {
 						"type": "string",
@@ -2524,7 +2524,7 @@
 					},
 					"keyHolders": {
 						"$ref": "#/components/schemas/EventAudience",
-						"description": "Members of the audience who receive a secret channel ahead of the event to share it on site.\r\nSelected like the audience; only members who are also in the audience count."
+						"description": "Members of the audience who receive a secret channel ahead of the event to share it on site.\nSelected like the audience; only members who are also in the audience count."
 					},
 					"version": {
 						"type": "number",
@@ -2608,7 +2608,7 @@
 					},
 					"psk": {
 						"type": "string",
-						"description": "Optional base64 key: empty (no encryption), 1 byte (upstream default key), 16 or 32 bytes.\r\nOmit it to let the server generate a random 32-byte key.",
+						"description": "Optional base64 key: empty (no encryption), 1 byte (upstream default key), 16 or 32 bytes.\nOmit it to let the server generate a random 32-byte key.",
 						"maxLength": 64
 					},
 					"uplinkEnabled": {
@@ -2843,7 +2843,7 @@
 					},
 					"claimUrl": {
 						"type": "string",
-						"description": "Link for the participant. The token travels in the URL fragment, which browsers never send\r\nto the server; the Web application removes it from history before exchanging it."
+						"description": "Link for the participant. The token travels in the URL fragment, which browsers never send\nto the server; the Web application removes it from history before exchanging it."
 					}
 				},
 				"required": [
@@ -3201,7 +3201,7 @@
 							}
 						],
 						"nullable": true,
-						"description": "ATAK role for members of this role, replacing their event group's default TAK role, e.g.\r\n`Team Lead` for platoon leaders. `null` keeps the group's role."
+						"description": "ATAK role for members of this role, replacing their event group's default TAK role, e.g.\n`Team Lead` for platoon leaders. `null` keeps the group's role."
 					},
 					"version": {
 						"type": "number",
@@ -3620,7 +3620,7 @@
 					},
 					"notifyMembers": {
 						"type": "boolean",
-						"description": "Emails members whose short name changed, if they have a confirmed address, asking them to set\r\nup their radio again. Otherwise the change is only shown to the administrator."
+						"description": "Emails members whose short name changed, if they have a confirmed address, asking them to set\nup their radio again. Otherwise the change is only shown to the administrator."
 					}
 				},
 				"required": [
@@ -3753,14 +3753,14 @@
 				"properties": {
 					"callsignFormat": {
 						"type": "string",
-						"description": "Callsign template. Allowed placeholders: `{username}` (required) and `{group}`.\r\nExample: `{username} [Bravo]`.",
+						"description": "Callsign template. Allowed placeholders: `{username}` (required) and `{group}`.\nExample: `{username} [Bravo]`.",
 						"minLength": 1,
 						"maxLength": 64
 					},
 					"shortNamePrefix": {
 						"type": "string",
 						"nullable": true,
-						"description": "Meshtastic short-name prefix, e.g. `B` for `B1`, `B2`. Unique within the event.\r\n`null` until chosen; activation requires it.",
+						"description": "Meshtastic short-name prefix, e.g. `B` for `B1`, `B2`. Unique within the event.\n`null` until chosen; activation requires it.",
 						"pattern": "^[A-Z0-9]{1,3}$"
 					},
 					"tak": {
@@ -4041,7 +4041,7 @@
 				"additionalProperties": false
 			},
 			"SnapshotChannel": {
-				"description": "A channel's published settings. Keys never enter snapshots: they stay encrypted on the channel,\r\nand rotation and release act on the channel directly so a leaked key stops being handed out at\r\nonce. `pskVersion` records which key was current when the revision was created.",
+				"description": "A channel's published settings. Keys never enter snapshots: they stay encrypted on the channel,\nand rotation and release act on the channel directly so a leaked key stops being handed out at\nonce. `pskVersion` records which key was current when the revision was created.",
 				"properties": {
 					"id": {
 						"type": "string"
@@ -4088,7 +4088,7 @@
 				"additionalProperties": false
 			},
 			"SnapshotMeshtastic": {
-				"description": "The event's Meshtastic firmware target and settings, with the profile file hash so an artifact\r\ncan always be traced back to the exact field definitions used to generate it.",
+				"description": "The event's Meshtastic firmware target and settings, with the profile file hash so an artifact\ncan always be traced back to the exact field definitions used to generate it.",
 				"properties": {
 					"firmwareVersion": {
 						"type": "string"
@@ -4138,7 +4138,7 @@
 				"description": "How TAK clients connect; `null` in revisions created before version 4."
 			},
 			"ConfigurationSnapshot": {
-				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\r\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\r\nadded `meshtastic`; version 4 added `tak`.",
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`.",
 				"properties": {
 					"schemaVersion": {
 						"type": "number",
@@ -4383,6 +4383,57 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DownloadGrantDto": {
+				"description": "A link that downloads the artifact without a session, e.g. from a QR code on another device.",
+				"properties": {
+					"url": {
+						"type": "string",
+						"description": "Treat as a secret: whoever has it can download the file until it expires."
+					},
+					"expiresAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"url",
+					"expiresAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DownloadGrantKind": {
+				"type": "string",
+				"enum": [
+					"device-profile",
+					"member-data-package",
+					"tak-connection-package"
+				]
+			},
+			"CreateDownloadGrantRequest": {
+				"properties": {
+					"kind": {
+						"$ref": "#/components/schemas/DownloadGrantKind"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Required for `device-profile` and `member-data-package`."
+					},
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Required for `device-profile` and `member-data-package`."
+					},
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Required for `member-data-package`."
+					}
+				},
+				"required": [
+					"kind"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PackageRevisionSummaryDto": {
 				"properties": {
 					"id": {
@@ -4549,7 +4600,7 @@
 				"additionalProperties": false
 			},
 			"CircleGeometry": {
-				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\r\nan approximated polygon (EDITOR.md) and maps to ATAK `u-d-c-c` circles.",
+				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\nan approximated polygon (EDITOR.md) and maps to ATAK `u-d-c-c` circles.",
 				"properties": {
 					"type": {
 						"type": "string",
@@ -4631,7 +4682,7 @@
 			},
 			"CotType": {
 				"type": "string",
-				"description": "CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly\r\ninfantry).",
+				"description": "CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly\ninfantry).",
 				"pattern": "^[a-z](-[A-Za-z0-9]+){1,15}$",
 				"maxLength": 64
 			},
@@ -4645,7 +4696,7 @@
 					"iconsetPath": {
 						"type": "string",
 						"nullable": true,
-						"description": "ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom\r\nicon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.",
+						"description": "ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom\nicon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.",
 						"pattern": "^[^\\u0000-\\u001f<>\"]+$",
 						"maxLength": 256
 					}
@@ -4890,7 +4941,7 @@
 				"additionalProperties": false
 			},
 			"PackageAudience": {
-				"description": "Who receives the published Data Package: every event member, or only those matching any\r\nselected group, role or member. The selection is ignored while `allMembers` is true.",
+				"description": "Who receives the published Data Package: every event member, or only those matching any\nselected group, role or member. The selection is ignored while `allMembers` is true.",
 				"properties": {
 					"groupIds": {
 						"items": {
@@ -5507,7 +5558,7 @@
 							"type": "array"
 						},
 						"type": "array",
-						"description": "Lower left, lower right, upper right and upper left corner as [longitude, latitude] in\r\nWGS84, as ATAK placed the image."
+						"description": "Lower left, lower right, upper right and upper left corner as [longitude, latitude] in\nWGS84, as ATAK placed the image."
 					},
 					"imageMediaType": {
 						"type": "string",
@@ -6239,7 +6290,7 @@
 						}
 					}
 				},
-				"description": "Disables a user: all sessions end, and sign-in, access links and TAK connections are refused.\r\nAdministrators cannot disable themselves. Requires `users.manage`.",
+				"description": "Disables a user: all sessions end, and sign-in, access links and TAK connections are refused.\nAdministrators cannot disable themselves. Requires `users.manage`.",
 				"tags": [
 					"Users"
 				],
@@ -6370,7 +6421,7 @@
 						}
 					}
 				},
-				"description": "Emails the user a single-use password-reset link if their address is verified. Administrators\r\nnever see or set passwords. Requires `users.manage`.",
+				"description": "Emails the user a single-use password-reset link if their address is verified. Administrators\nnever see or set passwords. Requires `users.manage`.",
 				"tags": [
 					"Users"
 				],
@@ -6966,7 +7017,7 @@
 						}
 					}
 				},
-				"description": "Adds a user to the group. Idempotent. The caller must hold every grant of the group, because\r\nmembership passes those grants on.",
+				"description": "Adds a user to the group. Idempotent. The caller must hold every grant of the group, because\nmembership passes those grants on.",
 				"tags": [
 					"User groups"
 				],
@@ -7273,7 +7324,7 @@
 						}
 					}
 				},
-				"description": "The recorded positions and markers as a GeoJSON FeatureCollection, oldest first, at most\r\n50,000 items. Requires `tak-traffic.view`; every export is audited.",
+				"description": "The recorded positions and markers as a GeoJSON FeatureCollection, oldest first, at most\n50,000 items. Requires `tak-traffic.view`; every export is audited.",
 				"tags": [
 					"TAK server"
 				],
@@ -7460,7 +7511,7 @@
 						}
 					}
 				},
-				"description": "Adds a publicly trusted server certificate for the TAK host name, e.g. the `fullchain.pem` and\r\n`privkey.pem` of Let's Encrypt, so devices trust the server without the OpenMeshTak CA.\r\nRequires a recent sign-in. Client certificates are still issued by the OpenMeshTak CA.",
+				"description": "Adds a publicly trusted server certificate for the TAK host name, e.g. the `fullchain.pem` and\n`privkey.pem` of Let's Encrypt, so devices trust the server without the OpenMeshTak CA.\nRequires a recent sign-in. Client certificates are still issued by the OpenMeshTak CA.",
 				"tags": [
 					"TAK server"
 				],
@@ -7572,7 +7623,7 @@
 						}
 					}
 				},
-				"description": "Connected TAK apps of the event and their current positions and markers, from the built-in\r\nTAK server's memory. Requires `tak-traffic.view` for the event.",
+				"description": "Connected TAK apps of the event and their current positions and markers, from the built-in\nTAK server's memory. Requires `tak-traffic.view` for the event.",
 				"tags": [
 					"TAK server"
 				],
@@ -7976,7 +8027,7 @@
 						}
 					}
 				},
-				"description": "Lists the active CA and older CAs that are still trusted. A new installation creates its own\r\nCA on the first call. Private keys are never returned.",
+				"description": "Lists the active CA and older CAs that are still trusted. A new installation creates its own\nCA on the first call. Private keys are never returned.",
 				"tags": [
 					"TAK server"
 				],
@@ -8023,7 +8074,7 @@
 						}
 					}
 				},
-				"description": "Generates a new CA and makes it the active one. The previous CA stays trusted until it\r\nexpires. Requires a recent sign-in.",
+				"description": "Generates a new CA and makes it the active one. The previous CA stays trusted until it\nexpires. Requires a recent sign-in.",
 				"tags": [
 					"TAK server"
 				],
@@ -8080,7 +8131,7 @@
 						}
 					}
 				},
-				"description": "Imports an existing CA and makes it the active one. The previous CA stays trusted until it\r\nexpires. Requires a recent sign-in; the key is encrypted at rest and never returned.",
+				"description": "Imports an existing CA and makes it the active one. The previous CA stays trusted until it\nexpires. Requires a recent sign-in; the key is encrypted at rest and never returned.",
 				"tags": [
 					"TAK server"
 				],
@@ -8958,7 +9009,7 @@
 						}
 					}
 				},
-				"description": "Creates an API key and returns its complete value exactly once. Creating a key while another\r\nis active is a rotation. Requires a recent sign-in.",
+				"description": "Creates an API key and returns its complete value exactly once. Creating a key while another\nis active is a rotation. Requires a recent sign-in.",
 				"tags": [
 					"Service accounts"
 				],
@@ -9118,7 +9169,7 @@
 						}
 					}
 				},
-				"description": "Resolves the member's callsign, TAK and Meshtastic identity. Requires\r\n`members.read`, being that member in an active event, or `member-artifacts.download` in an\r\nactive event, which is audited as an on-behalf view. Draft events return an administrator\r\npreview of the unpublished configuration.",
+				"description": "Resolves the member's callsign, TAK and Meshtastic identity. Requires\n`members.read`, being that member in an active event, or `member-artifacts.download` in an\nactive event, which is audited as an on-behalf view. Draft events return an administrator\npreview of the unpublished configuration.",
 				"tags": [
 					"Profiles"
 				],
@@ -9225,7 +9276,7 @@
 						}
 					}
 				},
-				"description": "Delivers an audited Meshtastic channel URL to the signed-in member when the published event\r\nconfiguration designates that member as a key holder. The URL contains secret key material.",
+				"description": "Delivers an audited Meshtastic channel URL to the signed-in member when the published event\nconfiguration designates that member as a key holder. The URL contains secret key material.",
 				"tags": [
 					"Profiles"
 				],
@@ -9287,7 +9338,7 @@
 						}
 					}
 				},
-				"description": "Describes the authenticated caller and its effective grants. Integrations use it to verify\r\nan API key; the Web application uses it to adapt navigation. It never replaces server-side\r\nauthorization.",
+				"description": "Describes the authenticated caller and its effective grants. Integrations use it to verify\nan API key; the Web application uses it to adapt navigation. It never replaces server-side\nauthorization.",
 				"tags": [
 					"Authentication"
 				],
@@ -9646,7 +9697,7 @@
 						}
 					}
 				},
-				"description": "Sets or clears write-only secrets such as the Wi-Fi or MQTT password. Values are never\r\nreturned; `secretsSet` only says which secrets hold a value. Requires the current `version`.",
+				"description": "Sets or clears write-only secrets such as the Wi-Fi or MQTT password. Values are never\nreturned; `secretsSet` only says which secrets hold a value. Requires the current `version`.",
 				"tags": [
 					"Meshtastic configuration"
 				],
@@ -9844,7 +9895,7 @@
 						}
 					}
 				},
-				"description": "Changes the recommended firmware. Except for raising the minimum patch within a line, send\r\nthe `confirmation` of the preview that was accepted.",
+				"description": "Changes the recommended firmware. Except for raising the minimum patch within a line, send\nthe `confirmation` of the preview that was accepted.",
 				"tags": [
 					"Meshtastic configuration"
 				],
@@ -10473,7 +10524,7 @@
 						}
 					}
 				},
-				"description": "Releases a withheld secret channel to its whole audience. Audited; requires the current\r\n`version`.",
+				"description": "Releases a withheld secret channel to its whole audience. Audited; requires the current\n`version`.",
 				"tags": [
 					"Meshtastic channels"
 				],
@@ -10638,7 +10689,7 @@
 						}
 					}
 				},
-				"description": "Generates the signed-in member's Meshtastic device profile (`.cfg`) from the published event\r\nconfiguration: owner names, device role, the event's radio settings and the channels the\r\nmember receives now. An operator with `member-artifacts.download` receives exactly the\r\nmember's file on their behalf. The file contains channel keys; every download is audited. The file\r\nname names the firmware line it is made for.",
+				"description": "Generates the signed-in member's Meshtastic device profile (`.cfg`) from the published event\nconfiguration: owner names, device role, the event's radio settings and the channels the\nmember receives now. An operator with `member-artifacts.download` receives exactly the\nmember's file on their behalf. The file contains channel keys; every download is audited. The file\nname names the firmware line it is made for.",
 				"tags": [
 					"Profiles"
 				],
@@ -10950,7 +11001,7 @@
 						}
 					}
 				},
-				"description": "Issues a 24-hour single-use claim and returns its token exactly once. Earlier open claims of\r\nthe member are revoked. Requires `member-claims.create` and an active event.",
+				"description": "Issues a 24-hour single-use claim and returns its token exactly once. Earlier open claims of\nthe member are revoked. Requires `member-claims.create` and an active event.",
 				"tags": [
 					"Event members"
 				],
@@ -11112,7 +11163,7 @@
 						}
 					}
 				},
-				"description": "Exchanges a single-use participant claim for a normal browser session. The token is sent in\r\nthe body, never in the URL. Every unusable claim returns the same `401`.",
+				"description": "Exchanges a single-use participant claim for a normal browser session. The token is sent in\nthe body, never in the URL. Every unusable claim returns the same `401`.",
 				"tags": [
 					"Authentication"
 				],
@@ -11553,7 +11604,7 @@
 						}
 					}
 				},
-				"description": "Replaces the editable event settings. Requires the current `version`. The lifecycle state is\r\nchanged only through dedicated transitions, and archived events are read-only.",
+				"description": "Replaces the editable event settings. Requires the current `version`. The lifecycle state is\nchanged only through dedicated transitions, and archived events are read-only.",
 				"tags": [
 					"Events"
 				],
@@ -11642,7 +11693,7 @@
 						}
 					}
 				},
-				"description": "Moves a draft event to `active`. Requires `events.manage` and at least one event role and\r\none event group; unmet requirements are listed in the problem's `errors`.",
+				"description": "Moves a draft event to `active`. Requires `events.manage` and at least one event role and\none event group; unmet requirements are listed in the problem's `errors`.",
 				"tags": [
 					"Events"
 				],
@@ -11820,7 +11871,7 @@
 						}
 					}
 				},
-				"description": "Returns an archived event to `active` after repeating activation validation. Requires\r\n`events.reactivate`. Revoked or expired credentials, artifacts and download grants stay\r\ninvalid; clients regenerate what they need.",
+				"description": "Returns an archived event to `active` after repeating activation validation. Requires\n`events.reactivate`. Revoked or expired credentials, artifacts and download grants stay\ninvalid; clients regenerate what they need.",
 				"tags": [
 					"Events"
 				],
@@ -12448,7 +12499,7 @@
 						}
 					}
 				},
-				"description": "Re-evaluates an open issue against the event's current roles and groups. Requires\r\n`members.manage`. A callsign override resolves a callsign conflict for this member.",
+				"description": "Re-evaluates an open issue against the event's current roles and groups. Requires\n`members.manage`. A callsign override resolves a callsign conflict for this member.",
 				"tags": [
 					"Event members"
 				],
@@ -12548,7 +12599,7 @@
 						}
 					}
 				},
-				"description": "Renumbers the group's short names `1..n` in the given order. Send every current member of\r\nthe group exactly once. Requires `members.manage`. Devices keep their old short name until\r\nthe member is provisioned again.",
+				"description": "Renumbers the group's short names `1..n` in the given order. Send every current member of\nthe group exactly once. Requires `members.manage`. Devices keep their old short name until\nthe member is provisioned again.",
 				"tags": [
 					"Event members"
 				],
@@ -12655,7 +12706,7 @@
 						}
 					}
 				},
-				"description": "Idempotently creates or updates the event membership of an external identity. Requires\r\n`members.sync` for the event. When the role or group slug does not exist, the response\r\ncontains a sync issue instead and nothing else changes. Synchronization never creates a\r\npassword, login, email address or session.",
+				"description": "Idempotently creates or updates the event membership of an external identity. Requires\n`members.sync` for the event. When the role or group slug does not exist, the response\ncontains a sync issue instead and nothing else changes. Synchronization never creates a\npassword, login, email address or session.",
 				"tags": [
 					"Event members"
 				],
@@ -12866,7 +12917,7 @@
 						}
 					}
 				},
-				"description": "Adds an existing OpenMeshTak user to the event. Members from external systems use the\r\nexternal-member upsert instead. Requires `members.manage`.",
+				"description": "Adds an existing OpenMeshTak user to the event. Members from external systems use the\nexternal-member upsert instead. Requires `members.manage`.",
 				"tags": [
 					"Event members"
 				],
@@ -13039,7 +13090,7 @@
 						}
 					}
 				},
-				"description": "Replaces the member's event role, event group and callsign override. Requires the current\r\n`version` and `members.manage`. An integration sync may later set role and group again.",
+				"description": "Replaces the member's event role, event group and callsign override. Requires the current\n`version` and `members.manage`. An integration sync may later set role and group again.",
 				"tags": [
 					"Event members"
 				],
@@ -13127,7 +13178,7 @@
 						}
 					}
 				},
-				"description": "Removes the member from this event only. The user and other event participations remain.\r\nRequires `members.manage`.",
+				"description": "Removes the member from this event only. The user and other event participations remain.\nRequires `members.manage`.",
 				"tags": [
 					"Event members"
 				],
@@ -13732,7 +13783,7 @@
 						}
 					}
 				},
-				"description": "Publishes the current configuration of an active event. Returns the latest revision with\r\n`created: false` when nothing changed. Requires `events.manage`.",
+				"description": "Publishes the current configuration of an active event. Returns the latest revision with\n`created: false` when nothing changed. Requires `events.manage`.",
 				"tags": [
 					"Events"
 				],
@@ -14001,6 +14052,106 @@
 						}
 					}
 				}
+			}
+		},
+		"/me/download-grants": {
+			"post": {
+				"operationId": "CreateDownloadGrant",
+				"responses": {
+					"201": {
+						"description": "Download link created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/DownloadGrantDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a link that downloads one artifact the signed-in user may download right now, valid\nfor 5 minutes and at most 3 downloads. Access is checked again when the link is used.",
+				"tags": [
+					"Downloads"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateDownloadGrantRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/downloads/{token}": {
+			"get": {
+				"operationId": "DownloadWithGrant",
+				"responses": {
+					"200": {
+						"description": "The artifact",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Link invalid, used up or expired",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Downloads the artifact of a download link without a session.",
+				"tags": [
+					"Downloads"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "token",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
 			}
 		},
 		"/events/{eventId}/data-packages/{packageId}/revisions": {
@@ -14968,7 +15119,7 @@
 						}
 					}
 				},
-				"description": "Creates a data package from an ATAK Data Package (`application/zip`) or a CoT file\r\n(`application/xml`) and imports it into the first layer. The name comes from the package\r\nmanifest, otherwise from `fileName`. A failed import leaves no package behind.",
+				"description": "Creates a data package from an ATAK Data Package (`application/zip`) or a CoT file\n(`application/xml`) and imports it into the first layer. The name comes from the package\nmanifest, otherwise from `fileName`. A failed import leaves no package behind.",
 				"tags": [
 					"Data packages"
 				],
@@ -15648,7 +15799,7 @@
 						}
 					}
 				},
-				"description": "Imports a GeoJSON FeatureCollection, Feature or geometry into the layer. Points, lines and\r\npolygons are supported; multi-geometries are split. The report lists every adjustment, every\r\nskipped and every rejected feature. Request bodies are limited to 1 MB.",
+				"description": "Imports a GeoJSON FeatureCollection, Feature or geometry into the layer. Points, lines and\npolygons are supported; multi-geometries are split. The report lists every adjustment, every\nskipped and every rejected feature. Request bodies are limited to 1 MB.",
 				"tags": [
 					"Data packages"
 				],
@@ -15743,7 +15894,7 @@
 						}
 					}
 				},
-				"description": "Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties.\r\n`layerId` limits the export to one layer.",
+				"description": "Exports the current draft as a GeoJSON FeatureCollection with simplestyle properties.\n`layerId` limits the export to one layer.",
 				"tags": [
 					"Data packages"
 				],
@@ -16325,7 +16476,7 @@
 						}
 					}
 				},
-				"description": "Renames, moves to another layer, shows/hides or changes the opacity of map content in the\r\ndraft. Requires `data-packages.edit` and the current `version`.",
+				"description": "Renames, moves to another layer, shows/hides or changes the opacity of map content in the\ndraft. Requires `data-packages.edit` and the current `version`.",
 				"tags": [
 					"Data packages"
 				],
@@ -16546,7 +16697,7 @@
 						}
 					}
 				},
-				"description": "Imports an ATAK Data Package (`application/zip`, at most 10 MB) or a single CoT event\r\n(`application/xml`) into the layer. Markers, freeform shapes, rectangles and circles are\r\nsupported; the report lists every adjusted, skipped and rejected item.",
+				"description": "Imports an ATAK Data Package (`application/zip`, at most 10 MB) or a single CoT event\n(`application/xml`) into the layer. Markers, freeform shapes, rectangles and circles are\nsupported; the report lists every adjusted, skipped and rejected item.",
 				"tags": [
 					"Data packages"
 				],
@@ -16632,7 +16783,7 @@
 						}
 					}
 				},
-				"description": "Downloads a published revision as an ATAK Data Package (ZIP with `MANIFEST/manifest.xml`).\r\n`layerId` exports only that layer, as its own package.",
+				"description": "Downloads a published revision as an ATAK Data Package (ZIP with `MANIFEST/manifest.xml`).\n`layerId` exports only that layer, as its own package.",
 				"tags": [
 					"Data packages"
 				],
@@ -17201,7 +17352,7 @@
 						}
 					}
 				},
-				"description": "Sets who receives the package's published revisions: all members or selected groups, roles\r\nand members. Requires `data-packages.publish` and the current `version`.",
+				"description": "Sets who receives the package's published revisions: all members or selected groups, roles\nand members. Requires `data-packages.publish` and the current `version`.",
 				"tags": [
 					"Data packages"
 				],
@@ -17298,7 +17449,7 @@
 						}
 					}
 				},
-				"description": "Chooses whether the built-in TAK server installs the package by itself on enrollment and/or\r\non every connection. Requires `data-packages.publish` and the current `version`.",
+				"description": "Chooses whether the built-in TAK server installs the package by itself on enrollment and/or\non every connection. Requires `data-packages.publish` and the current `version`.",
 				"tags": [
 					"Data packages"
 				],
@@ -17567,7 +17718,7 @@
 						}
 					}
 				},
-				"description": "Sets the first password of the signed-in account, for example after signing in with an access\r\nlink. It is then used for sign-in and the TAK login. Accounts that already have a password\r\nchange it through the authentication API with the current password.",
+				"description": "Sets the first password of the signed-in account, for example after signing in with an access\nlink. It is then used for sign-in and the TAK login. Accounts that already have a password\nchange it through the authentication API with the current password.",
 				"tags": [
 					"Account"
 				],
