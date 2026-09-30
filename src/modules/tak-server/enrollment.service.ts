@@ -11,8 +11,12 @@ import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
 import type { TakEnrollmentDto } from "./enrollment.dto.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
 import { x509 } from "./x509.js";
+import { auth } from "../auth/auth.js";
+import { normalizeUsername } from "../users/usernames.js";
 
-const TOKEN_MINUTES = 15;
+/** QR tokens of accounts without an event end date stay valid this long. */
+const FALLBACK_QR_TOKEN_DAYS = 30;
+const DAY = 24 * 60 * 60_000;
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token, "utf8").digest("hex");
@@ -29,8 +33,22 @@ function notReady(): ProblemError {
 }
 
 /**
- * Creates a single-use enrollment password for the signed-in user. The TAK user name is the
- * user's stable OpenMeshTak ID, so renaming an account never breaks a certificate.
+ * A QR token lasts until the latest end of the user's active events, so a TAK app can re-enroll
+ * with it during the event, for example after its certificate expired.
+ */
+async function qrTokenExpiry(userId: string, now: Date): Promise<Date> {
+  const latest = await database.event.findFirst({
+    where: { status: "active", endsAt: { gt: now }, members: { some: { userId } } },
+    orderBy: { endsAt: "desc" },
+    select: { endsAt: true },
+  });
+  return latest?.endsAt ?? new Date(now.getTime() + FALLBACK_QR_TOKEN_DAYS * DAY);
+}
+
+/**
+ * Everything the signed-in user needs to connect a TAK app: the account username for manual
+ * login (with the account password) and a fresh QR token for ATAK's QR enrollment, so the QR code
+ * never carries the password. Earlier QR tokens that no app ever used are revoked.
  */
 export async function createTakEnrollment(actor: ActorContext, now = new Date()): Promise<TakEnrollmentDto> {
   if (actor.principal.type !== "user") {
@@ -44,11 +62,19 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
   if (!settings.enabled || settings.hostName === null) {
     throw notReady();
   }
+  const { username } = await database.user.findUniqueOrThrow({
+    where: { id: actor.principal.authSubjectId },
+    select: { username: true },
+  });
+  if (username === null) {
+    throw new Error("Every account has a username; the startup backfill did not run.");
+  }
 
   const token = randomBytes(18).toString("base64url");
-  const expiresAt = new Date(now.getTime() + TOKEN_MINUTES * 60_000);
+  const expiresAt = await qrTokenExpiry(userId, now);
   const id = randomUUID();
   await database.$transaction(async (transaction) => {
+    await transaction.takEnrollmentToken.deleteMany({ where: { userId, usedAt: null } });
     await transaction.takEnrollmentToken.create({ data: { id, userId, tokenHash: hashToken(token), expiresAt } });
     await recordAudit(
       {
@@ -65,10 +91,9 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
   });
 
   const host = `${settings.hostName}:${String(settings.streamingPort)}`;
-  const query = new URLSearchParams({ host, username: userId, token });
+  const query = new URLSearchParams({ host, username, token });
   return {
-    username: userId,
-    token,
+    username,
     expiresAt: expiresAt.toISOString(),
     hostName: settings.hostName,
     enrollmentPort: settings.enrollmentPort,
@@ -86,6 +111,46 @@ function parseBasic(authorization: string | undefined): { username: string; pass
   return separator <= 0 ? null : { username: decoded.slice(0, separator), password: decoded.slice(separator + 1) };
 }
 
+interface EnrollmentLogin {
+  userId: string;
+  username: string;
+  /** The QR token used instead of the password, if any. */
+  tokenId: string | null;
+}
+
+async function passwordMatches(authSubjectId: string, password: string): Promise<boolean> {
+  const context = await auth.$context;
+  const account = await context.internalAdapter.findCredentialAccount(authSubjectId);
+  return typeof account?.password === "string" && (await context.password.verify({ hash: account.password, password }));
+}
+
+/**
+ * TAK apps send HTTP Basic credentials: the account username with either the account password
+ * (typed by hand) or a QR token. Usernames are case-insensitive like the Web sign-in.
+ */
+async function authenticateEnrollmentLogin(authorization: string | undefined, now: Date): Promise<EnrollmentLogin | null> {
+  const credentials = parseBasic(authorization);
+  if (credentials === null) {
+    return null;
+  }
+  const user = await database.user.findUnique({
+    where: { username: normalizeUsername(credentials.username) },
+    select: { id: true, username: true, domainUser: { select: { id: true, disabledAt: true } } },
+  });
+  const domainUser = user?.domainUser;
+  if (user === null || user.username === null || domainUser === null || domainUser === undefined || domainUser.disabledAt !== null) {
+    return null;
+  }
+
+  const token = await database.takEnrollmentToken.findUnique({ where: { tokenHash: hashToken(credentials.password) } });
+  if (token !== null && token.userId === domainUser.id && token.expiresAt > now) {
+    return { userId: domainUser.id, username: user.username, tokenId: token.id };
+  }
+  return (await passwordMatches(user.id, credentials.password))
+    ? { userId: domainUser.id, username: user.username, tokenId: null }
+    : null;
+}
+
 export interface SignedEnrollment {
   /** DER certificates as base64, the client certificate first. */
   signedCertificate: string;
@@ -97,9 +162,8 @@ function base64Der(certificate: x509.X509Certificate): string {
 }
 
 /**
- * Signs the CSR of an enrolling TAK app. The token is looked up by its hash, checked against the
- * user name, consumed atomically only after the request proved valid, and the user must still
- * have TAK access at that moment.
+ * Signs the CSR of an enrolling TAK app after checking its credentials. The user must still have
+ * TAK access at that moment; the certificate names the stable user ID, not the username.
  */
 export async function signEnrollmentRequest(
   authorization: string | undefined,
@@ -107,37 +171,36 @@ export async function signEnrollmentRequest(
   clientUid: string | null,
   now = new Date(),
 ): Promise<SignedEnrollment> {
-  const credentials = parseBasic(authorization);
-  const token =
-    credentials === null
-      ? null
-      : await database.takEnrollmentToken.findUnique({ where: { tokenHash: hashToken(credentials.password) } });
-  if (credentials === null || token === null || token.userId !== credentials.username || token.usedAt !== null || token.expiresAt <= now) {
+  const login = await authenticateEnrollmentLogin(authorization, now);
+  if (login === null) {
     throw new EnrollmentAuthenticationError("invalid enrollment credentials");
   }
 
-  const request = await validateCertificateRequest(csr, token.userId);
-  if (!hasAnyTakAccess(await takAccessFor(token.userId))) {
+  const request = await validateCertificateRequest(csr, login.username);
+  if (!hasAnyTakAccess(await takAccessFor(login.userId))) {
     throw new EnrollmentAuthenticationError("no TAK access");
   }
-  const consumed = await database.takEnrollmentToken.updateMany({
-    where: { id: token.id, usedAt: null },
-    data: { usedAt: now },
-  });
-  if (consumed.count !== 1) {
-    throw new EnrollmentAuthenticationError("enrollment token already used");
+  if (login.tokenId !== null) {
+    // Marks the QR token as in use, so a newer QR code does not revoke it.
+    await database.takEnrollmentToken.updateMany({ where: { id: login.tokenId, usedAt: null }, data: { usedAt: now } });
   }
 
   const settings = await loadTakServerSettings();
-  const { certificate, row } = await issueClientCertificate(token.userId, request, settings.clientCertificateDays, clientUid);
+  const { certificate, row } = await issueClientCertificate(login.userId, request, settings.clientCertificateDays, clientUid);
   await recordAudit({
-    actor: { type: "user", id: token.userId },
+    actor: { type: "user", id: login.userId },
     action: "tak-server.client-certificate-issued",
     targetType: "tak-client-certificate",
     targetId: row.id,
     result: "success",
     traceId: randomUUID(),
-    metadata: { serialNumber: row.serialNumber, fingerprintSha256: row.fingerprintSha256, clientUid, notAfter: row.notAfter.toISOString() },
+    metadata: {
+      serialNumber: row.serialNumber,
+      fingerprintSha256: row.fingerprintSha256,
+      clientUid,
+      notAfter: row.notAfter.toISOString(),
+      credential: login.tokenId === null ? "password" : "qr-token",
+    },
   });
 
   const authorities = await trustedCertificateAuthorities(now);
@@ -151,9 +214,7 @@ export { CertificateRequestError };
 
 /**
  * Who asks for the enrollment profile. Apps call it right after `signClient`, either with their new
- * client certificate or again with the enrollment credentials, whose token is already used up by
- * then. A used token is therefore accepted here until it expires, but only for this read-only
- * profile and only once it produced a certificate.
+ * client certificate or again with the enrollment credentials.
  */
 export async function authenticateProfileRequest(
   authorization: string | undefined,
@@ -166,13 +227,6 @@ export async function authenticateProfileRequest(
       return client.userId;
     }
   }
-  const credentials = parseBasic(authorization);
-  if (credentials === null) {
-    return null;
-  }
-  const token = await database.takEnrollmentToken.findUnique({ where: { tokenHash: hashToken(credentials.password) } });
-  if (token === null || token.userId !== credentials.username || token.usedAt === null || token.expiresAt <= now) {
-    return null;
-  }
-  return hasAnyTakAccess(await takAccessFor(token.userId)) ? token.userId : null;
+  const login = await authenticateEnrollmentLogin(authorization, now);
+  return login !== null && hasAnyTakAccess(await takAccessFor(login.userId)) ? login.userId : null;
 }

@@ -43,7 +43,8 @@ export async function validateCertificateRequest(body: string, expectedCommonNam
   }
   checkKeyStrength(request);
   const commonName = request.subjectName.getField("CN")[0];
-  if (commonName !== expectedCommonName) {
+  // ATAK puts the username as typed into the CSR; usernames are case-insensitive.
+  if (commonName?.toLowerCase() !== expectedCommonName.toLowerCase()) {
     throw new CertificateRequestError("The certificate request must use the enrollment user name as common name.");
   }
   return request;

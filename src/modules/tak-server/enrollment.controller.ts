@@ -13,9 +13,10 @@ import { createTakEnrollment } from "./enrollment.service.js";
 @Response<ProblemDetails>(403, "No TAK access")
 export class TakEnrollmentsController extends Controller {
   /**
-   * Creates a single-use enrollment password for the signed-in user, valid for 15 minutes, with
-   * the ATAK enrollment link. Members of active events and holders of `tak-server.admin-access`
-   * may enroll. The account password is never used by TAK apps.
+   * Returns the TAK login of the signed-in user (account username, used with the account
+   * password) and a fresh QR token in the ATAK enrollment link, valid until the end of the user's
+   * latest active event. Members of active events and holders of `tak-server.admin-access` may
+   * enroll. QR tokens never carry the account password.
    */
   @Post()
   @SuccessResponse(201, "Enrollment created")

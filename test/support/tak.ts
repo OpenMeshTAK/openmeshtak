@@ -34,8 +34,11 @@ function pemOf(base64Der: string): string {
 
 /** Runs the complete enrollment a TAK app performs and returns its certificate and key. */
 export async function enrollTakClient(app: Express, user: TestUser): Promise<EnrolledClient> {
-  const enrollment = (await request(app).post("/api/v1/me/tak-enrollments").set("Cookie", user.cookie).expect(201))
-    .body as { username: string; token: string };
+  const created = (await request(app).post("/api/v1/me/tak-enrollments").set("Cookie", user.cookie).expect(201))
+    .body as { atakEnrollmentUrl: string };
+  // Logs in with the QR token, like ATAK after scanning the enrollment code.
+  const query = new URL(created.atakEnrollmentUrl.replace("tak://", "https://")).searchParams;
+  const enrollment = { username: query.get("username") ?? "", token: query.get("token") ?? "" };
   const keys = await generateRsaKeyPair();
   const csr = await x509.Pkcs10CertificateRequestGenerator.create({ name: `CN=${enrollment.username}`, keys, signingAlgorithm: RSA_SIGNING });
   const response = await request(createEnrollmentApp())

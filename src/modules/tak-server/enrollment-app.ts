@@ -94,8 +94,9 @@ async function enrollmentProfile(request: Request, response: Response): Promise<
 
 /**
  * The enrollment endpoints a TAK app calls on the enrollment port. They are served over TLS with
- * the TAK server certificate and authenticate with the single-use enrollment token, never with
- * the account password. Failed attempts are throttled per address.
+ * the TAK server certificate and authenticate with the account username plus the account
+ * password or a QR token. Failed attempts are throttled per address, because the password can be
+ * guessed here as well as on the Web sign-in.
  */
 export function createEnrollmentApp(): Express {
   const app = express();
@@ -109,7 +110,7 @@ export function createEnrollmentApp(): Express {
     express.text({ type: () => true, limit: "16kb" }),
     (request, response) => void signClient(request, response),
   );
-  app.get("/Marti/api/tls/profile/enrollment", (request, response) => void enrollmentProfile(request, response));
+  app.get("/Marti/api/tls/profile/enrollment", failures, (request, response) => void enrollmentProfile(request, response));
   app.use((_request, response) => {
     response.status(404).end();
   });

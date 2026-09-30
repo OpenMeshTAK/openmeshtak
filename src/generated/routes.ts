@@ -359,7 +359,6 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "username": {"dataType":"string","required":true},
-            "token": {"dataType":"string","required":true},
             "expiresAt": {"dataType":"string","required":true},
             "hostName": {"dataType":"string","required":true},
             "enrollmentPort": {"dataType":"double","required":true},
