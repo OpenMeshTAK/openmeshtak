@@ -135,5 +135,10 @@ void describe("data package GeoJSON import and export", () => {
     await request(app).post(`${packageUrl}/revisions`).set("Cookie", editor.cookie).expect(200);
     const revision = await request(app).get(`${packageUrl}/revisions/1/geojson`).set("Cookie", editor.cookie).expect(200);
     assert.deepEqual(revision.body, draft.body);
+
+    const kml = await request(app).get(`${packageUrl}/revisions/1/kml`).set("Cookie", editor.cookie).expect(200);
+    assert.match(String(kml.headers["content-type"]), /application\/vnd\.google-earth\.kml\+xml/);
+    assert.match(kml.text, /<coordinates>8\.68,50\.11,112<\/coordinates>/);
+    assert.equal((kml.text.match(/<Placemark /g) ?? []).length, 3);
   });
 });
