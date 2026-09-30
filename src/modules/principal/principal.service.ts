@@ -1,6 +1,7 @@
 import type { Permission } from "../../shared/auth/permissions.js";
 import type { Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
+import { hasPassword } from "../account/password.service.js";
 import type { PermissionGrantDto } from "../../shared/auth/permission-grant.dto.js";
 
 export interface PrincipalDto {
@@ -10,6 +11,8 @@ export interface PrincipalDto {
   name: string;
   /** Sign-in and TAK login name of a user; `null` for service accounts. */
   username: string | null;
+  /** Whether a user can sign in with a password, which the TAK login needs; `false` for service accounts. */
+  hasPassword: boolean;
   /** Effective grants, deduplicated across all sources. */
   permissions: PermissionGrantDto[];
 }
@@ -56,6 +59,7 @@ export async function describePrincipal(principal: Principal): Promise<Principal
       id: principal.id,
       name: user.displayName,
       username: user.authSubject?.username ?? null,
+      hasPassword: await hasPassword(principal.authSubjectId),
       permissions: uniqueGrants(grants),
     };
   }
@@ -72,6 +76,7 @@ export async function describePrincipal(principal: Principal): Promise<Principal
     id: principal.id,
     name: account.name,
     username: null,
+    hasPassword: false,
     permissions: uniqueGrants(account.permissionGrants),
   };
 }

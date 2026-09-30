@@ -99,6 +99,8 @@ import { PackageAtakController } from './../modules/data-packages/package-atak.c
 import { DataPackagesController } from './../modules/data-packages/data-packages.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { CombinedExportController } from './../modules/data-packages/combined-export.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { AccountPasswordController } from './../modules/account/password.controller.js';
 import { expressAuthentication } from './../shared/auth/authorization.js';
 // @ts-ignore - no great way to install types from subpackage
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
@@ -717,6 +719,7 @@ const models: TsoaRoute.Models = {
             "id": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "username": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "hasPassword": {"dataType":"boolean","required":true},
             "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true},
         },
         "additionalProperties": false,
@@ -2183,6 +2186,14 @@ const models: TsoaRoute.Models = {
         "properties": {
             "name": {"dataType":"string","validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "packages": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportSelection"},"required":true,"validators":{"minItems":{"value":1},"maxItems":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SetPasswordRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "newPassword": {"dataType":"string","required":true,"validators":{"minLength":{"value":12},"maxLength":{"value":128}}},
         },
         "additionalProperties": false,
     },
@@ -6913,6 +6924,38 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAccountPasswordController_setPassword: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"SetPasswordRequest"},
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.post('/api/v1/me/password',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(AccountPasswordController)),
+            ...(fetchMiddlewares<RequestHandler>(AccountPasswordController.prototype.setPassword)),
+
+            async function AccountPasswordController_setPassword(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAccountPasswordController_setPassword, request, response });
+
+                const controller = new AccountPasswordController();
+
+              await templateService.apiHandler({
+                methodName: 'setPassword',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
               });
             } catch (err) {
                 return next(err);

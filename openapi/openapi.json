@@ -170,7 +170,7 @@
 					},
 					"username": {
 						"type": "string",
-						"description": "New sign-in and TAK login name; only for users with a local login. Apps enrolled with the old\nname keep working, because client certificates name the user ID.",
+						"description": "New sign-in and TAK login name; only for users with a local login. Apps enrolled with the old\r\nname keep working, because client certificates name the user ID.",
 						"pattern": "^[a-z0-9._-]{3,32}$"
 					}
 				},
@@ -1863,6 +1863,10 @@
 						"nullable": true,
 						"description": "Sign-in and TAK login name of a user; `null` for service accounts."
 					},
+					"hasPassword": {
+						"type": "boolean",
+						"description": "Whether a user can sign in with a password, which the TAK login needs; `false` for service accounts."
+					},
 					"permissions": {
 						"items": {
 							"$ref": "#/components/schemas/PermissionGrantDto"
@@ -1876,6 +1880,7 @@
 					"id",
 					"name",
 					"username",
+					"hasPassword",
 					"permissions"
 				],
 				"type": "object",
@@ -5885,6 +5890,20 @@
 				},
 				"required": [
 					"packages"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SetPasswordRequest": {
+				"properties": {
+					"newPassword": {
+						"type": "string",
+						"minLength": 12,
+						"maxLength": 128
+					}
+				},
+				"required": [
+					"newPassword"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -17507,6 +17526,66 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/CombinedExportRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/me/password": {
+			"post": {
+				"operationId": "SetPassword",
+				"responses": {
+					"204": {
+						"description": "Password set"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Recent sign-in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Password already set",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Sets the first password of the signed-in account, for example after signing in with an access\nlink. It is then used for sign-in and the TAK login. Accounts that already have a password\nchange it through the authentication API with the current password.",
+				"tags": [
+					"Account"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SetPasswordRequest"
 							}
 						}
 					}
