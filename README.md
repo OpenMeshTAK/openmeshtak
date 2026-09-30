@@ -48,6 +48,10 @@ When another proxy already owns ports 80 and 443, add the override so the Web co
 
 In CloudPanel, create a reverse-proxy site for `PUBLIC_HOST` with the target `http://127.0.0.1:8080` and let CloudPanel issue its certificate. Open the TAK ports 8446, 8443 and 8089 in the firewall; they go straight to Core because they terminate mutual TLS themselves. For a publicly trusted TAK certificate without port 80, use the DNS-01 (Cloudflare) option on the TAK server page.
 
+### API documentation
+
+Swagger UI is served at `https://<PUBLIC_HOST>/api/docs` when `SWAGGER_ENABLED=true` (off by default in production, on in development). The OpenAPI document is always available at `/api/openapi.json`.
+
 Runtime data (SQLite database and stored files) lives in the `core-data` volume at `/server/data`.
 
 ## License

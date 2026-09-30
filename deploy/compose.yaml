@@ -18,6 +18,7 @@ services:
       PUBLIC_ORIGIN: https://${PUBLIC_HOST}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
     secrets:
       - root_encryption_key
     volumes:

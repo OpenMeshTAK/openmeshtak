@@ -7,7 +7,8 @@ const booleanFromString = z
   .transform((value) => value === "true");
 
 const environmentSchema = z.object({
-  API_DOCS_ENABLED: booleanFromString.default(true),
+  /** Swagger UI at /api/docs; on in development, off in production unless enabled explicitly. */
+  SWAGGER_ENABLED: booleanFromString.optional(),
   APP_HOST: z.string().min(1).default("127.0.0.1"),
   APP_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
@@ -49,7 +50,7 @@ if (
 }
 
 export const config = Object.freeze({
-  apiDocsEnabled: environment.API_DOCS_ENABLED,
+  apiDocsEnabled: environment.SWAGGER_ENABLED ?? environment.NODE_ENV !== "production",
   authSecret: environment.BETTER_AUTH_SECRET ?? randomBytes(32).toString("base64url"),
   bootstrapTokenTtlMinutes: environment.BOOTSTRAP_TOKEN_TTL_MINUTES,
   databaseUrl: environment.DATABASE_URL,
