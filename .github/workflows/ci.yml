@@ -44,6 +44,9 @@ jobs:
       - name: Verify project
         run: pnpm check
 
+      - name: Smoke test a clean production install
+        run: pnpm smoke:clean-install
+
       - name: Verify generated contract is committed
         # pnpm check regenerates the OpenAPI document and tsoa routes. A difference means a
         # controller or DTO changed without committing the generated contract.

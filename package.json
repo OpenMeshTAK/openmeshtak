@@ -39,6 +39,7 @@
     "generate": "prisma generate --no-hints && tsoa spec-and-routes",
     "license:check": "tsx scripts/check-licenses.ts",
     "lint": "eslint . --max-warnings 0",
+    "smoke:clean-install": "pnpm build && tsx scripts/smoke-clean-install.ts",
     "start": "node dist/server.js",
     "test": "pnpm generate && tsx scripts/run-tests.ts",
     "typecheck": "pnpm generate && tsc --noEmit"

@@ -30,6 +30,14 @@ Run all current verification with:
 pnpm check
 ```
 
+The production clean-install path has a separate smoke test. It builds Core, applies every
+migration to an empty temporary data directory, starts the production server and checks health,
+initial setup and production-only route behavior:
+
+```sh
+pnpm smoke:clean-install
+```
+
 ## Docker deployment
 
 `deploy/compose.yaml` runs Core and the Web app (`openmeshtak-web`, checked out next to this repository) behind Caddy:
