@@ -5,6 +5,7 @@ import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { ProblemError } from "../../shared/errors/problem-error.js";
 import { requireUserPrincipal } from "../../shared/http/request-context.js";
+import { invalidUsernameProblem, isValidUsername, normalizeUsername, usernameTakenProblem } from "../users/usernames.js";
 
 function passwordAlreadySet(): ProblemError {
   return new ProblemError({
@@ -25,12 +26,34 @@ export async function hasPassword(authSubjectId: string): Promise<boolean> {
   return account !== null;
 }
 
+export interface AccountSetupInput {
+  newPassword: string;
+  /** Replaces the username derived from the name, if given. */
+  username?: string;
+}
+
+async function chooseUsername(authSubjectId: string, username: string | undefined): Promise<string | null> {
+  if (username === undefined) {
+    return null;
+  }
+  const normalized = normalizeUsername(username);
+  if (!isValidUsername(normalized)) {
+    throw invalidUsernameProblem();
+  }
+  const owner = await database.user.findUnique({ where: { username: normalized }, select: { id: true } });
+  if (owner !== null && owner.id !== authSubjectId) {
+    throw usernameTakenProblem();
+  }
+  return normalized;
+}
+
 /**
- * Sets the first password of an account that has none, typically a participant who signed in
- * with an access link. Every account needs a password for the TAK login; passkeys are optional.
- * The hash comes from Better Auth, which owns passwords; only a fresh session may do this.
+ * Completes an account that has no password yet, typically a participant who just signed in with
+ * an access link: it may pick its username and sets the first password. Every account needs a
+ * password for sign-in and the TAK login; passkeys are optional. Better Auth hashes the password;
+ * only a fresh session may do this, and never for an account that already has a password.
  */
-export async function setFirstPassword(actor: ActorContext, newPassword: string): Promise<void> {
+export async function completeAccountSetup(actor: ActorContext, input: AccountSetupInput): Promise<void> {
   const principal = requireUserPrincipal(actor.principal);
   requireRecentAuthentication(principal);
 
@@ -38,6 +61,11 @@ export async function setFirstPassword(actor: ActorContext, newPassword: string)
   const account = await context.internalAdapter.findCredentialAccount(principal.authSubjectId);
   if (account?.password) {
     throw passwordAlreadySet();
+  }
+  const username = await chooseUsername(principal.authSubjectId, input.username);
+  const newPassword = input.newPassword;
+  if (username !== null) {
+    await database.user.update({ where: { id: principal.authSubjectId }, data: { username, displayUsername: username } });
   }
 
   const passwordHash = await context.password.hash(newPassword);
@@ -54,10 +82,11 @@ export async function setFirstPassword(actor: ActorContext, newPassword: string)
 
   await recordAudit({
     actor: principal,
-    action: "password.set",
+    action: "account.setup-completed",
     targetType: "user",
     targetId: principal.id,
     result: "success",
     traceId: actor.traceId,
+    metadata: { usernameChosen: username !== null },
   });
 }

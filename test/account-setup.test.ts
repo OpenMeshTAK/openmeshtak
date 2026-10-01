@@ -24,7 +24,7 @@ async function principalOf(user: TestUser): Promise<{ hasPassword: boolean; user
   };
 }
 
-void describe("first account password", () => {
+void describe("account setup", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
@@ -40,18 +40,36 @@ void describe("first account password", () => {
   void it("sets the first password, which then signs in with the username", async () => {
     assert.equal((await principalOf(peter)).hasPassword, false);
 
-    await request(app).post("/api/v1/me/password").set("Cookie", peter.cookie).send({ newPassword: NEW_PASSWORD }).expect(204);
+    await request(app).post("/api/v1/me/account-setup").set("Cookie", peter.cookie).send({ newPassword: NEW_PASSWORD }).expect(204);
 
     const principal = await principalOf(peter);
     assert.equal(principal.hasPassword, true);
     assert.ok(await auth.api.signInUsername({ body: { username: principal.username, password: NEW_PASSWORD } }));
-    assert.equal(await database.auditEvent.count({ where: { action: "password.set" } }), 1);
+    assert.equal(await database.auditEvent.count({ where: { action: "account.setup-completed" } }), 1);
+  });
+
+  void it("lets the participant choose the username, but not a taken one", async () => {
+    await createUser("Taken", []);
+    await request(app)
+      .post("/api/v1/me/account-setup")
+      .set("Cookie", peter.cookie)
+      .send({ newPassword: NEW_PASSWORD, username: "taken" })
+      .expect(409);
+    assert.equal((await principalOf(peter)).hasPassword, false, "nothing changes on a conflict");
+
+    await request(app)
+      .post("/api/v1/me/account-setup")
+      .set("Cookie", peter.cookie)
+      .send({ newPassword: NEW_PASSWORD, username: "pete" })
+      .expect(204);
+    assert.equal((await principalOf(peter)).username, "pete");
+    assert.ok(await auth.api.signInUsername({ body: { username: "pete", password: NEW_PASSWORD } }));
   });
 
   void it("never replaces an existing password", async () => {
-    await request(app).post("/api/v1/me/password").set("Cookie", peter.cookie).send({ newPassword: NEW_PASSWORD }).expect(204);
+    await request(app).post("/api/v1/me/account-setup").set("Cookie", peter.cookie).send({ newPassword: NEW_PASSWORD }).expect(204);
     const again = await request(app)
-      .post("/api/v1/me/password")
+      .post("/api/v1/me/account-setup")
       .set("Cookie", peter.cookie)
       .send({ newPassword: "Another-password-to-try-1!" })
       .expect(409);
@@ -59,13 +77,13 @@ void describe("first account password", () => {
   });
 
   void it("requires a recent sign-in and a long enough password", async () => {
-    await request(app).post("/api/v1/me/password").set("Cookie", peter.cookie).send({ newPassword: "short" }).expect(422);
+    await request(app).post("/api/v1/me/account-setup").set("Cookie", peter.cookie).send({ newPassword: "short" }).expect(422);
 
     await database.session.updateMany({
       where: { userId: peter.authSubjectId },
       data: { createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     });
-    const stale = await request(app).post("/api/v1/me/password").set("Cookie", peter.cookie).send({ newPassword: NEW_PASSWORD }).expect(403);
+    const stale = await request(app).post("/api/v1/me/account-setup").set("Cookie", peter.cookie).send({ newPassword: NEW_PASSWORD }).expect(403);
     assert.equal((stale.body as { code: string }).code, "RECENT_AUTHENTICATION_REQUIRED");
   });
 });

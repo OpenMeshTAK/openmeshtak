@@ -703,7 +703,8 @@
 					},
 					"expiresAt": {
 						"type": "string",
-						"description": "When the QR token expires: the end of the user's latest active event, otherwise in 30 days.",
+						"nullable": true,
+						"description": "When the QR token expires: the end of the user's latest active event, otherwise in 30 days.\n`null` without QR enrollment.",
 						"format": "date-time"
 					},
 					"hostName": {
@@ -719,7 +720,8 @@
 					},
 					"atakEnrollmentUrl": {
 						"type": "string",
-						"description": "Link and QR code content for ATAK certificate enrollment, with the QR token."
+						"nullable": true,
+						"description": "Link and QR code content for ATAK certificate enrollment, with the QR token. `null` while the\nTAK server uses a certificate from its own CA, because ATAK's QR enrollment then fails."
 					}
 				},
 				"required": [
@@ -5942,12 +5944,17 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"SetPasswordRequest": {
+			"AccountSetupRequest": {
 				"properties": {
 					"newPassword": {
 						"type": "string",
 						"minLength": 12,
 						"maxLength": 128
+					},
+					"username": {
+						"type": "string",
+						"description": "Sign-in and TAK login name; keeps the one derived from the name when omitted.",
+						"pattern": "^[a-z0-9._-]{3,32}$"
 					}
 				},
 				"required": [
@@ -17680,12 +17687,12 @@
 				}
 			}
 		},
-		"/me/password": {
+		"/me/account-setup": {
 			"post": {
-				"operationId": "SetPassword",
+				"operationId": "CompleteAccountSetup",
 				"responses": {
 					"204": {
-						"description": "Password set"
+						"description": "Account set up"
 					},
 					"401": {
 						"description": "Authentication required",
@@ -17708,7 +17715,7 @@
 						}
 					},
 					"409": {
-						"description": "Password already set",
+						"description": "Password already set or username taken",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -17718,7 +17725,7 @@
 						}
 					}
 				},
-				"description": "Sets the first password of the signed-in account, for example after signing in with an access\nlink. It is then used for sign-in and the TAK login. Accounts that already have a password\nchange it through the authentication API with the current password.",
+				"description": "Completes an account without a password, for example right after signing in with an access\nlink: optionally picks the username and sets the first password, used for sign-in and the TAK\nlogin. Accounts that already have a password change it through the authentication API.",
 				"tags": [
 					"Account"
 				],
@@ -17733,7 +17740,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/SetPasswordRequest"
+								"$ref": "#/components/schemas/AccountSetupRequest"
 							}
 						}
 					}

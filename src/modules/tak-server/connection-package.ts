@@ -21,6 +21,10 @@ function escapeXml(value: string): string {
 }
 
 /**
+ * node-forge is used only to WRITE this PKCS#12 file. Its RSA signature verification has an
+ * unpatched advisory (GHSA-86w9-cpqp-85rv, ignored in pnpm audit for that reason); never use
+ * node-forge to verify signatures or parse untrusted certificates.
+ *
  * A PKCS#12 truststore with the CA certificates and no key. Triple-DES is the legacy PKCS#12
  * encryption that every ATAK version reads; it protects nothing secret here.
  */

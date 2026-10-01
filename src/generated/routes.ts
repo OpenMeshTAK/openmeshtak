@@ -104,7 +104,7 @@ import { DataPackagesController } from './../modules/data-packages/data-packages
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { CombinedExportController } from './../modules/data-packages/combined-export.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { AccountPasswordController } from './../modules/account/password.controller.js';
+import { AccountSetupController } from './../modules/account/account-setup.controller.js';
 import { expressAuthentication } from './../shared/auth/authorization.js';
 // @ts-ignore - no great way to install types from subpackage
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
@@ -363,11 +363,11 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "username": {"dataType":"string","required":true},
-            "expiresAt": {"dataType":"string","required":true},
+            "expiresAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "hostName": {"dataType":"string","required":true},
             "enrollmentPort": {"dataType":"double","required":true},
             "streamingPort": {"dataType":"double","required":true},
-            "atakEnrollmentUrl": {"dataType":"string","required":true},
+            "atakEnrollmentUrl": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -2218,10 +2218,11 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "SetPasswordRequest": {
+    "AccountSetupRequest": {
         "dataType": "refObject",
         "properties": {
             "newPassword": {"dataType":"string","required":true,"validators":{"minLength":{"value":12},"maxLength":{"value":128}}},
+            "username": {"dataType":"string","validators":{"pattern":{"value":"^[a-z0-9._-]{3,32}$"}}},
         },
         "additionalProperties": false,
     },
@@ -7021,27 +7022,27 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsAccountPasswordController_setPassword: Record<string, TsoaRoute.ParameterSchema> = {
-                body: {"in":"body","name":"body","required":true,"ref":"SetPasswordRequest"},
+        const argsAccountSetupController_completeAccountSetup: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"AccountSetupRequest"},
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
-        app.post('/api/v1/me/password',
+        app.post('/api/v1/me/account-setup',
             authenticateMiddleware([{"sessionCookie":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(AccountPasswordController)),
-            ...(fetchMiddlewares<RequestHandler>(AccountPasswordController.prototype.setPassword)),
+            ...(fetchMiddlewares<RequestHandler>(AccountSetupController)),
+            ...(fetchMiddlewares<RequestHandler>(AccountSetupController.prototype.completeAccountSetup)),
 
-            async function AccountPasswordController_setPassword(request: ExRequest, response: ExResponse, next: any) {
+            async function AccountSetupController_completeAccountSetup(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsAccountPasswordController_setPassword, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsAccountSetupController_completeAccountSetup, request, response });
 
-                const controller = new AccountPasswordController();
+                const controller = new AccountSetupController();
 
               await templateService.apiHandler({
-                methodName: 'setPassword',
+                methodName: 'completeAccountSetup',
                 controller,
                 response,
                 next,

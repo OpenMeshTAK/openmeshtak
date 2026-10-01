@@ -21,6 +21,11 @@
       "deepmerge-ts": "8.0.0",
       "mysql2": "3.23.1",
       "ts-deepmerge": "8.0.0"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-86w9-cpqp-85rv"
+      ]
     }
   },
   "scripts": {

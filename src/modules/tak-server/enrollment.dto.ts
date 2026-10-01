@@ -7,12 +7,16 @@ export interface TakEnrollmentDto {
   username: string;
   /**
    * When the QR token expires: the end of the user's latest active event, otherwise in 30 days.
+   * `null` without QR enrollment.
    * @format date-time
    */
-  expiresAt: string;
+  expiresAt: string | null;
   hostName: string;
   enrollmentPort: number;
   streamingPort: number;
-  /** Link and QR code content for ATAK certificate enrollment, with the QR token. */
-  atakEnrollmentUrl: string;
+  /**
+   * Link and QR code content for ATAK certificate enrollment, with the QR token. `null` while the
+   * TAK server uses a certificate from its own CA, because ATAK's QR enrollment then fails.
+   */
+  atakEnrollmentUrl: string | null;
 }

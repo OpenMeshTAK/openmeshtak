@@ -14,14 +14,35 @@ import { clearDatabase, createEvent, createUser, type TestUser } from "./support
 
 interface EnrollmentBody {
   username: string;
-  expiresAt: string;
-  atakEnrollmentUrl: string;
+  expiresAt: string | null;
+  atakEnrollmentUrl: string | null;
+}
+
+/**
+ * Pretends the listeners present a publicly trusted certificate, which QR enrollment needs. The
+ * enrollment app never reads its PEM, so placeholder contents are enough here.
+ */
+async function usePublicCertificate(): Promise<void> {
+  await database.takServerCertificate.create({
+    data: {
+      id: randomUUID(),
+      source: "acme",
+      hostName: "tak.example.org",
+      certificateChainPem: "placeholder",
+      keyEnvelope: "placeholder",
+      fingerprintSha256: "placeholder",
+      subject: "CN=tak.example.org",
+      notAfter: new Date(Date.now() + 60 * 24 * 60 * 60_000),
+      activeSlot: "active",
+    },
+  });
 }
 
 const PASSWORD = "A-secure-test-password-123!";
 
 /** The username and QR token as ATAK takes them from the scanned enrollment link. */
 function qrCredentials(created: EnrollmentBody): { username: string; token: string } {
+  assert.ok(created.atakEnrollmentUrl, "QR enrollment is offered");
   const query = new URL(created.atakEnrollmentUrl.replace("tak://", "https://")).searchParams;
   return { username: query.get("username") ?? "", token: query.get("token") ?? "" };
 }
@@ -89,13 +110,21 @@ void describe("TAK certificate enrollment", () => {
     await disconnectDatabase();
   });
 
+  void it("offers no QR enrollment while the server uses a certificate from its own CA", async () => {
+    await enableServer();
+    const created = await enroll(member);
+    assert.deepEqual([created.username, created.atakEnrollmentUrl, created.expiresAt], ["peter", null, null]);
+    assert.equal(await database.takEnrollmentToken.count(), 0);
+  });
+
   void it("returns the account username and a QR token only for event members while the server is enabled", async () => {
     await request(app).post("/api/v1/me/tak-enrollments").set("Cookie", member.cookie).expect(409);
     await enableServer();
+    await usePublicCertificate();
     const created = await enroll(member);
     assert.equal(created.username, "peter");
-    assert.match(created.atakEnrollmentUrl, /^tak:\/\/com\.atakmap\.app\/enroll\?host=tak\.example\.org%3A8089&username=peter&token=/);
-    assert.doesNotMatch(created.atakEnrollmentUrl, /secure-test-password/, "the QR code never carries the password");
+    assert.match(created.atakEnrollmentUrl ?? "", /^tak:\/\/com\.atakmap\.app\/enroll\?host=tak\.example\.org%3A8089&username=peter&token=/);
+    assert.doesNotMatch(created.atakEnrollmentUrl ?? "", /secure-test-password/, "the QR code never carries the password");
     await request(app).post("/api/v1/me/tak-enrollments").set("Cookie", outsider.cookie).expect(403);
 
     const stored = await database.takEnrollmentToken.findFirstOrThrow({ where: { userId: member.id } });
@@ -104,7 +133,8 @@ void describe("TAK certificate enrollment", () => {
 
   void it("keeps the QR token valid until the latest event ends, otherwise for 30 days", async () => {
     await enableServer();
-    const fallback = new Date((await enroll(member)).expiresAt).getTime();
+    await usePublicCertificate();
+    const fallback = new Date((await enroll(member)).expiresAt ?? "").getTime();
     assert.ok(Math.abs(fallback - (Date.now() + 30 * 24 * 60 * 60_000)) < 60_000);
 
     const endsAt = new Date(Date.now() + 3 * 24 * 60 * 60_000);
@@ -133,6 +163,7 @@ void describe("TAK certificate enrollment", () => {
 
   void it("enrolls repeatedly with the QR token and rejects wrong logins", async () => {
     await enableServer();
+    await usePublicCertificate();
     const credentials = qrCredentials(await enroll(member));
     await signClient(credentials, await csrFor("peter")).expect(200);
     await signClient(credentials, await csrFor("peter")).expect(200);
@@ -145,6 +176,7 @@ void describe("TAK certificate enrollment", () => {
 
   void it("revokes unused QR tokens when a new QR code is created, but keeps used ones", async () => {
     await enableServer();
+    await usePublicCertificate();
     const used = qrCredentials(await enroll(member));
     await signClient(used, await csrFor("peter")).expect(200);
     const unused = qrCredentials(await enroll(member));
@@ -157,6 +189,7 @@ void describe("TAK certificate enrollment", () => {
 
   void it("refuses disabled accounts and expired QR tokens", async () => {
     await enableServer();
+    await usePublicCertificate();
     const credentials = qrCredentials(await enroll(member));
     await database.takEnrollmentToken.updateMany({ where: { userId: member.id }, data: { expiresAt: new Date(Date.now() - 1000) } });
     await signClient(credentials, await csrFor("peter")).expect(401);

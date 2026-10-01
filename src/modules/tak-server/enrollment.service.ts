@@ -10,6 +10,7 @@ import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
 import type { TakEnrollmentDto } from "./enrollment.dto.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
+import { hasPublicServerCertificate } from "./server-certificate.js";
 import { x509 } from "./x509.js";
 import { auth } from "../auth/auth.js";
 import { normalizeUsername } from "../users/usernames.js";
@@ -47,8 +48,9 @@ async function qrTokenExpiry(userId: string, now: Date): Promise<Date> {
 
 /**
  * Everything the signed-in user needs to connect a TAK app: the account username for manual
- * login (with the account password) and a fresh QR token for ATAK's QR enrollment, so the QR code
- * never carries the password. Earlier QR tokens that no app ever used are revoked.
+ * login (with the account password) and, when the server has a publicly trusted certificate, a
+ * fresh QR token for ATAK's QR enrollment, so the QR code never carries the password. Earlier QR
+ * tokens that no app ever used are revoked.
  */
 export async function createTakEnrollment(actor: ActorContext, now = new Date()): Promise<TakEnrollmentDto> {
   if (actor.principal.type !== "user") {
@@ -68,6 +70,16 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
   });
   if (username === null) {
     throw new Error("Every account has a username; the startup backfill did not run.");
+  }
+
+  const login = {
+    username,
+    hostName: settings.hostName,
+    enrollmentPort: settings.enrollmentPort,
+    streamingPort: settings.streamingPort,
+  };
+  if (!(await hasPublicServerCertificate(settings.hostName, now))) {
+    return { ...login, atakEnrollmentUrl: null, expiresAt: null };
   }
 
   const token = randomBytes(18).toString("base64url");
@@ -93,11 +105,8 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
   const host = `${settings.hostName}:${String(settings.streamingPort)}`;
   const query = new URLSearchParams({ host, username, token });
   return {
-    username,
+    ...login,
     expiresAt: expiresAt.toISOString(),
-    hostName: settings.hostName,
-    enrollmentPort: settings.enrollmentPort,
-    streamingPort: settings.streamingPort,
     atakEnrollmentUrl: `tak://com.atakmap.app/enroll?${query.toString()}`,
   };
 }

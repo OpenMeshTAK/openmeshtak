@@ -207,6 +207,16 @@ export async function currentServerCertificate(hostName: string, now = new Date(
   return issueServerCertificate(hostName);
 }
 
+/**
+ * Whether the listeners present a publicly trusted certificate (added or obtained through ACME)
+ * for this host name. ATAK's QR enrollment only works then: it cannot be told to trust the
+ * OpenMeshTak CA before it connects.
+ */
+export async function hasPublicServerCertificate(hostName: string, now = new Date()): Promise<boolean> {
+  const active = await activeServerCertificate();
+  return (active?.source === "added" || active?.source === "acme") && active.hostName === hostName && active.notAfter > now;
+}
+
 /** The active certificate without issuing one, for status displays. */
 export function activeServerCertificate(): Promise<TakServerCertificate | null> {
   return database.takServerCertificate.findUnique({ where: { activeSlot: ACTIVE } });
