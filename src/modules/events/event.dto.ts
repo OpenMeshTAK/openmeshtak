@@ -1,5 +1,6 @@
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
+import type { EventOverview } from "./event-overview.js";
 
 export type EventStatus = "draft" | "active" | "archived";
 
@@ -30,8 +31,13 @@ export interface EventDto {
   updatedAt: string;
 }
 
+/** An event in the overview list, with the facts organizers act on. */
+export interface EventListItemDto extends EventDto {
+  overview: EventOverview;
+}
+
 export interface EventPage {
-  items: EventDto[];
+  items: EventListItemDto[];
   page: PageInfo;
 }
 

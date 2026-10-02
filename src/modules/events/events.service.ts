@@ -18,6 +18,7 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import { canonicalIanaTimeZone } from "../../shared/validation/time-zone.js";
+import { eventOverviews } from "./event-overview.js";
 import type {
   CreateEventRequest,
   EventDto,
@@ -119,7 +120,14 @@ export async function listEvents(
     take: limit + 1,
   });
 
-  return toPage(context, rows, limit, toEventDto);
+  const overviews = await eventOverviews(rows.slice(0, limit));
+  return toPage(context, rows, limit, (row) => {
+    const overview = overviews.get(row.id);
+    if (overview === undefined) {
+      throw new Error("Every listed event has an overview.");
+    }
+    return { ...toEventDto(row), overview };
+  });
 }
 
 export async function getEvent(principal: Principal, id: string): Promise<EventDto> {
