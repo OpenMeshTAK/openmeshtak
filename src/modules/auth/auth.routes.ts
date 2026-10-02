@@ -6,9 +6,16 @@ import { getTraceId } from "../../shared/logging/request-logging.js";
 
 const handler = toNodeHandler(auth);
 
+/**
+ * Better Auth endpoints OpenMeshTak does not offer: accounts come from setup, administrators and
+ * access links, never from public sign-up, and a public username lookup would let anyone collect
+ * valid TAK login names. OpenMeshTak checks availability itself inside account setup.
+ */
+const BLOCKED_PATHS = new Set([`${AUTH_BASE_PATH}/sign-up/email`, `${AUTH_BASE_PATH}/is-username-available`]);
+
 export function mountAuthRoutes(app: Express): void {
   app.all(`${AUTH_BASE_PATH}/*`, (request: Request, response: Response, next: NextFunction) => {
-    if (request.path === `${AUTH_BASE_PATH}/sign-up/email`) {
+    if (BLOCKED_PATHS.has(request.path)) {
       sendProblem(response, {
         type: "urn:openmeshtak:problem:not-found",
         title: "Resource not found",

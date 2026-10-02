@@ -50,6 +50,9 @@ export const auth = betterAuth({
       minUsernameLength: USERNAME_MIN_LENGTH,
       maxUsernameLength: USERNAME_MAX_LENGTH,
       usernameValidator: (value) => isValidUsername(value.toLowerCase()),
+      // Usernames are TAK login names; they change only through OpenMeshTak's own audited
+      // account setup and user administration, never through Better Auth's /update-user.
+      immutableUsername: true,
     }),
     // WebAuthn binds credentials to the public origin; behind Caddy this is the HTTPS hostname.
     passkey({ rpID: publicOrigin.hostname, rpName: "OpenMeshTak", origin: publicOrigin.origin }),
