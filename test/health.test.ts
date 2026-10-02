@@ -4,18 +4,20 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 
 void describe("GET /api/v1/health", () => {
-  void it("returns a small public health response", async () => {
+  void it("returns a small public health response with the Core version", async () => {
     const response = await request(createApp()).get("/api/v1/health").expect(200);
     const body = response.body as {
       service: unknown;
       status: unknown;
       timestamp: unknown;
+      version: unknown;
     };
 
     assert.match(response.headers["content-type"] ?? "", /^application\/json/);
     assert.equal(typeof response.headers["x-trace-id"], "string");
     assert.equal(body.status, "ok");
     assert.equal(body.service, "openmeshtak");
+    assert.match(body.version as string, /^\d+\.\d+\.\d+/);
     assert.equal(typeof body.timestamp, "string");
     assert.match(body.timestamp as string, /^\d{4}-\d{2}-\d{2}T/);
   });

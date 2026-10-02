@@ -1125,6 +1125,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "status": {"dataType":"enum","enums":["ok"],"required":true},
             "service": {"dataType":"enum","enums":["openmeshtak"],"required":true},
+            "version": {"dataType":"string","required":true},
             "timestamp": {"dataType":"string","required":true},
         },
         "additionalProperties": false,

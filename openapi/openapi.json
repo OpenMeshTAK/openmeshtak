@@ -2986,6 +2986,11 @@
 						],
 						"nullable": false
 					},
+					"version": {
+						"type": "string",
+						"description": "Core release version. Core and Web are released together: a Web app works with every Core of\nthe same major and minor version and warns otherwise.",
+						"example": "0.1.0"
+					},
 					"timestamp": {
 						"type": "string"
 					}
@@ -2993,6 +2998,7 @@
 				"required": [
 					"status",
 					"service",
+					"version",
 					"timestamp"
 				],
 				"type": "object",
