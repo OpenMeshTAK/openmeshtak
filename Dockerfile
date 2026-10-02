@@ -10,8 +10,13 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
+# Third-party notices and the CycloneDX SBOM for exactly the packages this image ships.
+RUN pnpm release:notices
 
 FROM node:24-bookworm-slim
+LABEL org.opencontainers.image.title="OpenMeshTak Core" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.source="https://github.com/OpenMeshTAK/openmeshtak"
 ENV NODE_ENV=production \
     APP_HOST=0.0.0.0 \
     APP_PORT=3000 \
@@ -23,7 +28,7 @@ WORKDIR /app
 # The Prisma CLI and tsx stay installed: migrations run on every start, before the server.
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
-COPY --from=build --chown=node:node /app/package.json /app/prisma7.config.ts ./
+COPY --from=build --chown=node:node /app/package.json /app/prisma7.config.ts /app/LICENSE ./
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/openapi ./openapi

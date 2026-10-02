@@ -44,6 +44,9 @@ jobs:
       - name: Verify project
         run: pnpm check
 
+      - name: Write release notices and SBOM
+        run: pnpm release:notices
+
       - name: Smoke test a clean production install
         run: pnpm smoke:clean-install
 

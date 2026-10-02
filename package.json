@@ -38,6 +38,7 @@
     "dev": "pnpm generate && tsx watch src/server.ts",
     "generate": "prisma generate --no-hints && tsoa spec-and-routes",
     "license:check": "tsx scripts/check-licenses.ts",
+    "release:notices": "tsx scripts/write-release-notices.ts",
     "lint": "eslint . --max-warnings 0",
     "smoke:clean-install": "pnpm build && tsx scripts/smoke-clean-install.ts",
     "start": "node dist/server.js",

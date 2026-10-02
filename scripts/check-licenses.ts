@@ -1,11 +1,4 @@
-import { spawnSync } from "node:child_process";
-
-interface LicensePackage {
-  name: string;
-  versions: string[];
-}
-
-type LicenseReport = Record<string, LicensePackage[]>;
+import { readInstalledLicenses } from "./installed-licenses.js";
 
 const allowedLicenses = new Set([
   "Apache-2.0",
@@ -44,54 +37,30 @@ const reviewedExceptions = new Map<string, Set<string>>([
   ["lgpl", new Set(["@jsr/meshtastic__protobufs@2.8.1"])],
 ]);
 
-const pnpmCli = process.env.npm_execpath;
+const report = readInstalledLicenses();
+const blocked: string[] = [];
 
-if (pnpmCli === undefined) {
-  throw new Error("npm_execpath is unavailable; run this check through pnpm.");
-}
+for (const [license, packages] of Object.entries(report)) {
+  if (allowedLicenses.has(license)) {
+    continue;
+  }
 
-const isJavaScriptCli = /\.(?:c|m)?js$/i.test(pnpmCli);
-const command = isJavaScriptCli ? process.execPath : pnpmCli;
-const arguments_ = isJavaScriptCli
-  ? [pnpmCli, "licenses", "list", "--json"]
-  : ["licenses", "list", "--json"];
+  const exceptions = reviewedExceptions.get(license) ?? new Set<string>();
 
-const result = spawnSync(command, arguments_, {
-  cwd: process.cwd(),
-  encoding: "utf8",
-});
+  for (const dependency of packages) {
+    for (const version of dependency.versions) {
+      const packageVersion = `${dependency.name}@${version}`;
 
-if (result.status !== 0) {
-  process.stderr.write(
-    `Unable to read the installed dependency licenses (status ${String(result.status)}): ${result.stderr}\n`,
-  );
-  process.exitCode = 1;
-} else {
-  const report = JSON.parse(result.stdout) as LicenseReport;
-  const blocked: string[] = [];
-
-  for (const [license, packages] of Object.entries(report)) {
-    if (allowedLicenses.has(license)) {
-      continue;
-    }
-
-    const exceptions = reviewedExceptions.get(license) ?? new Set<string>();
-
-    for (const dependency of packages) {
-      for (const version of dependency.versions) {
-        const packageVersion = `${dependency.name}@${version}`;
-
-        if (!exceptions.has(packageVersion)) {
-          blocked.push(`${packageVersion} (${license})`);
-        }
+      if (!exceptions.has(packageVersion)) {
+        blocked.push(`${packageVersion} (${license})`);
       }
     }
   }
+}
 
-  if (blocked.length > 0) {
-    process.stderr.write(`Blocked dependency licenses:\n${blocked.sort().join("\n")}\n`);
-    process.exitCode = 1;
-  } else {
-    process.stdout.write("Dependency licenses match the allowlist and reviewed exceptions.\n");
-  }
+if (blocked.length > 0) {
+  process.stderr.write(`Blocked dependency licenses:\n${blocked.sort().join("\n")}\n`);
+  process.exitCode = 1;
+} else {
+  process.stdout.write("Dependency licenses match the allowlist and reviewed exceptions.\n");
 }
