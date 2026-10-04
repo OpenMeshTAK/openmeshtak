@@ -99,7 +99,7 @@ function partsOf(geometry: JsonObject): JsonObject[] | null {
 
 /**
  * Converts untrusted GeoJSON into validated objects plus a report. Nothing is silently dropped:
- * every feature ends up accepted, changed, skipped or rejected with a reason (EDITOR.md).
+ * every feature ends up accepted, changed, skipped or rejected with a reason for the import report.
  */
 export function convertGeoJson(document: unknown, fallbackStyle: PackageObjectStyle): ImportConversion {
   const report: ImportConversion["report"] = { changed: [], retained: [], skipped: [], rejected: [] };

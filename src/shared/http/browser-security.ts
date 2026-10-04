@@ -19,7 +19,7 @@ export function apiResponseHeaders(_request: Request, response: Response, next: 
 }
 
 /**
- * CSRF defense for cookie-authenticated changes (SECURITY.md): browsers attach `Origin` to every
+ * CSRF defense for cookie-authenticated changes: browsers attach `Origin` to every
  * cross-origin POST/PUT/DELETE, and `Sec-Fetch-Site` where supported. A request that a browser
  * marks as coming from another site is rejected before authentication runs. Requests without
  * these headers do not come from a browser and cannot ride on a victim's cookies. Bearer-key

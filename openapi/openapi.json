@@ -4702,7 +4702,7 @@
 				"additionalProperties": false
 			},
 			"CircleGeometry": {
-				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\r\nan approximated polygon (EDITOR.md) and maps to ATAK `u-d-c-c` circles.",
+				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\r\na silently approximated polygon and maps to ATAK `u-d-c-c` circles.",
 				"properties": {
 					"type": {
 						"type": "string",

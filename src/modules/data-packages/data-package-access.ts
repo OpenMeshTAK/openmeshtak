@@ -28,7 +28,7 @@ export async function requireDataPackage(
   return { event, dataPackage };
 }
 
-/** Archived events are read-only, including their data package content (PRODUCT.md). */
+/** Archived events are a read-only record of what happened, including their data package content. */
 export function requireEditableEvent(event: Event): void {
   if (event.status === "archived") {
     throw eventArchivedProblem();

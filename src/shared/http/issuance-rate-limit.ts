@@ -3,7 +3,7 @@ import { sendProblem } from "../errors/problem.js";
 import { getTraceId } from "../logging/request-logging.js";
 
 /**
- * Caps how fast one client can mint credentials such as API keys or access links (SECURITY.md).
+ * Caps how fast one client can mint credentials such as API keys or access links.
  * Limits are generous for real work, for example issuing links for a whole event at once, and stop
  * a hijacked session or script from minting credentials in bulk.
  */

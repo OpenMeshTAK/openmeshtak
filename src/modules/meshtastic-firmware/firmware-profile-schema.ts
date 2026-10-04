@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Shape of `firmware-profiles/<id>/profile.json`. See MESHTASTIC.md in the planning repository.
+ * Shape of `firmware-profiles/<id>/profile.json`, one directory per supported firmware line.
  * Rules that span several fields, versions or the protobuf package are checked by the loader.
  */
 

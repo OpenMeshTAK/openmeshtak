@@ -20,9 +20,10 @@ function passkeyIdFrom(returned: unknown, body: unknown): string | null {
 }
 
 /**
- * Passkeys and passwords are credentials, so their changes are audited (SECURITY.md) and the
- * account's verified address gets a notice. Better Auth owns these endpoints; this after-hook
- * records only successful changes with safe IDs, never a public key, WebAuthn payload or password.
+ * Passkeys and passwords are credentials, so their changes are audited like every credential
+ * change, and the account's verified address gets a notice. Better Auth owns these endpoints;
+ * this after-hook records only successful changes with safe IDs, never a public key, WebAuthn
+ * payload or password.
  */
 export const credentialChangeHook = createAuthMiddleware(async (ctx) => {
   const action = AUDITED_PATHS[ctx.path];

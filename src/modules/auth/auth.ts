@@ -80,7 +80,7 @@ export const auth = betterAuth({
     // passkey. Align it with the step-up window used for API keys.
     freshAge: RECENT_AUTHENTICATION_MAX_AGE_SECONDS,
   },
-  // Better Auth would otherwise write to the console, bypassing redaction (LOGGING.md). Its extra
+  // Better Auth would otherwise write to the console, bypassing log redaction. Its extra
   // arguments can be raw errors with request details, so they go through the sanitizer too.
   logger: {
     log: (level, message, ...details: unknown[]) => {

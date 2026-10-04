@@ -4,9 +4,10 @@ import { join } from "node:path";
 import { readInstalledLicenses, type LicensePackage } from "./installed-licenses.js";
 
 /**
- * Writes the third-party notices and a CycloneDX SBOM into `dist/` for release artifacts
- * (LICENSING.md). The Core image ships `node_modules` as installed, including the tools that run
- * migrations, so both files cover every installed package, not only production dependencies.
+ * Writes the third-party notices and a CycloneDX SBOM into `dist/` for release artifacts, which
+ * must carry the attribution that third-party licenses require. The Core image ships
+ * `node_modules` as installed, including the tools that run migrations, so both files cover every
+ * installed package, not only production dependencies.
  */
 
 const outputDirectory = "dist";

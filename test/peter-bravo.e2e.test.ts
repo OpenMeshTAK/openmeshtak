@@ -66,7 +66,7 @@ async function profileAs(cookie: string, status = 200): Promise<ProfileBody> {
 
 /**
  * The RC1 exit-gate example: a bot synchronizes Peter into Bravo and Peter sees the resolved
- * profile from PRODUCT.md after claiming access. Steps build on each other and run in order.
+ * profile after claiming access. Steps build on each other and run in order.
  */
 void describe("Peter/Bravo end to end", () => {
   before(async () => {

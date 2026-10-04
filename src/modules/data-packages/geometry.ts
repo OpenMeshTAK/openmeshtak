@@ -38,8 +38,9 @@ function positionProblem(position: number[]): string | null {
 }
 
 /**
- * RC1 rejects geometry crossing the antimeridian instead of reshaping it (EDITOR.md). A segment
- * spanning more than 180 degrees of longitude can only be drawn across the 180th meridian.
+ * RC1 rejects geometry crossing the antimeridian with a validation error instead of silently
+ * reshaping it. A segment spanning more than 180 degrees of longitude can only be drawn across
+ * the 180th meridian.
  */
 function crossesAntimeridian(positions: number[][]): boolean {
   return positions.some((position, index) => {

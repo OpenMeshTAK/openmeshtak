@@ -39,7 +39,7 @@ const testEnvironment = {
   DATA_DIRECTORY: testDataDirectory,
   LOG_LEVEL: "silent",
   NODE_ENV: "test",
-  // A test-only firmware line proves new profiles need no code changes (ROADMAP Stage 5).
+  // A test-only firmware line proves new profiles need no code changes.
   MESHTASTIC_FIRMWARE_PROFILE_DIRS: resolve("test/fixtures/firmware-profiles"),
 };
 
