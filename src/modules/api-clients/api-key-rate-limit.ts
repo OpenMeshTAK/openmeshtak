@@ -7,7 +7,7 @@ const FAILURE_WINDOW_MS = 15 * 60_000;
 const MAX_FAILURES_PER_WINDOW = 20;
 
 function carriesApiKey(request: Request): boolean {
-  return /^bearer\s+omtk_sa_/i.test(request.headers.authorization ?? "");
+  return /^bearer\s+omtk_ak_/i.test(request.headers.authorization ?? "");
 }
 
 /**

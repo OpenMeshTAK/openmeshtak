@@ -1,4 +1,4 @@
-import type { ServiceAccountPrincipal } from "../../shared/auth/principal.js";
+import type { ApiClientPrincipal } from "../../shared/auth/principal.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
@@ -31,13 +31,13 @@ async function recordFailure(apiKeyId: string, reason: string, traceId: string):
 }
 
 /**
- * Resolves only the service-account identity. Permissions and event scopes are loaded from the
+ * Resolves only the api-client identity. Permissions and event scopes are loaded from the
  * account on every authorization check, so grant changes and revocation apply immediately.
  */
 export async function authenticateApiKey(
   authorizationHeader: string | undefined,
   traceId: string,
-): Promise<ServiceAccountPrincipal | null> {
+): Promise<ApiClientPrincipal | null> {
   const value = bearerValue(authorizationHeader);
   const parsed = value === null ? null : parseApiKey(value);
 
@@ -53,7 +53,7 @@ export async function authenticateApiKey(
       expiresAt: true,
       revokedAt: true,
       lastUsedAt: true,
-      serviceAccount: { select: { id: true, status: true } },
+      apiClient: { select: { id: true, status: true } },
     },
   });
 
@@ -69,8 +69,8 @@ export async function authenticateApiKey(
       ? "revoked"
       : apiKey.expiresAt !== null && apiKey.expiresAt <= now
         ? "expired"
-        : apiKey.serviceAccount.status !== "active"
-          ? "service-account-disabled"
+        : apiKey.apiClient.status !== "active"
+          ? "api-client-disabled"
           : null;
 
   if (failureReason !== null) {
@@ -86,8 +86,8 @@ export async function authenticateApiKey(
   }
 
   return {
-    type: "service-account",
-    id: apiKey.serviceAccount.id,
+    type: "api-client",
+    id: apiKey.apiClient.id,
     apiKeyId: apiKey.id,
   };
 }

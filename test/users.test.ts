@@ -7,7 +7,7 @@ import { disconnectDatabase } from "../src/shared/database/database.js";
 import {
   clearDatabase,
   createEvent,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -47,7 +47,7 @@ void describe("users", () => {
     const other = await createUser("Other", [{ permission: "members.read", eventId: await createEvent() }]);
     await request(app).get("/api/v1/users").set("Cookie", other.cookie).expect(403);
 
-    const key = await createServiceAccountKey([{ permission: "events.read" }]);
+    const key = await createApiClientKey([{ permission: "events.read" }]);
     await request(app).get("/api/v1/users").set("Authorization", `Bearer ${key}`).expect(403);
     await request(app).get("/api/v1/users").expect(401);
   });

@@ -47,7 +47,7 @@ import {
 @Route("events/{eventId}/meshtastic/channels")
 @Tags("Meshtastic channels")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(404, "Not found")
 export class MeshtasticChannelsController extends Controller {

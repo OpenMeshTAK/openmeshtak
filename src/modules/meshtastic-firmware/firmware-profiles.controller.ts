@@ -15,7 +15,7 @@ import { getFirmwareProfile, listFirmwareProfiles } from "./firmware-profiles.se
 @Route("meshtastic/firmware-profiles")
 @Tags("Meshtastic firmware profiles")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 export class FirmwareProfilesController extends Controller {

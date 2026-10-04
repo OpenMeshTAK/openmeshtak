@@ -18,7 +18,7 @@ interface GrantBody {
   eventId: string | null;
 }
 
-interface ServiceAccountBody {
+interface ApiClientBody {
   id: string;
   version: number;
   status: string;
@@ -50,21 +50,21 @@ interface PrincipalBody {
 let app: Express;
 let admin: TestUser;
 
-async function createServiceAccount(
+async function createApiClient(
   user: TestUser,
   permissions: GrantBody[] = [{ permission: "members.sync", eventId: null }],
-): Promise<ServiceAccountBody> {
+): Promise<ApiClientBody> {
   const response = await request(app)
-    .post("/api/v1/service-accounts")
+    .post("/api/v1/api-clients")
     .set("Cookie", user.cookie)
     .send({ name: "Discord bot", permissions })
     .expect(201);
-  return response.body as ServiceAccountBody;
+  return response.body as ApiClientBody;
 }
 
-async function createKey(serviceAccountId: string): Promise<CreatedKeyBody> {
+async function createKey(apiClientId: string): Promise<CreatedKeyBody> {
   const response = await request(app)
-    .post(`/api/v1/service-accounts/${serviceAccountId}/api-keys`)
+    .post(`/api/v1/api-clients/${apiClientId}/api-keys`)
     .set("Cookie", admin.cookie)
     .send({ name: "production" })
     .expect(201);
@@ -76,7 +76,7 @@ function principalWithKey(key: string): request.Test {
   return request(app).get("/api/v1/principal").set("Authorization", `Bearer ${key}`);
 }
 
-void describe("service accounts and API keys", () => {
+void describe("API clients and API keys", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
@@ -89,13 +89,13 @@ void describe("service accounts and API keys", () => {
   });
 
   void it("denies unauthenticated management requests", async () => {
-    const response = await request(app).get("/api/v1/service-accounts").expect(401);
+    const response = await request(app).get("/api/v1/api-clients").expect(401);
     assert.equal((response.body as ProblemBody).code, "AUTHENTICATION_REQUIRED");
   });
 
-  void it("creates, reads and audits a scoped service account", async () => {
+  void it("creates, reads and audits a scoped API client", async () => {
     const eventId = await createEvent();
-    const created = await createServiceAccount(admin, [
+    const created = await createApiClient(admin, [
       { permission: "members.sync", eventId },
       { permission: "events.read", eventId: null },
     ]);
@@ -108,12 +108,12 @@ void describe("service accounts and API keys", () => {
     );
 
     await request(app)
-      .get(`/api/v1/service-accounts/${created.id}`)
+      .get(`/api/v1/api-clients/${created.id}`)
       .set("Cookie", admin.cookie)
       .expect(200);
 
     const audit = await database.auditEvent.findFirstOrThrow({
-      where: { action: "service-account.created" },
+      where: { action: "api-client.created" },
     });
     assert.equal(audit.actorId, admin.id);
     assert.equal(audit.targetId, created.id);
@@ -121,7 +121,7 @@ void describe("service accounts and API keys", () => {
 
   void it("rejects invalid permission scopes and unknown events", async () => {
     const response = await request(app)
-      .post("/api/v1/service-accounts")
+      .post("/api/v1/api-clients")
       .set("Cookie", admin.cookie)
       .send({
         name: "Invalid",
@@ -136,18 +136,18 @@ void describe("service accounts and API keys", () => {
       (response.body as ProblemBody).errors?.map(({ code }) => code),
       ["SCOPE_NOT_SUPPORTED", "NOT_FOUND"],
     );
-    assert.equal(await database.serviceAccount.count(), 0);
+    assert.equal(await database.apiClient.count(), 0);
   });
 
   void it("rejects unknown permissions and unknown fields", async () => {
     await request(app)
-      .post("/api/v1/service-accounts")
+      .post("/api/v1/api-clients")
       .set("Cookie", admin.cookie)
       .send({ name: "Invalid", permissions: [{ permission: "root", eventId: null }] })
       .expect(422);
 
     await request(app)
-      .post("/api/v1/service-accounts")
+      .post("/api/v1/api-clients")
       .set("Cookie", admin.cookie)
       .send({ name: "Invalid", permissions: [], isAdmin: true })
       .expect(422);
@@ -155,30 +155,30 @@ void describe("service accounts and API keys", () => {
 
   void it("prevents granting permissions the actor does not hold", async () => {
     const manager = await createUser("Manager", [
-      { permission: "service-accounts.manage" },
+      { permission: "api-clients.manage" },
       { permission: "members.sync" },
     ]);
 
-    await createServiceAccount(manager, [{ permission: "members.sync", eventId: null }]);
+    await createApiClient(manager, [{ permission: "members.sync", eventId: null }]);
 
     const response = await request(app)
-      .post("/api/v1/service-accounts")
+      .post("/api/v1/api-clients")
       .set("Cookie", manager.cookie)
       .send({ name: "Escalation", permissions: [{ permission: "users.manage", eventId: null }] })
       .expect(403);
     assert.equal((response.body as ProblemBody).code, "FORBIDDEN");
   });
 
-  void it("denies users without service-account management permission", async () => {
+  void it("denies users without api-client management permission", async () => {
     const viewer = await createUser("Viewer", [{ permission: "events.read" }]);
-    await request(app).get("/api/v1/service-accounts").set("Cookie", viewer.cookie).expect(403);
+    await request(app).get("/api/v1/api-clients").set("Cookie", viewer.cookie).expect(403);
   });
 
   void it("returns an API key once and stores only its digest", async () => {
-    const account = await createServiceAccount(admin);
+    const account = await createApiClient(admin);
     const created = await createKey(account.id);
 
-    assert.match(created.key, /^omtk_sa_[0-9a-f]{24}_[A-Za-z0-9_-]{43}$/);
+    assert.match(created.key, /^omtk_ak_[0-9a-f]{24}_[A-Za-z0-9_-]{43}$/);
     assert.ok(created.key.startsWith(`${created.apiKey.displayPrefix}_`));
 
     const stored = await database.apiKey.findUniqueOrThrow({ where: { id: created.apiKey.id } });
@@ -186,7 +186,7 @@ void describe("service accounts and API keys", () => {
     assert.ok(!JSON.stringify(stored).includes(secret));
 
     const list = await request(app)
-      .get(`/api/v1/service-accounts/${account.id}/api-keys`)
+      .get(`/api/v1/api-clients/${account.id}/api-keys`)
       .set("Cookie", admin.cookie)
       .expect(200);
     assert.ok(!JSON.stringify(list.body).includes(secret));
@@ -196,25 +196,25 @@ void describe("service accounts and API keys", () => {
     assert.ok(!JSON.stringify(audits).includes(secret));
   });
 
-  void it("authenticates a service account by bearer key with its own grants only", async () => {
-    const account = await createServiceAccount(admin);
+  void it("authenticates an API client by bearer key with its own grants only", async () => {
+    const account = await createApiClient(admin);
     const { key } = await createKey(account.id);
 
     const response = await principalWithKey(key).expect(200);
     const principal = response.body as PrincipalBody;
-    assert.equal(principal.type, "service-account");
+    assert.equal(principal.type, "api-client");
     assert.equal(principal.id, account.id);
     assert.deepEqual(principal.permissions, [{ permission: "members.sync", eventId: null }]);
 
     // Credential management is session-only, even for a key whose account could be granted it.
     await request(app)
-      .get("/api/v1/service-accounts")
+      .get("/api/v1/api-clients")
       .set("Authorization", `Bearer ${key}`)
       .expect(401);
   });
 
   void it("supports overlapping rotation and immediate revocation", async () => {
-    const account = await createServiceAccount(admin);
+    const account = await createApiClient(admin);
     const first = await createKey(account.id);
     const second = await createKey(account.id);
 
@@ -223,7 +223,7 @@ void describe("service accounts and API keys", () => {
     assert.equal(await database.auditEvent.count({ where: { action: "api-key.rotated" } }), 1);
 
     const revoked = await request(app)
-      .post(`/api/v1/service-accounts/${account.id}/api-keys/${first.apiKey.id}/revoke`)
+      .post(`/api/v1/api-clients/${account.id}/api-keys/${first.apiKey.id}/revoke`)
       .set("Cookie", admin.cookie)
       .expect(200);
     assert.equal((revoked.body as ApiKeyBody).status, "revoked");
@@ -239,7 +239,7 @@ void describe("service accounts and API keys", () => {
   });
 
   void it("rejects tampered and expired keys with the same generic problem", async () => {
-    const account = await createServiceAccount(admin);
+    const account = await createApiClient(admin);
     const { key, apiKey } = await createKey(account.id);
     const tampered = `${key.slice(0, -1)}${key.endsWith("A") ? "B" : "A"}`;
 
@@ -258,7 +258,7 @@ void describe("service accounts and API keys", () => {
   });
 
   void it("rate-limits failed key attempts before they reach the audit log", async () => {
-    const account = await createServiceAccount(admin);
+    const account = await createApiClient(admin);
     const { key } = await createKey(account.id);
     const wrongSecret = `${key.slice(0, -43)}${"x".repeat(43)}`;
 
@@ -280,12 +280,12 @@ void describe("service accounts and API keys", () => {
     );
   });
 
-  void it("disables every key when the service account is disabled", async () => {
-    const account = await createServiceAccount(admin);
+  void it("disables every key when the API client is disabled", async () => {
+    const account = await createApiClient(admin);
     const { key } = await createKey(account.id);
 
     const updated = await request(app)
-      .put(`/api/v1/service-accounts/${account.id}`)
+      .put(`/api/v1/api-clients/${account.id}`)
       .set("Cookie", admin.cookie)
       .send({
         version: account.version,
@@ -295,13 +295,13 @@ void describe("service accounts and API keys", () => {
         permissions: account.permissions,
       })
       .expect(200);
-    assert.equal((updated.body as ServiceAccountBody).version, 2);
+    assert.equal((updated.body as ApiClientBody).version, 2);
 
     await principalWithKey(key).expect(401);
   });
 
   void it("detects stale updates through the version", async () => {
-    const account = await createServiceAccount(admin);
+    const account = await createApiClient(admin);
     const update = {
       version: account.version,
       name: "Renamed",
@@ -311,12 +311,12 @@ void describe("service accounts and API keys", () => {
     };
 
     await request(app)
-      .put(`/api/v1/service-accounts/${account.id}`)
+      .put(`/api/v1/api-clients/${account.id}`)
       .set("Cookie", admin.cookie)
       .send(update)
       .expect(200);
     const stale = await request(app)
-      .put(`/api/v1/service-accounts/${account.id}`)
+      .put(`/api/v1/api-clients/${account.id}`)
       .set("Cookie", admin.cookie)
       .send(update)
       .expect(409);
@@ -326,14 +326,14 @@ void describe("service accounts and API keys", () => {
   });
 
   void it("requires a recent sign-in before creating API keys", async () => {
-    const account = await createServiceAccount(admin);
+    const account = await createApiClient(admin);
     await database.session.updateMany({
       where: { userId: admin.authSubjectId },
       data: { createdAt: new Date(Date.now() - 60 * 60_000) },
     });
 
     const response = await request(app)
-      .post(`/api/v1/service-accounts/${account.id}/api-keys`)
+      .post(`/api/v1/api-clients/${account.id}/api-keys`)
       .set("Cookie", admin.cookie)
       .send({ name: "late" })
       .expect(403);
@@ -343,7 +343,7 @@ void describe("service accounts and API keys", () => {
 
   void it("paginates with opaque cursors and rejects unknown query parameters", async () => {
     for (let index = 0; index < 3; index += 1) {
-      await createServiceAccount(admin);
+      await createApiClient(admin);
     }
 
     const seen: string[] = [];
@@ -354,11 +354,11 @@ void describe("service accounts and API keys", () => {
         query.cursor = cursor;
       }
       const response = await request(app)
-        .get("/api/v1/service-accounts")
+        .get("/api/v1/api-clients")
         .query(query)
         .set("Cookie", admin.cookie)
         .expect(200);
-      const page = response.body as PageBody<ServiceAccountBody>;
+      const page = response.body as PageBody<ApiClientBody>;
       seen.push(...page.items.map(({ id }) => id));
       cursor = page.page.nextCursor;
     } while (cursor !== null);
@@ -366,15 +366,15 @@ void describe("service accounts and API keys", () => {
     assert.equal(new Set(seen).size, 3);
 
     await request(app)
-      .get("/api/v1/service-accounts?cursor=not-a-cursor")
+      .get("/api/v1/api-clients?cursor=not-a-cursor")
       .set("Cookie", admin.cookie)
       .expect(400);
     await request(app)
-      .get("/api/v1/service-accounts?status=active")
+      .get("/api/v1/api-clients?status=active")
       .set("Cookie", admin.cookie)
       .expect(422);
     await request(app)
-      .get("/api/v1/service-accounts?limit=101")
+      .get("/api/v1/api-clients?limit=101")
       .set("Cookie", admin.cookie)
       .expect(422);
   });

@@ -29,7 +29,7 @@ import { listSyncIssues } from "./sync-issues.service.js";
 @Route("events/{eventId}/sync-issues")
 @Tags("Event members")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 @Response<ProblemDetails>(404, "Not found")

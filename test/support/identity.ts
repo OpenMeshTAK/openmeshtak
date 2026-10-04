@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { auth } from "../../src/modules/auth/auth.js";
-import { generateApiKey } from "../../src/modules/service-accounts/api-key-secret.js";
+import { generateApiKey } from "../../src/modules/api-clients/api-key-secret.js";
 import { scopeKeyFor, type Permission } from "../../src/shared/auth/permissions.js";
 import { database } from "../../src/shared/database/database.js";
 import { assignMissingUsername } from "../../src/modules/users/usernames.js";
@@ -30,8 +30,8 @@ export async function clearDatabase(): Promise<void> {
     database.eventRole.deleteMany(),
     database.eventGroup.deleteMany(),
     database.apiKey.deleteMany(),
-    database.serviceAccountPermissionGrant.deleteMany(),
-    database.serviceAccount.deleteMany(),
+    database.apiClientPermissionGrant.deleteMany(),
+    database.apiClient.deleteMany(),
     database.permissionGrant.deleteMany(),
     database.userGroupMembership.deleteMany(),
     database.userGroup.deleteMany(),
@@ -114,14 +114,14 @@ export async function createEvent(): Promise<string> {
   return id;
 }
 
-/** Creates an active service account with one API key and returns the bearer value. */
-export async function createServiceAccountKey(grants: TestGrant[]): Promise<string> {
-  const serviceAccountId = randomUUID();
+/** Creates an active API client with one API key and returns the bearer value. */
+export async function createApiClientKey(grants: TestGrant[]): Promise<string> {
+  const apiClientId = randomUUID();
   const key = generateApiKey();
 
-  await database.serviceAccount.create({
+  await database.apiClient.create({
     data: {
-      id: serviceAccountId,
+      id: apiClientId,
       name: "Test integration",
       permissionGrants: {
         create: grants.map(({ permission, eventId = null }) => ({

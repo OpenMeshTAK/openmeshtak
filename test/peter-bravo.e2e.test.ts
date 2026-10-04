@@ -8,7 +8,7 @@ import { disconnectDatabase } from "../src/shared/database/database.js";
 import {
   clearDatabase,
   createEvent,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -111,7 +111,7 @@ void describe("Peter/Bravo end to end", () => {
     });
     commandId = (command.body as { id: string }).id;
 
-    const bot = await createServiceAccountKey([{ permission: "members.sync", eventId }]);
+    const bot = await createApiClientKey([{ permission: "members.sync", eventId }]);
     const synced = await request(app)
       .put(`/api/v1/events/${eventId}/external-members/discord/123456789`)
       .set("Authorization", `Bearer ${bot}`)

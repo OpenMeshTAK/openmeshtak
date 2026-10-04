@@ -29,11 +29,11 @@ export async function hasPermission(
     return userHasPermission(principal.id, permission, eventId);
   }
 
-  const grant = await database.serviceAccountPermissionGrant.findFirst({
+  const grant = await database.apiClientPermissionGrant.findFirst({
     where: {
       permission,
       scopeKey,
-      serviceAccount: { id: principal.id, status: "active" },
+      apiClient: { id: principal.id, status: "active" },
     },
     select: { id: true },
   });
@@ -73,8 +73,8 @@ export async function hasAnyGrantForEvent(principal: Principal, eventId: string)
           where: { scopeKey, userGroup: { memberships: { some: { userId: principal.id } } } },
           select: { id: true },
         })
-      : await database.serviceAccountPermissionGrant.findFirst({
-          where: { scopeKey, serviceAccount: { id: principal.id, status: "active" } },
+      : await database.apiClientPermissionGrant.findFirst({
+          where: { scopeKey, apiClient: { id: principal.id, status: "active" } },
           select: { id: true },
         });
   return grant !== null;
@@ -93,8 +93,8 @@ export async function eventAccessFor(
           where: { permission, userGroup: { memberships: { some: { userId: principal.id } } } },
           select: { scopeKey: true, eventId: true },
         })
-      : await database.serviceAccountPermissionGrant.findMany({
-          where: { permission, serviceAccount: { id: principal.id, status: "active" } },
+      : await database.apiClientPermissionGrant.findMany({
+          where: { permission, apiClient: { id: principal.id, status: "active" } },
           select: { scopeKey: true, eventId: true },
         });
 

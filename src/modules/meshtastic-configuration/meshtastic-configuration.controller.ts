@@ -39,7 +39,7 @@ import {
 @Route("events/{eventId}/meshtastic/configuration")
 @Tags("Meshtastic configuration")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(404, "Not found")
 export class MeshtasticConfigurationController extends Controller {

@@ -4,7 +4,7 @@ import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { disconnectDatabase } from "../src/shared/database/database.js";
-import { clearDatabase, createServiceAccountKey, createUser, type TestUser } from "./support/identity.js";
+import { clearDatabase, createApiClientKey, createUser, type TestUser } from "./support/identity.js";
 
 let app: Express;
 let admin: TestUser;
@@ -35,7 +35,7 @@ void describe("map settings", () => {
     };
     assert.equal(settings.providerName, "OpenStreetMap");
     assert.equal(settings.version, 0);
-    const key = await createServiceAccountKey([]);
+    const key = await createApiClientKey([]);
     await request(app).get("/api/v1/map/settings").set("Authorization", `Bearer ${key}`).expect(401);
   });
 

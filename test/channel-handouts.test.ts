@@ -6,7 +6,7 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { PERMISSIONS } from "../src/shared/auth/permissions.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
-import { clearDatabase, createEvent, createServiceAccountKey, createUser, type TestUser } from "./support/identity.js";
+import { clearDatabase, createEvent, createApiClientKey, createUser, type TestUser } from "./support/identity.js";
 
 interface HandoutBody {
   channelId: string;
@@ -119,7 +119,7 @@ void describe("secret Meshtastic channel handouts", () => {
 
     await request(app).get(handout(otherMemberId)).set("Cookie", otherMember.cookie).expect(404);
     await request(app).get(handout(holderMemberId)).set("Cookie", admin.cookie).expect(404);
-    const apiKey = await createServiceAccountKey([{ permission: "members.read", eventId }]);
+    const apiKey = await createApiClientKey([{ permission: "members.read", eventId }]);
     await request(app)
       .get(handout(holderMemberId))
       .set("Authorization", `Bearer ${apiKey}`)

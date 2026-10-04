@@ -7,7 +7,7 @@ import { PERMISSIONS } from "../src/shared/auth/permissions.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import {
   clearDatabase,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -206,7 +206,7 @@ void describe("events", () => {
   void it("serves scoped integrations through API keys", async () => {
     const visible = await createEvent("visible");
     await createEvent("hidden");
-    const key = await createServiceAccountKey([{ permission: "events.read", eventId: visible.id }]);
+    const key = await createApiClientKey([{ permission: "events.read", eventId: visible.id }]);
 
     const list = await request(app)
       .get("/api/v1/events")

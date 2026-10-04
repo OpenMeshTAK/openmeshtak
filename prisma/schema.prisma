@@ -14,22 +14,22 @@ enum EventStatus {
 }
 
 model Event {
-  id                      String                          @id
+  id                      String                       @id
   name                    String
-  slug                    String                          @unique
+  slug                    String                       @unique
   timeZone                String
-  status                  EventStatus                     @default(draft)
-  version                 Int                             @default(1)
+  status                  EventStatus                  @default(draft)
+  version                 Int                          @default(1)
   startsAt                DateTime?
   endsAt                  DateTime?
-  createdAt               DateTime                        @default(now())
-  updatedAt               DateTime                        @updatedAt
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
   permissionGrants        PermissionGrant[]
-  serviceAccountGrants    ServiceAccountPermissionGrant[]
+  apiClientGrants         ApiClientPermissionGrant[]
   roles                   EventRole[]
   groups                  EventGroup[]
-  takTrafficRecording TakTrafficRecording?
-  takTrafficItems     TakTrafficItem[]
+  takTrafficRecording     TakTrafficRecording?
+  takTrafficItems         TakTrafficItem[]
   members                 EventMember[]
   syncIssues              SyncIssue[]
   memberClaims            MemberClaim[]
@@ -41,20 +41,20 @@ model Event {
 }
 
 model User {
-  id            String      @id
-  name          String
-  email         String      @unique
-  emailVerified Boolean     @default(false)
+  id              String      @id
+  name            String
+  email           String      @unique
+  emailVerified   Boolean     @default(false)
   /// Lowercase sign-in and TAK login name (Better Auth username plugin). Set for every account.
-  username        String?   @unique
+  username        String?     @unique
   displayUsername String?
-  image         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  passkeys      Passkey[]
-  domainUser    DomainUser?
+  image           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+  passkeys        Passkey[]
+  domainUser      DomainUser?
 
   @@map("user")
 }
@@ -127,23 +127,23 @@ model Verification {
 }
 
 model DomainUser {
-  id                     String                @id
-  displayName            String
+  id                    String                 @id
+  displayName           String
   /// Set while an administrator has disabled the account: no sign-in, no sessions, no TAK access.
-  disabledAt             DateTime?
-  version                Int                   @default(1)
-  authSubjectId          String?               @unique
-  authSubject            User?                 @relation(fields: [authSubjectId], references: [id], onDelete: SetNull)
-  memberships            UserGroupMembership[]
-  createdServiceAccounts ServiceAccount[]
-  createdApiKeys         ApiKey[]
-  externalIdentities     ExternalIdentity[]
-  eventMemberships       EventMember[]
-  takEnrollmentTokens    TakEnrollmentToken[]
-  takClientCertificates  TakClientCertificate[]
-  downloadGrants         DownloadGrant[]
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @updatedAt
+  disabledAt            DateTime?
+  version               Int                    @default(1)
+  authSubjectId         String?                @unique
+  authSubject           User?                  @relation(fields: [authSubjectId], references: [id], onDelete: SetNull)
+  memberships           UserGroupMembership[]
+  createdApiClients     ApiClient[]
+  createdApiKeys        ApiKey[]
+  externalIdentities    ExternalIdentity[]
+  eventMemberships      EventMember[]
+  takEnrollmentTokens   TakEnrollmentToken[]
+  takClientCertificates TakClientCertificate[]
+  downloadGrants        DownloadGrant[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 }
 
 /// Authorization group. `systemKey` marks groups the server protects, such as the setup Admin group.
@@ -195,63 +195,63 @@ model BootstrapChallenge {
   @@index([expiresAt])
 }
 
-enum ServiceAccountStatus {
+enum ApiClientStatus {
   active
   disabled
 }
 
 /// A non-human machine principal. It is intentionally not a User and cannot join user groups.
-model ServiceAccount {
-  id               String                          @id
+model ApiClient {
+  id               String                     @id
   name             String
   description      String?
-  status           ServiceAccountStatus            @default(active)
-  version          Int                             @default(1)
+  status           ApiClientStatus            @default(active)
+  version          Int                        @default(1)
   createdByUserId  String?
-  createdBy        DomainUser?                     @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
-  permissionGrants ServiceAccountPermissionGrant[]
+  createdBy        DomainUser?                @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  permissionGrants ApiClientPermissionGrant[]
   apiKeys          ApiKey[]
-  createdAt        DateTime                        @default(now())
-  updatedAt        DateTime                        @updatedAt
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
 
   @@index([createdAt, id])
 }
 
-model ServiceAccountPermissionGrant {
-  id               String         @id
-  serviceAccountId String
-  permission       String
-  scopeKey         String
-  eventId          String?
-  serviceAccount   ServiceAccount @relation(fields: [serviceAccountId], references: [id], onDelete: Cascade)
-  event            Event?         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  createdAt        DateTime       @default(now())
+model ApiClientPermissionGrant {
+  id          String    @id
+  apiClientId String
+  permission  String
+  scopeKey    String
+  eventId     String?
+  apiClient   ApiClient @relation(fields: [apiClientId], references: [id], onDelete: Cascade)
+  event       Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
 
-  @@unique([serviceAccountId, permission, scopeKey])
+  @@unique([apiClientId, permission, scopeKey])
   @@index([eventId])
 }
 
 /// Stores only safe metadata and a SHA-256 digest of the random key secret, never the bearer value.
 model ApiKey {
-  id               String         @id
-  serviceAccountId String
-  name             String
-  publicKeyId      String         @unique
-  secretHash       String
-  expiresAt        DateTime?
-  lastUsedAt       DateTime?
-  revokedAt        DateTime?
-  createdByUserId  String?
-  serviceAccount   ServiceAccount @relation(fields: [serviceAccountId], references: [id], onDelete: Cascade)
-  createdBy        DomainUser?    @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
-  createdAt        DateTime       @default(now())
+  id              String      @id
+  apiClientId     String
+  name            String
+  publicKeyId     String      @unique
+  secretHash      String
+  expiresAt       DateTime?
+  lastUsedAt      DateTime?
+  revokedAt       DateTime?
+  createdByUserId String?
+  apiClient       ApiClient   @relation(fields: [apiClientId], references: [id], onDelete: Cascade)
+  createdBy       DomainUser? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime    @default(now())
 
-  @@index([serviceAccountId, createdAt, id])
+  @@index([apiClientId, createdAt, id])
 }
 
 enum AuditActorType {
   user
-  service_account
+  api_client
   anonymous
   system
 }
@@ -413,7 +413,7 @@ model MemberClaim {
   expiresAt    DateTime
   consumedAt   DateTime?
   revokedAt    DateTime?
-  /// Safe actor reference ("user" or "service-account") of whoever issued the claim.
+  /// Safe actor reference ("user" or "api-client") of whoever issued the claim.
   issuedByType String
   issuedById   String
   event        Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -447,28 +447,28 @@ model EventConfigurationRevision {
 
 /// Editable, format-neutral map content of one event, distributed as an ATAK Data Package.
 model DataPackage {
-  id          String                @id
-  eventId     String
-  name        String
-  description String?
-  version     Int                   @default(1)
+  id                  String                @id
+  eventId             String
+  name                String
+  description         String?
+  version             Int                   @default(1)
   /// Drawing order within the event; lower values are drawn first, below higher ones.
-  sortOrder   Int                   @default(0)
+  sortOrder           Int                   @default(0)
   /// Distribution: every member of the event, or only the members the audience selects.
-  audienceAll Boolean               @default(true)
-  audience    DataPackageAudience[]
+  audienceAll         Boolean               @default(true)
+  audience            DataPackageAudience[]
   /// The built-in TAK server installs the package right after a member enrolls.
-  installOnEnrollment Boolean       @default(false)
+  installOnEnrollment Boolean               @default(false)
   /// The built-in TAK server delivers new or changed revisions whenever a member connects.
-  installOnConnection Boolean       @default(false)
-  event       Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  layers      PackageLayer[]
-  objects     PackageObject[]
-  contents    PackageContent[]
-  revisions   PackageRevision[]
-  sources     DataPackageSource[]
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  installOnConnection Boolean               @default(false)
+  event               Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  layers              PackageLayer[]
+  objects             PackageObject[]
+  contents            PackageContent[]
+  revisions           PackageRevision[]
+  sources             DataPackageSource[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
 
   @@index([eventId, createdAt, id])
 }
@@ -796,19 +796,19 @@ model TakClientCertificate {
 
 /// SMTP delivery for account emails; a single row with id "email". The password is write-only.
 model EmailSettings {
-  id                String   @id
-  enabled           Boolean  @default(false)
-  host              String?
-  port              Int      @default(587)
+  id               String   @id
+  enabled          Boolean  @default(false)
+  host             String?
+  port             Int      @default(587)
   /// "starttls", "tls" (implicit TLS) or "none" (only for local relays).
-  security          String   @default("starttls")
-  username          String?
+  security         String   @default("starttls")
+  username         String?
   /// Encrypted with the deployment root key; never returned.
-  passwordEnvelope  String?
-  fromAddress       String?
-  fromName          String   @default("OpenMeshTak")
-  version           Int      @default(1)
-  updatedAt         DateTime @updatedAt
+  passwordEnvelope String?
+  fromAddress      String?
+  fromName         String   @default("OpenMeshTak")
+  version          Int      @default(1)
+  updatedAt        DateTime @updatedAt
 }
 
 /// Opt-in recording of an event's TAK traffic. Off by default, because positions are personal data.
@@ -857,19 +857,19 @@ model MapSettings {
 /// Short-lived link to one generated artifact, so a phone can download it without a browser
 /// session, e.g. after scanning a QR code. Only the hash of the link token is stored.
 model DownloadGrant {
-  id         String    @id
-  tokenHash  String    @unique
+  id        String     @id
+  tokenHash String     @unique
   /// The user the artifact is generated for and whose access is checked again on download.
-  userId     String
+  userId    String
   /// "device-profile", "member-data-package" or "tak-connection-package".
-  kind       String
-  eventId    String?
-  memberId   String?
-  packageId  String?
-  expiresAt  DateTime
-  uses       Int       @default(0)
-  user       DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime  @default(now())
+  kind      String
+  eventId   String?
+  memberId  String?
+  packageId String?
+  expiresAt DateTime
+  uses      Int        @default(0)
+  user      DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
 
   @@index([userId])
 }

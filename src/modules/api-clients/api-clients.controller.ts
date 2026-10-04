@@ -29,84 +29,84 @@ import type {
   ApiKeyPage,
   CreateApiKeyRequest,
   CreatedApiKeyResponse,
-  CreateServiceAccountRequest,
-  ServiceAccountDto,
-  ServiceAccountPage,
-  UpdateServiceAccountRequest,
-} from "./service-account.dto.js";
+  CreateApiClientRequest,
+  ApiClientDto,
+  ApiClientPage,
+  UpdateApiClientRequest,
+} from "./api-client.dto.js";
 import {
-  createServiceAccount,
-  getServiceAccount,
-  listServiceAccounts,
-  updateServiceAccount,
-} from "./service-accounts.service.js";
+  createApiClient,
+  getApiClient,
+  listApiClients,
+  updateApiClient,
+} from "./api-clients.service.js";
 
 const apiKeyIssuanceRateLimit = issuanceRateLimit(20, "API keys");
 
 /**
- * Service accounts are managed by humans only. Machine principals cannot create or rotate
+ * API clients are managed by humans only. Machine principals cannot create or rotate
  * credentials, so these operations accept the interactive session scheme exclusively.
  */
-@Route("service-accounts")
-@Tags("Service accounts")
+@Route("api-clients")
+@Tags("API clients")
 @Security("sessionCookie")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
-export class ServiceAccountsController extends Controller {
+export class ApiClientsController extends Controller {
   /**
-   * Lists service accounts ordered by creation time, oldest first.
+   * Lists API clients ordered by creation time, oldest first.
    * @isInt limit
    * @minimum limit 1
    * @maximum limit 100
    */
   @Get()
-  @SuccessResponse(200, "Service accounts")
+  @SuccessResponse(200, "API clients")
   @Middlewares(allowQueryParameters("limit", "cursor"))
   @Response<ProblemDetails>(400, "Invalid cursor")
-  public async listServiceAccounts(
+  public async listApiClients(
     @Request() request: unknown,
     @Query() limit?: number,
     @Query() cursor?: string,
-  ): Promise<ServiceAccountPage> {
+  ): Promise<ApiClientPage> {
     const { principal } = requestContext(request);
-    return listServiceAccounts(principal, limit, cursor);
+    return listApiClients(principal, limit, cursor);
   }
 
-  /** Creates a service account with explicit permission grants. */
+  /** Creates an API client with explicit permission grants. */
   @Post()
-  @SuccessResponse(201, "Service account created")
+  @SuccessResponse(201, "API client created")
   @Response<ProblemDetails>(422, "Validation failed")
-  public async createServiceAccount(
+  public async createApiClient(
     @Request() request: unknown,
-    @Body() body: CreateServiceAccountRequest,
-  ): Promise<ServiceAccountDto> {
-    const created = await createServiceAccount(requestContext(request), body);
+    @Body() body: CreateApiClientRequest,
+  ): Promise<ApiClientDto> {
+    const created = await createApiClient(requestContext(request), body);
     this.setStatus(201);
     return created;
   }
 
-  @Get("{serviceAccountId}")
-  @SuccessResponse(200, "Service account")
+  @Get("{apiClientId}")
+  @SuccessResponse(200, "API client")
   @Response<ProblemDetails>(404, "Not found")
-  public async getServiceAccount(
+  public async getApiClient(
     @Request() request: unknown,
-    @Path() serviceAccountId: Uuid,
-  ): Promise<ServiceAccountDto> {
-    return getServiceAccount(requestContext(request).principal, serviceAccountId);
+    @Path() apiClientId: Uuid,
+  ): Promise<ApiClientDto> {
+    return getApiClient(requestContext(request).principal, apiClientId);
   }
 
   /** Replaces name, description, status and grants. Requires the current `version`. */
-  @Put("{serviceAccountId}")
-  @SuccessResponse(200, "Service account updated")
+  @Put("{apiClientId}")
+  @SuccessResponse(200, "API client updated")
   @Response<ProblemDetails>(404, "Not found")
   @Response<ProblemDetails>(409, "Version conflict")
   @Response<ProblemDetails>(422, "Validation failed")
-  public async updateServiceAccount(
+  public async updateApiClient(
     @Request() request: unknown,
-    @Path() serviceAccountId: Uuid,
-    @Body() body: UpdateServiceAccountRequest,
-  ): Promise<ServiceAccountDto> {
-    return updateServiceAccount(requestContext(request), serviceAccountId, body);
+    @Path() apiClientId: Uuid,
+    @Body() body: UpdateApiClientRequest,
+  ): Promise<ApiClientDto> {
+    return updateApiClient(requestContext(request), apiClientId, body);
   }
 
   /**
@@ -115,25 +115,25 @@ export class ServiceAccountsController extends Controller {
    * @minimum limit 1
    * @maximum limit 100
    */
-  @Get("{serviceAccountId}/api-keys")
+  @Get("{apiClientId}/api-keys")
   @SuccessResponse(200, "API keys")
   @Middlewares(allowQueryParameters("limit", "cursor"))
   @Response<ProblemDetails>(400, "Invalid cursor")
   @Response<ProblemDetails>(404, "Not found")
   public async listApiKeys(
     @Request() request: unknown,
-    @Path() serviceAccountId: Uuid,
+    @Path() apiClientId: Uuid,
     @Query() limit?: number,
     @Query() cursor?: string,
   ): Promise<ApiKeyPage> {
-    return listApiKeys(requestContext(request), serviceAccountId, limit, cursor);
+    return listApiKeys(requestContext(request), apiClientId, limit, cursor);
   }
 
   /**
    * Creates an API key and returns its complete value exactly once. Creating a key while another
    * is active is a rotation. Requires a recent sign-in.
    */
-  @Post("{serviceAccountId}/api-keys")
+  @Post("{apiClientId}/api-keys")
   @Middlewares(apiKeyIssuanceRateLimit)
   @SuccessResponse(201, "API key created")
   @Response<ProblemDetails>(429, "Too many new API keys")
@@ -141,26 +141,26 @@ export class ServiceAccountsController extends Controller {
   @Response<ProblemDetails>(422, "Validation failed")
   public async createApiKey(
     @Request() request: unknown,
-    @Path() serviceAccountId: Uuid,
+    @Path() apiClientId: Uuid,
     @Body() body: CreateApiKeyRequest,
   ): Promise<CreatedApiKeyResponse> {
     const context = requestContext(request);
     preventCaching(context);
     const principal = requireUserPrincipal(context.principal);
-    const created = await createApiKey({ ...context, principal }, serviceAccountId, body);
+    const created = await createApiKey({ ...context, principal }, apiClientId, body);
     this.setStatus(201);
     return created;
   }
 
   /** Revokes an API key immediately. Repeating the request is harmless. */
-  @Post("{serviceAccountId}/api-keys/{apiKeyId}/revoke")
+  @Post("{apiClientId}/api-keys/{apiKeyId}/revoke")
   @SuccessResponse(200, "API key revoked")
   @Response<ProblemDetails>(404, "Not found")
   public async revokeApiKey(
     @Request() request: unknown,
-    @Path() serviceAccountId: Uuid,
+    @Path() apiClientId: Uuid,
     @Path() apiKeyId: Uuid,
   ): Promise<ApiKeyDto> {
-    return revokeApiKey(requestContext(request), serviceAccountId, apiKeyId);
+    return revokeApiKey(requestContext(request), apiClientId, apiKeyId);
   }
 }

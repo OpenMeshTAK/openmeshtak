@@ -36,7 +36,7 @@ import { createEvent, getEvent, listEvents, updateEvent } from "./events.service
 @Route("events")
 @Tags("Events")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 export class EventsController extends Controller {
   /**

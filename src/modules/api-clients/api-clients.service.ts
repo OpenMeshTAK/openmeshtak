@@ -18,15 +18,15 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import type {
-  CreateServiceAccountRequest,
-  ServiceAccountDto,
-  ServiceAccountPage,
-  UpdateServiceAccountRequest,
-} from "./service-account.dto.js";
+  CreateApiClientRequest,
+  ApiClientDto,
+  ApiClientPage,
+  UpdateApiClientRequest,
+} from "./api-client.dto.js";
 
-const LIST_CONTEXT = "service-accounts";
+const LIST_CONTEXT = "api-clients";
 
-const serviceAccountSelection = {
+const apiClientSelection = {
   id: true,
   name: true,
   description: true,
@@ -38,9 +38,9 @@ const serviceAccountSelection = {
     select: { permission: true, eventId: true, scopeKey: true },
     orderBy: [{ permission: "asc" }, { scopeKey: "asc" }],
   },
-} satisfies Prisma.ServiceAccountSelect;
+} satisfies Prisma.ApiClientSelect;
 
-interface ServiceAccountRow {
+interface ApiClientRow {
   id: string;
   name: string;
   description: string | null;
@@ -51,7 +51,7 @@ interface ServiceAccountRow {
   permissionGrants: Array<{ permission: string; eventId: string | null; scopeKey: string }>;
 }
 
-function toDto(row: ServiceAccountRow): ServiceAccountDto {
+function toDto(row: ApiClientRow): ApiClientDto {
   return {
     id: row.id,
     name: row.name,
@@ -68,10 +68,10 @@ function toDto(row: ServiceAccountRow): ServiceAccountDto {
   };
 }
 
-async function findRow(id: string): Promise<ServiceAccountRow> {
-  const row = await database.serviceAccount.findUnique({
+async function findRow(id: string): Promise<ApiClientRow> {
+  const row = await database.apiClient.findUnique({
     where: { id },
-    select: serviceAccountSelection,
+    select: apiClientSelection,
   });
 
   if (row === null) {
@@ -80,43 +80,43 @@ async function findRow(id: string): Promise<ServiceAccountRow> {
   return row;
 }
 
-export async function listServiceAccounts(
+export async function listApiClients(
   principal: Principal,
   limit = DEFAULT_PAGE_LIMIT,
   cursor?: string,
-): Promise<ServiceAccountPage> {
-  await requirePermission(principal, "service-accounts.manage");
+): Promise<ApiClientPage> {
+  await requirePermission(principal, "api-clients.manage");
   const position = cursor === undefined ? null : decodeCursor(LIST_CONTEXT, cursor);
 
-  const rows = await database.serviceAccount.findMany({
+  const rows = await database.apiClient.findMany({
     where: afterCursor(position),
     orderBy: [...CURSOR_ORDER],
     take: limit + 1,
-    select: serviceAccountSelection,
+    select: apiClientSelection,
   });
 
   return toPage(LIST_CONTEXT, rows, limit, toDto);
 }
 
-export async function getServiceAccount(
+export async function getApiClient(
   principal: Principal,
   id: string,
-): Promise<ServiceAccountDto> {
-  await requirePermission(principal, "service-accounts.manage");
+): Promise<ApiClientDto> {
+  await requirePermission(principal, "api-clients.manage");
   return toDto(await findRow(id));
 }
 
-export async function createServiceAccount(
+export async function createApiClient(
   actor: ActorContext,
-  input: CreateServiceAccountRequest,
-): Promise<ServiceAccountDto> {
-  await requirePermission(actor.principal, "service-accounts.manage");
+  input: CreateApiClientRequest,
+): Promise<ApiClientDto> {
+  await requirePermission(actor.principal, "api-clients.manage");
   const grants = await validatePermissionGrants(input.permissions);
   await requireDelegableGrants(actor.principal, grants);
 
   const id = randomUUID();
   await database.$transaction(async (transaction) => {
-    await transaction.serviceAccount.create({
+    await transaction.apiClient.create({
       data: {
         id,
         name: input.name,
@@ -135,8 +135,8 @@ export async function createServiceAccount(
     await recordAudit(
       {
         actor: actor.principal,
-        action: "service-account.created",
-        targetType: "service-account",
+        action: "api-client.created",
+        targetType: "api-client",
         targetId: id,
         result: "success",
         traceId: actor.traceId,
@@ -149,12 +149,12 @@ export async function createServiceAccount(
   return toDto(await findRow(id));
 }
 
-export async function updateServiceAccount(
+export async function updateApiClient(
   actor: ActorContext,
   id: string,
-  input: UpdateServiceAccountRequest,
-): Promise<ServiceAccountDto> {
-  await requirePermission(actor.principal, "service-accounts.manage");
+  input: UpdateApiClientRequest,
+): Promise<ApiClientDto> {
+  await requirePermission(actor.principal, "api-clients.manage");
   const current = await findRow(id);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -168,7 +168,7 @@ export async function updateServiceAccount(
 
   await database.$transaction(async (transaction) => {
     // The version predicate makes the check-and-write atomic against concurrent updates.
-    const updated = await transaction.serviceAccount.updateMany({
+    const updated = await transaction.apiClient.updateMany({
       where: { id, version: input.version },
       data: {
         name: input.name,
@@ -178,18 +178,18 @@ export async function updateServiceAccount(
       },
     });
     if (updated.count !== 1) {
-      const latest = await transaction.serviceAccount.findUnique({
+      const latest = await transaction.apiClient.findUnique({
         where: { id },
         select: { version: true },
       });
       throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
     }
 
-    await transaction.serviceAccountPermissionGrant.deleteMany({ where: { serviceAccountId: id } });
-    await transaction.serviceAccountPermissionGrant.createMany({
+    await transaction.apiClientPermissionGrant.deleteMany({ where: { apiClientId: id } });
+    await transaction.apiClientPermissionGrant.createMany({
       data: grants.map((grant) => ({
         id: randomUUID(),
-        serviceAccountId: id,
+        apiClientId: id,
         permission: grant.permission,
         scopeKey: grant.scopeKey,
         eventId: grant.eventId,
@@ -199,8 +199,8 @@ export async function updateServiceAccount(
     await recordAudit(
       {
         actor: actor.principal,
-        action: "service-account.updated",
-        targetType: "service-account",
+        action: "api-client.updated",
+        targetType: "api-client",
         targetId: id,
         result: "success",
         traceId: actor.traceId,

@@ -18,11 +18,11 @@
         "in": "cookie",
         "name": "openmeshtak.session_token"
       },
-      "serviceAccountBearer": {
+      "apiClientBearer": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "omtk_sa_<publicKeyId>_<secret>",
-        "description": "Service-account API key. Never send it in a URL."
+        "bearerFormat": "omtk_ak_<publicKeyId>_<secret>",
+        "description": "API key of an API client. Never send it in a URL."
       }
     },
     "rootSecurity": [

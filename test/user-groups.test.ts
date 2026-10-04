@@ -12,7 +12,7 @@ import { database, disconnectDatabase } from "../src/shared/database/database.js
 import {
   clearDatabase,
   createEvent,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -179,7 +179,7 @@ void describe("user groups", () => {
   });
 
   void it("is not available to API keys", async () => {
-    const key = await createServiceAccountKey([{ permission: "events.read" }]);
+    const key = await createApiClientKey([{ permission: "events.read" }]);
     await request(app).get("/api/v1/user-groups").set("Authorization", `Bearer ${key}`).expect(401);
   });
 

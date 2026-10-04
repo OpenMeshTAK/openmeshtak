@@ -40,7 +40,7 @@ import {
 @Route("events/{eventId}/roles")
 @Tags("Event roles")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(404, "Not found")
 export class EventRolesController extends Controller {

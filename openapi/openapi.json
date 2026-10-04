@@ -203,7 +203,7 @@
 					"artifacts.download",
 					"member-artifacts.download",
 					"tak-traffic.view",
-					"service-accounts.manage",
+					"api-clients.manage",
 					"tak-server.manage",
 					"tak-server.admin-access",
 					"email.manage",
@@ -1172,267 +1172,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"ServiceAccountStatus": {
-				"type": "string",
-				"enum": [
-					"active",
-					"disabled"
-				]
-			},
-			"ServiceAccountDto": {
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string",
-						"nullable": true
-					},
-					"status": {
-						"$ref": "#/components/schemas/ServiceAccountStatus"
-					},
-					"version": {
-						"type": "number",
-						"format": "double",
-						"description": "Optimistic-concurrency version; send it back unchanged with updates."
-					},
-					"permissions": {
-						"items": {
-							"$ref": "#/components/schemas/PermissionGrantDto"
-						},
-						"type": "array"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updatedAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"name",
-					"description",
-					"status",
-					"version",
-					"permissions",
-					"createdAt",
-					"updatedAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ServiceAccountPage": {
-				"properties": {
-					"items": {
-						"items": {
-							"$ref": "#/components/schemas/ServiceAccountDto"
-						},
-						"type": "array"
-					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
-					}
-				},
-				"required": [
-					"items",
-					"page"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CreateServiceAccountRequest": {
-				"properties": {
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"description": {
-						"type": "string",
-						"nullable": true,
-						"maxLength": 500
-					},
-					"permissions": {
-						"items": {
-							"$ref": "#/components/schemas/PermissionGrantDto"
-						},
-						"type": "array",
-						"maxItems": 100
-					}
-				},
-				"required": [
-					"name",
-					"permissions"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpdateServiceAccountRequest": {
-				"properties": {
-					"version": {
-						"type": "integer",
-						"format": "int32",
-						"description": "Version the client last read.",
-						"minimum": 1
-					},
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"description": {
-						"type": "string",
-						"nullable": true,
-						"maxLength": 500
-					},
-					"status": {
-						"$ref": "#/components/schemas/ServiceAccountStatus",
-						"description": "Disabling an account immediately invalidates all of its API keys."
-					},
-					"permissions": {
-						"items": {
-							"$ref": "#/components/schemas/PermissionGrantDto"
-						},
-						"type": "array",
-						"description": "Complete replacement of the account's grants.",
-						"maxItems": 100
-					}
-				},
-				"required": [
-					"version",
-					"name",
-					"description",
-					"status",
-					"permissions"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyStatus": {
-				"type": "string",
-				"enum": [
-					"active",
-					"expired",
-					"revoked"
-				]
-			},
-			"ApiKeyDto": {
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"serviceAccountId": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"displayPrefix": {
-						"type": "string",
-						"description": "Recognizable, non-secret beginning of the key."
-					},
-					"status": {
-						"$ref": "#/components/schemas/ApiKeyStatus"
-					},
-					"expiresAt": {
-						"type": "string",
-						"nullable": true,
-						"format": "date-time"
-					},
-					"lastUsedAt": {
-						"type": "string",
-						"nullable": true,
-						"format": "date-time"
-					},
-					"revokedAt": {
-						"type": "string",
-						"nullable": true,
-						"format": "date-time"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"id",
-					"serviceAccountId",
-					"name",
-					"displayPrefix",
-					"status",
-					"expiresAt",
-					"lastUsedAt",
-					"revokedAt",
-					"createdAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyPage": {
-				"properties": {
-					"items": {
-						"items": {
-							"$ref": "#/components/schemas/ApiKeyDto"
-						},
-						"type": "array"
-					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
-					}
-				},
-				"required": [
-					"items",
-					"page"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CreatedApiKeyResponse": {
-				"properties": {
-					"apiKey": {
-						"$ref": "#/components/schemas/ApiKeyDto"
-					},
-					"key": {
-						"type": "string",
-						"description": "Complete bearer value. It is returned exactly once and cannot be retrieved again."
-					}
-				},
-				"required": [
-					"apiKey",
-					"key"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CreateApiKeyRequest": {
-				"properties": {
-					"name": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 100
-					},
-					"expiresAt": {
-						"type": "string",
-						"nullable": true,
-						"description": "Optional expiry instant; must lie in the future.",
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"name"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"ProfileAssignment": {
 				"properties": {
 					"slug": {
@@ -1847,7 +1586,7 @@
 						"type": "string",
 						"enum": [
 							"user",
-							"service-account"
+							"api-client"
 						]
 					},
 					"id": {
@@ -1860,11 +1599,11 @@
 					"username": {
 						"type": "string",
 						"nullable": true,
-						"description": "Sign-in and TAK login name of a user; `null` for service accounts."
+						"description": "Sign-in and TAK login name of a user; `null` for API clients."
 					},
 					"hasPassword": {
 						"type": "boolean",
-						"description": "Whether a user can sign in with a password, which the TAK login needs; `false` for service accounts."
+						"description": "Whether a user can sign in with a password, which the TAK login needs; `false` for API clients."
 					},
 					"permissions": {
 						"items": {
@@ -2988,7 +2727,7 @@
 					},
 					"version": {
 						"type": "string",
-						"description": "Core release version. Core and Web are released together: a Web app works with every Core of\nthe same major and minor version and warns otherwise.",
+						"description": "Core release version. Core and Web are released together: a Web app works with every Core of\r\nthe same major and minor version and warns otherwise.",
 						"example": "0.1.0"
 					},
 					"timestamp": {
@@ -3024,7 +2763,7 @@
 					},
 					"unpublishedChanges": {
 						"type": "boolean",
-						"description": "Whether an active event's current configuration differs from its published revision, so\nparticipants do not see the changes until someone publishes. Always `false` for drafts\n(activation publishes) and archived events (read-only)."
+						"description": "Whether an active event's current configuration differs from its published revision, so\r\nparticipants do not see the changes until someone publishes. Always `false` for drafts\r\n(activation publishes) and archived events (read-only)."
 					}
 				},
 				"required": [
@@ -6044,6 +5783,267 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ApiClientStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"disabled"
+				]
+			},
+			"ApiClientDto": {
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"status": {
+						"$ref": "#/components/schemas/ApiClientStatus"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"description",
+					"status",
+					"version",
+					"permissions",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiClientPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ApiClientDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateApiClientRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 500
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array",
+						"maxItems": 100
+					}
+				},
+				"required": [
+					"name",
+					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateApiClientRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 500
+					},
+					"status": {
+						"$ref": "#/components/schemas/ApiClientStatus",
+						"description": "Disabling an account immediately invalidates all of its API keys."
+					},
+					"permissions": {
+						"items": {
+							"$ref": "#/components/schemas/PermissionGrantDto"
+						},
+						"type": "array",
+						"description": "Complete replacement of the account's grants.",
+						"maxItems": 100
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"description",
+					"status",
+					"permissions"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"expired",
+					"revoked"
+				]
+			},
+			"ApiKeyDto": {
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"apiClientId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"displayPrefix": {
+						"type": "string",
+						"description": "Recognizable, non-secret beginning of the key."
+					},
+					"status": {
+						"$ref": "#/components/schemas/ApiKeyStatus"
+					},
+					"expiresAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"lastUsedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"revokedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"apiClientId",
+					"name",
+					"displayPrefix",
+					"status",
+					"expiresAt",
+					"lastUsedAt",
+					"revokedAt",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ApiKeyDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatedApiKeyResponse": {
+				"properties": {
+					"apiKey": {
+						"$ref": "#/components/schemas/ApiKeyDto"
+					},
+					"key": {
+						"type": "string",
+						"description": "Complete bearer value. It is returned exactly once and cannot be retrieved again."
+					}
+				},
+				"required": [
+					"apiKey",
+					"key"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateApiKeyRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"expiresAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "Optional expiry instant; must lie in the future.",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"AccountSetupRequest": {
 				"properties": {
 					"newPassword": {
@@ -6070,11 +6070,11 @@
 				"in": "cookie",
 				"name": "openmeshtak.session_token"
 			},
-			"serviceAccountBearer": {
+			"apiClientBearer": {
 				"type": "http",
 				"scheme": "bearer",
-				"bearerFormat": "omtk_sa_<publicKeyId>_<secret>",
-				"description": "Service-account API key. Never send it in a URL."
+				"bearerFormat": "omtk_ak_<publicKeyId>_<secret>",
+				"description": "API key of an API client. Never send it in a URL."
 			}
 		}
 	},
@@ -6142,7 +6142,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -6230,7 +6230,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -6317,7 +6317,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -6406,7 +6406,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -6475,7 +6475,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -6537,7 +6537,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -6599,7 +6599,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -8491,7 +8491,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -8578,7 +8578,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -8657,570 +8657,6 @@
 				}
 			}
 		},
-		"/service-accounts": {
-			"get": {
-				"operationId": "ListServiceAccounts",
-				"responses": {
-					"200": {
-						"description": "Service accounts",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ServiceAccountPage"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Invalid cursor",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Lists service accounts ordered by creation time, oldest first.",
-				"tags": [
-					"Service accounts"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "query",
-						"name": "limit",
-						"required": false,
-						"schema": {
-							"format": "int32",
-							"type": "integer",
-							"minimum": 1,
-							"maximum": 100
-						}
-					},
-					{
-						"in": "query",
-						"name": "cursor",
-						"required": false,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			},
-			"post": {
-				"operationId": "CreateServiceAccount",
-				"responses": {
-					"201": {
-						"description": "Service account created",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ServiceAccountDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Validation failed",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Creates a service account with explicit permission grants.",
-				"tags": [
-					"Service accounts"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/CreateServiceAccountRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/service-accounts/{serviceAccountId}": {
-			"get": {
-				"operationId": "GetServiceAccount",
-				"responses": {
-					"200": {
-						"description": "Service account",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ServiceAccountDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Service accounts"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "serviceAccountId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			},
-			"put": {
-				"operationId": "UpdateServiceAccount",
-				"responses": {
-					"200": {
-						"description": "Service account updated",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ServiceAccountDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"409": {
-						"description": "Version conflict",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Validation failed",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Replaces name, description, status and grants. Requires the current `version`.",
-				"tags": [
-					"Service accounts"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "serviceAccountId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/UpdateServiceAccountRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/service-accounts/{serviceAccountId}/api-keys": {
-			"get": {
-				"operationId": "ListApiKeys",
-				"responses": {
-					"200": {
-						"description": "API keys",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyPage"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Invalid cursor",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Lists safe API-key metadata. Key secrets are never returned after creation.",
-				"tags": [
-					"Service accounts"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "serviceAccountId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "query",
-						"name": "limit",
-						"required": false,
-						"schema": {
-							"format": "int32",
-							"type": "integer",
-							"minimum": 1,
-							"maximum": 100
-						}
-					},
-					{
-						"in": "query",
-						"name": "cursor",
-						"required": false,
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			},
-			"post": {
-				"operationId": "CreateApiKey",
-				"responses": {
-					"201": {
-						"description": "API key created",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/CreatedApiKeyResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Validation failed",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"429": {
-						"description": "Too many new API keys",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Creates an API key and returns its complete value exactly once. Creating a key while another\r\nis active is a rotation. Requires a recent sign-in.",
-				"tags": [
-					"Service accounts"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "serviceAccountId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/CreateApiKeyRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/service-accounts/{serviceAccountId}/api-keys/{apiKeyId}/revoke": {
-			"post": {
-				"operationId": "RevokeApiKey",
-				"responses": {
-					"200": {
-						"description": "API key revoked",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyDto"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Authentication required",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "Access denied",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProblemDetails"
-								}
-							}
-						}
-					}
-				},
-				"description": "Revokes an API key immediately. Repeating the request is harmless.",
-				"tags": [
-					"Service accounts"
-				],
-				"security": [
-					{
-						"sessionCookie": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "serviceAccountId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					},
-					{
-						"in": "path",
-						"name": "apiKeyId",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/Uuid"
-						}
-					}
-				]
-			}
-		},
 		"/events/{eventId}/members/{memberId}/profile": {
 			"get": {
 				"operationId": "GetMemberProfile",
@@ -9285,7 +8721,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -9454,7 +8890,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": []
@@ -9507,7 +8943,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": []
@@ -9567,7 +9003,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -9625,7 +9061,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -9714,7 +9150,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -9813,7 +9249,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -9912,7 +9348,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10011,7 +9447,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10090,7 +9526,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10196,7 +9632,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10264,7 +9700,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10359,7 +9795,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10446,7 +9882,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10543,7 +9979,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10640,7 +10076,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -10727,7 +10163,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11022,7 +10458,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11117,7 +10553,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11194,7 +10630,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11477,7 +10913,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11574,7 +11010,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [],
@@ -11633,7 +11069,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11720,7 +11156,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11809,7 +11245,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11898,7 +11334,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -11987,7 +11423,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12066,7 +11502,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12171,7 +11607,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12239,7 +11675,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12334,7 +11770,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12421,7 +11857,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12508,7 +11944,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12615,7 +12051,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12715,7 +12151,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12822,7 +12258,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -12927,7 +12363,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13033,7 +12469,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13111,7 +12547,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13206,7 +12642,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13294,7 +12730,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13371,7 +12807,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13476,7 +12912,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13544,7 +12980,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13639,7 +13075,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13726,7 +13162,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13803,7 +13239,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13899,7 +13335,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -13957,7 +13393,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -14325,7 +13761,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -14429,7 +13865,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -14506,7 +13942,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -14616,7 +14052,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -14705,7 +14141,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -14826,7 +14262,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -14912,7 +14348,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15015,7 +14451,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15110,7 +14546,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15235,7 +14671,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15323,7 +14759,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15437,7 +14873,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15544,7 +14980,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15640,7 +15076,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15725,7 +15161,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15810,7 +15246,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -15915,7 +15351,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16010,7 +15446,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16095,7 +15531,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16210,7 +15646,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16292,7 +15728,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16370,7 +15806,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16487,7 +15923,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16592,7 +16028,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16688,7 +16124,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16813,7 +16249,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -16899,7 +16335,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17004,7 +16440,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17110,7 +16546,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17188,7 +16624,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17283,7 +16719,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17371,7 +16807,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17468,7 +16904,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17565,7 +17001,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17662,7 +17098,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17762,7 +17198,7 @@
 						"sessionCookie": []
 					},
 					{
-						"serviceAccountBearer": []
+						"apiClientBearer": []
 					}
 				],
 				"parameters": [
@@ -17785,6 +17221,570 @@
 						}
 					}
 				}
+			}
+		},
+		"/api-clients": {
+			"get": {
+				"operationId": "ListApiClients",
+				"responses": {
+					"200": {
+						"description": "API clients",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiClientPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists API clients ordered by creation time, oldest first.",
+				"tags": [
+					"API clients"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateApiClient",
+				"responses": {
+					"201": {
+						"description": "API client created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiClientDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates an API client with explicit permission grants.",
+				"tags": [
+					"API clients"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateApiClientRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api-clients/{apiClientId}": {
+			"get": {
+				"operationId": "GetApiClient",
+				"responses": {
+					"200": {
+						"description": "API client",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiClientDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"API clients"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "apiClientId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateApiClient",
+				"responses": {
+					"200": {
+						"description": "API client updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiClientDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces name, description, status and grants. Requires the current `version`.",
+				"tags": [
+					"API clients"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "apiClientId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateApiClientRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api-clients/{apiClientId}/api-keys": {
+			"get": {
+				"operationId": "ListApiKeys",
+				"responses": {
+					"200": {
+						"description": "API keys",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiKeyPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists safe API-key metadata. Key secrets are never returned after creation.",
+				"tags": [
+					"API clients"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "apiClientId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateApiKey",
+				"responses": {
+					"201": {
+						"description": "API key created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreatedApiKeyResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many new API keys",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates an API key and returns its complete value exactly once. Creating a key while another\r\nis active is a rotation. Requires a recent sign-in.",
+				"tags": [
+					"API clients"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "apiClientId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateApiKeyRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api-clients/{apiClientId}/api-keys/{apiKeyId}/revoke": {
+			"post": {
+				"operationId": "RevokeApiKey",
+				"responses": {
+					"200": {
+						"description": "API key revoked",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiKeyDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Revokes an API key immediately. Repeating the request is harmless.",
+				"tags": [
+					"API clients"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "apiClientId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "apiKeyId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/me/account-setup": {

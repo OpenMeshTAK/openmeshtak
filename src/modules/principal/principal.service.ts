@@ -5,13 +5,13 @@ import { hasPassword } from "../account/account-setup.service.js";
 import type { PermissionGrantDto } from "../../shared/auth/permission-grant.dto.js";
 
 export interface PrincipalDto {
-  type: "user" | "service-account";
+  type: "user" | "api-client";
   /** @format uuid */
   id: string;
   name: string;
-  /** Sign-in and TAK login name of a user; `null` for service accounts. */
+  /** Sign-in and TAK login name of a user; `null` for API clients. */
   username: string | null;
-  /** Whether a user can sign in with a password, which the TAK login needs; `false` for service accounts. */
+  /** Whether a user can sign in with a password, which the TAK login needs; `false` for API clients. */
   hasPassword: boolean;
   /** Effective grants, deduplicated across all sources. */
   permissions: PermissionGrantDto[];
@@ -64,7 +64,7 @@ export async function describePrincipal(principal: Principal): Promise<Principal
     };
   }
 
-  const account = await database.serviceAccount.findUniqueOrThrow({
+  const account = await database.apiClient.findUniqueOrThrow({
     where: { id: principal.id },
     select: {
       name: true,
@@ -72,7 +72,7 @@ export async function describePrincipal(principal: Principal): Promise<Principal
     },
   });
   return {
-    type: "service-account",
+    type: "api-client",
     id: principal.id,
     name: account.name,
     username: null,

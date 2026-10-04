@@ -26,7 +26,7 @@ import type { ImportReport } from "./package-import.dto.js";
 @Route("events/{eventId}/data-packages/{packageId}")
 @Tags("Data packages")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 @Response<ProblemDetails>(404, "Not found")

@@ -1,13 +1,13 @@
 import type { Request } from "express";
 import { auth } from "../../modules/auth/auth.js";
-import { authenticateApiKey } from "../../modules/service-accounts/api-key-authentication.js";
+import { authenticateApiKey } from "../../modules/api-clients/api-key-authentication.js";
 import { database } from "../database/database.js";
 import { ProblemError } from "../errors/problem-error.js";
 import { getTraceId } from "../logging/request-logging.js";
-import type { Principal, ServiceAccountPrincipal, UserPrincipal } from "./principal.js";
+import type { Principal, ApiClientPrincipal, UserPrincipal } from "./principal.js";
 
 export const SESSION_SECURITY = "sessionCookie";
-export const SERVICE_ACCOUNT_SECURITY = "serviceAccountBearer";
+export const API_CLIENT_SECURITY = "apiClientBearer";
 
 function requestHeaders(request: Request): Headers {
   const headers = new Headers();
@@ -68,7 +68,7 @@ async function authenticateSession(request: Request): Promise<UserPrincipal> {
   };
 }
 
-async function authenticateServiceAccount(request: Request): Promise<ServiceAccountPrincipal> {
+async function authenticateApiClient(request: Request): Promise<ApiClientPrincipal> {
   const principal = await authenticateApiKey(request.headers.authorization, getTraceId(request));
 
   if (principal === null) {
@@ -89,8 +89,8 @@ export async function expressAuthentication(
   switch (securityName) {
     case SESSION_SECURITY:
       return authenticateSession(request);
-    case SERVICE_ACCOUNT_SECURITY:
-      return authenticateServiceAccount(request);
+    case API_CLIENT_SECURITY:
+      return authenticateApiClient(request);
     default:
       throw authenticationRequired();
   }

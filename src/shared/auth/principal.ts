@@ -6,13 +6,13 @@ export interface UserPrincipal {
   sessionCreatedAt: Date;
 }
 
-export interface ServiceAccountPrincipal {
-  type: "service-account";
+export interface ApiClientPrincipal {
+  type: "api-client";
   id: string;
   apiKeyId: string;
 }
 
-export type Principal = UserPrincipal | ServiceAccountPrincipal;
+export type Principal = UserPrincipal | ApiClientPrincipal;
 
 /** The authenticated caller plus request correlation, as passed from controllers to services. */
 export interface ActorContext {

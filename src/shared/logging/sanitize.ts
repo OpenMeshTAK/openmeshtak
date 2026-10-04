@@ -1,7 +1,7 @@
 const REDACTED = "[REDACTED]";
 
 const sensitiveKeyPattern = /(?:authorization|proxy-?authorization|cookie|set-?cookie|x-?api-?key|password|api-?key|credential|secret|token|session-?id|csrf|psk|private-?key|pkcs12|signing-?key)/i;
-const openMeshTakSecretPattern = /omtk_(?:sa_[A-Za-z0-9_-]+_|bootstrap_|claim_)[A-Za-z0-9_-]+/g;
+const openMeshTakSecretPattern = /omtk_(?:ak_[A-Za-z0-9_-]+_|bootstrap_|claim_)[A-Za-z0-9_-]+/g;
 const privateKeyPattern = /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g;
 
 type SeenValues = WeakSet<object>;

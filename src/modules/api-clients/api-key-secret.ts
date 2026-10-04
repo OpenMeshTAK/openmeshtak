@@ -1,12 +1,12 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
-const API_KEY_PREFIX = "omtk_sa_";
+const API_KEY_PREFIX = "omtk_ak_";
 
 /**
  * The public key ID is hex so it can never contain the `_` separator; the secret is base64url
  * of 32 random bytes and may contain `_`, so parsing splits only at the first separator.
  */
-const apiKeyPattern = /^omtk_sa_([0-9a-f]{24})_([A-Za-z0-9_-]{43})$/;
+const apiKeyPattern = /^omtk_ak_([0-9a-f]{24})_([A-Za-z0-9_-]{43})$/;
 
 export interface GeneratedApiKey {
   publicKeyId: string;

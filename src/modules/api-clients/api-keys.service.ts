@@ -21,11 +21,11 @@ import type {
   ApiKeyStatus,
   CreateApiKeyRequest,
   CreatedApiKeyResponse,
-} from "./service-account.dto.js";
+} from "./api-client.dto.js";
 
 const apiKeySelection = {
   id: true,
-  serviceAccountId: true,
+  apiClientId: true,
   name: true,
   publicKeyId: true,
   expiresAt: true,
@@ -36,7 +36,7 @@ const apiKeySelection = {
 
 interface ApiKeyRow {
   id: string;
-  serviceAccountId: string;
+  apiClientId: string;
   name: string;
   publicKeyId: string;
   expiresAt: Date | null;
@@ -55,7 +55,7 @@ function statusOf(row: ApiKeyRow, now: Date): ApiKeyStatus {
 function toDto(row: ApiKeyRow, now = new Date()): ApiKeyDto {
   return {
     id: row.id,
-    serviceAccountId: row.serviceAccountId,
+    apiClientId: row.apiClientId,
     name: row.name,
     displayPrefix: apiKeyDisplayPrefix(row.publicKeyId),
     status: statusOf(row, now),
@@ -66,8 +66,8 @@ function toDto(row: ApiKeyRow, now = new Date()): ApiKeyDto {
   };
 }
 
-async function requireServiceAccount(id: string): Promise<void> {
-  const account = await database.serviceAccount.findUnique({ where: { id }, select: { id: true } });
+async function requireApiClient(id: string): Promise<void> {
+  const account = await database.apiClient.findUnique({ where: { id }, select: { id: true } });
   if (account === null) {
     throw notFoundProblem();
   }
@@ -89,17 +89,17 @@ function parseExpiry(value: string | null | undefined, now: Date): Date | null {
 
 export async function listApiKeys(
   actor: ActorContext,
-  serviceAccountId: string,
+  apiClientId: string,
   limit = DEFAULT_PAGE_LIMIT,
   cursor?: string,
 ): Promise<ApiKeyPage> {
-  await requirePermission(actor.principal, "service-accounts.manage");
-  await requireServiceAccount(serviceAccountId);
+  await requirePermission(actor.principal, "api-clients.manage");
+  await requireApiClient(apiClientId);
 
-  const context = `service-accounts/${serviceAccountId}/api-keys`;
+  const context = `api-clients/${apiClientId}/api-keys`;
   const position = cursor === undefined ? null : decodeCursor(context, cursor);
   const rows = await database.apiKey.findMany({
-    where: { serviceAccountId, ...afterCursor(position) },
+    where: { apiClientId, ...afterCursor(position) },
     orderBy: [...CURSOR_ORDER],
     take: limit + 1,
     select: apiKeySelection,
@@ -115,12 +115,12 @@ export async function listApiKeys(
  */
 export async function createApiKey(
   actor: ActorContext & { principal: UserPrincipal },
-  serviceAccountId: string,
+  apiClientId: string,
   input: CreateApiKeyRequest,
 ): Promise<CreatedApiKeyResponse> {
-  await requirePermission(actor.principal, "service-accounts.manage");
+  await requirePermission(actor.principal, "api-clients.manage");
   requireRecentAuthentication(actor.principal);
-  await requireServiceAccount(serviceAccountId);
+  await requireApiClient(apiClientId);
 
   const now = new Date();
   const expiresAt = parseExpiry(input.expiresAt, now);
@@ -130,7 +130,7 @@ export async function createApiKey(
   const row = await database.$transaction(async (transaction) => {
     const otherActiveKeys = await transaction.apiKey.count({
       where: {
-        serviceAccountId,
+        apiClientId,
         revokedAt: null,
         OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
@@ -139,7 +139,7 @@ export async function createApiKey(
     const created = await transaction.apiKey.create({
       data: {
         id,
-        serviceAccountId,
+        apiClientId,
         name: input.name,
         publicKeyId: generated.publicKeyId,
         secretHash: generated.secretHash,
@@ -157,7 +157,7 @@ export async function createApiKey(
         targetId: id,
         result: "success",
         traceId: actor.traceId,
-        metadata: { serviceAccountId, otherActiveKeys },
+        metadata: { apiClientId, otherActiveKeys },
       },
       transaction,
     );
@@ -171,13 +171,13 @@ export async function createApiKey(
 /** Revocation is immediate and idempotent; repeating it returns the already revoked key. */
 export async function revokeApiKey(
   actor: ActorContext,
-  serviceAccountId: string,
+  apiClientId: string,
   apiKeyId: string,
 ): Promise<ApiKeyDto> {
-  await requirePermission(actor.principal, "service-accounts.manage");
+  await requirePermission(actor.principal, "api-clients.manage");
 
   const existing = await database.apiKey.findFirst({
-    where: { id: apiKeyId, serviceAccountId },
+    where: { id: apiKeyId, apiClientId },
     select: apiKeySelection,
   });
   if (existing === null) {
@@ -201,7 +201,7 @@ export async function revokeApiKey(
         targetId: apiKeyId,
         result: "success",
         traceId: actor.traceId,
-        metadata: { serviceAccountId },
+        metadata: { apiClientId },
       },
       transaction,
     );

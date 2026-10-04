@@ -3,7 +3,7 @@ import express, { type Express } from "express";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import { mountAuthRoutes } from "./modules/auth/auth.routes.js";
-import { createApiKeyFailureRateLimit } from "./modules/service-accounts/api-key-rate-limit.js";
+import { createApiKeyFailureRateLimit } from "./modules/api-clients/api-key-rate-limit.js";
 import { RegisterRoutes } from "./generated/routes.js";
 import { config } from "./shared/config/config.js";
 import { errorHandler, notFoundHandler } from "./shared/errors/problem.js";

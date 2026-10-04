@@ -11,7 +11,7 @@ export interface MemberArtifactAccess {
 /**
  * Personal artifacts exist only for active events and only for signed-in users: the member
  * themself, or an operator with `member-artifacts.download` for this event who downloads on the
- * member's behalf, for example to flash a radio on site. Service accounts never receive them.
+ * member's behalf, for example to flash a radio on site. API clients never receive them.
  * Everything else looks like a missing member so foreign members cannot be probed.
  */
 export async function requireMemberArtifactAccess(

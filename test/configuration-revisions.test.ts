@@ -8,7 +8,7 @@ import { disconnectDatabase } from "../src/shared/database/database.js";
 import {
   clearDatabase,
   createEvent,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -180,7 +180,7 @@ void describe("event configuration revisions", () => {
 
   void it("requires events.manage to publish", async () => {
     await transition("activate", 1);
-    const reader = await createServiceAccountKey([{ permission: "events.read", eventId }]);
+    const reader = await createApiClientKey([{ permission: "events.read", eventId }]);
 
     await request(app)
       .post(url("/configuration-revisions"))

@@ -8,7 +8,7 @@ import { database, disconnectDatabase } from "../src/shared/database/database.js
 import {
   clearDatabase,
   createEvent,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -145,7 +145,7 @@ for (const kind of ["roles", "groups"] as const) {
         .set("Cookie", reader.cookie)
         .expect(404);
 
-      const key = await createServiceAccountKey([
+      const key = await createApiClientKey([
         { permission: "events.read", eventId },
         { permission: "events.manage", eventId },
       ]);

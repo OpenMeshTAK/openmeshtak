@@ -5,7 +5,7 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { PERMISSIONS } from "../src/shared/auth/permissions.js";
 import { disconnectDatabase } from "../src/shared/database/database.js";
-import { clearDatabase, createServiceAccountKey, createUser, type TestUser } from "./support/identity.js";
+import { clearDatabase, createApiClientKey, createUser, type TestUser } from "./support/identity.js";
 
 const event = { name: "LightSim 2027", slug: "lightsim-2027", timeZone: "Europe/Berlin" };
 
@@ -59,7 +59,7 @@ void describe("browser security", () => {
   });
 
   void it("does not apply the origin check to API-key requests", async () => {
-    const key = await createServiceAccountKey([{ permission: "events.manage" }]);
+    const key = await createApiClientKey([{ permission: "events.manage" }]);
     await request(app)
       .post("/api/v1/events")
       .set("Authorization", `Bearer ${key}`)

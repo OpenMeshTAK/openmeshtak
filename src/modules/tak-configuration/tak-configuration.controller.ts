@@ -12,7 +12,7 @@ import { getTakConfiguration, updateTakConfiguration } from "./tak-configuration
 @Route("events/{eventId}/tak/configuration")
 @Tags("TAK configuration")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(404, "Not found")
 export class TakConfigurationController extends Controller {

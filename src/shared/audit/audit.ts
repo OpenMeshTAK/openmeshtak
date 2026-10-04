@@ -25,14 +25,14 @@ export interface AuditEntry {
 }
 
 function actorFields(actor: AuditActor): {
-  actorType: "user" | "service_account" | "anonymous" | "system";
+  actorType: "user" | "api_client" | "anonymous" | "system";
   actorId: string | null;
 } {
   switch (actor.type) {
     case "user":
       return { actorType: "user", actorId: actor.id };
-    case "service-account":
-      return { actorType: "service_account", actorId: actor.id };
+    case "api-client":
+      return { actorType: "api_client", actorId: actor.id };
     default:
       return { actorType: actor.type, actorId: null };
   }

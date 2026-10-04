@@ -1,14 +1,14 @@
 import type { PermissionGrantDto } from "../../shared/auth/permission-grant.dto.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
 
-export type ServiceAccountStatus = "active" | "disabled";
+export type ApiClientStatus = "active" | "disabled";
 
-export interface ServiceAccountDto {
+export interface ApiClientDto {
   /** @format uuid */
   id: string;
   name: string;
   description: string | null;
-  status: ServiceAccountStatus;
+  status: ApiClientStatus;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
   permissions: PermissionGrantDto[];
@@ -18,12 +18,12 @@ export interface ServiceAccountDto {
   updatedAt: string;
 }
 
-export interface ServiceAccountPage {
-  items: ServiceAccountDto[];
+export interface ApiClientPage {
+  items: ApiClientDto[];
   page: PageInfo;
 }
 
-export interface CreateServiceAccountRequest {
+export interface CreateApiClientRequest {
   /**
    * @minLength 1
    * @maxLength 100
@@ -35,7 +35,7 @@ export interface CreateServiceAccountRequest {
   permissions: PermissionGrantDto[];
 }
 
-export interface UpdateServiceAccountRequest {
+export interface UpdateApiClientRequest {
   /**
    * Version the client last read.
    * @isInt
@@ -50,7 +50,7 @@ export interface UpdateServiceAccountRequest {
   /** @maxLength 500 */
   description: string | null;
   /** Disabling an account immediately invalidates all of its API keys. */
-  status: ServiceAccountStatus;
+  status: ApiClientStatus;
   /**
    * Complete replacement of the account's grants.
    * @maxItems 100
@@ -64,7 +64,7 @@ export interface ApiKeyDto {
   /** @format uuid */
   id: string;
   /** @format uuid */
-  serviceAccountId: string;
+  apiClientId: string;
   name: string;
   /** Recognizable, non-secret beginning of the key. */
   displayPrefix: string;

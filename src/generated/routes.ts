@@ -30,8 +30,6 @@ import { TakConfigurationController } from './../modules/tak-configuration/tak-c
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SetupController } from './../modules/setup/setup.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { ServiceAccountsController } from './../modules/service-accounts/service-accounts.controller.js';
-// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberProfileController } from './../modules/profiles/profiles.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MyEventMembershipsController } from './../modules/profiles/profiles.controller.js';
@@ -103,6 +101,8 @@ import { PackageAtakController } from './../modules/data-packages/package-atak.c
 import { DataPackagesController } from './../modules/data-packages/data-packages.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { CombinedExportController } from './../modules/data-packages/combined-export.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { ApiClientsController } from './../modules/api-clients/api-clients.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { AccountSetupController } from './../modules/account/account-setup.controller.js';
 import { expressAuthentication } from './../shared/auth/authorization.js';
@@ -189,7 +189,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Permission": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["tak-traffic.view"]},{"dataType":"enum","enums":["service-accounts.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["settings.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["tak-traffic.view"]},{"dataType":"enum","enums":["api-clients.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["settings.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PermissionGrantDto": {
@@ -520,105 +520,6 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ServiceAccountStatus": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["disabled"]}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ServiceAccountDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"dataType":"string","required":true},
-            "name": {"dataType":"string","required":true},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "status": {"ref":"ServiceAccountStatus","required":true},
-            "version": {"dataType":"double","required":true},
-            "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true},
-            "createdAt": {"dataType":"string","required":true},
-            "updatedAt": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ServiceAccountPage": {
-        "dataType": "refObject",
-        "properties": {
-            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"ServiceAccountDto"},"required":true},
-            "page": {"ref":"PageInfo","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateServiceAccountRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":500}}},
-            "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true,"validators":{"maxItems":{"value":100}}},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateServiceAccountRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":500}}},
-            "status": {"ref":"ServiceAccountStatus","required":true},
-            "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true,"validators":{"maxItems":{"value":100}}},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ApiKeyStatus": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["expired"]},{"dataType":"enum","enums":["revoked"]}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ApiKeyDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": {"dataType":"string","required":true},
-            "serviceAccountId": {"dataType":"string","required":true},
-            "name": {"dataType":"string","required":true},
-            "displayPrefix": {"dataType":"string","required":true},
-            "status": {"ref":"ApiKeyStatus","required":true},
-            "expiresAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "lastUsedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "revokedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "createdAt": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ApiKeyPage": {
-        "dataType": "refObject",
-        "properties": {
-            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"ApiKeyDto"},"required":true},
-            "page": {"ref":"PageInfo","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreatedApiKeyResponse": {
-        "dataType": "refObject",
-        "properties": {
-            "apiKey": {"ref":"ApiKeyDto","required":true},
-            "key": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateApiKeyRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
-            "expiresAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ProfileAssignment": {
         "dataType": "refObject",
         "properties": {
@@ -718,7 +619,7 @@ const models: TsoaRoute.Models = {
     "PrincipalDto": {
         "dataType": "refObject",
         "properties": {
-            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["user"]},{"dataType":"enum","enums":["service-account"]}],"required":true},
+            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["user"]},{"dataType":"enum","enums":["api-client"]}],"required":true},
             "id": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "username": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
@@ -2248,6 +2149,105 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApiClientStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["disabled"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApiClientDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "status": {"ref":"ApiClientStatus","required":true},
+            "version": {"dataType":"double","required":true},
+            "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApiClientPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"ApiClientDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateApiClientRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":500}}},
+            "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true,"validators":{"maxItems":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateApiClientRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":500}}},
+            "status": {"ref":"ApiClientStatus","required":true},
+            "permissions": {"dataType":"array","array":{"dataType":"refObject","ref":"PermissionGrantDto"},"required":true,"validators":{"maxItems":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApiKeyStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["active"]},{"dataType":"enum","enums":["expired"]},{"dataType":"enum","enums":["revoked"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApiKeyDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "apiClientId": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+            "displayPrefix": {"dataType":"string","required":true},
+            "status": {"ref":"ApiKeyStatus","required":true},
+            "expiresAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "lastUsedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "revokedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "createdAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApiKeyPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"ApiKeyDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreatedApiKeyResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "apiKey": {"ref":"ApiKeyDto","required":true},
+            "key": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateApiKeyRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "expiresAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AccountSetupRequest": {
         "dataType": "refObject",
         "properties": {
@@ -2281,7 +2281,7 @@ export function RegisterRoutes(app: Router) {
                 search: {"in":"query","name":"search","dataType":"string"},
         };
         app.get('/api/v1/users',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.listUsers)),
 
@@ -2313,7 +2313,7 @@ export function RegisterRoutes(app: Router) {
                 userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/users/:userId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.getUser)),
 
@@ -2346,7 +2346,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateUserRequest"},
         };
         app.put('/api/v1/users/:userId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.updateUser)),
 
@@ -2378,7 +2378,7 @@ export function RegisterRoutes(app: Router) {
                 userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/users/:userId/disable',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.disableUser)),
 
@@ -2410,7 +2410,7 @@ export function RegisterRoutes(app: Router) {
                 userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/users/:userId/enable',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.enableUser)),
 
@@ -2442,7 +2442,7 @@ export function RegisterRoutes(app: Router) {
                 userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/users/:userId/password-reset',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.sendUserPasswordReset)),
 
@@ -2474,7 +2474,7 @@ export function RegisterRoutes(app: Router) {
                 userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/users/:userId/revoke-sessions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.revokeUserSessions)),
 
@@ -3401,7 +3401,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/tak/configuration',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(TakConfigurationController)),
             ...(fetchMiddlewares<RequestHandler>(TakConfigurationController.prototype.getTakConfiguration)),
 
@@ -3434,7 +3434,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateTakConfigurationRequest"},
         };
         app.put('/api/v1/events/:eventId/tak/configuration',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(TakConfigurationController)),
             ...(fetchMiddlewares<RequestHandler>(TakConfigurationController.prototype.updateTakConfiguration)),
 
@@ -3521,243 +3521,13 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsServiceAccountsController_listServiceAccounts: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
-                cursor: {"in":"query","name":"cursor","dataType":"string"},
-        };
-        app.get('/api/v1/service-accounts',
-            authenticateMiddleware([{"sessionCookie":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController)),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController.prototype.listServiceAccounts)),
-
-            async function ServiceAccountsController_listServiceAccounts(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsServiceAccountsController_listServiceAccounts, request, response });
-
-                const controller = new ServiceAccountsController();
-
-              await templateService.apiHandler({
-                methodName: 'listServiceAccounts',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsServiceAccountsController_createServiceAccount: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                body: {"in":"body","name":"body","required":true,"ref":"CreateServiceAccountRequest"},
-        };
-        app.post('/api/v1/service-accounts',
-            authenticateMiddleware([{"sessionCookie":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController)),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController.prototype.createServiceAccount)),
-
-            async function ServiceAccountsController_createServiceAccount(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsServiceAccountsController_createServiceAccount, request, response });
-
-                const controller = new ServiceAccountsController();
-
-              await templateService.apiHandler({
-                methodName: 'createServiceAccount',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 201,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsServiceAccountsController_getServiceAccount: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                serviceAccountId: {"in":"path","name":"serviceAccountId","required":true,"ref":"Uuid"},
-        };
-        app.get('/api/v1/service-accounts/:serviceAccountId',
-            authenticateMiddleware([{"sessionCookie":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController)),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController.prototype.getServiceAccount)),
-
-            async function ServiceAccountsController_getServiceAccount(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsServiceAccountsController_getServiceAccount, request, response });
-
-                const controller = new ServiceAccountsController();
-
-              await templateService.apiHandler({
-                methodName: 'getServiceAccount',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsServiceAccountsController_updateServiceAccount: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                serviceAccountId: {"in":"path","name":"serviceAccountId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"UpdateServiceAccountRequest"},
-        };
-        app.put('/api/v1/service-accounts/:serviceAccountId',
-            authenticateMiddleware([{"sessionCookie":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController)),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController.prototype.updateServiceAccount)),
-
-            async function ServiceAccountsController_updateServiceAccount(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsServiceAccountsController_updateServiceAccount, request, response });
-
-                const controller = new ServiceAccountsController();
-
-              await templateService.apiHandler({
-                methodName: 'updateServiceAccount',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsServiceAccountsController_listApiKeys: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                serviceAccountId: {"in":"path","name":"serviceAccountId","required":true,"ref":"Uuid"},
-                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
-                cursor: {"in":"query","name":"cursor","dataType":"string"},
-        };
-        app.get('/api/v1/service-accounts/:serviceAccountId/api-keys',
-            authenticateMiddleware([{"sessionCookie":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController)),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController.prototype.listApiKeys)),
-
-            async function ServiceAccountsController_listApiKeys(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsServiceAccountsController_listApiKeys, request, response });
-
-                const controller = new ServiceAccountsController();
-
-              await templateService.apiHandler({
-                methodName: 'listApiKeys',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsServiceAccountsController_createApiKey: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                serviceAccountId: {"in":"path","name":"serviceAccountId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"CreateApiKeyRequest"},
-        };
-        app.post('/api/v1/service-accounts/:serviceAccountId/api-keys',
-            authenticateMiddleware([{"sessionCookie":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController)),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController.prototype.createApiKey)),
-
-            async function ServiceAccountsController_createApiKey(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsServiceAccountsController_createApiKey, request, response });
-
-                const controller = new ServiceAccountsController();
-
-              await templateService.apiHandler({
-                methodName: 'createApiKey',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 201,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsServiceAccountsController_revokeApiKey: Record<string, TsoaRoute.ParameterSchema> = {
-                request: {"in":"request","name":"request","required":true,"dataType":"object"},
-                serviceAccountId: {"in":"path","name":"serviceAccountId","required":true,"ref":"Uuid"},
-                apiKeyId: {"in":"path","name":"apiKeyId","required":true,"ref":"Uuid"},
-        };
-        app.post('/api/v1/service-accounts/:serviceAccountId/api-keys/:apiKeyId/revoke',
-            authenticateMiddleware([{"sessionCookie":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController)),
-            ...(fetchMiddlewares<RequestHandler>(ServiceAccountsController.prototype.revokeApiKey)),
-
-            async function ServiceAccountsController_revokeApiKey(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsServiceAccountsController_revokeApiKey, request, response });
-
-                const controller = new ServiceAccountsController();
-
-              await templateService.apiHandler({
-                methodName: 'revokeApiKey',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: 200,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsMemberProfileController_getMemberProfile: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/members/:memberId/profile',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MemberProfileController)),
             ...(fetchMiddlewares<RequestHandler>(MemberProfileController.prototype.getMemberProfile)),
 
@@ -3853,7 +3623,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.get('/api/v1/principal',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PrincipalController)),
             ...(fetchMiddlewares<RequestHandler>(PrincipalController.prototype.getPrincipal)),
 
@@ -3884,7 +3654,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.get('/api/v1/meshtastic/firmware-profiles',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(FirmwareProfilesController)),
             ...(fetchMiddlewares<RequestHandler>(FirmwareProfilesController.prototype.listFirmwareProfiles)),
 
@@ -3916,7 +3686,7 @@ export function RegisterRoutes(app: Router) {
                 profileId: {"in":"path","name":"profileId","required":true,"dataType":"string"},
         };
         app.get('/api/v1/meshtastic/firmware-profiles/:profileId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(FirmwareProfilesController)),
             ...(fetchMiddlewares<RequestHandler>(FirmwareProfilesController.prototype.getFirmwareProfile)),
 
@@ -3948,7 +3718,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/meshtastic/configuration',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.getMeshtasticConfiguration)),
 
@@ -3981,7 +3751,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateMeshtasticSettingsRequest"},
         };
         app.put('/api/v1/events/:eventId/meshtastic/configuration/settings',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.updateMeshtasticSettings)),
 
@@ -4014,7 +3784,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateMeshtasticSecretsRequest"},
         };
         app.put('/api/v1/events/:eventId/meshtastic/configuration/secrets',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.updateMeshtasticSecrets)),
 
@@ -4047,7 +3817,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"PreviewFirmwareChangeRequest"},
         };
         app.post('/api/v1/events/:eventId/meshtastic/configuration/firmware/preview',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.previewFirmwareChange)),
 
@@ -4080,7 +3850,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"ChangeFirmwareRequest"},
         };
         app.put('/api/v1/events/:eventId/meshtastic/configuration/firmware',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticConfigurationController.prototype.changeFirmware)),
 
@@ -4114,7 +3884,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/meshtastic/channels',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.listMeshtasticChannels)),
 
@@ -4147,7 +3917,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreateMeshtasticChannelRequest"},
         };
         app.post('/api/v1/events/:eventId/meshtastic/channels',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.createMeshtasticChannel)),
 
@@ -4180,7 +3950,7 @@ export function RegisterRoutes(app: Router) {
                 channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/meshtastic/channels/:channelId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.getMeshtasticChannel)),
 
@@ -4214,7 +3984,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateMeshtasticChannelRequest"},
         };
         app.put('/api/v1/events/:eventId/meshtastic/channels/:channelId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.updateMeshtasticChannel)),
 
@@ -4247,7 +4017,7 @@ export function RegisterRoutes(app: Router) {
                 channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
         };
         app.delete('/api/v1/events/:eventId/meshtastic/channels/:channelId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.deleteMeshtasticChannel)),
 
@@ -4281,7 +4051,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"RotateChannelPskRequest"},
         };
         app.post('/api/v1/events/:eventId/meshtastic/channels/:channelId/psk/rotate',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.rotateMeshtasticChannelPsk)),
 
@@ -4315,7 +4085,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"ReleaseMeshtasticChannelRequest"},
         };
         app.post('/api/v1/events/:eventId/meshtastic/channels/:channelId/release',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.releaseMeshtasticChannel)),
 
@@ -4348,7 +4118,7 @@ export function RegisterRoutes(app: Router) {
                 channelId: {"in":"path","name":"channelId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/events/:eventId/meshtastic/channels/:channelId/psk/reveal',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController)),
             ...(fetchMiddlewares<RequestHandler>(MeshtasticChannelsController.prototype.revealMeshtasticChannelPsk)),
 
@@ -4481,7 +4251,7 @@ export function RegisterRoutes(app: Router) {
                 memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/members/:memberId/claims',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MemberClaimsController)),
             ...(fetchMiddlewares<RequestHandler>(MemberClaimsController.prototype.listMemberClaims)),
 
@@ -4514,7 +4284,7 @@ export function RegisterRoutes(app: Router) {
                 memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/events/:eventId/members/:memberId/claims',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MemberClaimsController)),
             ...(fetchMiddlewares<RequestHandler>(MemberClaimsController.prototype.createMemberClaim)),
 
@@ -4548,7 +4318,7 @@ export function RegisterRoutes(app: Router) {
                 claimId: {"in":"path","name":"claimId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/events/:eventId/members/:memberId/claims/:claimId/revoke',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(MemberClaimsController)),
             ...(fetchMiddlewares<RequestHandler>(MemberClaimsController.prototype.revokeMemberClaim)),
 
@@ -4705,7 +4475,7 @@ export function RegisterRoutes(app: Router) {
                 status: {"in":"query","name":"status","ref":"EventStatus"},
         };
         app.get('/api/v1/events',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventsController)),
             ...(fetchMiddlewares<RequestHandler>(EventsController.prototype.listEvents)),
 
@@ -4737,7 +4507,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreateEventRequest"},
         };
         app.post('/api/v1/events',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventsController)),
             ...(fetchMiddlewares<RequestHandler>(EventsController.prototype.createEvent)),
 
@@ -4769,7 +4539,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventsController)),
             ...(fetchMiddlewares<RequestHandler>(EventsController.prototype.getEvent)),
 
@@ -4802,7 +4572,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateEventRequest"},
         };
         app.put('/api/v1/events/:eventId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventsController)),
             ...(fetchMiddlewares<RequestHandler>(EventsController.prototype.updateEvent)),
 
@@ -4835,7 +4605,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"EventTransitionRequest"},
         };
         app.post('/api/v1/events/:eventId/activate',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventsController)),
             ...(fetchMiddlewares<RequestHandler>(EventsController.prototype.activateEvent)),
 
@@ -4868,7 +4638,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"EventTransitionRequest"},
         };
         app.post('/api/v1/events/:eventId/archive',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventsController)),
             ...(fetchMiddlewares<RequestHandler>(EventsController.prototype.archiveEvent)),
 
@@ -4901,7 +4671,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"EventTransitionRequest"},
         };
         app.post('/api/v1/events/:eventId/reactivate',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventsController)),
             ...(fetchMiddlewares<RequestHandler>(EventsController.prototype.reactivateEvent)),
 
@@ -4935,7 +4705,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/roles',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController)),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController.prototype.listEventRoles)),
 
@@ -4968,7 +4738,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreateEventRoleRequest"},
         };
         app.post('/api/v1/events/:eventId/roles',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController)),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController.prototype.createEventRole)),
 
@@ -5001,7 +4771,7 @@ export function RegisterRoutes(app: Router) {
                 roleId: {"in":"path","name":"roleId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/roles/:roleId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController)),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController.prototype.getEventRole)),
 
@@ -5035,7 +4805,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateEventRoleRequest"},
         };
         app.put('/api/v1/events/:eventId/roles/:roleId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController)),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController.prototype.updateEventRole)),
 
@@ -5068,7 +4838,7 @@ export function RegisterRoutes(app: Router) {
                 roleId: {"in":"path","name":"roleId","required":true,"ref":"Uuid"},
         };
         app.delete('/api/v1/events/:eventId/roles/:roleId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController)),
             ...(fetchMiddlewares<RequestHandler>(EventRolesController.prototype.deleteEventRole)),
 
@@ -5103,7 +4873,7 @@ export function RegisterRoutes(app: Router) {
                 status: {"in":"query","name":"status","ref":"SyncIssueStatus"},
         };
         app.get('/api/v1/events/:eventId/sync-issues',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(SyncIssuesController)),
             ...(fetchMiddlewares<RequestHandler>(SyncIssuesController.prototype.listSyncIssues)),
 
@@ -5137,7 +4907,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"RetrySyncIssueRequest"},
         };
         app.post('/api/v1/events/:eventId/sync-issues/:syncIssueId/retry',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(SyncIssuesController)),
             ...(fetchMiddlewares<RequestHandler>(SyncIssuesController.prototype.retrySyncIssue)),
 
@@ -5171,7 +4941,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"ReorderGroupMembersRequest"},
         };
         app.put('/api/v1/events/:eventId/groups/:groupId/member-order',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(GroupMemberOrderController)),
             ...(fetchMiddlewares<RequestHandler>(GroupMemberOrderController.prototype.reorderGroupMembers)),
 
@@ -5206,7 +4976,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"ExternalMemberSyncRequest"},
         };
         app.put('/api/v1/events/:eventId/external-members/:provider/:externalId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(ExternalMembersController)),
             ...(fetchMiddlewares<RequestHandler>(ExternalMembersController.prototype.syncExternalMember)),
 
@@ -5240,7 +5010,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/members',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController)),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController.prototype.listEventMembers)),
 
@@ -5273,7 +5043,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreateEventMemberRequest"},
         };
         app.post('/api/v1/events/:eventId/members',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController)),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController.prototype.createEventMember)),
 
@@ -5306,7 +5076,7 @@ export function RegisterRoutes(app: Router) {
                 memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/members/:memberId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController)),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController.prototype.getEventMember)),
 
@@ -5340,7 +5110,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateEventMemberRequest"},
         };
         app.put('/api/v1/events/:eventId/members/:memberId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController)),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController.prototype.updateEventMember)),
 
@@ -5373,7 +5143,7 @@ export function RegisterRoutes(app: Router) {
                 memberId: {"in":"path","name":"memberId","required":true,"ref":"Uuid"},
         };
         app.delete('/api/v1/events/:eventId/members/:memberId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController)),
             ...(fetchMiddlewares<RequestHandler>(EventMembersController.prototype.deleteEventMember)),
 
@@ -5407,7 +5177,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/groups',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController)),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController.prototype.listEventGroups)),
 
@@ -5440,7 +5210,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreateEventGroupRequest"},
         };
         app.post('/api/v1/events/:eventId/groups',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController)),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController.prototype.createEventGroup)),
 
@@ -5473,7 +5243,7 @@ export function RegisterRoutes(app: Router) {
                 groupId: {"in":"path","name":"groupId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/groups/:groupId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController)),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController.prototype.getEventGroup)),
 
@@ -5507,7 +5277,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateEventGroupRequest"},
         };
         app.put('/api/v1/events/:eventId/groups/:groupId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController)),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController.prototype.updateEventGroup)),
 
@@ -5540,7 +5310,7 @@ export function RegisterRoutes(app: Router) {
                 groupId: {"in":"path","name":"groupId","required":true,"ref":"Uuid"},
         };
         app.delete('/api/v1/events/:eventId/groups/:groupId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController)),
             ...(fetchMiddlewares<RequestHandler>(EventGroupsController.prototype.deleteEventGroup)),
 
@@ -5574,7 +5344,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/configuration-revisions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController)),
             ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController.prototype.listConfigurationRevisions)),
 
@@ -5606,7 +5376,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/events/:eventId/configuration-revisions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController)),
             ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController.prototype.publishConfiguration)),
 
@@ -5639,7 +5409,7 @@ export function RegisterRoutes(app: Router) {
                 revisionId: {"in":"path","name":"revisionId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/configuration-revisions/:revisionId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController)),
             ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController.prototype.getConfigurationRevision)),
 
@@ -5832,7 +5602,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController)),
             ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController.prototype.listPackageRevisions)),
 
@@ -5865,7 +5635,7 @@ export function RegisterRoutes(app: Router) {
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/events/:eventId/data-packages/:packageId/revisions',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController)),
             ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController.prototype.publishDataPackage)),
 
@@ -5899,7 +5669,7 @@ export function RegisterRoutes(app: Router) {
                 number: {"in":"path","name":"number","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"number"},"minimum":{"value":1}}},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController)),
             ...(fetchMiddlewares<RequestHandler>(PackageRevisionsController.prototype.getPackageRevision)),
 
@@ -5932,7 +5702,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"ReorderDataPackagesRequest"},
         };
         app.put('/api/v1/events/:eventId/data-package-order',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageOrderController)),
             ...(fetchMiddlewares<RequestHandler>(PackageOrderController.prototype.reorderDataPackages)),
 
@@ -5968,7 +5738,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/objects',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.listPackageObjects)),
 
@@ -6002,7 +5772,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreatePackageObjectRequest"},
         };
         app.post('/api/v1/events/:eventId/data-packages/:packageId/objects',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.createPackageObject)),
 
@@ -6036,7 +5806,7 @@ export function RegisterRoutes(app: Router) {
                 objectId: {"in":"path","name":"objectId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/objects/:objectId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.getPackageObject)),
 
@@ -6071,7 +5841,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageObjectRequest"},
         };
         app.put('/api/v1/events/:eventId/data-packages/:packageId/objects/:objectId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.updatePackageObject)),
 
@@ -6105,7 +5875,7 @@ export function RegisterRoutes(app: Router) {
                 objectId: {"in":"path","name":"objectId","required":true,"ref":"Uuid"},
         };
         app.delete('/api/v1/events/:eventId/data-packages/:packageId/objects/:objectId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
             ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.deletePackageObject)),
 
@@ -6138,7 +5908,7 @@ export function RegisterRoutes(app: Router) {
                 fileName: {"in":"query","name":"fileName","dataType":"string","validators":{"maxLength":{"value":255}}},
         };
         app.post('/api/v1/events/:eventId/data-package-imports/atak',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageNewImportController)),
             ...(fetchMiddlewares<RequestHandler>(PackageNewImportController.prototype.importAtakAsNewPackage)),
 
@@ -6173,7 +5943,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/layers',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageLayersController)),
             ...(fetchMiddlewares<RequestHandler>(PackageLayersController.prototype.listPackageLayers)),
 
@@ -6207,7 +5977,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreatePackageLayerRequest"},
         };
         app.post('/api/v1/events/:eventId/data-packages/:packageId/layers',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageLayersController)),
             ...(fetchMiddlewares<RequestHandler>(PackageLayersController.prototype.createPackageLayer)),
 
@@ -6242,7 +6012,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageLayerRequest"},
         };
         app.put('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageLayersController)),
             ...(fetchMiddlewares<RequestHandler>(PackageLayersController.prototype.updatePackageLayer)),
 
@@ -6276,7 +6046,7 @@ export function RegisterRoutes(app: Router) {
                 layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
         };
         app.delete('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageLayersController)),
             ...(fetchMiddlewares<RequestHandler>(PackageLayersController.prototype.deletePackageLayer)),
 
@@ -6310,7 +6080,7 @@ export function RegisterRoutes(app: Router) {
                 layerId: {"in":"query","name":"layerId","ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/kml',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageKmlController)),
             ...(fetchMiddlewares<RequestHandler>(PackageKmlController.prototype.exportPackageDraftKml)),
 
@@ -6345,7 +6115,7 @@ export function RegisterRoutes(app: Router) {
                 layerId: {"in":"query","name":"layerId","ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number/kml',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageKmlController)),
             ...(fetchMiddlewares<RequestHandler>(PackageKmlController.prototype.exportPackageRevisionKml)),
 
@@ -6380,7 +6150,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"GeoJsonDocument"},
         };
         app.post('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId/import',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController)),
             ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController.prototype.importPackageGeoJson)),
 
@@ -6414,7 +6184,7 @@ export function RegisterRoutes(app: Router) {
                 layerId: {"in":"query","name":"layerId","ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/geojson',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController)),
             ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController.prototype.exportPackageDraftGeoJson)),
 
@@ -6449,7 +6219,7 @@ export function RegisterRoutes(app: Router) {
                 layerId: {"in":"query","name":"layerId","ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number/geojson',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController)),
             ...(fetchMiddlewares<RequestHandler>(PackageGeoJsonController.prototype.exportPackageRevisionGeoJson)),
 
@@ -6482,7 +6252,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreateDataPackageCopyRequest"},
         };
         app.post('/api/v1/events/:eventId/data-package-copies',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageCopyController)),
             ...(fetchMiddlewares<RequestHandler>(PackageCopyController.prototype.createDataPackageCopy)),
 
@@ -6515,7 +6285,7 @@ export function RegisterRoutes(app: Router) {
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/contents',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.listPackageContents)),
 
@@ -6552,7 +6322,7 @@ export function RegisterRoutes(app: Router) {
                 y: {"in":"path","name":"y","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"y"},"minimum":{"value":0}}},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId/tiles/:z/:x/:y',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.getOfflineMapTile)),
 
@@ -6586,7 +6356,7 @@ export function RegisterRoutes(app: Router) {
                 contentId: {"in":"path","name":"contentId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId/image',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.getRubberSheetImage)),
 
@@ -6621,7 +6391,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageContentRequest"},
         };
         app.put('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.updatePackageContent)),
 
@@ -6655,7 +6425,7 @@ export function RegisterRoutes(app: Router) {
                 contentId: {"in":"path","name":"contentId","required":true,"ref":"Uuid"},
         };
         app.delete('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController)),
             ...(fetchMiddlewares<RequestHandler>(PackageContentController.prototype.deletePackageContent)),
 
@@ -6689,7 +6459,7 @@ export function RegisterRoutes(app: Router) {
                 layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
         };
         app.post('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId/import/atak',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageAtakController)),
             ...(fetchMiddlewares<RequestHandler>(PackageAtakController.prototype.importAtakDataPackage)),
 
@@ -6724,7 +6494,7 @@ export function RegisterRoutes(app: Router) {
                 layerId: {"in":"query","name":"layerId","ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId/revisions/:number/atak',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(PackageAtakController)),
             ...(fetchMiddlewares<RequestHandler>(PackageAtakController.prototype.exportAtakDataPackage)),
 
@@ -6758,7 +6528,7 @@ export function RegisterRoutes(app: Router) {
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
         };
         app.get('/api/v1/events/:eventId/data-packages',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.listDataPackages)),
 
@@ -6791,7 +6561,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CreateDataPackageRequest"},
         };
         app.post('/api/v1/events/:eventId/data-packages',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.createDataPackage)),
 
@@ -6824,7 +6594,7 @@ export function RegisterRoutes(app: Router) {
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
         };
         app.get('/api/v1/events/:eventId/data-packages/:packageId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.getDataPackage)),
 
@@ -6858,7 +6628,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdateDataPackageRequest"},
         };
         app.put('/api/v1/events/:eventId/data-packages/:packageId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.updateDataPackage)),
 
@@ -6891,7 +6661,7 @@ export function RegisterRoutes(app: Router) {
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
         };
         app.delete('/api/v1/events/:eventId/data-packages/:packageId',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.deleteDataPackage)),
 
@@ -6925,7 +6695,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageAudienceRequest"},
         };
         app.put('/api/v1/events/:eventId/data-packages/:packageId/audience',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.updateDataPackageAudience)),
 
@@ -6959,7 +6729,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageTakDeliveryRequest"},
         };
         app.put('/api/v1/events/:eventId/data-packages/:packageId/tak-delivery',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
             ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.updateDataPackageTakDelivery)),
 
@@ -6992,7 +6762,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CombinedExportRequest"},
         };
         app.post('/api/v1/events/:eventId/data-package-exports/atak/preview',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(CombinedExportController)),
             ...(fetchMiddlewares<RequestHandler>(CombinedExportController.prototype.previewCombinedExport)),
 
@@ -7025,7 +6795,7 @@ export function RegisterRoutes(app: Router) {
                 body: {"in":"body","name":"body","required":true,"ref":"CombinedExportRequest"},
         };
         app.post('/api/v1/events/:eventId/data-package-exports/atak',
-            authenticateMiddleware([{"sessionCookie":[]},{"serviceAccountBearer":[]}]),
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
             ...(fetchMiddlewares<RequestHandler>(CombinedExportController)),
             ...(fetchMiddlewares<RequestHandler>(CombinedExportController.prototype.exportCombinedDataPackage)),
 
@@ -7041,6 +6811,236 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'exportCombinedDataPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsApiClientsController_listApiClients: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/api-clients',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController)),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController.prototype.listApiClients)),
+
+            async function ApiClientsController_listApiClients(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsApiClientsController_listApiClients, request, response });
+
+                const controller = new ApiClientsController();
+
+              await templateService.apiHandler({
+                methodName: 'listApiClients',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsApiClientsController_createApiClient: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateApiClientRequest"},
+        };
+        app.post('/api/v1/api-clients',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController)),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController.prototype.createApiClient)),
+
+            async function ApiClientsController_createApiClient(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsApiClientsController_createApiClient, request, response });
+
+                const controller = new ApiClientsController();
+
+              await templateService.apiHandler({
+                methodName: 'createApiClient',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsApiClientsController_getApiClient: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                apiClientId: {"in":"path","name":"apiClientId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/api-clients/:apiClientId',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController)),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController.prototype.getApiClient)),
+
+            async function ApiClientsController_getApiClient(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsApiClientsController_getApiClient, request, response });
+
+                const controller = new ApiClientsController();
+
+              await templateService.apiHandler({
+                methodName: 'getApiClient',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsApiClientsController_updateApiClient: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                apiClientId: {"in":"path","name":"apiClientId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateApiClientRequest"},
+        };
+        app.put('/api/v1/api-clients/:apiClientId',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController)),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController.prototype.updateApiClient)),
+
+            async function ApiClientsController_updateApiClient(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsApiClientsController_updateApiClient, request, response });
+
+                const controller = new ApiClientsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateApiClient',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsApiClientsController_listApiKeys: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                apiClientId: {"in":"path","name":"apiClientId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/api-clients/:apiClientId/api-keys',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController)),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController.prototype.listApiKeys)),
+
+            async function ApiClientsController_listApiKeys(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsApiClientsController_listApiKeys, request, response });
+
+                const controller = new ApiClientsController();
+
+              await templateService.apiHandler({
+                methodName: 'listApiKeys',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsApiClientsController_createApiKey: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                apiClientId: {"in":"path","name":"apiClientId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateApiKeyRequest"},
+        };
+        app.post('/api/v1/api-clients/:apiClientId/api-keys',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController)),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController.prototype.createApiKey)),
+
+            async function ApiClientsController_createApiKey(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsApiClientsController_createApiKey, request, response });
+
+                const controller = new ApiClientsController();
+
+              await templateService.apiHandler({
+                methodName: 'createApiKey',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsApiClientsController_revokeApiKey: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                apiClientId: {"in":"path","name":"apiClientId","required":true,"ref":"Uuid"},
+                apiKeyId: {"in":"path","name":"apiKeyId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/api-clients/:apiClientId/api-keys/:apiKeyId/revoke',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController)),
+            ...(fetchMiddlewares<RequestHandler>(ApiClientsController.prototype.revokeApiKey)),
+
+            async function ApiClientsController_revokeApiKey(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsApiClientsController_revokeApiKey, request, response });
+
+                const controller = new ApiClientsController();
+
+              await templateService.apiHandler({
+                methodName: 'revokeApiKey',
                 controller,
                 response,
                 next,

@@ -10,7 +10,7 @@ import { importAtakAsNewPackage, type ImportedDataPackage } from "./package-atak
 @Route("events/{eventId}/data-package-imports/atak")
 @Tags("Data packages")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 @Response<ProblemDetails>(404, "Not found")

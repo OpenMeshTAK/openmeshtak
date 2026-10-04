@@ -8,7 +8,7 @@ import { database, disconnectDatabase } from "../src/shared/database/database.js
 import {
   clearDatabase,
   createEvent,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -71,7 +71,7 @@ void describe("external member synchronization", () => {
     app = createApp();
     admin = await createUser("Admin", PERMISSIONS.map((permission) => ({ permission })));
     eventId = await createEvent();
-    botKey = await createServiceAccountKey([{ permission: "members.sync", eventId }]);
+    botKey = await createApiClientKey([{ permission: "members.sync", eventId }]);
     await addSlugs("roles", "participant", "lead");
     await addSlugs("groups", "bravo", "alpha");
   });
@@ -125,7 +125,7 @@ void describe("external member synchronization", () => {
     eventId = await createEvent();
     await addSlugs("roles", "participant");
     await addSlugs("groups", "bravo");
-    const key = await createServiceAccountKey([{ permission: "members.sync", eventId }]);
+    const key = await createApiClientKey([{ permission: "members.sync", eventId }]);
     const second = (await sync("123456789", peter, key).expect(200)).body as SyncBody;
 
     assert.notEqual(eventId, secondEvent);
@@ -190,7 +190,7 @@ void describe("external member synchronization", () => {
     await sync("123456789", peter).expect(404);
 
     eventId = ownEvent;
-    const reader = await createServiceAccountKey([{ permission: "events.read", eventId }]);
+    const reader = await createApiClientKey([{ permission: "events.read", eventId }]);
     await sync("123456789", peter, reader).expect(403);
   });
 

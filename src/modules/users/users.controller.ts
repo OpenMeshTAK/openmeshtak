@@ -25,7 +25,7 @@ import { getUser, listUsers, revokeUserSessions, sendUserPasswordReset, setUserD
 @Route("users")
 @Tags("Users")
 @Security("sessionCookie")
-@Security("serviceAccountBearer")
+@Security("apiClientBearer")
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 export class UsersController extends Controller {

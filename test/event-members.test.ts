@@ -8,7 +8,7 @@ import { database, disconnectDatabase } from "../src/shared/database/database.js
 import {
   clearDatabase,
   createEvent,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -46,7 +46,7 @@ void describe("event members", () => {
     await createAssignment("roles", "participant");
     await createAssignment("groups", "bravo");
 
-    const key = await createServiceAccountKey([{ permission: "members.sync", eventId }]);
+    const key = await createApiClientKey([{ permission: "members.sync", eventId }]);
     const response = await request(app)
       .put(`/api/v1/events/${eventId}/external-members/discord/123456789`)
       .set("Authorization", `Bearer ${key}`)
@@ -61,7 +61,7 @@ void describe("event members", () => {
   });
 
   void it("lists and reads members with members.read", async () => {
-    const reader = await createServiceAccountKey([{ permission: "members.read", eventId }]);
+    const reader = await createApiClientKey([{ permission: "members.read", eventId }]);
 
     const list = await request(app)
       .get(`/api/v1/events/${eventId}/members`)
@@ -80,7 +80,7 @@ void describe("event members", () => {
 
   void it("conceals members of other events", async () => {
     const otherEvent = await createEvent();
-    const outsider = await createServiceAccountKey([{ permission: "members.read", eventId: otherEvent }]);
+    const outsider = await createApiClientKey([{ permission: "members.read", eventId: otherEvent }]);
 
     await request(app)
       .get(`/api/v1/events/${eventId}/members`)
@@ -179,7 +179,7 @@ void describe("event members", () => {
       .expect(422);
     assert.equal((invalid.body as ProblemBody).code, "VALIDATION_FAILED");
 
-    const key = await createServiceAccountKey([{ permission: "members.sync", eventId }]);
+    const key = await createApiClientKey([{ permission: "members.sync", eventId }]);
     await request(app)
       .put(`/api/v1/events/${eventId}/external-members/discord/987654321`)
       .set("Authorization", `Bearer ${key}`)

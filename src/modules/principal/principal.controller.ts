@@ -14,7 +14,7 @@ export class PrincipalController extends Controller {
   @Get()
   @SuccessResponse(200, "Authenticated principal")
   @Security("sessionCookie")
-  @Security("serviceAccountBearer")
+  @Security("apiClientBearer")
   @Response<ProblemDetails>(401, "Authentication required")
   public async getPrincipal(@Request() request: unknown): Promise<PrincipalDto> {
     return describePrincipal(requestContext(request).principal);

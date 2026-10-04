@@ -14,7 +14,7 @@ import { database, disconnectDatabase } from "../src/shared/database/database.js
 import {
   clearDatabase,
   createEvent,
-  createServiceAccountKey,
+  createApiClientKey,
   createUser,
   type TestUser,
 } from "./support/identity.js";
@@ -94,7 +94,7 @@ void describe("member callsigns and short names", () => {
     app = createApp();
     admin = await createUser("Admin", PERMISSIONS.map((permission) => ({ permission })));
     eventId = await createEvent();
-    botKey = await createServiceAccountKey([{ permission: "members.sync", eventId }]);
+    botKey = await createApiClientKey([{ permission: "members.sync", eventId }]);
 
     await request(app)
       .post(`/api/v1/events/${eventId}/roles`)
