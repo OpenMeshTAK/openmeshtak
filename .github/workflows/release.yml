@@ -1,0 +1,224 @@
+name: Release
+
+# Pushing a tag such as v0.2.0 verifies the project, publishes the multi-arch Core image to GHCR
+# and creates the GitHub release. Core and Web are released together: tag both repositories with
+# the same version, which must equal the version in package.json.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/openmeshtak/openmeshtak
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: file:./server/data/db/ci.sqlite
+      NODE_ENV: test
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check the tag against package.json
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::Tag $GITHUB_REF_NAME is not vMAJOR.MINOR.PATCH[-PRERELEASE]."
+            exit 1
+          fi
+          package_version="$(node -p "require('./package.json').version")"
+          if [ "$version" != "$package_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $package_version."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          case "$version" in
+            *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply database migrations
+        run: pnpm db:deploy
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=moderate
+
+      - name: Verify project
+        run: pnpm check
+
+      - name: Smoke test a clean production install
+        run: pnpm smoke:clean-install
+
+      - name: Verify generated contract is committed
+        run: git diff --exit-code -- openapi/openapi.json src/generated/routes.ts
+
+  image:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 0.2.1 is tagged 0.2.1 and 0.2; stable releases also move `latest`. Pre-releases get only
+      # their exact version.
+      - name: Image tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ needs.verify.outputs.prerelease == 'false' }}
+          labels: |
+            org.opencontainers.image.title=OpenMeshTak Core
+            org.opencontainers.image.licenses=AGPL-3.0-only
+          annotations: |
+            org.opencontainers.image.title=OpenMeshTak Core
+            org.opencontainers.image.description=OpenMeshTak Core API and built-in TAK server
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
+      # Buildx attaches provenance and an SBOM attestation to the pushed image.
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # GitHub artifact attestations need a public repository on the free plan, so private
+      # releases skip this step; verify with `gh attestation verify oci://<image> -R <repo>`.
+      - name: Attest build provenance
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+
+  release:
+    needs: [verify, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write release notices and SBOM
+        run: pnpm release:notices
+
+      # Everything an operator needs to run the published images, pinned to this release.
+      - name: Package the deployment files
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          # Unpacks to openmeshtak-$VERSION/deploy/, so the README commands work from that folder.
+          bundle="openmeshtak-$VERSION"
+          mkdir -p "release/$bundle/deploy/secrets"
+          cp deploy/compose.yaml deploy/compose.reverse-proxy.yaml "release/$bundle/deploy/"
+          sed "s/^OPENMESHTAK_VERSION=.*/OPENMESHTAK_VERSION=$VERSION/" deploy/.env.example > "release/$bundle/deploy/.env.example"
+          cp deploy/secrets/.gitignore "release/$bundle/deploy/secrets/"
+          tar -czf "release/openmeshtak-deploy-$VERSION.tar.gz" -C release "$bundle"
+          cp openapi/openapi.json "release/openmeshtak-openapi-$VERSION.json"
+          cp dist/THIRD_PARTY_NOTICES.txt "release/openmeshtak-THIRD_PARTY_NOTICES-$VERSION.txt"
+          cp dist/sbom.cdx.json "release/openmeshtak-sbom-$VERSION.cdx.json"
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.verify.outputs.version }}
+          PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+        run: |
+          prerelease_flag=""
+          if [ "$PRERELEASE" = "true" ]; then prerelease_flag="--prerelease"; fi
+          cat > release/notes.md <<EOF
+          Core image: \`$IMAGE:$VERSION\`
+
+          Run it together with OpenMeshTak Web $VERSION. Unpack \`openmeshtak-deploy-$VERSION.tar.gz\`,
+          change into \`openmeshtak-$VERSION\` and follow the Docker deployment steps in the README.
+          EOF
+          gh release create "$GITHUB_REF_NAME" --title "OpenMeshTak Core $VERSION" --notes-file release/notes.md \
+            --verify-tag $prerelease_flag \
+            "release/openmeshtak-deploy-$VERSION.tar.gz" \
+            "release/openmeshtak-openapi-$VERSION.json" \
+            "release/openmeshtak-THIRD_PARTY_NOTICES-$VERSION.txt" \
+            "release/openmeshtak-sbom-$VERSION.cdx.json"
