@@ -12,7 +12,10 @@ export interface TakEnrollmentDto {
    */
   expiresAt: string | null;
   hostName: string;
+  /** Public ports; they may differ from the listen ports inside the container. */
   enrollmentPort: number;
+  /** Public Marti port for Data Packages; the enrollment profile also sets it in ATAK. */
+  martiPort: number;
   streamingPort: number;
   /**
    * Link and QR code content for ATAK certificate enrollment, with the QR token. `null` while the

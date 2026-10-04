@@ -14,6 +14,7 @@ import { clearDatabase, createEvent, createUser, type TestUser } from "./support
 
 interface EnrollmentBody {
   username: string;
+  martiPort: number;
   expiresAt: string | null;
   atakEnrollmentUrl: string | null;
 }
@@ -54,11 +55,11 @@ let member: TestUser;
 let outsider: TestUser;
 let eventId: string;
 
-async function enableServer(): Promise<void> {
+async function enableServer(ports: { martiPort?: number } = {}): Promise<void> {
   await request(app)
     .put("/api/v1/tak-server/settings")
     .set("Cookie", admin.cookie)
-    .send({ version: 0, enabled: true, hostName: "tak.example.org", enrollmentPort: 8446, martiPort: 8443, streamingPort: 8089, clientCertificateDays: 30 })
+    .send({ version: 0, enabled: true, hostName: "tak.example.org", enrollmentPort: 8446, martiPort: 8443, streamingPort: 8089, clientCertificateDays: 30, ...ports })
     .expect(200);
 }
 
@@ -239,8 +240,10 @@ void describe("TAK certificate enrollment", () => {
     assert.equal(p12.getBags({ bagType: keyBag })[keyBag]?.length ?? 0, 0, "no key");
   });
 
-  void it("serves the enrollment profile for a valid TAK login", async () => {
-    await enableServer();
+  void it("serves the enrollment profile with the public Marti port for a valid TAK login", async () => {
+    // An explicitly chosen alternative Marti port, as on hosts where CloudPanel owns 8443.
+    await enableServer({ martiPort: 8484 });
+    assert.equal((await enroll(member)).martiPort, 8484);
     const profileUrl = "/Marti/api/tls/profile/enrollment?clientUid=ANDROID-1234";
     await request(enrollment).get(profileUrl).auth("peter", "wrong-password").expect(401);
 
@@ -255,7 +258,9 @@ void describe("TAK certificate enrollment", () => {
       })
       .expect(200);
     const files = unzipSync(new Uint8Array(profile.body as Buffer));
-    assert.match(strFromU8(files["preferences/preference.pref"] ?? new Uint8Array()), /deviceProfileEnableOnConnect/);
+    const preferences = strFromU8(files["preferences/preference.pref"] ?? new Uint8Array());
+    assert.match(preferences, /deviceProfileEnableOnConnect/);
+    assert.match(preferences, /<entry key="apiSecureServerPort" class="class java.lang.String">8484<\/entry>/);
   });
 
   void it("refuses enrollment when the member left before signing", async () => {

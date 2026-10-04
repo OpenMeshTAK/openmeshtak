@@ -60,6 +60,10 @@ When another proxy already owns ports 80 and 443, add the override so Caddy serv
 
 In CloudPanel, create a reverse-proxy site for `PUBLIC_HOST` with the target `http://127.0.0.1:8080` and let CloudPanel issue its certificate. CloudPanel's own administration uses port 8443, so publish the TAK Data Package (Marti) port on an alternative such as 8484: change `"8443:8443"` to `"8484:8443"` in `deploy/compose.yaml` and enter 8484 as the Data Package port on the TAK server page, which is the only source for the ports in QR codes and profiles. ATAK learns it from the enrollment profile. Keep 8446 and 8089 unchanged and open 8446, 8484 and 8089 in the firewall; they go straight to Core because they terminate mutual TLS themselves. For a publicly trusted TAK certificate without port 80, use the DNS-01 (Cloudflare) option on the TAK server page.
 
+### TAK ports
+
+The ports on the TAK server page are the public ports devices connect to; QR codes, connection packages and profiles always use them. Core listens on `TAK_ENROLLMENT_LISTEN_PORT`, `TAK_MARTI_LISTEN_PORT` and `TAK_STREAMING_LISTEN_PORT` (default 8446, 8443, 8089) inside the container, and the compose file publishes them on the public ports, which you adjust there to match the TAK server page. If one of them cannot be bound, Core does not start, so a TAK server never runs half.
+
 ### API documentation
 
 Swagger UI is served at `https://<PUBLIC_HOST>/api/docs` when `SWAGGER_ENABLED=true` (off by default in production, on in development). The OpenAPI document is always available at `/api/openapi.json`.

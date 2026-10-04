@@ -44,6 +44,7 @@ export async function createConnectionPackage(actor: ActorContext): Promise<{ fi
   const artifact = buildConnectionPackage({
     hostName: settings.hostName,
     streamingPort: settings.streamingPort,
+    martiPort: settings.martiPort,
     caPems: await trustAnchors(settings.hostName),
   });
   await recordAudit({

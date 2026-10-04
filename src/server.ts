@@ -26,6 +26,9 @@ async function startServer(): Promise<void> {
     writeBootstrapOperatorNotice(bootstrapChallenge);
   }
 
+  // A TAK port that cannot be bound is a deployment error; never run a partial TAK server.
+  await takListeners.start();
+
   const app = createApp();
   const server = app.listen(config.port, config.host, () => {
     logger.info(
@@ -39,7 +42,6 @@ async function startServer(): Promise<void> {
     );
   });
 
-  void takListeners.start();
   scheduleTrafficCleanup();
   takAcmeManager.start();
 

@@ -7,15 +7,24 @@ import { visiblePackagesFor, type VisiblePackage } from "./visible-packages.js";
 /**
  * Device profiles are ordinary Data Packages that a TAK app installs by itself: once after
  * enrollment and on each connection. Ours carry the member's published packages as nested Data
- * Packages plus the preference that makes the app ask for the connection profile.
+ * Packages plus the preferences that make the app ask for the connection profile and use the
+ * public Marti port.
+ *
+ * ATAK keeps the Marti port in the application-wide `apiSecureServerPort` preference (default
+ * 8443) and learns it from the enrollment profile, fetched on the enrollment port before any
+ * Marti request. That is what makes a non-standard public Marti port such as 8484 work without
+ * changing the enrollment or CoT ports. ATAK stores the value as a string.
  */
-const PROFILE_PREFERENCES = `<?xml version="1.0" standalone="yes"?>
+function profilePreferences(martiPort: number): string {
+  return `<?xml version="1.0" standalone="yes"?>
 <preferences>
   <preference version="1" name="com.atakmap.app_preferences">
     <entry key="deviceProfileEnableOnConnect" class="class java.lang.Boolean">true</entry>
+    <entry key="apiSecureServerPort" class="class java.lang.String">${String(martiPort)}</entry>
   </preference>
 </preferences>
 `;
+}
 
 function escapeXml(value: string): string {
   return value.replace(/[<>&"']/g, (character) => `&#${String(character.charCodeAt(0))};`);
@@ -48,12 +57,15 @@ export async function profilePackages(userId: string, access: TakAccess, kind: P
   );
 }
 
-/** The profile Data Package, or `null` when there is nothing to install. */
-export async function buildDeviceProfile(kind: ProfileKind, packages: VisiblePackage[]): Promise<Uint8Array | null> {
+/**
+ * The profile Data Package, or `null` when there is nothing to install. The enrollment profile is
+ * always delivered, because it carries the public Marti port.
+ */
+export async function buildDeviceProfile(kind: ProfileKind, packages: VisiblePackage[], martiPort: number): Promise<Uint8Array | null> {
   if (kind === "connection" && packages.length === 0) {
     return null;
   }
-  const files: Zippable = { "preferences/preference.pref": strToU8(PROFILE_PREFERENCES) };
+  const files: Zippable = { "preferences/preference.pref": strToU8(profilePreferences(martiPort)) };
   for (const item of packages) {
     const artifact = await buildAtakExport(item.dataPackage.id, item.latest);
     files[`packages/${item.dataPackage.id}/${artifact.fileName}`] = artifact.bytes;

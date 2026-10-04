@@ -366,6 +366,7 @@ const models: TsoaRoute.Models = {
             "expiresAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "hostName": {"dataType":"string","required":true},
             "enrollmentPort": {"dataType":"double","required":true},
+            "martiPort": {"dataType":"double","required":true},
             "streamingPort": {"dataType":"double","required":true},
             "atakEnrollmentUrl": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
         },

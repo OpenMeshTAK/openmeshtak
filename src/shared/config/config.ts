@@ -29,9 +29,23 @@ const environmentSchema = z.object({
   TRUST_PROXY: booleanFromString.default(false),
   /** Built Web app that Core serves on the same origin; the image sets it, development uses Vite. */
   WEB_ROOT: z.string().min(1).optional(),
+  /**
+   * Ports the TAK listeners bind inside the container. They are deployment values, separate from
+   * the public ports in the TAK server settings, which alone appear in participant material.
+   */
+  TAK_ENROLLMENT_LISTEN_PORT: z.coerce.number().int().min(1).max(65_535).default(8446),
+  TAK_MARTI_LISTEN_PORT: z.coerce.number().int().min(1).max(65_535).default(8443),
+  TAK_STREAMING_LISTEN_PORT: z.coerce.number().int().min(1).max(65_535).default(8089),
 });
 
 const environment = environmentSchema.parse(process.env);
+
+if (
+  new Set([environment.TAK_ENROLLMENT_LISTEN_PORT, environment.TAK_MARTI_LISTEN_PORT, environment.TAK_STREAMING_LISTEN_PORT, environment.APP_PORT])
+    .size !== 4
+) {
+  throw new Error("APP_PORT and the TAK listen ports must all differ.");
+}
 
 if (environment.NODE_ENV === "production" && environment.BETTER_AUTH_SECRET === undefined) {
   throw new Error("BETTER_AUTH_SECRET is required in production.");
@@ -64,6 +78,11 @@ export const config = Object.freeze({
   port: environment.APP_PORT,
   publicOrigin: environment.PUBLIC_ORIGIN,
   rootEncryptionKeyFile: environment.ROOT_ENCRYPTION_KEY_FILE,
+  takListenPorts: Object.freeze({
+    enrollment: environment.TAK_ENROLLMENT_LISTEN_PORT,
+    marti: environment.TAK_MARTI_LISTEN_PORT,
+    streaming: environment.TAK_STREAMING_LISTEN_PORT,
+  }),
   trustProxy: environment.TRUST_PROXY,
   webRoot: environment.WEB_ROOT,
 });

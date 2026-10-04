@@ -76,6 +76,7 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
     username,
     hostName: settings.hostName,
     enrollmentPort: settings.enrollmentPort,
+    martiPort: settings.martiPort,
     streamingPort: settings.streamingPort,
   };
   if (!(await hasPublicServerCertificate(settings.hostName, now))) {

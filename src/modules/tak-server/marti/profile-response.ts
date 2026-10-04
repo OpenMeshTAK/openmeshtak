@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import { recordAudit } from "../../../shared/audit/audit.js";
 import type { TakAccess } from "../tak-access.js";
+import { loadTakServerSettings } from "../tak-server-settings.js";
 import { buildDeviceProfile, profilePackages, type ProfileKind } from "./device-profile.js";
 
 /**
@@ -15,7 +16,9 @@ export async function sendDeviceProfile(
   changedSince: Date | null,
 ): Promise<void> {
   const packages = await profilePackages(userId, access, kind, changedSince);
-  const profile = await buildDeviceProfile(kind, packages);
+  // The public Marti port from the settings, never the container's listen port.
+  const { martiPort } = await loadTakServerSettings();
+  const profile = await buildDeviceProfile(kind, packages, martiPort);
   if (profile === null) {
     response.status(204).end();
     return;

@@ -12,6 +12,8 @@ const TRUSTSTORE_PATH = "certs/openmeshtak-truststore.p12";
 export interface ConnectionPackageInput {
   hostName: string;
   streamingPort: number;
+  /** Public Marti port; ATAK reads it from the app-wide `apiSecureServerPort` preference. */
+  martiPort: number;
   /** CA certificates the app must trust: the OpenMeshTak CAs, or the public chain's root. */
   caPems: string[];
 }
@@ -58,6 +60,7 @@ function preferences(input: ConnectionPackageInput): string {
   </preference>
   <preference version="1" name="com.atakmap.app_preferences">
     <entry key="displayServerConnectionWidget" class="class java.lang.Boolean">true</entry>
+    <entry key="apiSecureServerPort" class="class java.lang.String">${String(input.martiPort)}</entry>
   </preference>
 </preferences>
 `;
