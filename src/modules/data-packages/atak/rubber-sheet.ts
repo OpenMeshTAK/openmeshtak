@@ -3,9 +3,8 @@ import { XMLParser } from "fast-xml-parser";
 
 /**
  * ATAK rubber sheets travel as KMZ files: `doc.kml` with one `GroundOverlay` plus the image it
- * references. Real ATAK exports (Data/Rubber.zip, Data/TS3-GameMap.zip) place the image with a
- * `gx:LatLonQuad`, four corners counter-clockwise from the lower left; `LatLonBox` is accepted as
- * the axis-aligned form.
+ * references. Real ATAK exports place the image with a `gx:LatLonQuad`, four corners
+ * counter-clockwise from the lower left; `LatLonBox` is accepted as the axis-aligned form.
  */
 export interface RubberSheet {
   name: string;

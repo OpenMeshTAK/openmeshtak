@@ -6,10 +6,10 @@ import Database from "better-sqlite3";
 import { strFromU8, unzipSync } from "fflate";
 
 /**
- * Read-only access to ATAK SQLite tile caches (Data/AS-OfflineMap, Data/Mahlwinkel_topo):
- * table `tiles(key, provider, tile)` in Web Mercator, where the key packs zoom, column and row as
- * `((z * 2^z) + x) * 2^z + y` with XYZ rows (verified against the real fixture). Arithmetic is used
- * instead of bit shifts because the keys exceed 32 bits from zoom 16 on.
+ * Read-only access to ATAK SQLite tile caches: table `tiles(key, provider, tile)` in Web Mercator,
+ * where the key packs zoom, column and row as `((z * 2^z) + x) * 2^z + y` with XYZ rows (verified
+ * against real ATAK tile caches). Arithmetic is used instead of bit shifts because the keys exceed
+ * 32 bits from zoom 16 on.
  */
 export interface TileCacheSummary {
   minZoom: number;
