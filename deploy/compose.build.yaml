@@ -1,10 +1,11 @@
-# Override that builds both images from source instead of pulling the published release:
-# this repository and openmeshtak-web checked out next to each other.
+# Override that builds the image from source instead of pulling the published release: this
+# repository and openmeshtak-web checked out next to each other.
 #
 #   docker compose -f deploy/compose.yaml -f deploy/compose.build.yaml --env-file deploy/.env up -d --build
 
 services:
   core:
-    build: ..
-  web:
-    build: ../../openmeshtak-web
+    build:
+      context: ..
+      additional_contexts:
+        web: ../../openmeshtak-web

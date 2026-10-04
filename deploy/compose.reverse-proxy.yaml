@@ -5,7 +5,7 @@
 #   docker compose -f deploy/compose.yaml -f deploy/compose.reverse-proxy.yaml --env-file deploy/.env up -d
 
 services:
-  web:
+  caddy:
     environment:
       SITE_ADDRESS: ":80"
     ports: !override

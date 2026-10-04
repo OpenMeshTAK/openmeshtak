@@ -1,8 +1,9 @@
 name: Release
 
-# Pushing a tag such as v0.2.0 verifies the project, publishes the multi-arch Core image to GHCR
-# and creates the GitHub release. Core and Web are released together: tag both repositories with
-# the same version, which must equal the version in package.json.
+# Pushing a tag such as v0.2.0 verifies Core and the Web app at that tag, publishes the multi-arch
+# OpenMeshTak image (Core serving the Web app) to GHCR and creates the GitHub release. Both
+# repositories share one version: tag openmeshtak-web with the same version first; both
+# package.json versions must equal the tag.
 
 on:
   push:
@@ -18,6 +19,7 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/openmeshtak/openmeshtak
+  WEB_REPOSITORY: OpenMeshTAK/openmeshtak-web
 
 jobs:
   verify:
@@ -82,8 +84,52 @@ jobs:
       - name: Verify generated contract is committed
         run: git diff --exit-code -- openapi/openapi.json src/generated/routes.ts
 
+  verify-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # WEB_REPOSITORY_TOKEN is only needed while openmeshtak-web is private.
+      - name: Check out the Web app at the same tag
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.WEB_REPOSITORY }}
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.WEB_REPOSITORY_TOKEN || github.token }}
+
+      - name: Check the tag against the Web package.json
+        run: |
+          package_version="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME#v}" != "$package_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the Web package.json version $package_version."
+            exit 1
+          fi
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=moderate
+
+      - name: Verify the Web app
+        run: pnpm check
+
+      - name: Verify generated API client is committed
+        run: git diff --exit-code -- src/generated/api
+
   image:
-    needs: verify
+    needs: [verify, verify-web]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -95,6 +141,14 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Check out the Web app at the same tag
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.WEB_REPOSITORY }}
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.WEB_REPOSITORY_TOKEN || github.token }}
+          path: openmeshtak-web
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -124,11 +178,11 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ needs.verify.outputs.prerelease == 'false' }}
           labels: |
-            org.opencontainers.image.title=OpenMeshTak Core
+            org.opencontainers.image.title=OpenMeshTak
             org.opencontainers.image.licenses=AGPL-3.0-only
           annotations: |
-            org.opencontainers.image.title=OpenMeshTak Core
-            org.opencontainers.image.description=OpenMeshTak Core API and built-in TAK server
+            org.opencontainers.image.title=OpenMeshTak
+            org.opencontainers.image.description=OpenMeshTak Core with the Web app and the built-in TAK server
             org.opencontainers.image.licenses=AGPL-3.0-only
 
       # Buildx attaches provenance and an SBOM attestation to the pushed image.
@@ -137,6 +191,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          build-contexts: web=./openmeshtak-web
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -157,7 +212,6 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
-
   release:
     needs: [verify, image]
     runs-on: ubuntu-latest
@@ -169,6 +223,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Check out the Web app at the same tag
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.WEB_REPOSITORY }}
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.WEB_REPOSITORY_TOKEN || github.token }}
+          path: openmeshtak-web
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -179,28 +241,36 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            openmeshtak-web/pnpm-lock.yaml
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Write release notices and SBOMs
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm release:notices
+          cd openmeshtak-web
+          pnpm install --frozen-lockfile
+          mkdir -p dist
+          pnpm release:notices
 
-      - name: Write release notices and SBOM
-        run: pnpm release:notices
-
-      # Everything an operator needs to run the published images, pinned to this release.
-      - name: Package the deployment files
+      # Everything an operator needs to run the published image, pinned to this release.
+      - name: Package the release files
         env:
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
           # Unpacks to openmeshtak-$VERSION/deploy/, so the README commands work from that folder.
           bundle="openmeshtak-$VERSION"
           mkdir -p "release/$bundle/deploy/secrets"
-          cp deploy/compose.yaml deploy/compose.reverse-proxy.yaml "release/$bundle/deploy/"
+          cp deploy/compose.yaml deploy/compose.reverse-proxy.yaml deploy/Caddyfile "release/$bundle/deploy/"
           sed "s/^OPENMESHTAK_VERSION=.*/OPENMESHTAK_VERSION=$VERSION/" deploy/.env.example > "release/$bundle/deploy/.env.example"
           cp deploy/secrets/.gitignore "release/$bundle/deploy/secrets/"
           tar -czf "release/openmeshtak-deploy-$VERSION.tar.gz" -C release "$bundle"
           cp openapi/openapi.json "release/openmeshtak-openapi-$VERSION.json"
-          cp dist/THIRD_PARTY_NOTICES.txt "release/openmeshtak-THIRD_PARTY_NOTICES-$VERSION.txt"
-          cp dist/sbom.cdx.json "release/openmeshtak-sbom-$VERSION.cdx.json"
+          cp dist/THIRD_PARTY_NOTICES.txt "release/openmeshtak-core-THIRD_PARTY_NOTICES-$VERSION.txt"
+          cp dist/sbom.cdx.json "release/openmeshtak-core-sbom-$VERSION.cdx.json"
+          cp openmeshtak-web/dist/THIRD_PARTY_NOTICES.txt "release/openmeshtak-web-THIRD_PARTY_NOTICES-$VERSION.txt"
+          cp openmeshtak-web/dist/sbom.cdx.json "release/openmeshtak-web-sbom-$VERSION.cdx.json"
 
       - name: Create the GitHub release
         env:
@@ -211,14 +281,16 @@ jobs:
           prerelease_flag=""
           if [ "$PRERELEASE" = "true" ]; then prerelease_flag="--prerelease"; fi
           cat > release/notes.md <<EOF
-          Core image: \`$IMAGE:$VERSION\`
+          Image: \`$IMAGE:$VERSION\` (Core with the Web app)
 
-          Run it together with OpenMeshTak Web $VERSION. Unpack \`openmeshtak-deploy-$VERSION.tar.gz\`,
-          change into \`openmeshtak-$VERSION\` and follow the Docker deployment steps in the README.
+          Unpack \`openmeshtak-deploy-$VERSION.tar.gz\`, change into \`openmeshtak-$VERSION\` and follow
+          the Docker deployment steps in the README.
           EOF
-          gh release create "$GITHUB_REF_NAME" --title "OpenMeshTak Core $VERSION" --notes-file release/notes.md \
+          gh release create "$GITHUB_REF_NAME" --title "OpenMeshTak $VERSION" --notes-file release/notes.md \
             --verify-tag $prerelease_flag \
             "release/openmeshtak-deploy-$VERSION.tar.gz" \
             "release/openmeshtak-openapi-$VERSION.json" \
-            "release/openmeshtak-THIRD_PARTY_NOTICES-$VERSION.txt" \
-            "release/openmeshtak-sbom-$VERSION.cdx.json"
+            "release/openmeshtak-core-THIRD_PARTY_NOTICES-$VERSION.txt" \
+            "release/openmeshtak-core-sbom-$VERSION.cdx.json" \
+            "release/openmeshtak-web-THIRD_PARTY_NOTICES-$VERSION.txt" \
+            "release/openmeshtak-web-sbom-$VERSION.cdx.json"

@@ -8,6 +8,7 @@ import { RegisterRoutes } from "./generated/routes.js";
 import { config } from "./shared/config/config.js";
 import { errorHandler, notFoundHandler } from "./shared/errors/problem.js";
 import { apiResponseHeaders, rejectCrossSiteRequests } from "./shared/http/browser-security.js";
+import { mountWebApp } from "./shared/http/web-app.js";
 import { requestLogging } from "./shared/logging/request-logging.js";
 
 function loadOpenApiDocument(): Record<string, unknown> {
@@ -20,7 +21,8 @@ export function createApp(): Express {
 
   app.disable("x-powered-by");
   app.set("trust proxy", config.trustProxy);
-  app.use(helmet({ contentSecurityPolicy: false }));
+  // The Web app is never framed; API responses add their own strict CSP.
+  app.use(helmet({ contentSecurityPolicy: false, frameguard: { action: "deny" } }));
   app.use(requestLogging);
   // Swagger UI under /api/docs keeps Helmet's defaults; it needs scripts and styles.
   app.use(["/api/v1", "/api/auth"], apiResponseHeaders);
@@ -37,6 +39,10 @@ export function createApp(): Express {
 
   if (config.apiDocsEnabled) {
     app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(loadOpenApiDocument()));
+  }
+
+  if (config.webRoot !== undefined) {
+    mountWebApp(app, config.webRoot);
   }
 
   app.use(notFoundHandler);

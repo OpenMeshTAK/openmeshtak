@@ -27,6 +27,8 @@ const environmentSchema = z.object({
   PUBLIC_ORIGIN: z.url().default("http://localhost:3000"),
   ROOT_ENCRYPTION_KEY_FILE: z.string().min(1).optional(),
   TRUST_PROXY: booleanFromString.default(false),
+  /** Built Web app that Core serves on the same origin; the image sets it, development uses Vite. */
+  WEB_ROOT: z.string().min(1).optional(),
 });
 
 const environment = environmentSchema.parse(process.env);
@@ -63,4 +65,5 @@ export const config = Object.freeze({
   publicOrigin: environment.PUBLIC_ORIGIN,
   rootEncryptionKeyFile: environment.ROOT_ENCRYPTION_KEY_FILE,
   trustProxy: environment.TRUST_PROXY,
+  webRoot: environment.WEB_ROOT,
 });

@@ -6,3 +6,5 @@ coverage
 .env.*
 *.log
 .git
+# The Web repository checked out by the release workflow; it reaches the build as context "web".
+openmeshtak-web
