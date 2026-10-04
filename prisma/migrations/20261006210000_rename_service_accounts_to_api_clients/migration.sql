@@ -20,7 +20,24 @@ DROP INDEX "ApiKey_serviceAccountId_createdAt_id_idx";
 CREATE INDEX "ApiKey_apiClientId_createdAt_id_idx" ON "ApiKey"("apiClientId", "createdAt", "id");
 
 -- RenamePermission
+-- Core may already have granted the new name at startup; keep one grant per group and scope.
+DELETE FROM "PermissionGrant"
+WHERE "permission" = 'service-accounts.manage'
+  AND EXISTS (
+    SELECT 1 FROM "PermissionGrant" AS "renamed"
+    WHERE "renamed"."userGroupId" = "PermissionGrant"."userGroupId"
+      AND "renamed"."scopeKey" = "PermissionGrant"."scopeKey"
+      AND "renamed"."permission" = 'api-clients.manage'
+  );
 UPDATE "PermissionGrant" SET "permission" = 'api-clients.manage' WHERE "permission" = 'service-accounts.manage';
+DELETE FROM "ApiClientPermissionGrant"
+WHERE "permission" = 'service-accounts.manage'
+  AND EXISTS (
+    SELECT 1 FROM "ApiClientPermissionGrant" AS "renamed"
+    WHERE "renamed"."apiClientId" = "ApiClientPermissionGrant"."apiClientId"
+      AND "renamed"."scopeKey" = "ApiClientPermissionGrant"."scopeKey"
+      AND "renamed"."permission" = 'api-clients.manage'
+  );
 UPDATE "ApiClientPermissionGrant" SET "permission" = 'api-clients.manage' WHERE "permission" = 'service-accounts.manage';
 
 -- RenameStoredActorValues
