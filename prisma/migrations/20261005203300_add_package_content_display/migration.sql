@@ -1,4 +1,0 @@
--- AlterTable
-ALTER TABLE "PackageContent" ADD COLUMN "visible" BOOLEAN NOT NULL DEFAULT true;
-ALTER TABLE "PackageContent" ADD COLUMN "opacity" REAL NOT NULL DEFAULT 1;
-ALTER TABLE "PackageContent" ADD COLUMN "version" INTEGER NOT NULL DEFAULT 1;

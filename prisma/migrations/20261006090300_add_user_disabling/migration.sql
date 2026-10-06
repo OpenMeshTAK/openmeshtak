@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "DomainUser" ADD COLUMN "disabledAt" DATETIME;
-ALTER TABLE "DomainUser" ADD COLUMN "version" INTEGER NOT NULL DEFAULT 1;
