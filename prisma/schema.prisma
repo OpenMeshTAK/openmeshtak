@@ -755,6 +755,9 @@ model TakServerSettings {
   martiPort             Int      @default(8443)
   streamingPort         Int      @default(8089)
   clientCertificateDays Int      @default(365)
+  /// When the public host name or a public port last changed after setup. Apps enrolled before it
+  /// may still use the old endpoint and must enroll again.
+  endpointChangedAt     DateTime?
   version               Int      @default(1)
   updatedAt             DateTime @updatedAt
 }

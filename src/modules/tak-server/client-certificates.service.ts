@@ -6,6 +6,7 @@ import { database } from "../../shared/database/database.js";
 import { notFoundProblem } from "../../shared/errors/problem-error.js";
 import type { RevokeTakCertificateRequest, TakClientCertificateDto } from "./client-certificates.dto.js";
 import { takConnections } from "./tak-connections.js";
+import { loadTakServerSettings } from "./tak-server-settings.js";
 
 type CertificateWithUser = TakClientCertificate & { user: { displayName: string } };
 
@@ -16,7 +17,7 @@ function statusOf(certificate: TakClientCertificate, now: Date): TakClientCertif
   return certificate.notAfter <= now ? "expired" : "valid";
 }
 
-function toDto(certificate: CertificateWithUser, now = new Date()): TakClientCertificateDto {
+function toDto(certificate: CertificateWithUser, endpointChangedAt: Date | null, now = new Date()): TakClientCertificateDto {
   return {
     id: certificate.id,
     userId: certificate.userId,
@@ -29,7 +30,13 @@ function toDto(certificate: CertificateWithUser, now = new Date()): TakClientCer
     notAfter: certificate.notAfter.toISOString(),
     revokedAt: certificate.revokedAt?.toISOString() ?? null,
     revocationReason: certificate.revocationReason,
+    issuedForOldEndpoint: endpointChangedAt !== null && certificate.createdAt < endpointChangedAt,
   };
+}
+
+async function toDtos(rows: CertificateWithUser[]): Promise<TakClientCertificateDto[]> {
+  const { endpointChangedAt } = await loadTakServerSettings();
+  return rows.map((row) => toDto(row, endpointChangedAt));
 }
 
 const include = { user: { select: { displayName: true } } } as const;
@@ -38,7 +45,7 @@ const include = { user: { select: { displayName: true } } } as const;
 export async function listTakClientCertificates(principal: Principal): Promise<TakClientCertificateDto[]> {
   await requirePermission(principal, "tak-server.manage");
   const rows = await database.takClientCertificate.findMany({ include, orderBy: { createdAt: "desc" }, take: 500 });
-  return rows.map((row) => toDto(row));
+  return toDtos(rows);
 }
 
 /** The signed-in user's own certificates, so a lost phone can be cut off without an administrator. */
@@ -51,7 +58,7 @@ export async function listMyTakCertificates(principal: Principal): Promise<TakCl
     include,
     orderBy: { createdAt: "desc" },
   });
-  return rows.map((row) => toDto(row));
+  return toDtos(rows);
 }
 
 async function revoke(actor: ActorContext, certificate: TakClientCertificate, reason: string | null): Promise<void> {
@@ -79,7 +86,9 @@ async function revoke(actor: ActorContext, certificate: TakClientCertificate, re
 }
 
 async function revokedDto(certificateId: string): Promise<TakClientCertificateDto> {
-  return toDto(await database.takClientCertificate.findUniqueOrThrow({ where: { id: certificateId }, include }));
+  const row = await database.takClientCertificate.findUniqueOrThrow({ where: { id: certificateId }, include });
+  const { endpointChangedAt } = await loadTakServerSettings();
+  return toDto(row, endpointChangedAt);
 }
 
 /** Revokes any certificate and ends its connections immediately. Requires `tak-server.manage`. */

@@ -501,6 +501,22 @@
 						"nullable": true,
 						"description": "`null` until the server first starts or a certificate is added."
 					},
+					"endpointChangedAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "When the public host name or a port last changed after setup; `null` if never. Apps enrolled\nbefore it may still use the old endpoint.",
+						"format": "date-time"
+					},
+					"validClientCertificates": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Valid client certificates. Changing the host name or a port while this is above 0 requires\n`endpointChange` in the update, because those apps must enroll again."
+					},
+					"clientCertificatesToReEnroll": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Valid client certificates issued before `endpointChangedAt`; their apps may still point to the\nold endpoint and must enroll again."
+					},
 					"version": {
 						"type": "number",
 						"format": "double",
@@ -515,7 +531,24 @@
 					"streamingPort",
 					"clientCertificateDays",
 					"serverCertificate",
+					"endpointChangedAt",
+					"validClientCertificates",
+					"clientCertificatesToReEnroll",
 					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakEndpointChangeConfirmation": {
+				"description": "The administrator's decision for a host name or port change that affects devices.",
+				"properties": {
+					"notifyAffectedUsers": {
+						"type": "boolean",
+						"description": "Email users with enrolled apps that they must set them up again; otherwise only warn here."
+					}
+				},
+				"required": [
+					"notifyAffectedUsers"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -558,6 +591,10 @@
 						"format": "int32",
 						"minimum": 1,
 						"maximum": 825
+					},
+					"endpointChange": {
+						"$ref": "#/components/schemas/TakEndpointChangeConfirmation",
+						"description": "Required when this update moves a port to a non-standard value, or changes the host name or a\nport while apps are enrolled. Core never changes a public port on its own."
 					}
 				},
 				"required": [
@@ -789,6 +826,10 @@
 					"revocationReason": {
 						"type": "string",
 						"nullable": true
+					},
+					"issuedForOldEndpoint": {
+						"type": "boolean",
+						"description": "Issued before the TAK server's host name or a port last changed; the app may still use the old\nendpoint and must enroll again."
 					}
 				},
 				"required": [
@@ -802,7 +843,8 @@
 					"notBefore",
 					"notAfter",
 					"revokedAt",
-					"revocationReason"
+					"revocationReason",
+					"issuedForOldEndpoint"
 				],
 				"type": "object",
 				"additionalProperties": false

@@ -54,7 +54,8 @@ export async function createConnectionPackage(actor: ActorContext): Promise<{ fi
     targetId: "tak-server",
     result: "success",
     traceId: actor.traceId,
-    metadata: { hostName: settings.hostName },
+    // The settings version identifies the endpoint the package points to.
+    metadata: { hostName: settings.hostName, settingsVersion: settings.version },
   });
   return artifact;
 }

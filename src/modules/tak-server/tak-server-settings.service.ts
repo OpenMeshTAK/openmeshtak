@@ -10,6 +10,12 @@ import {
   versionConflictProblem,
   type ProblemFieldError,
 } from "../../shared/errors/problem-error.js";
+import {
+  countValidClientCertificates,
+  endpointChanged,
+  newNonStandardPorts,
+  notifyEndpointChange,
+} from "./endpoint-change.js";
 import { activeServerCertificate, addServerCertificate, removeAddedServerCertificate } from "./server-certificate.js";
 import { takListeners } from "./tak-listeners.js";
 import { HOST_NAME, loadTakServerSettings, SETTINGS_ID } from "./tak-server-settings.js";
@@ -33,8 +39,9 @@ function certificateDto(certificate: TakServerCertificate | null): TakServerCert
       };
 }
 
-async function toDto(): Promise<TakServerSettingsDto> {
+async function toDto(now = new Date()): Promise<TakServerSettingsDto> {
   const settings = await loadTakServerSettings();
+  const endpointChangedAt = settings.endpointChangedAt;
   return {
     enabled: settings.enabled,
     hostName: settings.hostName,
@@ -43,6 +50,9 @@ async function toDto(): Promise<TakServerSettingsDto> {
     streamingPort: settings.streamingPort,
     clientCertificateDays: settings.clientCertificateDays,
     serverCertificate: certificateDto(await activeServerCertificate()),
+    endpointChangedAt: endpointChangedAt?.toISOString() ?? null,
+    validClientCertificates: await countValidClientCertificates(now),
+    clientCertificatesToReEnroll: endpointChangedAt === null ? 0 : await countValidClientCertificates(now, endpointChangedAt),
     version: settings.version,
   };
 }
@@ -71,10 +81,13 @@ function settingsProblems(input: UpdateTakServerSettingsRequest): ProblemFieldEr
   return problems;
 }
 
+type SettingsData = Omit<UpdateTakServerSettingsRequest, "version" | "endpointChange"> & { endpointChangedAt?: Date };
+
 async function storeSettings(
   actor: ActorContext,
   version: number,
-  data: Omit<UpdateTakServerSettingsRequest, "version">,
+  data: SettingsData,
+  auditDetails: Record<string, unknown>,
 ): Promise<void> {
   await database.$transaction(async (transaction) => {
     if (version === 0) {
@@ -100,11 +113,21 @@ async function storeSettings(
         targetId: SETTINGS_ID,
         result: "success",
         traceId: actor.traceId,
-        metadata: data,
+        metadata: { ...data, endpointChangedAt: data.endpointChangedAt?.toISOString(), ...auditDetails },
       },
       transaction,
     );
   });
+}
+
+function confirmationRequired(): ProblemFieldError[] {
+  return [
+    {
+      field: "endpointChange",
+      code: "ENDPOINT_CHANGE_CONFIRMATION_REQUIRED",
+      message: "Confirm the new address or ports and choose whether to email users whose apps must enroll again.",
+    },
+  ];
 }
 
 /** Host names are stored lowercase so certificate checks compare like with like. */
@@ -119,10 +142,31 @@ export async function updateTakServerSettings(
   if (problems.length > 0) {
     throw validationProblem(problems);
   }
-  const { version, ...data } = normalized;
-  await storeSettings(actor, version, data);
+  const { version, endpointChange, ...data } = normalized;
+
+  // Enrolled apps keep the endpoint they enrolled with, so a change needs an explicit decision
+  // about them; a non-standard port needs one because it changes how participants connect.
+  const now = new Date();
+  const current = await loadTakServerSettings();
+  const changed = endpointChanged(current, data);
+  const affectedClientCertificates = changed ? await countValidClientCertificates(now) : 0;
+  const nonStandardPorts = newNonStandardPorts(current, data);
+  if ((affectedClientCertificates > 0 || nonStandardPorts.length > 0) && endpointChange === undefined) {
+    throw validationProblem(confirmationRequired());
+  }
+
+  const notifyAffectedUsers = endpointChange?.notifyAffectedUsers === true && affectedClientCertificates > 0;
+  await storeSettings(actor, version, changed ? { ...data, endpointChangedAt: now } : data, {
+    endpointChanged: changed,
+    affectedClientCertificates,
+    nonStandardPorts,
+    notifyAffectedUsers,
+  });
+  if (notifyAffectedUsers) {
+    await notifyEndpointChange(data, now);
+  }
   void takListeners.reload();
-  return toDto();
+  return toDto(now);
 }
 
 function requireRecentUser(actor: ActorContext): void {

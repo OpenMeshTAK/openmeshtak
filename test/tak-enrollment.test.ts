@@ -59,7 +59,7 @@ async function enableServer(ports: { martiPort?: number } = {}): Promise<void> {
   await request(app)
     .put("/api/v1/tak-server/settings")
     .set("Cookie", admin.cookie)
-    .send({ version: 0, enabled: true, hostName: "tak.example.org", enrollmentPort: 8446, martiPort: 8443, streamingPort: 8089, clientCertificateDays: 30, ...ports })
+    .send({ version: 0, enabled: true, hostName: "tak.example.org", enrollmentPort: 8446, martiPort: 8443, streamingPort: 8089, clientCertificateDays: 30, ...ports, endpointChange: { notifyAffectedUsers: false } })
     .expect(200);
 }
 

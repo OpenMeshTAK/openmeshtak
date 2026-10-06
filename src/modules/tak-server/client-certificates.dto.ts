@@ -17,6 +17,11 @@ export interface TakClientCertificateDto {
   /** @format date-time */
   revokedAt: string | null;
   revocationReason: string | null;
+  /**
+   * Issued before the TAK server's host name or a port last changed; the app may still use the old
+   * endpoint and must enroll again.
+   */
+  issuedForOldEndpoint: boolean;
 }
 
 export interface RevokeTakCertificateRequest {

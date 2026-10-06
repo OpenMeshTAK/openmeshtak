@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
-import { X509Certificate } from "node:crypto";
+import { randomUUID, X509Certificate } from "node:crypto";
 import { after, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../src/app.js";
+import { setEmailDeliveryForTests, type OutgoingEmail } from "../src/modules/email/mailer.js";
 import { activeCertificateAuthority } from "../src/modules/tak-server/certificate-authority.js";
 import { addServerCertificate, currentServerCertificate } from "../src/modules/tak-server/server-certificate.js";
 import { exportPrivateKeyPem, generateRsaKeyPair, RSA_SIGNING, x509 } from "../src/modules/tak-server/x509.js";
-import { disconnectDatabase } from "../src/shared/database/database.js";
+import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createUser, type TestUser } from "./support/identity.js";
 
 interface SettingsBody {
@@ -132,6 +133,68 @@ void describe("TAK server settings", () => {
       .body as SettingsBody;
     assert.equal(removed.serverCertificate, null);
     assert.equal((await currentServerCertificate("tak.example.org")).source, "issued");
+  });
+
+  void it("requires a confirmed decision for non-standard ports and audits it", async () => {
+    await save({ version: 0, hostName: "tak.example.org" }).expect(200);
+    const refused = await save({ version: 1, hostName: "tak.example.org", martiPort: 8484 }).expect(422);
+    assert.deepEqual(
+      (refused.body as { errors: Array<{ code: string }> }).errors.map(({ code }) => code),
+      ["ENDPOINT_CHANGE_CONFIRMATION_REQUIRED"],
+    );
+
+    await save({ version: 1, hostName: "tak.example.org", martiPort: 8484, endpointChange: { notifyAffectedUsers: false } }).expect(200);
+    const audits = await database.auditEvent.findMany({ where: { action: "tak-server.settings-updated" } });
+    const choices = audits.map(({ metadata }) => (metadata as { nonStandardPorts: string[] }).nonStandardPorts);
+    assert.deepEqual(choices.filter((ports) => ports.length > 0), [["martiPort"]]);
+    // Keeping the chosen port needs no new confirmation.
+    await save({ version: 2, hostName: "tak.example.org", martiPort: 8484, clientCertificateDays: 30 }).expect(200);
+  });
+
+  void it("marks enrolled apps for re-enrollment when the endpoint changes and emails their users on request", async () => {
+    await save({ version: 0, hostName: "tak.example.org" }).expect(200);
+    const member = await createUser("Peter", []);
+    await database.user.update({ where: { id: member.authSubjectId }, data: { emailVerified: true } });
+    await database.takClientCertificate.create({
+      data: {
+        id: randomUUID(),
+        userId: member.id,
+        caId: randomUUID(),
+        serialNumber: "01",
+        fingerprintSha256: "aa".repeat(32),
+        commonName: member.id,
+        notBefore: new Date(Date.now() - 60_000),
+        notAfter: new Date(Date.now() + 86_400_000),
+      },
+    });
+    await database.emailSettings.create({ data: { id: "email", enabled: true, host: "smtp.example.org", fromAddress: "noreply@example.org" } });
+    const outbox: OutgoingEmail[] = [];
+    setEmailDeliveryForTests((_settings, message) => {
+      outbox.push(message);
+      return Promise.resolve();
+    });
+
+    try {
+      // A change unrelated to the endpoint needs no decision.
+      await save({ version: 1, hostName: "tak.example.org", clientCertificateDays: 90 }).expect(200);
+      await save({ version: 2, hostName: "tak2.example.org" }).expect(422);
+
+      const moved = (
+        await save({ version: 2, hostName: "tak2.example.org", endpointChange: { notifyAffectedUsers: true } }).expect(200)
+      ).body as { endpointChangedAt: string | null; validClientCertificates: number; clientCertificatesToReEnroll: number };
+      assert.notEqual(moved.endpointChangedAt, null);
+      assert.deepEqual([moved.validClientCertificates, moved.clientCertificatesToReEnroll], [1, 1]);
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      assert.equal(outbox.length, 1);
+      assert.match(outbox[0]?.text ?? "", /moved to tak2.example.org/);
+
+      const certificates = (await request(app).get("/api/v1/tak-server/client-certificates").set("Cookie", admin.cookie).expect(200))
+        .body as Array<{ issuedForOldEndpoint: boolean }>;
+      assert.deepEqual(certificates.map(({ issuedForOldEndpoint }) => issuedForOldEndpoint), [true]);
+    } finally {
+      setEmailDeliveryForTests(null);
+    }
   });
 
   void it("is only available to holders of tak-server.manage", async () => {
