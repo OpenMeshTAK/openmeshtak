@@ -3,11 +3,23 @@ dist/
 .env
 .env.*
 !.env.example
-server/data/
-server/secrets/
+# Local runtime data: SQLite database, stored files and the development root key.
+server/
 coverage/
 *.log
 
 # Prisma generates this client from the reviewed schema.
 src/generated/prisma/
 DEPENDENCY_LICENSE_EXCEPTIONS.md
+
+# Keys and certificates never belong in the repository, including the root encryption key that
+# docker-compose.yml reads; back that one up separately.
+root_encryption_key
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Output of local release packaging and the Web checkout the release workflow builds with.
+release/
+openmeshtak-web/

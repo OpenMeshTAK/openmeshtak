@@ -25,6 +25,9 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
+# Only production dependencies ship; the Prisma CLI and tsx are among them because migrations run
+# on every start.
+RUN pnpm prune --prod
 # Third-party notices and the CycloneDX SBOM for exactly the packages this image ships.
 RUN pnpm release:notices
 
@@ -41,7 +44,6 @@ ENV NODE_ENV=production \
     TRUST_PROXY=true \
     WEB_ROOT=/app/web
 WORKDIR /app
-# The Prisma CLI and tsx stay installed: migrations run on every start, before the server.
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/package.json /app/prisma7.config.ts /app/LICENSE ./
@@ -50,7 +52,7 @@ COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/openapi ./openapi
 COPY --from=build --chown=node:node /app/firmware-profiles ./firmware-profiles
 COPY --from=web-build --chown=node:node /web/dist ./web
-COPY deploy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh && mkdir -p /server/data && chown -R node:node /server/data
 USER node
 VOLUME ["/server/data"]

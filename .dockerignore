@@ -8,3 +8,10 @@ coverage
 .git
 # The Web repository checked out by the release workflow; it reaches the build as context "web".
 openmeshtak-web
+# Secrets and local release output never enter the image build context.
+root_encryption_key
+*.key
+*.pem
+*.p12
+*.pfx
+release

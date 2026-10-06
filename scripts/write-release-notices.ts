@@ -5,9 +5,8 @@ import { readInstalledLicenses, type LicensePackage } from "./installed-licenses
 
 /**
  * Writes the third-party notices and a CycloneDX SBOM into `dist/` for release artifacts, which
- * must carry the attribution that third-party licenses require. The Core image ships
- * `node_modules` as installed, including the tools that run migrations, so both files cover every
- * installed package, not only production dependencies.
+ * must carry the attribution that third-party licenses require. The image build runs it after
+ * pruning to production dependencies, so both files cover exactly the packages the image ships.
  */
 
 const outputDirectory = "dist";
@@ -100,7 +99,7 @@ function sbom(components: Component[], version: string): object {
 }
 
 const { version } = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
-const components = Object.values(readInstalledLicenses())
+const components = Object.values(readInstalledLicenses({ production: true }))
   .flatMap(componentsOf)
   .sort((left, right) => left.name.localeCompare(right.name) || left.version.localeCompare(right.version));
 

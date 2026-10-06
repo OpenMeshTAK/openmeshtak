@@ -259,13 +259,11 @@ jobs:
         env:
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
-          # Unpacks to openmeshtak-$VERSION/deploy/, so the README commands work from that folder.
-          bundle="openmeshtak-$VERSION"
-          mkdir -p "release/$bundle/deploy/secrets"
-          cp deploy/compose.yaml deploy/compose.reverse-proxy.yaml deploy/Caddyfile "release/$bundle/deploy/"
-          sed "s/^OPENMESHTAK_VERSION=.*/OPENMESHTAK_VERSION=$VERSION/" deploy/.env.example > "release/$bundle/deploy/.env.example"
-          cp deploy/secrets/.gitignore "release/$bundle/deploy/secrets/"
-          tar -czf "release/openmeshtak-deploy-$VERSION.tar.gz" -C release "$bundle"
+          # The sample compose file defaults to this release instead of latest.
+          mkdir -p release
+          sed "s/{OPENMESHTAK_VERSION:-latest}/{OPENMESHTAK_VERSION:-$VERSION}/" docker-compose.yml > release/docker-compose.yml
+          grep -q "OPENMESHTAK_VERSION:-$VERSION}" release/docker-compose.yml
+          cp scripts/preflight.sh release/preflight.sh
           cp openapi/openapi.json "release/openmeshtak-openapi-$VERSION.json"
           cp dist/THIRD_PARTY_NOTICES.txt "release/openmeshtak-core-THIRD_PARTY_NOTICES-$VERSION.txt"
           cp dist/sbom.cdx.json "release/openmeshtak-core-sbom-$VERSION.cdx.json"
@@ -283,12 +281,13 @@ jobs:
           cat > release/notes.md <<EOF
           Image: \`$IMAGE:$VERSION\` (Core with the Web app)
 
-          Unpack \`openmeshtak-deploy-$VERSION.tar.gz\`, change into \`openmeshtak-$VERSION\` and follow
+          Download \`docker-compose.yml\` (it defaults to this release) and \`preflight.sh\`, then follow
           the Docker deployment steps in the README.
           EOF
           gh release create "$GITHUB_REF_NAME" --title "OpenMeshTak $VERSION" --notes-file release/notes.md \
             --verify-tag $prerelease_flag \
-            "release/openmeshtak-deploy-$VERSION.tar.gz" \
+            release/docker-compose.yml \
+            release/preflight.sh \
             "release/openmeshtak-openapi-$VERSION.json" \
             "release/openmeshtak-core-THIRD_PARTY_NOTICES-$VERSION.txt" \
             "release/openmeshtak-core-sbom-$VERSION.cdx.json" \

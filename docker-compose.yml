@@ -1,0 +1,54 @@
+# OpenMeshTak sample deployment: one container runs Core with the Web app, the API and the
+# built-in TAK server. Put these values into a .env file next to this file:
+#
+#   OPENMESHTAK_VERSION=0.1.0            # optional, default latest; pin it to upgrade deliberately
+#   PUBLIC_HOST=openmeshtak.example.org  # public HTTPS host name of the Web app
+#   BETTER_AUTH_SECRET=...               # at least 32 random characters: openssl rand -base64 48
+#
+# Create the root encryption key once and back it up separately; without it, stored secrets such
+# as channel keys and the TAK CA key cannot be decrypted:
+#
+#   openssl rand -base64 32 > root_encryption_key
+#   docker compose up -d
+#
+# Your reverse proxy (CloudPanel, nginx, ...) terminates HTTPS for PUBLIC_HOST and forwards to
+# http://127.0.0.1:8080. The bootstrap token for the first administrator is in `docker compose
+# logs core`.
+#
+# The TAK ports go straight to Core, which terminates mutual TLS itself. The left side of each
+# mapping is the public port and must match the TAK server page in the Web app, the only source
+# for QR codes and profiles. If 8443 is taken (CloudPanel's own administration uses it), publish
+# Data Packages on e.g. "8484:8443" and enter 8484 on the TAK server page. Keep 8446 and 8089:
+# ATAK Quick Connect expects them.
+
+name: openmeshtak
+
+services:
+  core:
+    image: ghcr.io/openmeshtak/openmeshtak:${OPENMESHTAK_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      PUBLIC_ORIGIN: https://${PUBLIC_HOST:?Set PUBLIC_HOST in .env}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Swagger UI at https://<PUBLIC_HOST>/api/docs
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+    secrets:
+      - root_encryption_key
+    volumes:
+      - core-data:/server/data
+    ports:
+      # Web app and API, for the reverse proxy only.
+      - "127.0.0.1:8080:3000"
+      # TAK enrollment, Data Packages (Marti) and CoT streaming.
+      - "8446:8446"
+      - "8443:8443"
+      - "8089:8089"
+
+secrets:
+  # Kept outside the database and the data volume.
+  root_encryption_key:
+    file: ./root_encryption_key
+
+volumes:
+  core-data:
