@@ -30,7 +30,7 @@
   },
   "scripts": {
     "build": "pnpm generate && tsc -p tsconfig.build.json",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm license:check",
+    "check": "pnpm generate && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm license:check",
     "db:deploy": "tsx scripts/prepare-data.ts && tsx scripts/run-prisma.ts migrate deploy",
     "db:generate": "prisma generate --no-hints",
     "db:migrate": "tsx scripts/prepare-data.ts && tsx scripts/run-prisma.ts migrate dev",
