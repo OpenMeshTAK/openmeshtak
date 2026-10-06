@@ -1,8 +1,20 @@
 # OpenMeshTak Core
 
-OpenMeshTak Core is the authoritative API server for the OpenMeshTak ecosystem.
+OpenMeshTak Core is the authoritative API and backend for the OpenMeshTak ecosystem. It owns identity, authorization, events, memberships, mission content, provisioning, artifact generation, storage, integrations and the built-in TAK services.
 
-The repository is in early implementation. The current slice provides the Express/tsoa application shell, SQLite through pinned Prisma 7, centralized secret-safe Pino logging, a health endpoint, generated OpenAPI and local Swagger UI.
+OpenMeshTak is under active development. Client and firmware compatibility is published only after the corresponding real-client test has passed; the presence of a generator or protocol implementation is not by itself a compatibility claim.
+
+## Capabilities
+
+- versioned REST API with generated OpenAPI and optional Swagger UI
+- local accounts, sessions, passkeys, participant claims and scoped API clients
+- event, role, group, membership and permission management
+- versioned event configuration and auditable publication workflows
+- mission layers, CoT/KML conversion and ATAK Data Package generation
+- TAK certificate enrollment, Marti package access and CoT streaming
+- Meshtastic firmware profiles, channels and per-member configuration
+- encrypted secret storage, structured redacted logging and audit events
+- SQLite for the current implementation, with PostgreSQL planned for scaling
 
 ## Requirements
 
@@ -18,21 +30,19 @@ pnpm db:migrate
 pnpm dev
 ```
 
-The API listens on `http://127.0.0.1:3000` by default. Its initial endpoints are:
+The API listens on `http://127.0.0.1:3000` by default. Useful development endpoints are:
 
 - `GET /api/v1/health`
 - `GET /api/openapi.json`
 - `GET /api/docs`
 
-Run all current verification with:
+Run the complete verification suite with:
 
 ```sh
 pnpm check
 ```
 
-The production clean-install path has a separate smoke test. It builds Core, applies every
-migration to an empty temporary data directory, starts the production server and checks health,
-initial setup and production-only route behavior:
+The production clean-install smoke test builds Core, applies every migration to an empty temporary data directory, starts the production server, and checks health, initial setup and production-only route behavior:
 
 ```sh
 pnpm smoke:clean-install
@@ -40,7 +50,7 @@ pnpm smoke:clean-install
 
 ## Docker deployment
 
-OpenMeshTak ships as one image, `ghcr.io/openmeshtak/openmeshtak`: Core serves the Web app, the API and the built-in TAK server. `docker-compose.yml` is a sample deployment behind an existing reverse proxy such as CloudPanel or nginx; its comments list the `.env` values. Each GitHub release attaches it with that release as the default version.
+OpenMeshTak ships as one image, `ghcr.io/openmeshtak/openmeshtak`: Core serves the Web app, the API and the built-in TAK server. `docker-compose.yml` is a sample deployment behind an existing reverse proxy such as CloudPanel or nginx; its comments list the required `.env` values.
 
 1. `openssl rand -base64 32 > root_encryption_key` once, and back the file up separately.
 2. Create `.env` with `PUBLIC_HOST` and `BETTER_AUTH_SECRET`. `OPENMESHTAK_VERSION` defaults to `latest`; pin it to upgrade deliberately, because Core applies database migrations on start.
@@ -62,10 +72,6 @@ Core listens on `TAK_ENROLLMENT_LISTEN_PORT`, `TAK_MARTI_LISTEN_PORT` and `TAK_S
 Swagger UI is served at `https://<PUBLIC_HOST>/api/docs` when `SWAGGER_ENABLED=true` (off by default in production, on in development). The OpenAPI document is always available at `/api/openapi.json`.
 
 Runtime data (SQLite database and stored files) lives in the `core-data` volume at `/server/data`.
-
-## Releases
-
-One image contains Core and the Web app, and both repositories share one version. To release, set the same `version` in `package.json` of both repositories, commit, push the tag `v<version>` (for example `v0.2.0`) to `openmeshtak-web` first and then to this repository. The release workflow here verifies both repositories at that tag, checks that both `package.json` versions match it, publishes the multi-arch image (`linux/amd64`, `linux/arm64`) to `ghcr.io/openmeshtak/openmeshtak` and creates the GitHub release with the deployment bundle, the OpenAPI document, third-party notices and SBOMs. While `openmeshtak-web` is private, the repository secret `WEB_REPOSITORY_TOKEN` must hold a fine-grained token with read access to its contents; once it is public, no secret is needed. Image tags are the exact version and `MAJOR.MINOR`; stable releases also move `latest`, pre-releases such as `v0.2.0-rc.1` do not.
 
 ## Known advisories
 
