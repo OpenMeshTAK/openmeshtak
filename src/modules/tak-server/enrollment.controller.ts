@@ -1,5 +1,5 @@
 import { Readable } from "node:stream";
-import { Controller, Get, Post, Produces, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
+import { Controller, Get, Post, Produces, Request, Response, Route, Security, SuccessResponse, Tags } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { TakEnrollmentDto } from "./enrollment.dto.js";

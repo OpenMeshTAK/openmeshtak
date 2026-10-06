@@ -11,7 +11,7 @@ import {
   Security,
   SuccessResponse,
   Tags,
-} from "tsoa";
+} from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";

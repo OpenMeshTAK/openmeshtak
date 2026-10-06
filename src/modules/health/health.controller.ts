@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { Controller, Get, NoSecurity, Route, SuccessResponse, Tags } from "tsoa";
+import { Controller, Get, NoSecurity, Route, SuccessResponse, Tags } from "@tsoa/runtime";
 
 export interface HealthResponse {
   status: "ok";

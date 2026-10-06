@@ -1,5 +1,5 @@
 import { Readable } from "node:stream";
-import { Body, Controller, Path, Post, Produces, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
+import { Body, Controller, Path, Post, Produces, Request, Response, Route, Security, SuccessResponse, Tags } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";

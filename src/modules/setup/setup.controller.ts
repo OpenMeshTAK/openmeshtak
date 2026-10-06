@@ -10,7 +10,7 @@ import {
   Route,
   SuccessResponse,
   Tags,
-} from "tsoa";
+} from "@tsoa/runtime";
 import { createInitialAdministrator, isConfigured } from "./bootstrap.service.js";
 import { setupRateLimit } from "./setup-rate-limit.js";
 

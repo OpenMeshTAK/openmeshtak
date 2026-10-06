@@ -14,7 +14,7 @@ import {
   Security,
   SuccessResponse,
   Tags,
-} from "tsoa";
+} from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";

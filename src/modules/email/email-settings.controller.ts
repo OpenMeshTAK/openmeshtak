@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
+import { Body, Controller, Get, Post, Put, Request, Response, Route, Security, SuccessResponse, Tags } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { EmailSettingsDto, SendTestEmailRequest, UpdateEmailSettingsRequest } from "./email-settings.dto.js";

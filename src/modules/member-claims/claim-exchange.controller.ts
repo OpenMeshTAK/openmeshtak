@@ -9,7 +9,7 @@ import {
   Route,
   SuccessResponse,
   Tags,
-} from "tsoa";
+} from "@tsoa/runtime";
 import type { Request as ExpressRequest, Response as ExpressResponse } from "express";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { getTraceId } from "../../shared/logging/request-logging.js";

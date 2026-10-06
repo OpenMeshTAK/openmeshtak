@@ -1,4 +1,4 @@
-import { Controller, Middlewares, Path, Post, Query, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
+import { Controller, Middlewares, Path, Post, Query, Request, Response, Route, Security, SuccessResponse, Tags } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";

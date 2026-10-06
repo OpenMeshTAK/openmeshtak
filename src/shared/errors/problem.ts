@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { ValidateError } from "tsoa";
+import { ValidateError } from "@tsoa/runtime";
 import { ProblemError, type ProblemFieldError } from "./problem-error.js";
 import { logger } from "../logging/logger.js";
 import { getTraceId } from "../logging/request-logging.js";

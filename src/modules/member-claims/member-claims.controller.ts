@@ -10,7 +10,7 @@ import {
   Security,
   SuccessResponse,
   Tags,
-} from "tsoa";
+} from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { preventCaching, requestContext } from "../../shared/http/request-context.js";
 import { issuanceRateLimit } from "../../shared/http/issuance-rate-limit.js";

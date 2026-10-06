@@ -1,5 +1,5 @@
 import { Readable } from "node:stream";
-import { Body, Controller, Get, NoSecurity, Path, Post, Produces, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
+import { Body, Controller, Get, NoSecurity, Path, Post, Produces, Request, Response, Route, Security, SuccessResponse, Tags } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import { getTraceId } from "../../shared/logging/request-logging.js";
