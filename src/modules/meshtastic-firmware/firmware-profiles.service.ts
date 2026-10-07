@@ -11,7 +11,7 @@ import { findFirmwareProfile, firmwareProfiles } from "./firmware-profiles.js";
 import { formatFirmwareVersion } from "./firmware-version.js";
 
 /** Profiles hold no secrets, but they are configuration detail for people who edit events. */
-async function requireEventEditor(principal: Principal): Promise<void> {
+export async function requireEventEditor(principal: Principal): Promise<void> {
   const access = await eventAccessFor(principal, "events.manage");
   if (!access.all && access.eventIds.length === 0) {
     throw forbidden();

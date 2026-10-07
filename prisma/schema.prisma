@@ -852,6 +852,15 @@ model TakTrafficItem {
   @@index([eventId, receivedAt])
 }
 
+/// Whether Core looks up published Meshtastic firmware releases from the official flasher; a single
+/// row with id "meshtastic". Defaults to on; offline installations switch it off.
+model FirmwareReleaseSettings {
+  id           String   @id
+  checkEnabled Boolean  @default(true)
+  version      Int      @default(1)
+  updatedAt    DateTime @updatedAt
+}
+
 /// The online base map of the Web editor; a single row with id "map". Defaults to OpenStreetMap.
 model MapSettings {
   id              String   @id
