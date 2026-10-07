@@ -77,6 +77,10 @@ Runtime data (SQLite database and stored files) lives in the `core-data` volume 
 
 - `node-forge` GHSA-86w9-cpqp-85rv (RSA PKCS#1 v1.5 signature verification): Core uses node-forge only to write the PKCS#12 truststore of TAK connection packages and never verifies signatures with it, so the vulnerable code path is not reachable. The advisory is ignored in `pnpm audit` with this justification and reviewed again when a patched version exists.
 
+## AI assistance
+
+LLMs are used in the development of this project. See [AI_USAGE.md](AI_USAGE.md) for how they are used and reviewed.
+
 ## License
 
 OpenMeshTak Core is licensed under `AGPL-3.0-only`.
