@@ -18,6 +18,8 @@ interface EnrollmentBody {
   martiPort: number;
   expiresAt: string | null;
   atakEnrollmentUrl: string | null;
+  itakQrString: string | null;
+  itakPackageCertificateId: string | null;
 }
 
 /** Pretends the listeners present a certificate chaining directly to a bundled public root. */
@@ -114,7 +116,7 @@ void describe("TAK certificate enrollment", () => {
   void it("offers no QR enrollment while the server uses a certificate from its own CA", async () => {
     await enableServer();
     const created = await enroll(member);
-    assert.deepEqual([created.username, created.atakEnrollmentUrl, created.expiresAt], ["peter", null, null]);
+    assert.deepEqual([created.username, created.atakEnrollmentUrl, created.itakQrString, created.expiresAt], ["peter", null, null, null]);
     assert.equal(await database.takEnrollmentToken.count(), 0);
   });
 
@@ -125,6 +127,7 @@ void describe("TAK certificate enrollment", () => {
     const created = await enroll(member);
     assert.equal(created.username, "peter");
     assert.match(created.atakEnrollmentUrl ?? "", /^tak:\/\/com\.atakmap\.app\/enroll\?host=tak\.example\.org%3A8089&username=peter&token=/);
+    assert.equal(created.itakQrString, "OpenMeshTak_tak.example.org,tak.example.org,8089,SSL");
     assert.doesNotMatch(created.atakEnrollmentUrl ?? "", /secure-test-password/, "the QR code never carries the password");
     await request(app).post("/api/v1/me/tak-enrollments").set("Cookie", outsider.cookie).expect(403);
 
@@ -184,6 +187,11 @@ void describe("TAK certificate enrollment", () => {
     assert.equal(row.clientUid, "ANDROID-1234");
     // The same login works again, e.g. when the app re-enrolls after its certificate expired.
     await signClient(credentials, await csrFor("peter")).expect(200);
+    // One valid certificate per device: re-enrolling the same device UID replaces the earlier one.
+    const rows = await database.takClientCertificate.findMany({ where: { userId: member.id }, orderBy: { createdAt: "asc" } });
+    assert.equal(rows.length, 2);
+    assert.ok(rows[0]?.revokedAt, "the replaced certificate is revoked");
+    assert.equal(rows[1]?.revokedAt, null);
   });
 
   void it("enrolls repeatedly with the QR token and rejects wrong logins", async () => {
@@ -269,6 +277,45 @@ void describe("TAK certificate enrollment", () => {
     const truststoreCertificate = forge.pki.certificateToPem(bags[0]?.cert as forge.pki.Certificate);
     assert.equal(new X509Certificate(truststoreCertificate).fingerprint256, new X509Certificate(authority.certificatePem).fingerprint256);
     assert.equal(p12.getBags({ bagType: keyBag })[keyBag]?.length ?? 0, 0, "no key");
+  });
+
+  void it("offers a separate iTAK package with a fresh user-bound client identity", async () => {
+    await enableServer({ martiPort: 8484 });
+    const response = await request(app)
+      .get("/api/v1/me/itak-connection-package")
+      .set("Cookie", member.cookie)
+      .buffer(true)
+      .parse((res, callback) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => callback(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    assert.equal(response.headers["cache-control"], "no-store");
+    const files = unzipSync(new Uint8Array(response.body as Buffer));
+    assert.ok(files["manifest.xml"]);
+    assert.ok(files["client.p12"]);
+    assert.ok(files["truststore.p12"]);
+    const preferences = strFromU8(files["openmeshtak.pref"] ?? new Uint8Array());
+    assert.match(preferences, /tak\.example\.org:8089:ssl/);
+    assert.match(preferences, /key="apiSecureServerPort"[^>]*>8484</);
+
+    const certificate = await database.takClientCertificate.findFirstOrThrow({ where: { userId: member.id } });
+    assert.match(certificate.clientUid ?? "", /^ITAK-PACKAGE-/);
+    assert.equal(await database.auditEvent.count({ where: { action: "tak-server.client-certificate-issued" } }), 1);
+    assert.equal(await database.auditEvent.count({ where: { action: "tak-server.itak-connection-package-downloaded" } }), 1);
+
+    // One package per device: a second download waits until the first certificate is revoked.
+    assert.equal((await enroll(member)).itakPackageCertificateId, certificate.id);
+    const refused = await request(app).get("/api/v1/me/itak-connection-package").set("Cookie", member.cookie).expect(409);
+    assert.equal((refused.body as { code: string }).code, "TAK_PACKAGE_CERTIFICATE_EXISTS");
+    await request(app)
+      .post(`/api/v1/me/tak-certificates/${certificate.id}/revoke`)
+      .set("Cookie", member.cookie)
+      .send({})
+      .expect(200);
+    assert.equal((await enroll(member)).itakPackageCertificateId, null);
+    await request(app).get("/api/v1/me/itak-connection-package").set("Cookie", member.cookie).expect(200);
   });
 
   void it("serves the enrollment profile with the public Marti port for a valid TAK login", async () => {

@@ -64,6 +64,16 @@ void describe("download grants", () => {
     assert.equal(created.url.includes(stored.tokenHash), false, "only the hash is stored");
   });
 
+  void it("downloads the private iTAK connection package through a short-lived grant", async () => {
+    const created = (await grant(member, { kind: "itak-connection-package" }).expect(201)).body as { url: string };
+    const response = await request(app).get(pathOf(created.url)).expect(200);
+    assert.equal(response.headers["content-type"], "application/zip");
+    assert.equal(response.headers["cache-control"], "no-store");
+    assert.equal(await database.takClientCertificate.count({ where: { userId: member.id } }), 1);
+    // The package's certificate is still valid, so no second package link is issued.
+    await grant(member, { kind: "itak-connection-package" }).expect(409);
+  });
+
   void it("refuses expired links, foreign artifacts and users who lost access", async () => {
     const expiring = (await grant(member, { kind: "tak-connection-package" }).expect(201)).body as { url: string };
     await database.downloadGrant.updateMany({ data: { expiresAt: new Date(Date.now() - 1000) } });

@@ -1,3 +1,5 @@
+import type { Uuid } from "../../shared/http/uuid.js";
+
 /**
  * Everything a TAK app needs to connect. Manual setup uses `username` with the account password;
  * the ATAK link and QR code carry a QR token instead, which is shown only in this response.
@@ -23,4 +25,15 @@ export interface TakEnrollmentDto {
    * TAK server uses a certificate from its own CA, because ATAK's QR enrollment then fails.
    */
   atakEnrollmentUrl: string | null;
+  /**
+   * QR payload understood by iTAK's server scanner. It configures the SSL streaming endpoint and
+   * iTAK then asks for the user's login. `null` with a private server certificate because the QR
+   * cannot carry CA trust material.
+   */
+  itakQrString: string | null;
+  /**
+   * The still valid certificate from an earlier iTAK package download. A new package is refused
+   * until it is revoked, so each downloaded package stays one device.
+   */
+  itakPackageCertificateId: Uuid | null;
 }

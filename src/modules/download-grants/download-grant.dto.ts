@@ -1,6 +1,6 @@
 import type { Uuid } from "../../shared/http/uuid.js";
 
-export type DownloadGrantKind = "device-profile" | "member-data-package" | "tak-connection-package";
+export type DownloadGrantKind = "device-profile" | "member-data-package" | "tak-connection-package" | "itak-connection-package";
 
 export interface CreateDownloadGrantRequest {
   kind: DownloadGrantKind;

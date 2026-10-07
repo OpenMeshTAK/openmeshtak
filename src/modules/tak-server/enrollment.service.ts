@@ -6,6 +6,8 @@ import { forbidden } from "../../shared/auth/permission-check.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
 import { authenticateTakClient } from "./client-authentication.js";
 import { CertificateRequestError, issueClientCertificate, validateCertificateRequest } from "./client-certificates.js";
+import { revokeReplacedCertificates, validPackageCertificate } from "./client-certificates.service.js";
+import { ITAK_PACKAGE_UID_PREFIX } from "./itak-connection-package.service.js";
 import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
 import type { TakEnrollmentDto } from "./enrollment.dto.js";
@@ -92,9 +94,10 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
     enrollmentPort: settings.enrollmentPort,
     martiPort: settings.martiPort,
     streamingPort: settings.streamingPort,
+    itakPackageCertificateId: (await validPackageCertificate(userId, ITAK_PACKAGE_UID_PREFIX, now))?.id ?? null,
   };
   if (!(await hasPublicServerCertificate(settings.hostName, now))) {
-    return { ...login, atakEnrollmentUrl: null, expiresAt: null };
+    return { ...login, atakEnrollmentUrl: null, itakQrString: null, expiresAt: null };
   }
 
   const token = randomBytes(18).toString("base64url");
@@ -123,6 +126,8 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
     ...login,
     expiresAt: expiresAt?.toISOString() ?? null,
     atakEnrollmentUrl: `tak://com.atakmap.app/enroll?${query.toString()}`,
+    // iTAK uses this comma-separated server QR format; it prompts for the login separately.
+    itakQrString: `OpenMeshTak_${settings.hostName},${settings.hostName},${String(settings.streamingPort)},SSL`,
   };
 }
 
@@ -211,13 +216,14 @@ export async function signEnrollmentRequest(
 
   const settings = await loadTakServerSettings();
   const { certificate, row } = await issueClientCertificate(login.userId, request, settings.clientCertificateDays, clientUid);
+  const actor = { principal: { type: "user", id: login.userId } as const, traceId: randomUUID() };
   await recordAudit({
-    actor: { type: "user", id: login.userId },
+    actor: actor.principal,
     action: "tak-server.client-certificate-issued",
     targetType: "tak-client-certificate",
     targetId: row.id,
     result: "success",
-    traceId: randomUUID(),
+    traceId: actor.traceId,
     metadata: {
       serialNumber: row.serialNumber,
       fingerprintSha256: row.fingerprintSha256,
@@ -226,6 +232,7 @@ export async function signEnrollmentRequest(
       credential: login.tokenId === null ? "password" : "qr-token",
     },
   });
+  await revokeReplacedCertificates(actor, row, now);
 
   const authorityPems = (await trustedCertificateAuthorities(now)).map(({ certificatePem }) => certificatePem);
   if (settings.hostName !== null) {

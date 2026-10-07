@@ -9,6 +9,7 @@ import { requireMemberArtifactAccess } from "../member-artifacts/member-artifact
 import { downloadMemberDataPackage, listMemberDataPackages } from "../member-data-packages/member-data-packages.service.js";
 import { generateDeviceProfile } from "../meshtastic-artifacts/device-profile.service.js";
 import { createConnectionPackage } from "../tak-server/connection-package.service.js";
+import { createItakConnectionPackage, requireNoValidItakPackage } from "../tak-server/itak-connection-package.service.js";
 import { hasAnyTakAccess, takAccessFor } from "../tak-server/tak-access.js";
 import type { CreateDownloadGrantRequest, DownloadGrantDto } from "./download-grant.dto.js";
 
@@ -50,8 +51,12 @@ async function checkAccess(principal: UserPrincipal, input: CreateDownloadGrantR
       return;
     }
     case "tak-connection-package":
+    case "itak-connection-package":
       if (!hasAnyTakAccess(await takAccessFor(principal.id))) {
         throw notFoundProblem();
+      }
+      if (input.kind === "itak-connection-package") {
+        await requireNoValidItakPackage(principal.id);
       }
   }
 }
@@ -140,6 +145,10 @@ async function produce(actor: ActorContext, grant: DownloadGrant): Promise<Grant
     }
     case "tak-connection-package": {
       const file = await createConnectionPackage(actor);
+      return { ...file, contentType: "application/zip" };
+    }
+    case "itak-connection-package": {
+      const file = await createItakConnectionPackage(actor);
       return { ...file, contentType: "application/zip" };
     }
     default:

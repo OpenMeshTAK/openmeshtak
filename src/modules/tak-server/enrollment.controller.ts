@@ -5,6 +5,7 @@ import { requestContext } from "../../shared/http/request-context.js";
 import type { TakEnrollmentDto } from "./enrollment.dto.js";
 import { createConnectionPackage } from "./connection-package.service.js";
 import { createTakEnrollment } from "./enrollment.service.js";
+import { createItakConnectionPackage } from "./itak-connection-package.service.js";
 
 @Route("me/tak-enrollments")
 @Tags("TAK server")
@@ -47,6 +48,29 @@ export class TakConnectionPackageController extends Controller {
     const { fileName, bytes } = await createConnectionPackage(requestContext(request));
     this.setHeader("Content-Type", "application/zip");
     this.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    return Readable.from([Buffer.from(bytes)]);
+  }
+}
+
+@Route("me/itak-connection-package")
+@Tags("TAK server")
+@Security("sessionCookie")
+@Response<ProblemDetails>(401, "Authentication required")
+@Response<ProblemDetails>(403, "No TAK access")
+export class ItakConnectionPackageController extends Controller {
+  /**
+   * An iTAK connection package with the configured server ports, trust material and a newly
+   * issued user-bound client identity. The private client key exists only in this download.
+   */
+  @Get()
+  @Produces("application/zip")
+  @SuccessResponse(200, "iTAK Connection Data Package")
+  @Response<ProblemDetails>(409, "TAK server not enabled, or an earlier iTAK package certificate is still valid")
+  public async getItakConnectionPackage(@Request() request: unknown): Promise<Readable> {
+    const { fileName, bytes } = await createItakConnectionPackage(requestContext(request));
+    this.setHeader("Content-Type", "application/zip");
+    this.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    this.setHeader("Cache-Control", "no-store");
     return Readable.from([Buffer.from(bytes)]);
   }
 }

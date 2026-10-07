@@ -20,6 +20,8 @@ import { TakEnrollmentsController } from './../modules/tak-server/enrollment.con
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakConnectionPackageController } from './../modules/tak-server/enrollment.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { ItakConnectionPackageController } from './../modules/tak-server/enrollment.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakClientCertificatesController } from './../modules/tak-server/client-certificates.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MyTakCertificatesController } from './../modules/tak-server/client-certificates.controller.js';
@@ -464,6 +466,8 @@ const models: TsoaRoute.Models = {
             "martiPort": {"dataType":"double","required":true},
             "streamingPort": {"dataType":"double","required":true},
             "atakEnrollmentUrl": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "itakQrString": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "itakPackageCertificateId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -1854,7 +1858,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DownloadGrantKind": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["device-profile"]},{"dataType":"enum","enums":["member-data-package"]},{"dataType":"enum","enums":["tak-connection-package"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["device-profile"]},{"dataType":"enum","enums":["member-data-package"]},{"dataType":"enum","enums":["tak-connection-package"]},{"dataType":"enum","enums":["itak-connection-package"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateDownloadGrantRequest": {
@@ -3484,6 +3488,37 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getTakConnectionPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsItakConnectionPackageController_getItakConnectionPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/me/itak-connection-package',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ItakConnectionPackageController)),
+            ...(fetchMiddlewares<RequestHandler>(ItakConnectionPackageController.prototype.getItakConnectionPackage)),
+
+            async function ItakConnectionPackageController_getItakConnectionPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsItakConnectionPackageController_getItakConnectionPackage, request, response });
+
+                const controller = new ItakConnectionPackageController();
+
+              await templateService.apiHandler({
+                methodName: 'getItakConnectionPackage',
                 controller,
                 response,
                 next,

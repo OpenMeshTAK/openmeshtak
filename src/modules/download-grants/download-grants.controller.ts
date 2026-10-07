@@ -18,6 +18,7 @@ export class DownloadGrantsController extends Controller {
    */
   @Post()
   @SuccessResponse(201, "Download link created")
+  @Response<ProblemDetails>(409, "An iTAK package certificate is still valid")
   public async createDownloadGrant(@Request() request: unknown, @Body() body: CreateDownloadGrantRequest): Promise<DownloadGrantDto> {
     this.setStatus(201);
     return createDownloadGrant(requestContext(request), body);

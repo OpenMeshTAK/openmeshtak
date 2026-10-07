@@ -1,5 +1,5 @@
 import type { TakClientCertificate } from "../../generated/prisma/client.js";
-import { recordAudit } from "../../shared/audit/audit.js";
+import { type AuditActor, recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
@@ -61,7 +61,14 @@ export async function listMyTakCertificates(principal: Principal): Promise<TakCl
   return toDtos(rows);
 }
 
-async function revoke(actor: ActorContext, certificate: TakClientCertificate, reason: string | null): Promise<void> {
+/** Who revokes: a Web session, or a TAK app that authenticated only for enrollment. */
+interface RevokingActor {
+  principal: AuditActor;
+  traceId: string;
+}
+
+/** Revokes a certificate with an audit entry and ends its TAK connections immediately. */
+export async function revokeCertificate(actor: RevokingActor, certificate: TakClientCertificate, reason: string | null): Promise<void> {
   if (certificate.revokedAt === null) {
     await database.$transaction(async (transaction) => {
       await transaction.takClientCertificate.update({
@@ -102,7 +109,7 @@ export async function revokeTakClientCertificate(
   if (certificate === null) {
     throw notFoundProblem();
   }
-  await revoke(actor, certificate, input.reason ?? null);
+  await revokeCertificate(actor, certificate, input.reason ?? null);
   return revokedDto(certificateId);
 }
 
@@ -116,6 +123,35 @@ export async function revokeMyTakCertificate(
   if (certificate === null || actor.principal.type !== "user" || certificate.userId !== actor.principal.id) {
     throw notFoundProblem();
   }
-  await revoke(actor, certificate, input.reason ?? null);
+  await revokeCertificate(actor, certificate, input.reason ?? null);
   return revokedDto(certificateId);
+}
+
+/** Unrevoked, unexpired certificates of a user whose device UID matches. */
+function validFor(userId: string, clientUid: { equals: string } | { startsWith: string }, now: Date) {
+  return { userId, clientUid, revokedAt: null, notAfter: { gt: now } };
+}
+
+/**
+ * One valid certificate per user and device: when an app enrolls again with the same device UID,
+ * for example after its certificate expired or the app was reinstalled, the earlier ones end.
+ */
+export async function revokeReplacedCertificates(actor: RevokingActor, replacement: TakClientCertificate, now = new Date()): Promise<void> {
+  if (replacement.clientUid === null) {
+    return;
+  }
+  const replaced = await database.takClientCertificate.findMany({
+    where: { ...validFor(replacement.userId, { equals: replacement.clientUid }, now), id: { not: replacement.id } },
+  });
+  for (const certificate of replaced) {
+    await revokeCertificate(actor, certificate, "Replaced by a new enrollment of the same device");
+  }
+}
+
+/**
+ * The valid certificate a user already received in a downloaded package of this kind. Packages carry
+ * their private key, so Core cannot tell devices apart; a new package needs the old one revoked.
+ */
+export async function validPackageCertificate(userId: string, clientUidPrefix: string, now = new Date()): Promise<TakClientCertificate | null> {
+  return database.takClientCertificate.findFirst({ where: validFor(userId, { startsWith: clientUidPrefix }, now) });
 }
