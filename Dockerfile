@@ -35,6 +35,10 @@ FROM node:24-bookworm-slim
 LABEL org.opencontainers.image.title="OpenMeshTak" \
       org.opencontainers.image.licenses="AGPL-3.0-only" \
       org.opencontainers.image.source="https://github.com/OpenMeshTAK/openmeshtak"
+# Prisma picks its schema engine by the OpenSSL version it detects. The build stage has libssl3
+# (through python3), so the engine installed there is the openssl-3.0.x one; without OpenSSL here
+# Prisma falls back to openssl-1.1.x and tries to download that engine on every start.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production \
     APP_HOST=0.0.0.0 \
     APP_PORT=3000 \
