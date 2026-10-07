@@ -38,6 +38,16 @@ export interface UpdatePackageTakDeliveryRequest {
   takDelivery: PackageTakDelivery;
 }
 
+export interface DataPackageContentSummary {
+  points: number;
+  lines: number;
+  polygons: number;
+  circles: number;
+  /** Offline map caches, including nested map packages. */
+  offlineMaps: number;
+  rubberSheets: number;
+}
+
 export interface DataPackageDto {
   id: Uuid;
   eventId: Uuid;
@@ -45,6 +55,15 @@ export interface DataPackageDto {
   description: string | null;
   /** Number of the newest published revision, or `null` while nothing is published. */
   latestRevision: number | null;
+  /**
+   * Approximate download size in bytes of the newest revision's ATAK Data Package, or `null`
+   * while nothing is published. Counts attached files plus uncompressed CoT.
+   */
+  latestRevisionSize: number | null;
+  /** `true` when publishing would create a new revision: nothing is published yet or the draft differs. */
+  hasUnpublishedChanges: boolean;
+  /** What the draft holds, by kind. */
+  draftContents: DataPackageContentSummary;
   /** Published package revisions whose content was copied into this package's initial draft. */
   sources: DataPackageSourceDto[];
   audience: PackageAudience;

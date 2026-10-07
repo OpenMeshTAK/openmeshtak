@@ -17,6 +17,7 @@ import {
 } from "../../shared/pagination/cursor.js";
 import { geometryProblems, kindOf } from "./geometry.js";
 import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
+import { clearDraftHash } from "./package-state.js";
 import { readTak, takColumn } from "./tak-marker.js";
 import type {
   CreatePackageObjectRequest,
@@ -155,6 +156,7 @@ export async function createObject(
       tak: takColumn(input.geometry, input.tak),
     },
   });
+  await clearDraftHash(database, packageId);
   return toObjectDto(row);
 }
 
@@ -190,6 +192,7 @@ export async function updateObject(
   if (updated.count !== 1) {
     throw versionConflictProblem((await findObject(packageId, objectId)).version);
   }
+  await clearDraftHash(database, packageId);
   return toObjectDto(await findObject(packageId, objectId));
 }
 
@@ -204,4 +207,5 @@ export async function deleteObject(
   const current = await findObject(packageId, objectId);
   await requireWritableLayer(packageId, current.layerId);
   await database.packageObject.delete({ where: { id: current.id } });
+  await clearDraftHash(database, packageId);
 }

@@ -17,6 +17,7 @@ import type {
   UpdatePackageLayerRequest,
 } from "./data-package.dto.js";
 import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
+import { clearDraftHash } from "./package-state.js";
 import { referencedBlobIds, removeUnreferencedBlobs } from "./package-content-cleanup.js";
 
 /** Keeps one data package understandable in the editor and bounded for publishing. */
@@ -91,6 +92,7 @@ export async function createLayer(
     const row = await transaction.packageLayer.create({
       data: { id: randomUUID(), packageId, name: input.name, sortOrder: (existing._max.sortOrder ?? -1) + 1 },
     });
+    await clearDraftHash(transaction, packageId);
     return toLayerDto(row);
   });
 }
@@ -119,6 +121,7 @@ export async function updateLayer(
   if (updated.count !== 1) {
     throw versionConflictProblem((await findLayer(packageId, layerId)).version);
   }
+  await clearDraftHash(database, packageId);
   return toLayerDto(await findLayer(packageId, layerId));
 }
 
@@ -134,5 +137,6 @@ export async function deleteLayer(
   const layer = await findLayer(packageId, layerId);
   const blobIds = await referencedBlobIds(packageId, layer.id);
   await database.packageLayer.delete({ where: { id: layer.id } });
+  await clearDraftHash(database, packageId);
   await removeUnreferencedBlobs(eventId, blobIds);
 }

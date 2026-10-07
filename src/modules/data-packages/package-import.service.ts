@@ -11,6 +11,7 @@ import type { ImportConversion } from "./import-candidate.js";
 import type { GeoJsonDocument, GeoJsonFeatureCollection, ImportReport } from "./package-import.dto.js";
 import { findLayer } from "./package-layers.service.js";
 import { DEFAULT_STYLE, MAX_OBJECTS_PER_PACKAGE } from "./package-objects.service.js";
+import { clearDraftHash } from "./package-state.js";
 import { takColumn } from "./tak-marker.js";
 import { buildPackageSnapshot, snapshotOfLayer, type PackageSnapshot } from "./package-snapshot.js";
 
@@ -114,6 +115,7 @@ export async function saveImport(
         })),
       });
     }
+    await clearDraftHash(transaction, packageId);
     await recordAudit(
       {
         actor: actor.principal,

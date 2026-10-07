@@ -74,6 +74,62 @@ void describe("data package revisions", () => {
     assert.equal((dataPackage.body as { latestRevision: number }).latestRevision, 2);
   });
 
+  void it("reports unpublished draft changes and the published size", async () => {
+    interface PackageState {
+      hasUnpublishedChanges: boolean;
+      latestRevisionSize: number | null;
+      draftContents: { points: number; polygons: number };
+      version: number;
+    }
+    const state = async (): Promise<PackageState> =>
+      (await request(app).get(packageUrl).set("Cookie", editor.cookie).expect(200)).body as PackageState;
+
+    const draft = await state();
+    assert.equal(draft.hasUnpublishedChanges, true);
+    assert.equal(draft.latestRevisionSize, null);
+
+    const point = await addPoint("Rally point");
+    await publish();
+    const published = await state();
+    assert.equal(published.hasUnpublishedChanges, false);
+    assert.ok((published.latestRevisionSize ?? 0) > 0);
+    assert.equal(published.draftContents.points, 1);
+    assert.equal(published.draftContents.polygons, 0);
+
+    const revision = await database.packageRevision.findFirstOrThrow({ select: { exportSize: true } });
+    assert.equal(revision.exportSize, published.latestRevisionSize);
+
+    // Locking is editor-only state outside the snapshot: the cache is cleared but nothing changed.
+    const layers = await request(app).get(`${packageUrl}/layers`).set("Cookie", editor.cookie).expect(200);
+    const [layer] = (layers.body as { items: Array<{ name: string; sortOrder: number; visible: boolean; version: number }> })
+      .items;
+    assert.ok(layer);
+    await request(app)
+      .put(`${packageUrl}/layers/${layerId}`)
+      .set("Cookie", editor.cookie)
+      .send({ name: layer.name, sortOrder: layer.sortOrder, visible: layer.visible, locked: true, version: layer.version })
+      .expect(200);
+    assert.equal((await state()).hasUnpublishedChanges, false);
+
+    // A deletion leaves no timestamp behind, so it must still count as a change.
+    await request(app)
+      .put(`${packageUrl}/layers/${layerId}`)
+      .set("Cookie", editor.cookie)
+      .send({ name: layer.name, sortOrder: layer.sortOrder, visible: layer.visible, locked: false, version: layer.version + 1 })
+      .expect(200);
+    await request(app).delete(`${packageUrl}/objects/${point.id}`).set("Cookie", editor.cookie).expect(204);
+    assert.equal((await state()).hasUnpublishedChanges, true);
+
+    await publish();
+    assert.equal((await state()).hasUnpublishedChanges, false);
+    const renamed = await request(app)
+      .put(packageUrl)
+      .set("Cookie", editor.cookie)
+      .send({ name: "Phoenix 2", description: null, version: (await state()).version })
+      .expect(200);
+    assert.equal((renamed.body as PackageState).hasUnpublishedChanges, true);
+  });
+
   void it("keeps published revisions unchanged when the draft changes later", async () => {
     const point = await addPoint("Rally point");
     await publish();

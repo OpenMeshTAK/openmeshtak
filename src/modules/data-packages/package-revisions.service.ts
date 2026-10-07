@@ -18,6 +18,7 @@ import type {
   PackageRevisionSummaryDto,
   PublishDataPackageResponse,
 } from "./package-revision.dto.js";
+import { estimateAtakExportSize } from "./package-export-size.js";
 import { buildPackageSnapshot, hashPackageSnapshot, type PackageSnapshot } from "./package-snapshot.js";
 
 function toSummary(row: PackageRevision): PackageRevisionSummaryDto {
@@ -54,10 +55,14 @@ export async function publishDataPackage(
       where: { packageId },
       orderBy: { number: "desc" },
     });
+    // Refreshes the list's cached draft hash without counting as an edit.
+    const { updatedAt } = await transaction.dataPackage.findUniqueOrThrow({ where: { id: packageId }, select: { updatedAt: true } });
+    await transaction.dataPackage.update({ where: { id: packageId }, data: { draftHash: snapshotHash, updatedAt } });
     if (latest?.snapshotHash === snapshotHash) {
       return { created: false, revision: toDto(latest) };
     }
 
+    const createdAt = new Date();
     const revision = await transaction.packageRevision.create({
       data: {
         id: randomUUID(),
@@ -65,6 +70,8 @@ export async function publishDataPackage(
         number: (latest?.number ?? 0) + 1,
         snapshot: snapshot as unknown as Prisma.InputJsonObject,
         snapshotHash,
+        exportSize: estimateAtakExportSize(snapshot, createdAt),
+        createdAt,
         createdByType: actor.principal.type,
         createdById: actor.principal.id,
       },

@@ -11,6 +11,7 @@ import { readBlob, storagePath } from "../../shared/storage/blob-storage.js";
 import { rubberSheetImage, type RubberSheet } from "./atak/rubber-sheet.js";
 import { readTile, tileCacheSummary, type Tile } from "./atak/tile-cache.js";
 import { requireDataPackage, requireEditableEvent } from "./data-package-access.js";
+import { clearDraftHash } from "./package-state.js";
 import { removeUnreferencedBlobs } from "./package-content-cleanup.js";
 import type { PackageContentDto, UpdatePackageContentRequest } from "./package-content.dto.js";
 
@@ -154,6 +155,7 @@ export async function updatePackageContent(
     const latest = await database.packageContent.findUnique({ where: { id: contentId } });
     throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
   }
+  await clearDraftHash(database, packageId);
   const contents = await listPackageContents(actor.principal, eventId, packageId);
   return contents.find(({ id }) => id === contentId)!;
 }
@@ -171,6 +173,7 @@ export async function deletePackageContent(
   }
   await database.$transaction(async (transaction) => {
     await transaction.packageContent.delete({ where: { id: contentId } });
+    await clearDraftHash(transaction, packageId);
     await recordAudit(
       {
         actor: actor.principal,

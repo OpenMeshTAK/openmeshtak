@@ -1924,6 +1924,19 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DataPackageContentSummary": {
+        "dataType": "refObject",
+        "properties": {
+            "points": {"dataType":"double","required":true},
+            "lines": {"dataType":"double","required":true},
+            "polygons": {"dataType":"double","required":true},
+            "circles": {"dataType":"double","required":true},
+            "offlineMaps": {"dataType":"double","required":true},
+            "rubberSheets": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DataPackageSourceDto": {
         "dataType": "refObject",
         "properties": {
@@ -1966,6 +1979,9 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "latestRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "latestRevisionSize": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "hasUnpublishedChanges": {"dataType":"boolean","required":true},
+            "draftContents": {"ref":"DataPackageContentSummary","required":true},
             "sources": {"dataType":"array","array":{"dataType":"refObject","ref":"DataPackageSourceDto"},"required":true},
             "audience": {"ref":"PackageAudience","required":true},
             "takDelivery": {"ref":"PackageTakDelivery","required":true},

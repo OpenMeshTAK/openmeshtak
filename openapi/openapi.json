@@ -5094,6 +5094,45 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DataPackageContentSummary": {
+				"properties": {
+					"points": {
+						"type": "number",
+						"format": "double"
+					},
+					"lines": {
+						"type": "number",
+						"format": "double"
+					},
+					"polygons": {
+						"type": "number",
+						"format": "double"
+					},
+					"circles": {
+						"type": "number",
+						"format": "double"
+					},
+					"offlineMaps": {
+						"type": "number",
+						"format": "double",
+						"description": "Offline map caches, including nested map packages."
+					},
+					"rubberSheets": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"points",
+					"lines",
+					"polygons",
+					"circles",
+					"offlineMaps",
+					"rubberSheets"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"DataPackageSourceDto": {
 				"properties": {
 					"id": {
@@ -5212,6 +5251,20 @@
 						"nullable": true,
 						"description": "Number of the newest published revision, or `null` while nothing is published."
 					},
+					"latestRevisionSize": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Approximate download size in bytes of the newest revision's ATAK Data Package, or `null`\nwhile nothing is published. Counts attached files plus uncompressed CoT."
+					},
+					"hasUnpublishedChanges": {
+						"type": "boolean",
+						"description": "`true` when publishing would create a new revision: nothing is published yet or the draft differs."
+					},
+					"draftContents": {
+						"$ref": "#/components/schemas/DataPackageContentSummary",
+						"description": "What the draft holds, by kind."
+					},
 					"sources": {
 						"items": {
 							"$ref": "#/components/schemas/DataPackageSourceDto"
@@ -5250,6 +5303,9 @@
 					"name",
 					"description",
 					"latestRevision",
+					"latestRevisionSize",
+					"hasUnpublishedChanges",
+					"draftContents",
 					"sources",
 					"audience",
 					"takDelivery",

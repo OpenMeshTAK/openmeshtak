@@ -464,6 +464,8 @@ model DataPackage {
   installOnEnrollment Boolean               @default(false)
   /// The built-in TAK server delivers new or changed revisions whenever a member connects.
   installOnConnection Boolean               @default(false)
+  /// Cached SHA-256 of the draft snapshot; cleared on every draft change and recomputed on read.
+  draftHash           String?
   event               Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
   layers              PackageLayer[]
   objects             PackageObject[]
@@ -579,6 +581,8 @@ model PackageRevision {
   number        Int
   snapshot      Json
   snapshotHash  String
+  /// Estimated ATAK download size in bytes, stored at publish; null on revisions published before it.
+  exportSize    Int?
   createdByType String
   createdById   String
   dataPackage   DataPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)

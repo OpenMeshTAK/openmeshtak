@@ -13,9 +13,16 @@ import {
 } from "../../shared/pagination/cursor.js";
 import { referencedBlobIds, removeUnreferencedBlobs } from "./package-content-cleanup.js";
 import { nextPackageSortOrder } from "./package-order.js";
+import { contentSummaries, draftHashOf, exportSizeOf } from "./package-state.js";
 import { audienceFromSelectors } from "../event-audience/event-audience.js";
 import { requireEventPermission } from "../events/event-access.js";
-import type { CreateDataPackageRequest, DataPackageDto, DataPackagePage, UpdateDataPackageRequest } from "./data-package.dto.js";
+import type {
+  CreateDataPackageRequest,
+  DataPackageContentSummary,
+  DataPackageDto,
+  DataPackagePage,
+  UpdateDataPackageRequest,
+} from "./data-package.dto.js";
 import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
 
 const packageSelection = {
@@ -31,19 +38,29 @@ const packageSelection = {
   installOnConnection: true,
   createdAt: true,
   updatedAt: true,
-  revisions: { select: { number: true }, orderBy: { number: "desc" }, take: 1 },
+  draftHash: true,
+  revisions: {
+    select: { id: true, number: true, snapshotHash: true, exportSize: true },
+    orderBy: { number: "desc" },
+    take: 1,
+  },
   sources: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] },
 } satisfies Prisma.DataPackageSelect;
 
 type PackageRow = Prisma.DataPackageGetPayload<{ select: typeof packageSelection }>;
 
-function toDto(row: PackageRow): DataPackageDto {
+async function toDto(row: PackageRow, draftContents: DataPackageContentSummary): Promise<DataPackageDto> {
+  const latest = row.revisions[0];
   return {
     id: row.id,
     eventId: row.eventId,
     name: row.name,
     description: row.description,
-    latestRevision: row.revisions[0]?.number ?? null,
+    latestRevision: latest?.number ?? null,
+    latestRevisionSize: latest === undefined ? null : await exportSizeOf(latest),
+    // The same hash comparison publishing uses, so this is exactly "publishing creates a revision".
+    hasUnpublishedChanges: latest === undefined || (await draftHashOf(row)) !== latest.snapshotHash,
+    draftContents,
     sources: row.sources.map((source) => ({
       id: source.id,
       sourcePackageId: source.sourcePackageId,
@@ -63,10 +80,15 @@ function toDto(row: PackageRow): DataPackageDto {
   };
 }
 
+async function toDtos(rows: PackageRow[]): Promise<DataPackageDto[]> {
+  const summaries = await contentSummaries(rows.map(({ id }) => id));
+  return Promise.all(rows.map((row) => toDto(row, summaries.get(row.id)!)));
+}
+
 export async function loadDto(packageId: string): Promise<DataPackageDto> {
-  return toDto(
-    await database.dataPackage.findUniqueOrThrow({ where: { id: packageId }, select: packageSelection }),
-  );
+  const row = await database.dataPackage.findUniqueOrThrow({ where: { id: packageId }, select: packageSelection });
+  const [dto] = await toDtos([row]);
+  return dto!;
 }
 
 function audit(actor: ActorContext, action: string, packageId: string, eventId: string) {
@@ -97,7 +119,8 @@ export async function listDataPackages(
     take: limit + 1,
     select: packageSelection,
   });
-  return toPage(context, rows, limit, toDto);
+  const page = toPage(context, rows, limit, (row) => row);
+  return { ...page, items: await toDtos(page.items) };
 }
 
 export async function getDataPackage(principal: Principal, eventId: string, packageId: string): Promise<DataPackageDto> {
@@ -141,7 +164,7 @@ export async function updateDataPackage(
 
   const updated = await database.dataPackage.updateMany({
     where: { id: packageId, eventId, version: input.version },
-    data: { name: input.name, description: input.description, version: { increment: 1 } },
+    data: { name: input.name, description: input.description, draftHash: null, version: { increment: 1 } },
   });
   if (updated.count !== 1) {
     const latest = await database.dataPackage.findUnique({ where: { id: packageId }, select: { version: true } });
