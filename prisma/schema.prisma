@@ -22,7 +22,7 @@ model Event {
   version                 Int                          @default(1)
   startsAt                DateTime?
   endsAt                  DateTime?
-  /// Days a TAK login token stays valid; 0 means until the event ends, without an end for good.
+  /// Days a TAK login token stays valid; 0 keeps it valid until the event's end date, or with no end date it never expires.
   takLoginTokenDays       Int                          @default(0)
   createdAt               DateTime                     @default(now())
   updatedAt               DateTime                     @updatedAt

@@ -26,8 +26,8 @@ export interface EventDto {
   /** @format date-time */
   endsAt: string | null;
   /**
-   * Days a TAK login token (QR code or typed instead of the password) stays valid. `0` means until
-   * the event ends, and without an end date for good. Tokens stop working anyway once the user
+   * Days a TAK login token (QR code or typed instead of the password) stays valid. `0` keeps it valid
+   * until the event's end date, or with no end date it never expires. Tokens stop working anyway once the user
    * loses TAK access.
    * @isInt
    * @minimum 0
@@ -74,8 +74,8 @@ export interface CreateEventRequest {
    */
   endsAt?: string | null;
   /**
-   * Days a TAK login token (QR code or typed instead of the password) stays valid. `0` means until
-   * the event ends, and without an end date for good. Defaults to `0`. Tokens stop working anyway once the user
+   * Days a TAK login token (QR code or typed instead of the password) stays valid. `0` keeps it valid
+   * until the event's end date, or with no end date it never expires. Defaults to `0`. Tokens stop working anyway once the user
    * loses TAK access.
    * @isInt
    * @minimum 0
@@ -107,8 +107,8 @@ export interface UpdateEventRequest {
   /** @format date-time */
   endsAt: string | null;
   /**
-   * Days a TAK login token (QR code or typed instead of the password) stays valid. `0` means until
-   * the event ends, and without an end date for good. Omitted keeps the current value. Tokens stop working anyway once the user
+   * Days a TAK login token (QR code or typed instead of the password) stays valid. `0` keeps it valid
+   * until the event's end date, or with no end date it never expires. Omitted keeps the current value. Tokens stop working anyway once the user
    * loses TAK access.
    * @isInt
    * @minimum 0

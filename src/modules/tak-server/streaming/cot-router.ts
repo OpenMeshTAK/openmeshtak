@@ -39,7 +39,7 @@ export interface LiveConnection {
 }
 
 /**
- * Forwards CoT between connected apps that share an event and a TAK server group. Nothing is
+ * Forwards CoT between connected apps that share an active event. Nothing is
  * persisted; the latest items per connection only live in memory, so late joiners and the live
  * view see what is current.
  */

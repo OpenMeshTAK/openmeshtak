@@ -16,7 +16,7 @@ import {
   newNonStandardPorts,
   notifyEndpointChange,
 } from "./endpoint-change.js";
-import { activeServerCertificate, addServerCertificate, removeAddedServerCertificate } from "./server-certificate.js";
+import { activeServerCertificate, addServerCertificate, removePublicServerCertificate } from "./server-certificate.js";
 import { takListeners } from "./tak-listeners.js";
 import { HOST_NAME, loadTakServerSettings, SETTINGS_ID } from "./tak-server-settings.js";
 import type {
@@ -211,11 +211,12 @@ export async function addTakServerCertificate(
   return toDto();
 }
 
-/** Goes back to a server certificate issued by the OpenMeshTak CA. */
+/** Goes back to a server certificate issued by the OpenMeshTak CA and stops ACME from replacing it. */
 export async function removeTakServerCertificate(actor: ActorContext): Promise<TakServerSettingsDto> {
   await requirePermission(actor.principal, "tak-server.manage");
   requireRecentUser(actor);
-  await removeAddedServerCertificate();
+  await disableTakAcmeAutomation();
+  await removePublicServerCertificate();
   await serverCertificateAudit(actor, "tak-server.server-certificate-removed", {});
   void takListeners.reload();
   return toDto();

@@ -79,6 +79,7 @@ export interface ResolvedProfileDto {
     callsign: string;
     team: TakTeam;
     role: TakRole;
+    /** The group's TAK server groups for an external TAK server; the built-in server ignores them. */
     serverGroups: string[];
     /** How this member connects ATAK/iTAK; `null` when the event gives no guidance. */
     connection: ProfileTakConnection | null;

@@ -31,7 +31,11 @@ export interface GroupProvisioning {
   tak: {
     team: TakTeam;
     role: TakRole;
-    /** @maxItems 20 */
+    /**
+     * Group names for an external TAK server, passed on unchanged in each member's profile for
+     * integrations. The built-in TAK server ignores them; the event alone decides who sees whom.
+     * @maxItems 20
+     */
     serverGroups: ProvisioningName[];
   };
 }

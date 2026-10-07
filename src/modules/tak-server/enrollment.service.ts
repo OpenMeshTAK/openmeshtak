@@ -35,8 +35,8 @@ function notReady(): ProblemError {
 
 /**
  * When a QR token expires, so a TAK app can re-enroll with it during the event, for example after
- * its certificate expired. Each active event sets the lifetime in days; 0 means until the event
- * ends, and without an end date for good. The most generous of the user's active events wins;
+ * its certificate expired. Each active event sets the lifetime in days; 0 keeps it valid until
+ * the event's end date, or with no end date it never expires. The most generous of the user's active events wins;
  * `null` means no time limit. Losing TAK access ends every token anyway.
  */
 async function qrTokenExpiry(userId: string, now: Date): Promise<Date | null> {

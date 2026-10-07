@@ -135,6 +135,17 @@ void describe("TAK server settings", () => {
     assert.equal((await currentServerCertificate("tak.example.org")).source, "issued");
   });
 
+  void it("switches from an ACME certificate back to the OpenMeshTak CA and stops ACME", async () => {
+    await save({ version: 0, hostName: "tak.example.org" }).expect(200);
+    await database.takAcmeSettings.create({ data: { id: "tak-acme", enabled: true } });
+    const chain = await publicChain("tak.example.org");
+    await addServerCertificate(chain.chainPem, chain.keyPem, "tak.example.org", { trustedRoots: [chain.rootPem], source: "acme" });
+
+    await request(app).delete("/api/v1/tak-server/server-certificate").set("Cookie", admin.cookie).expect(200);
+    assert.equal((await currentServerCertificate("tak.example.org")).source, "issued");
+    assert.equal((await database.takAcmeSettings.findUniqueOrThrow({ where: { id: "tak-acme" } })).enabled, false);
+  });
+
   void it("requires a confirmed decision for non-standard ports and audits it", async () => {
     await save({ version: 0, hostName: "tak.example.org" }).expect(200);
     const refused = await save({ version: 1, hostName: "tak.example.org", martiPort: 8484 }).expect(422);

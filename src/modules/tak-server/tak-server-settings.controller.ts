@@ -53,7 +53,10 @@ export class TakServerSettingsController extends Controller {
     return addTakServerCertificate(requestContext(request), body);
   }
 
-  /** Removes an added certificate; the server then uses one issued by the OpenMeshTak CA. */
+  /**
+   * Removes an added or ACME certificate and disables ACME; the server then uses one issued by the
+   * OpenMeshTak CA.
+   */
   @Delete("server-certificate")
   @SuccessResponse(200, "Server certificate removed")
   public async removeTakServerCertificate(@Request() request: unknown): Promise<TakServerSettingsDto> {

@@ -222,10 +222,10 @@ export function activeServerCertificate(): Promise<TakServerCertificate | null> 
   return database.takServerCertificate.findUnique({ where: { activeSlot: ACTIVE } });
 }
 
-/** Drops an added certificate so the next start issues one from the OpenMeshTak CA again. */
-export async function removeAddedServerCertificate(): Promise<void> {
+/** Drops an added or ACME certificate so the next start issues one from the OpenMeshTak CA again. */
+export async function removePublicServerCertificate(): Promise<void> {
   await database.takServerCertificate.updateMany({
-    where: { activeSlot: ACTIVE, source: "added" },
+    where: { activeSlot: ACTIVE, source: { in: ["added", "acme"] } },
     data: { activeSlot: null },
   });
 }
