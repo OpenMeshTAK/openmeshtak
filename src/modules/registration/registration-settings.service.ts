@@ -23,16 +23,16 @@ export async function registrationMode(): Promise<RegistrationMode> {
 }
 
 export async function getRegistrationSettings(principal: Principal): Promise<RegistrationSettingsDto> {
-  await requirePermission(principal, "users.manage");
+  await requirePermission(principal, "registration.manage");
   return loadRegistrationSettings();
 }
 
-/** Opening registration lets strangers create accounts, so every change is audited. Requires `users.manage`. */
+/** Opening registration lets strangers create accounts, so every change is audited. Requires `registration.manage`. */
 export async function updateRegistrationSettings(
   actor: ActorContext,
   input: UpdateRegistrationSettingsRequest,
 ): Promise<RegistrationSettingsDto> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "registration.manage");
   await database.$transaction(async (transaction) => {
     if (input.version === 0) {
       try {

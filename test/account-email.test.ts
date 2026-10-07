@@ -50,7 +50,7 @@ void describe("account emails", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
-    admin = await createUser("Admin", [{ permission: "users.manage" }]);
+    admin = await createUser("Admin", [{ permission: "users.create" }, { permission: "users.edit" }, { permission: "users.set-email" }, { permission: "users.disable" }, { permission: "users.sign-out" }, { permission: "users.password-reset" }, { permission: "users.setup-links" }]);
     peter = await createUser("Peter", []);
     email = (await database.user.findUniqueOrThrow({ where: { id: peter.authSubjectId } })).email;
     await database.emailSettings.create({

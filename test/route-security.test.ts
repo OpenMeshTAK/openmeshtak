@@ -23,6 +23,8 @@ const PUBLIC_OPERATIONS = new Set([
   // Registration mode, and sign-up itself while an administrator allows it.
   "GET /registration",
   "POST /registration",
+  // The installation's name; the sign-in page shows it before anyone signs in.
+  "GET /instance",
   // The short-lived, hashed link token is the credential (download grants).
   "GET /downloads/{token}",
 ]);

@@ -52,7 +52,7 @@ export async function addUserGroupMember(
   userGroupId: string,
   userId: string,
 ): Promise<void> {
-  await requirePermission(actor.principal, "user-groups.manage");
+  await requirePermission(actor.principal, "user-group-members.manage");
   const group = await findUserGroupRow(userGroupId);
   await requireUser(userId);
   await requireDelegableGrants(
@@ -95,7 +95,7 @@ export async function removeUserGroupMember(
   userGroupId: string,
   userId: string,
 ): Promise<void> {
-  await requirePermission(actor.principal, "user-groups.manage");
+  await requirePermission(actor.principal, "user-group-members.manage");
   const group = await findUserGroupRow(userGroupId);
 
   await database.$transaction(async (transaction) => {

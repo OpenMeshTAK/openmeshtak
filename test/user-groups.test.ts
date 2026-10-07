@@ -103,7 +103,7 @@ void describe("user groups", () => {
     await createGroup("readers", [{ permission: "events.read", eventId: null }], manager).expect(201);
     const response = await createGroup(
       "escalation",
-      [{ permission: "users.manage", eventId: null }],
+      [{ permission: "users.create", eventId: null }],
       manager,
     ).expect(403);
     assert.equal((response.body as ProblemBody).code, "FORBIDDEN");

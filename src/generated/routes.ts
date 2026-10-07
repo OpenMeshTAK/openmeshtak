@@ -64,6 +64,8 @@ import { ClaimExchangeController } from './../modules/member-claims/claim-exchan
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MapSettingsController } from './../modules/map-settings/map-settings.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { InstanceSettingsController } from './../modules/instance-settings/instance-settings.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { HealthController } from './../modules/health/health.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EventsController } from './../modules/events/events.controller.js';
@@ -155,6 +157,25 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"string","validators":{"pattern":{"value":"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"}}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UserAccountEvent": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "slug": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UserGroupSummary": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UserDto": {
         "dataType": "refObject",
         "properties": {
@@ -164,6 +185,8 @@ const models: TsoaRoute.Models = {
             "email": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "disabled": {"dataType":"boolean","required":true},
             "passwordSet": {"dataType":"boolean","required":true},
+            "accountEvent": {"dataType":"union","subSchemas":[{"ref":"UserAccountEvent"},{"dataType":"enum","enums":[null]}],"required":true},
+            "userGroups": {"dataType":"array","array":{"dataType":"refObject","ref":"UserGroupSummary"},"required":true},
             "version": {"dataType":"double","required":true},
             "createdAt": {"dataType":"string","required":true},
         },
@@ -186,6 +209,11 @@ const models: TsoaRoute.Models = {
             "page": {"ref":"PageInfo","required":true},
         },
         "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UserAccountType": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["permanent"]},{"dataType":"enum","enums":["event"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SetupLinkDto": {
@@ -220,6 +248,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
             "displayName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "email": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":254},"pattern":{"value":"^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"}}},
             "username": {"dataType":"string","validators":{"pattern":{"value":"^[a-z0-9._-]{3,32}$"}}},
         },
         "additionalProperties": false,
@@ -243,7 +272,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Permission": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["tak-traffic.view"]},{"dataType":"enum","enums":["api-clients.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["settings.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.create"]},{"dataType":"enum","enums":["users.edit"]},{"dataType":"enum","enums":["users.set-email"]},{"dataType":"enum","enums":["users.disable"]},{"dataType":"enum","enums":["users.sign-out"]},{"dataType":"enum","enums":["users.password-reset"]},{"dataType":"enum","enums":["users.setup-links"]},{"dataType":"enum","enums":["registration.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["user-group-members.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-accounts.create"]},{"dataType":"enum","enums":["event-accounts.manage"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["tak-traffic.view"]},{"dataType":"enum","enums":["api-clients.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["settings.manage"]},{"dataType":"enum","enums":["audit.read"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PermissionGrantDto": {
@@ -1207,6 +1236,24 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "InstanceSettingsDto": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateInstanceSettingsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":60}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "HealthResponse": {
         "dataType": "refObject",
         "properties": {
@@ -1246,6 +1293,7 @@ const models: TsoaRoute.Models = {
             "startsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "endsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "takLoginTokenDays": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":3650}}},
+            "permanentAccounts": {"dataType":"boolean","required":true},
             "createdAt": {"dataType":"string","required":true},
             "updatedAt": {"dataType":"string","required":true},
             "overview": {"ref":"EventOverview","required":true},
@@ -1274,6 +1322,7 @@ const models: TsoaRoute.Models = {
             "startsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "endsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "takLoginTokenDays": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":3650}}},
+            "permanentAccounts": {"dataType":"boolean","required":true},
             "createdAt": {"dataType":"string","required":true},
             "updatedAt": {"dataType":"string","required":true},
         },
@@ -1289,6 +1338,7 @@ const models: TsoaRoute.Models = {
             "startsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},
             "endsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},
             "takLoginTokenDays": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":3650}}},
+            "permanentAccounts": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },
@@ -1303,6 +1353,7 @@ const models: TsoaRoute.Models = {
             "startsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "endsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "takLoginTokenDays": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":3650}}},
+            "permanentAccounts": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },
@@ -1311,6 +1362,14 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "EventAccountsMadePermanentResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "accounts": {"dataType":"double","required":true},
         },
         "additionalProperties": false,
     },
@@ -1514,6 +1573,28 @@ const models: TsoaRoute.Models = {
             "eventRoleId": {"ref":"Uuid","required":true},
             "eventGroupId": {"ref":"Uuid","required":true},
             "callsignOverride": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"minLength":{"value":1},"maxLength":{"value":39}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreatedEventMemberAccountResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "member": {"ref":"EventMemberDto","required":true},
+            "user": {"ref":"UserDto","required":true},
+            "setupLink": {"ref":"SetupLinkDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateEventMemberAccountRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "eventRoleId": {"ref":"Uuid","required":true},
+            "eventGroupId": {"ref":"Uuid","required":true},
+            "callsignOverride": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"minLength":{"value":1},"maxLength":{"value":39}}},
+            "displayName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "username": {"dataType":"string","validators":{"pattern":{"value":"^[a-z0-9._-]{3,32}$"}}},
         },
         "additionalProperties": false,
     },
@@ -2485,6 +2566,7 @@ export function RegisterRoutes(app: Router) {
                 limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
                 search: {"in":"query","name":"search","dataType":"string"},
+                accountType: {"in":"query","name":"accountType","ref":"UserAccountType"},
         };
         app.get('/api/v1/users',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -2765,6 +2847,38 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsUsersController_makeUserPermanent: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/users/:userId/make-permanent',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(UsersController)),
+            ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.makeUserPermanent)),
+
+            async function UsersController_makeUserPermanent(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsUsersController_makeUserPermanent, request, response });
+
+                const controller = new UsersController();
+
+              await templateService.apiHandler({
+                methodName: 'makeUserPermanent',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);
@@ -5051,6 +5165,67 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsInstanceSettingsController_getInstanceSettings: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/v1/instance',
+            ...(fetchMiddlewares<RequestHandler>(InstanceSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(InstanceSettingsController.prototype.getInstanceSettings)),
+
+            async function InstanceSettingsController_getInstanceSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsInstanceSettingsController_getInstanceSettings, request, response });
+
+                const controller = new InstanceSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getInstanceSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsInstanceSettingsController_updateInstanceSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateInstanceSettingsRequest"},
+        };
+        app.put('/api/v1/instance',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(InstanceSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(InstanceSettingsController.prototype.updateInstanceSettings)),
+
+            async function InstanceSettingsController_updateInstanceSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsInstanceSettingsController_updateInstanceSettings, request, response });
+
+                const controller = new InstanceSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateInstanceSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsHealthController_getHealth: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/api/v1/health',
@@ -5299,6 +5474,38 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'reactivateEvent',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEventsController_makeEventAccountsPermanent: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/make-accounts-permanent',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(EventsController)),
+            ...(fetchMiddlewares<RequestHandler>(EventsController.prototype.makeEventAccountsPermanent)),
+
+            async function EventsController_makeEventAccountsPermanent(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEventsController_makeEventAccountsPermanent, request, response });
+
+                const controller = new EventsController();
+
+              await templateService.apiHandler({
+                methodName: 'makeEventAccountsPermanent',
                 controller,
                 response,
                 next,
@@ -5671,6 +5878,39 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'createEventMember',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEventMembersController_createEventMemberAccount: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateEventMemberAccountRequest"},
+        };
+        app.post('/api/v1/events/:eventId/members/accounts',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(EventMembersController)),
+            ...(fetchMiddlewares<RequestHandler>(EventMembersController.prototype.createEventMemberAccount)),
+
+            async function EventMembersController_createEventMemberAccount(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEventMembersController_createEventMemberAccount, request, response });
+
+                const controller = new EventMembersController();
+
+              await templateService.apiHandler({
+                methodName: 'createEventMemberAccount',
                 controller,
                 response,
                 next,

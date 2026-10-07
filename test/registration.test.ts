@@ -33,7 +33,7 @@ void describe("self-registration", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
-    admin = await createUser("Admin", [{ permission: "users.manage" }]);
+    admin = await createUser("Admin", [{ permission: "registration.manage" }]);
   });
 
   after(async () => {

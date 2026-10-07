@@ -32,9 +32,9 @@ function auditEntry(actor: ActorContext, action: string, inviteId: string) {
   };
 }
 
-/** The most recent registration invites, newest first. Requires `users.manage`. */
+/** The most recent registration invites, newest first. Requires `registration.manage`. */
 export async function listRegistrationInvites(principal: Principal): Promise<RegistrationInviteDto[]> {
-  await requirePermission(principal, "users.manage");
+  await requirePermission(principal, "registration.manage");
   const invites = await database.accountInvite.findMany({
     where: { userId: null },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -44,9 +44,9 @@ export async function listRegistrationInvites(principal: Principal): Promise<Reg
   return invites.map((invite) => toDto(invite, now));
 }
 
-/** Issues a single-use registration invite, valid for seven days. Requires `users.manage`. */
+/** Issues a single-use registration invite, valid for seven days. Requires `registration.manage`. */
 export async function createRegistrationInvite(actor: ActorContext): Promise<CreatedRegistrationInviteResponse> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "registration.manage");
   const issued = await database.$transaction(async (transaction) => {
     const invite = await issueAccountInvite(transaction, actor.principal, null);
     await recordAudit(auditEntry(actor, "registration-invite.created", invite.id), transaction);
@@ -56,9 +56,9 @@ export async function createRegistrationInvite(actor: ActorContext): Promise<Cre
   return { invite: toDto(invite), inviteUrl: `${config.publicOrigin}/register#${issued.token}` };
 }
 
-/** Revocation is immediate and idempotent. Requires `users.manage`. */
+/** Revocation is immediate and idempotent. Requires `registration.manage`. */
 export async function revokeRegistrationInvite(actor: ActorContext, inviteId: string): Promise<RegistrationInviteDto> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "registration.manage");
   const invite = await database.accountInvite.findFirst({ where: { id: inviteId, userId: null } });
   if (invite === null) {
     throw notFoundProblem();

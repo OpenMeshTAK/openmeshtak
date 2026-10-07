@@ -18,14 +18,14 @@ import { getRegistrationSettings, updateRegistrationSettings } from "./registrat
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 export class RegistrationSettingsController extends Controller {
-  /** Who may create their own account. Requires `users.manage`. */
+  /** Who may create their own account. Requires `registration.manage`. */
   @Get()
   @SuccessResponse(200, "Registration settings")
   public async getRegistrationSettings(@Request() request: unknown): Promise<RegistrationSettingsDto> {
     return getRegistrationSettings(requestContext(request).principal);
   }
 
-  /** Closes registration, makes it invite-only or opens it to everyone. Requires `users.manage`. */
+  /** Closes registration, makes it invite-only or opens it to everyone. Requires `registration.manage`. */
   @Put()
   @SuccessResponse(200, "Registration settings saved")
   @Response<ProblemDetails>(409, "Version conflict")
@@ -45,7 +45,7 @@ export class RegistrationSettingsController extends Controller {
 @Response<ProblemDetails>(401, "Authentication required")
 @Response<ProblemDetails>(403, "Access denied")
 export class RegistrationInvitesController extends Controller {
-  /** The 50 most recent registration invites, newest first. Requires `users.manage`. */
+  /** The 50 most recent registration invites, newest first. Requires `registration.manage`. */
   @Get()
   @SuccessResponse(200, "Registration invites")
   public async listRegistrationInvites(@Request() request: unknown): Promise<RegistrationInviteDto[]> {
@@ -54,7 +54,7 @@ export class RegistrationInvitesController extends Controller {
 
   /**
    * Issues a single-use registration link, valid for seven days, for invite-only registration.
-   * The link is returned once. Requires `users.manage`.
+   * The link is returned once. Requires `registration.manage`.
    */
   @Post()
   @SuccessResponse(201, "Registration invite created")
@@ -64,7 +64,7 @@ export class RegistrationInvitesController extends Controller {
     return created;
   }
 
-  /** Revokes an unused invite immediately. Requires `users.manage`. */
+  /** Revokes an unused invite immediately. Requires `registration.manage`. */
   @Post("{inviteId}/revoke")
   @SuccessResponse(200, "Registration invite revoked")
   @Response<ProblemDetails>(404, "Not found")

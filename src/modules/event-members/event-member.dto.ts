@@ -1,6 +1,7 @@
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
 import type { Slug } from "../events/event.dto.js";
+import type { SetupLinkDto, UserDto } from "../users/user.dto.js";
 
 /**
  * Opaque lowercase namespace of the external system, e.g. `discord`. It is not a login provider.
@@ -45,6 +46,38 @@ export interface EventMemberDto {
 export interface EventMemberPage {
   items: EventMemberDto[];
   page: PageInfo;
+}
+
+/** Role, group and optional callsign override of a new member. */
+export interface MemberAssignmentInput {
+  eventRoleId: Uuid;
+  eventGroupId: Uuid;
+  /**
+   * Callsign to use instead of the group format.
+   * @minLength 1
+   * @maxLength 39
+   */
+  callsignOverride?: string | null;
+}
+
+export interface CreateEventMemberAccountRequest extends MemberAssignmentInput {
+  /**
+   * Name of the new person; it feeds the group's callsign format.
+   * @minLength 1
+   * @maxLength 100
+   */
+  displayName: string;
+  /**
+   * Sign-in and TAK login name; derived from the display name when omitted.
+   * @pattern ^[a-z0-9._-]{3,32}$
+   */
+  username?: string;
+}
+
+export interface CreatedEventMemberAccountResponse {
+  member: EventMemberDto;
+  user: UserDto;
+  setupLink: SetupLinkDto;
 }
 
 export interface CreateEventMemberRequest {

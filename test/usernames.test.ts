@@ -18,7 +18,7 @@ void describe("account usernames", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
-    admin = await createUser("Admin", [{ permission: "users.read" }, { permission: "users.manage" }]);
+    admin = await createUser("Admin", [{ permission: "users.read" }, { permission: "users.create" }, { permission: "users.edit" }, { permission: "users.set-email" }, { permission: "users.disable" }, { permission: "users.sign-out" }, { permission: "users.password-reset" }, { permission: "users.setup-links" }]);
     peter = await createUser("Peter Müller", []);
   });
 

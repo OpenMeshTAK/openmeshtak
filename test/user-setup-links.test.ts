@@ -42,7 +42,7 @@ void describe("administrator-created users", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
-    admin = await createUser("Admin", [{ permission: "users.manage" }, { permission: "users.read" }]);
+    admin = await createUser("Admin", [{ permission: "users.create" }, { permission: "users.edit" }, { permission: "users.set-email" }, { permission: "users.disable" }, { permission: "users.sign-out" }, { permission: "users.password-reset" }, { permission: "users.setup-links" }, { permission: "users.read" }]);
   });
 
   after(async () => {
@@ -74,7 +74,7 @@ void describe("administrator-created users", () => {
     assert.equal(await database.auditEvent.count({ where: { action: "user.created" } }), 1);
   });
 
-  void it("rejects a taken username and needs users.manage", async () => {
+  void it("rejects a taken username and needs users.create", async () => {
     await request(app).post("/api/v1/users").set("Cookie", admin.cookie).send({ displayName: "Otto", username: "otto" }).expect(201);
     const taken = await request(app)
       .post("/api/v1/users")

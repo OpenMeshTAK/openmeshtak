@@ -20,6 +20,8 @@ import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
 import type {
+  CreatedEventMemberAccountResponse,
+  CreateEventMemberAccountRequest,
   CreateEventMemberRequest,
   EventMemberDto,
   EventMemberPage,
@@ -27,6 +29,7 @@ import type {
 } from "./event-member.dto.js";
 import {
   createEventMember,
+  createEventMemberAccount,
   deleteEventMember,
   getEventMember,
   listEventMembers,
@@ -74,6 +77,26 @@ export class EventMembersController extends Controller {
     @Body() body: CreateEventMemberRequest,
   ): Promise<EventMemberDto> {
     const created = await createEventMember(requestContext(request), eventId, body);
+    this.setStatus(201);
+    return created;
+  }
+
+  /**
+   * Creates a new person and adds them to the event in one step. Returns a single-use setup link,
+   * valid for seven days, so they choose their own password. The account is an event account that
+   * is deleted when the event is archived, unless the event keeps its accounts
+   * (`permanentAccounts`). Requires `member-accounts.create`.
+   */
+  @Post("accounts")
+  @SuccessResponse(201, "Account and member created")
+  @Response<ProblemDetails>(409, "Username taken, callsign or short-name conflict, or event archived")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async createEventMemberAccount(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Body() body: CreateEventMemberAccountRequest,
+  ): Promise<CreatedEventMemberAccountResponse> {
+    const created = await createEventMemberAccount(requestContext(request), eventId, body);
     this.setStatus(201);
     return created;
   }

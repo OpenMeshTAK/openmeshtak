@@ -9,6 +9,7 @@ import { requireReadableEvent } from "./event-access.js";
 import { activationProblems, notReady } from "./event-readiness.js";
 import { toEventDto } from "./events.service.js";
 import { createConfigurationRevision } from "../event-configuration/configuration-revisions.service.js";
+import { endEventAccounts } from "../users/event-accounts.js";
 
 interface Transition {
   from: EventStatus;
@@ -116,6 +117,9 @@ export async function transitionEvent(
           ).count
         : 0;
 
+    // Event accounts end with their event; reactivation does not bring them back.
+    const accounts = transition.to === "archived" ? await endEventAccounts(transaction, eventId) : { deleted: 0, moved: 0 };
+
     await recordAudit(
       {
         actor: actor.principal,
@@ -128,6 +132,8 @@ export async function transitionEvent(
           previousStatus: transition.from,
           status: transition.to,
           ...(revokedClaims > 0 ? { revokedClaims } : {}),
+          ...(accounts.deleted > 0 ? { deletedAccounts: accounts.deleted } : {}),
+          ...(accounts.moved > 0 ? { movedAccounts: accounts.moved } : {}),
         },
       },
       transaction,

@@ -34,6 +34,11 @@ export interface EventDto {
    * @maximum 3650
    */
   takLoginTokenDays: number;
+  /**
+   * Accounts created for this event (new members, synchronized participants) are permanent instead
+   * of event accounts that are deleted when the event is archived.
+   */
+  permanentAccounts: boolean;
   /** @format date-time */
   createdAt: string;
   /** @format date-time */
@@ -82,6 +87,11 @@ export interface CreateEventRequest {
    * @maximum 3650
    */
   takLoginTokenDays?: number;
+  /**
+   * Accounts created for this event (new members, synchronized participants) are permanent instead
+   * of event accounts that are deleted when the event is archived. Defaults to `false`.
+   */
+  permanentAccounts?: boolean;
 }
 
 export interface UpdateEventRequest {
@@ -115,6 +125,11 @@ export interface UpdateEventRequest {
    * @maximum 3650
    */
   takLoginTokenDays?: number;
+  /**
+   * Accounts created for this event (new members, synchronized participants) are permanent instead
+   * of event accounts that are deleted when the event is archived. Omitted keeps the current value.
+   */
+  permanentAccounts?: boolean;
 }
 
 export interface EventTransitionRequest {

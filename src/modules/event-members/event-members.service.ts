@@ -16,10 +16,16 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import { eventArchivedProblem, requireEventPermission } from "../events/event-access.js";
+import type { Prisma } from "../../generated/prisma/client.js";
+import { accountEventIdFor } from "../users/event-accounts.js";
+import { createAccountWithSetupLink } from "../users/user-setup-links.service.js";
 import type {
+  CreatedEventMemberAccountResponse,
+  CreateEventMemberAccountRequest,
   CreateEventMemberRequest,
   EventMemberDto,
   EventMemberPage,
+  MemberAssignmentInput,
   UpdateEventMemberRequest,
 } from "./event-member.dto.js";
 import { eventMemberSelection, toEventMemberDto } from "./event-member.mapper.js";
@@ -123,22 +129,56 @@ export async function createEventMember(
       if (existing !== null) {
         throw memberExistsProblem();
       }
-
-      const assignment = await resolveAssignment(
-        transaction,
-        eventId,
-        { ...input, callsignOverride: input.callsignOverride?.trim() || null, username: user.displayName },
-        null,
-      );
-      const memberId = randomUUID();
-      await transaction.eventMember.create({
-        data: { id: memberId, eventId, userId: user.id, username: user.displayName, ...assignment },
-      });
-      await recordAudit(auditMember(actor, "event-member.created", memberId, eventId, assignment), transaction);
-      return toEventMemberDto(
-        await transaction.eventMember.findUniqueOrThrow({ where: { id: memberId }, select: eventMemberSelection }),
-      );
+      return await addMember(transaction, actor, eventId, user, input);
     });
+  } catch (error: unknown) {
+    throw concurrentAssignmentProblem(error);
+  }
+}
+
+async function addMember(
+  transaction: Prisma.TransactionClient,
+  actor: ActorContext,
+  eventId: string,
+  user: { id: string; displayName: string },
+  input: MemberAssignmentInput,
+): Promise<EventMemberDto> {
+  const assignment = await resolveAssignment(
+    transaction,
+    eventId,
+    { ...input, callsignOverride: input.callsignOverride?.trim() || null, username: user.displayName },
+    null,
+  );
+  const memberId = randomUUID();
+  await transaction.eventMember.create({
+    data: { id: memberId, eventId, userId: user.id, username: user.displayName, ...assignment },
+  });
+  await recordAudit(auditMember(actor, "event-member.created", memberId, eventId, assignment), transaction);
+  return toEventMemberDto(
+    await transaction.eventMember.findUniqueOrThrow({ where: { id: memberId }, select: eventMemberSelection }),
+  );
+}
+
+/**
+ * Creates a new person directly as a member and returns their single-use setup link. The account
+ * is an event account, deleted when the event is archived, unless the event keeps its accounts.
+ * Requires the event's `member-accounts.create`; the account gets no permissions beyond this event.
+ */
+export async function createEventMemberAccount(
+  actor: ActorContext,
+  eventId: string,
+  input: CreateEventMemberAccountRequest,
+): Promise<CreatedEventMemberAccountResponse> {
+  const event = await requireEventPermission(actor.principal, eventId, "member-accounts.create");
+  if (event.status === "archived") {
+    throw eventArchivedProblem();
+  }
+  const account = { displayName: input.displayName, ...(input.username === undefined ? {} : { username: input.username }) };
+  try {
+    const { response, result } = await createAccountWithSetupLink(actor, account, accountEventIdFor(event), (transaction, user) =>
+      addMember(transaction, actor, eventId, user, input),
+    );
+    return { member: result, user: response.user, setupLink: response.setupLink };
   } catch (error: unknown) {
     throw concurrentAssignmentProblem(error);
   }

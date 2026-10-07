@@ -18,7 +18,16 @@ import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import type { CreatedUserResponse, CreateUserRequest, SetupLinkDto, UpdateUserRequest, UserDto, UserPage } from "./user.dto.js";
+import { makeUserPermanent } from "./event-accounts.js";
+import type {
+  CreatedUserResponse,
+  CreateUserRequest,
+  SetupLinkDto,
+  UpdateUserRequest,
+  UserAccountType,
+  UserDto,
+  UserPage,
+} from "./user.dto.js";
 import { createSetupLink, createUser } from "./user-setup-links.service.js";
 import { getUser, listUsers, revokeUserSessions, sendUserPasswordReset, setUserDisabled, updateUser } from "./users.service.js";
 
@@ -38,7 +47,7 @@ export class UsersController extends Controller {
    */
   @Get()
   @SuccessResponse(200, "Users")
-  @Middlewares(allowQueryParameters("limit", "cursor", "search"))
+  @Middlewares(allowQueryParameters("limit", "cursor", "search", "accountType"))
   @Response<ProblemDetails>(400, "Invalid cursor")
   public async listUsers(
     @Request() request: unknown,
@@ -46,14 +55,16 @@ export class UsersController extends Controller {
     @Query() cursor?: string,
     /** Matches part of the display name or email. @maxLength 100 */
     @Query() search?: string,
+    /** Only permanent accounts or only event accounts. */
+    @Query() accountType?: UserAccountType,
   ): Promise<UserPage> {
-    return listUsers(requestContext(request).principal, limit, cursor, search);
+    return listUsers(requestContext(request).principal, limit, cursor, search, accountType);
   }
 
   /**
    * Creates a user without a password and returns a single-use setup link, valid for seven days.
    * The person opens it, signs in once and sets their own password. The new user has no
-   * permissions until added to a user group or an event. Requires `users.manage`.
+   * permissions until added to a user group or an event. Requires `users.create`.
    */
   @Post()
   @SuccessResponse(201, "User created")
@@ -72,7 +83,7 @@ export class UsersController extends Controller {
     return getUser(requestContext(request).principal, userId);
   }
 
-  /** Renames a user. Requires instance-wide `users.manage`. */
+  /** Renames a user. Requires instance-wide `users.edit`. */
   @Put("{userId}")
   @SuccessResponse(200, "User updated")
   @Response<ProblemDetails>(404, "Not found")
@@ -84,7 +95,7 @@ export class UsersController extends Controller {
 
   /**
    * Disables a user: all sessions end, and sign-in, access links and TAK connections are refused.
-   * Administrators cannot disable themselves. Requires `users.manage`.
+   * Administrators cannot disable themselves. Requires `users.disable`.
    */
   @Post("{userId}/disable")
   @SuccessResponse(200, "User disabled")
@@ -94,7 +105,7 @@ export class UsersController extends Controller {
     return setUserDisabled(requestContext(request), userId, true);
   }
 
-  /** Enables a disabled user again. Requires `users.manage`. */
+  /** Enables a disabled user again. Requires `users.disable`. */
   @Post("{userId}/enable")
   @SuccessResponse(200, "User enabled")
   @Response<ProblemDetails>(404, "Not found")
@@ -104,7 +115,7 @@ export class UsersController extends Controller {
 
   /**
    * Emails the user a single-use password-reset link if their address is verified. Administrators
-   * never see or set passwords. Requires `users.manage`.
+   * never see or set passwords. Requires `users.password-reset`.
    */
   @Post("{userId}/password-reset")
   @SuccessResponse(202, "Reset email requested")
@@ -116,7 +127,7 @@ export class UsersController extends Controller {
 
   /**
    * Issues a new single-use setup link for a user who has not set a password yet. Earlier links
-   * of the user stop working. Requires `users.manage`.
+   * of the user stop working. Requires `users.setup-links`.
    */
   @Post("{userId}/setup-link")
   @SuccessResponse(201, "Setup link created")
@@ -128,12 +139,24 @@ export class UsersController extends Controller {
     return link;
   }
 
-  /** Signs the user out everywhere. Requires `users.manage`. */
+  /** Signs the user out everywhere. Requires `users.sign-out`. */
   @Post("{userId}/revoke-sessions")
   @SuccessResponse(204, "Sessions revoked")
   @Response<ProblemDetails>(404, "Not found")
   public async revokeUserSessions(@Request() request: unknown, @Path() userId: Uuid): Promise<void> {
     await revokeUserSessions(requestContext(request), userId);
     this.setStatus(204);
+  }
+
+  /**
+   * Turns an event account into a permanent account that stays when its event is archived.
+   * Permanent accounts are returned unchanged. Requires `users.read` and
+   * `event-accounts.manage` for the account's event.
+   */
+  @Post("{userId}/make-permanent")
+  @SuccessResponse(200, "User is permanent")
+  @Response<ProblemDetails>(404, "Not found")
+  public async makeUserPermanent(@Request() request: unknown, @Path() userId: Uuid): Promise<UserDto> {
+    return makeUserPermanent(requestContext(request), userId);
   }
 }

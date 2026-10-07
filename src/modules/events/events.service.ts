@@ -42,6 +42,7 @@ interface EventRow {
   startsAt: Date | null;
   endsAt: Date | null;
   takLoginTokenDays: number;
+  permanentAccounts: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +55,8 @@ interface EventSettings {
   endsAt: Date | null;
   /** Left out on updates that keep the current value. */
   takLoginTokenDays?: number;
+  /** Left out on updates that keep the current value. */
+  permanentAccounts?: boolean;
 }
 
 export function toEventDto(row: EventRow): EventDto {
@@ -67,6 +70,7 @@ export function toEventDto(row: EventRow): EventDto {
     startsAt: row.startsAt?.toISOString() ?? null,
     endsAt: row.endsAt?.toISOString() ?? null,
     takLoginTokenDays: row.takLoginTokenDays,
+    permanentAccounts: row.permanentAccounts,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -79,6 +83,7 @@ function validateSettings(input: {
   startsAt?: string | null | undefined;
   endsAt?: string | null | undefined;
   takLoginTokenDays?: number | undefined;
+  permanentAccounts?: boolean | undefined;
 }): EventSettings {
   const errors: ProblemFieldError[] = [];
   const timeZone = canonicalIanaTimeZone(input.timeZone);
@@ -102,6 +107,9 @@ function validateSettings(input: {
   const settings: EventSettings = { name: input.name, slug: input.slug, timeZone, startsAt, endsAt };
   if (input.takLoginTokenDays !== undefined) {
     settings.takLoginTokenDays = input.takLoginTokenDays;
+  }
+  if (input.permanentAccounts !== undefined) {
+    settings.permanentAccounts = input.permanentAccounts;
   }
   return settings;
 }
@@ -147,6 +155,9 @@ export async function getEvent(principal: Principal, id: string): Promise<EventD
 export async function createEvent(actor: ActorContext, input: CreateEventRequest): Promise<EventDto> {
   await requirePermission(actor.principal, "events.manage");
   const settings = validateSettings(input);
+  if (settings.permanentAccounts === true) {
+    await requirePermission(actor.principal, "event-accounts.manage");
+  }
   const id = randomUUID();
 
   try {
@@ -182,6 +193,10 @@ export async function updateEvent(
     throw versionConflictProblem(current.version);
   }
   const settings = validateSettings(input);
+  // Whether new accounts outlive the event is an account decision, not just an event setting.
+  if (settings.permanentAccounts !== undefined && settings.permanentAccounts !== current.permanentAccounts) {
+    await requirePermission(actor.principal, "event-accounts.manage", id);
+  }
 
   try {
     await database.$transaction(async (transaction) => {

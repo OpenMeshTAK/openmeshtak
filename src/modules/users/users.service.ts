@@ -1,11 +1,13 @@
 import { auth } from "../auth/auth.js";
-import { isPlaceholderEmail } from "../auth/claim-session.plugin.js";
+import { sendAdministratorEmailChangeNotice } from "../auth/account-emails.js";
+import { isPlaceholderEmail, placeholderEmailFor } from "../auth/claim-session.plugin.js";
 import { config } from "../../shared/config/config.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
-import { notFoundProblem, ProblemError, versionConflictProblem } from "../../shared/errors/problem-error.js";
+import { logger } from "../../shared/logging/logger.js";
+import { notFoundProblem, ProblemError, validationProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
 import {
   afterCursor,
   CURSOR_ORDER,
@@ -13,7 +15,7 @@ import {
   decodeCursor,
   toPage,
 } from "../../shared/pagination/cursor.js";
-import type { UpdateUserRequest, UserDto, UserPage } from "./user.dto.js";
+import type { UpdateUserRequest, UserAccountType, UserDto, UserPage } from "./user.dto.js";
 import { invalidUsernameProblem, isValidUsername, normalizeUsername, usernameTakenProblem } from "./usernames.js";
 
 const LIST_CONTEXT = "users";
@@ -31,6 +33,8 @@ export const userSelection = {
       accounts: { where: { providerId: "credential", password: { not: null } }, select: { id: true }, take: 1 },
     },
   },
+  accountEvent: { select: { id: true, slug: true, name: true } },
+  memberships: { select: { userGroup: { select: { id: true, name: true } } }, orderBy: { assignedAt: "asc" } },
 } as const;
 
 interface UserRow {
@@ -40,6 +44,8 @@ interface UserRow {
   version: number;
   createdAt: Date;
   authSubject: { email: string; username: string | null; accounts: { id: string }[] } | null;
+  accountEvent: { id: string; slug: string; name: string } | null;
+  memberships: { userGroup: { id: string; name: string } }[];
 }
 
 export function toUserDto(row: UserRow): UserDto {
@@ -54,6 +60,8 @@ export function toUserDto(row: UserRow): UserDto {
         : row.authSubject.email,
     disabled: row.disabledAt !== null,
     passwordSet: (row.authSubject?.accounts.length ?? 0) > 0,
+    accountEvent: row.accountEvent,
+    userGroups: row.memberships.map(({ userGroup }) => userGroup),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
   };
@@ -67,18 +75,26 @@ function searchFilter(search: string | undefined) {
     : { OR: [{ displayName: { contains: text } }, { authSubject: { email: { contains: text } } }] };
 }
 
+function accountTypeFilter(accountType: UserAccountType | undefined) {
+  if (accountType === undefined) {
+    return {};
+  }
+  return accountType === "event" ? { accountEventId: { not: null } } : { accountEventId: null };
+}
+
 export async function listUsers(
   principal: Principal,
   limit = DEFAULT_PAGE_LIMIT,
   cursor?: string,
   search?: string,
+  accountType?: UserAccountType,
 ): Promise<UserPage> {
   await requirePermission(principal, "users.read");
-  const context = `${LIST_CONTEXT}?${search ?? ""}`;
+  const context = `${LIST_CONTEXT}?${search ?? ""}&${accountType ?? ""}`;
   const position = cursor === undefined ? null : decodeCursor(context, cursor);
 
   const rows = await database.domainUser.findMany({
-    where: { ...afterCursor(position), ...searchFilter(search) },
+    where: { ...afterCursor(position), ...searchFilter(search), ...accountTypeFilter(accountType) },
     orderBy: [...CURSOR_ORDER],
     take: limit + 1,
     select: userSelection,
@@ -131,14 +147,21 @@ async function checkUsernameChange(authSubjectId: string | null, username: strin
   return normalized;
 }
 
-/** Renames a user and optionally changes the username. Requires instance-wide `users.manage`. */
+/**
+ * Renames a user and optionally changes the username (`users.edit`) and the email address
+ * (`users.set-email`, see {@link checkEmailChange}).
+ */
 export async function updateUser(actor: ActorContext, id: string, input: UpdateUserRequest): Promise<UserDto> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "users.edit");
   const current = await findForUpdate(id);
   const username = await checkUsernameChange(current.authSubjectId, input.username);
+  const email = await checkEmailChange(actor, current, input.email);
   await database.$transaction(async (transaction) => {
     if (username !== null && current.authSubjectId !== null && username !== current.authSubject?.username) {
       await transaction.user.update({ where: { id: current.authSubjectId }, data: { username, displayUsername: username } });
+    }
+    if (email !== null && current.authSubjectId !== null) {
+      await transaction.user.update({ where: { id: current.authSubjectId }, data: { email: email.stored, emailVerified: false } });
     }
     const updated = await transaction.domainUser.updateMany({
       where: { id, version: input.version },
@@ -148,16 +171,79 @@ export async function updateUser(actor: ActorContext, id: string, input: UpdateU
       throw versionConflictProblem((await findForUpdate(id)).version);
     }
     await recordAudit(
-      auditEntry(actor, "user.updated", id, username !== null && username !== current.authSubject?.username ? { usernameChanged: true } : {}),
+      auditEntry(actor, "user.updated", id, {
+        ...(username !== null && username !== current.authSubject?.username ? { usernameChanged: true } : {}),
+        ...(email !== null ? { emailChanged: true } : {}),
+      }),
       transaction,
     );
   });
+  if (email?.address != null) {
+    // The address is saved either way; without working email the person confirms it later from
+    // their account page.
+    try {
+      await auth.api.sendVerificationEmail({ body: { email: email.address, callbackURL: ACCOUNT_PAGE } });
+    } catch (error: unknown) {
+      logger.warn({ error, event: "user_email_verification_not_sent", userId: id }, "Email confirmation not sent");
+    }
+  }
+  if (email?.previousVerified != null) {
+    await sendAdministratorEmailChangeNotice(email.previousVerified, current.displayName, email.address);
+  }
   return toUserDto(await findForUpdate(id));
 }
 
-/** Ends every browser session of a user, e.g. after a lost device. Requires `users.manage`. */
+/** Where email confirmation links lead in the Web app. */
+const ACCOUNT_PAGE = new URL("/account", config.publicOrigin).href;
+
+function emailTakenProblem(): ProblemError {
+  return new ProblemError({
+    type: "urn:openmeshtak:problem:email-taken",
+    title: "Email address in use",
+    status: 409,
+    detail: "Another account already uses this email address.",
+    code: "EMAIL_TAKEN",
+  });
+}
+
+/**
+ * An administrator-entered address stays unverified until its owner confirms the link sent to it,
+ * so it receives no password reset before then. Because a confirmed address can reset the
+ * password, changing it is its own permission (`users.set-email`) and a previously verified
+ * address is told about the change. `null` removes the address. Returns `null` without a change.
+ */
+async function checkEmailChange(
+  actor: ActorContext,
+  current: { id: string; authSubjectId: string | null; authSubject: { email: string } | null },
+  email: string | null | undefined,
+): Promise<{ address: string | null; stored: string; previousVerified: string | null } | null> {
+  if (email === undefined) {
+    return null;
+  }
+  await requirePermission(actor.principal, "users.set-email");
+  const address = email === null || email.trim() === "" ? null : email.trim().toLowerCase();
+  if (current.authSubjectId === null) {
+    throw validationProblem([{ field: "email", code: "NO_LOGIN", message: "This user has no local login yet." }]);
+  }
+  const stored = address ?? placeholderEmailFor(current.id);
+  if (stored === current.authSubject?.email) {
+    return null;
+  }
+  const owner = await database.user.findUnique({ where: { email: stored }, select: { id: true } });
+  if (owner !== null && owner.id !== current.authSubjectId) {
+    throw emailTakenProblem();
+  }
+  const previous = await database.user.findUniqueOrThrow({
+    where: { id: current.authSubjectId },
+    select: { email: true, emailVerified: true },
+  });
+  const previousVerified = previous.emailVerified && !isPlaceholderEmail(previous.email) ? previous.email : null;
+  return { address, stored, previousVerified };
+}
+
+/** Ends every browser session of a user, e.g. after a lost device. Requires `users.sign-out`. */
 export async function revokeUserSessions(actor: ActorContext, id: string): Promise<void> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "users.sign-out");
   const user = await findForUpdate(id);
   await database.$transaction(async (transaction) => {
     const deleted =
@@ -178,10 +264,10 @@ function cannotDisableSelf(): ProblemError {
 
 /**
  * Disables or re-enables a user. Disabling ends all sessions at once; sign-in, access links and
- * TAK connections are refused until the account is enabled again. Requires `users.manage`.
+ * TAK connections are refused until the account is enabled again. Requires `users.disable`.
  */
 export async function setUserDisabled(actor: ActorContext, id: string, disabled: boolean): Promise<UserDto> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "users.disable");
   if (disabled && actor.principal.type === "user" && actor.principal.id === id) {
     throw cannotDisableSelf();
   }
@@ -207,7 +293,7 @@ export const PASSWORD_RESET_PAGE = new URL("/reset-password", config.publicOrigi
  * goes only to a verified address, otherwise nothing is sent and the response stays the same.
  */
 export async function sendUserPasswordReset(actor: ActorContext, id: string): Promise<void> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "users.password-reset");
   const user = await findForUpdate(id);
   const email = user.authSubject?.email;
   if (email !== undefined && !isPlaceholderEmail(email)) {

@@ -24,7 +24,9 @@ model Event {
   endsAt                  DateTime?
   /// Days a TAK login token stays valid; 0 keeps it valid until the event's end date, or with no end date it never expires.
   takLoginTokenDays       Int                          @default(0)
-  createdAt               DateTime                     @default(now())
+  /// Accounts created for this event are permanent instead of being deleted when it is archived.
+  permanentAccounts       Boolean                      @default(false)
+  createdAt              DateTime                     @default(now())
   updatedAt               DateTime                     @updatedAt
   permissionGrants        PermissionGrant[]
   apiClientGrants         ApiClientPermissionGrant[]
@@ -40,6 +42,8 @@ model Event {
   meshtasticChannels      MeshtasticChannel[]
   meshtasticConfiguration MeshtasticConfiguration?
   takConfiguration        TakConfiguration?
+  /// Event accounts; archiving the event deletes them.
+  accounts                DomainUser[]                 @relation("EventAccounts")
 }
 
 model User {
@@ -136,6 +140,9 @@ model DomainUser {
   version               Int                    @default(1)
   authSubjectId         String?                @unique
   authSubject           User?                  @relation(fields: [authSubjectId], references: [id], onDelete: SetNull)
+  /// Set for event accounts: archiving this event deletes the account. `null` for permanent accounts.
+  accountEventId        String?
+  accountEvent          Event?                 @relation("EventAccounts", fields: [accountEventId], references: [id], onDelete: Restrict)
   memberships           UserGroupMembership[]
   createdApiClients     ApiClient[]
   createdApiKeys        ApiKey[]
@@ -147,6 +154,8 @@ model DomainUser {
   accountInvites        AccountInvite[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
+
+  @@index([accountEventId])
 }
 
 /// Authorization group. `systemKey` marks groups the server protects, such as the setup Admin group.
@@ -850,6 +859,16 @@ model TakTrafficItem {
   event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId, receivedAt])
+}
+
+/// Instance-wide display settings; a single row with id "instance". A missing row means the
+/// default name "OpenMeshTak".
+model InstanceSettings {
+  id        String   @id
+  /// Shown as the browser page title, on the sign-in page and in account emails.
+  name      String
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt
 }
 
 /// Whether Core looks up published Meshtastic firmware releases from the official flasher; a single

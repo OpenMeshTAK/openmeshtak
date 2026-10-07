@@ -6,6 +6,7 @@ import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import { ProblemError, validationProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
 import type { EmailSettingsDto, SendTestEmailRequest, SmtpSecurity, UpdateEmailSettingsRequest } from "./email-settings.dto.js";
+import { instanceName } from "../instance-settings/instance-settings.service.js";
 import { EMAIL_SETTINGS_ID, encryptSmtpPassword, loadEmailSettings, sendEmail } from "./mailer.js";
 
 function toDto(settings: EmailSettings | null): EmailSettingsDto {
@@ -87,11 +88,12 @@ export async function updateEmailSettings(actor: ActorContext, input: UpdateEmai
 /** Sends a test email so an administrator sees the SMTP settings work before users rely on them. */
 export async function sendTestEmail(actor: ActorContext, input: SendTestEmailRequest): Promise<void> {
   await requirePermission(actor.principal, "email.manage");
+  const name = await instanceName();
   try {
     await sendEmail({
       to: input.to,
-      subject: "OpenMeshTak test email",
-      text: "This test email confirms that OpenMeshTak can send account emails with the configured SMTP settings.",
+      subject: `${name} test email`,
+      text: `This test email confirms that ${name} can send account emails with the configured SMTP settings.`,
     });
   } catch (error: unknown) {
     // SMTP errors can contain server details but no secrets of ours; show a short, safe reason.

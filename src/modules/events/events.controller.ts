@@ -28,6 +28,8 @@ import type {
 } from "./event.dto.js";
 import { transitionEvent } from "./event-lifecycle.service.js";
 import { createEvent, getEvent, listEvents, updateEvent } from "./events.service.js";
+import { makeEventAccountsPermanent } from "../users/event-accounts.js";
+import type { EventAccountsMadePermanentResponse } from "../users/user.dto.js";
 
 /**
  * Events are administered by people and by scoped integrations; every operation is authorized
@@ -117,7 +119,11 @@ export class EventsController extends Controller {
     return transitionEvent(requestContext(request), eventId, "activate", body.version);
   }
 
-  /** Moves an active event to the read-only `archived` state. Requires `events.manage`. */
+  /**
+   * Moves an active event to the read-only `archived` state. Requires `events.manage`. Its event
+   * accounts are deleted with their sign-in, sessions and TAK certificates; accounts that are still
+   * members of another unarchived event move to that event instead.
+   */
   @Post("{eventId}/archive")
   @SuccessResponse(200, "Event archived")
   @Response<ProblemDetails>(403, "Access denied")
@@ -147,5 +153,20 @@ export class EventsController extends Controller {
     @Body() body: EventTransitionRequest,
   ): Promise<EventDto> {
     return transitionEvent(requestContext(request), eventId, "reactivate", body.version);
+  }
+
+  /**
+   * Turns every current event account of the event into a permanent account, so archiving no
+   * longer deletes them. Requires `event-accounts.manage` for the event.
+   */
+  @Post("{eventId}/make-accounts-permanent")
+  @SuccessResponse(200, "Event accounts made permanent")
+  @Response<ProblemDetails>(403, "Access denied")
+  @Response<ProblemDetails>(404, "Not found")
+  public async makeEventAccountsPermanent(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+  ): Promise<EventAccountsMadePermanentResponse> {
+    return { accounts: await makeEventAccountsPermanent(requestContext(request), eventId) };
   }
 }

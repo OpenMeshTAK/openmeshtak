@@ -69,7 +69,7 @@ void describe("user-group members", () => {
   });
 
   void it("refuses membership in groups whose grants the actor does not hold", async () => {
-    const manager = await createUser("Manager", [{ permission: "user-groups.manage" }]);
+    const manager = await createUser("Manager", [{ permission: "user-group-members.manage" }]);
     const newcomer = await createUser("Newcomer", []);
 
     const response = await member(adminGroupId, newcomer.id, "put", manager).expect(403);

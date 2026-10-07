@@ -69,7 +69,7 @@ void describe("email settings", () => {
 
   void it("requires a host and sender to enable delivery and email.manage to change anything", async () => {
     await request(app).put("/api/v1/email/settings").set("Cookie", admin.cookie).send({ version: 0, ...settings, host: null }).expect(422);
-    const other = await createUser("Editor", [{ permission: "users.manage" }]);
+    const other = await createUser("Editor", [{ permission: "users.edit" }]);
     await request(app).get("/api/v1/email/settings").set("Cookie", other.cookie).expect(403);
   });
 });

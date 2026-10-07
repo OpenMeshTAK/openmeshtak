@@ -27,7 +27,7 @@ void describe("user administration", () => {
   beforeEach(async () => {
     await clearDatabase();
     app = createApp();
-    admin = await createUser("Admin", [{ permission: "users.read" }, { permission: "users.manage" }, { permission: "tak-server.admin-access" }]);
+    admin = await createUser("Admin", [{ permission: "users.read" }, { permission: "users.create" }, { permission: "users.edit" }, { permission: "users.set-email" }, { permission: "users.disable" }, { permission: "users.sign-out" }, { permission: "users.password-reset" }, { permission: "users.setup-links" }, { permission: "tak-server.admin-access" }]);
     peter = await createUser("Peter Parker", [{ permission: "tak-server.admin-access" }]);
   });
 
@@ -50,6 +50,38 @@ void describe("user administration", () => {
       .body as UserBody;
     assert.deepEqual([renamed.displayName, renamed.version], ["Spider", 2]);
     await request(app).put(`/api/v1/users/${peter.id}`).set("Cookie", admin.cookie).send({ version: 1, displayName: "Again" }).expect(409);
+  });
+
+  void it("sets an unverified email address with users.set-email and refuses taken ones", async () => {
+    const editor = await createUser("Editor", [{ permission: "users.edit" }]);
+    await request(app)
+      .put(`/api/v1/users/${peter.id}`)
+      .set("Cookie", editor.cookie)
+      .send({ version: 1, displayName: "Peter Parker", email: "peter@example.test" })
+      .expect(403);
+
+    const updated = await request(app)
+      .put(`/api/v1/users/${peter.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ version: 1, displayName: "Peter Parker", email: "Peter@Example.test" })
+      .expect(200);
+    assert.equal((updated.body as { email: string }).email, "peter@example.test");
+    const subject = await database.user.findUniqueOrThrow({ where: { id: peter.authSubjectId } });
+    assert.deepEqual([subject.email, subject.emailVerified], ["peter@example.test", false]);
+
+    const taken = await request(app)
+      .put(`/api/v1/users/${admin.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ version: 1, displayName: "Admin", email: "peter@example.test" })
+      .expect(409);
+    assert.equal((taken.body as { code: string }).code, "EMAIL_TAKEN");
+
+    const removed = await request(app)
+      .put(`/api/v1/users/${peter.id}`)
+      .set("Cookie", admin.cookie)
+      .send({ version: 2, displayName: "Peter Parker", email: null })
+      .expect(200);
+    assert.equal((removed.body as { email: string | null }).email, null);
   });
 
   void it("disables a user everywhere and enables them again", async () => {

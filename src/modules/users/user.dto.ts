@@ -1,6 +1,20 @@
 import type { Uuid } from "../../shared/http/uuid.js";
 import type { PageInfo } from "../../shared/pagination/cursor.js";
 
+/** `permanent` accounts stay; `event` accounts are deleted when their event is archived. */
+export type UserAccountType = "permanent" | "event";
+
+export interface UserAccountEvent {
+  id: Uuid;
+  slug: string;
+  name: string;
+}
+
+export interface UserGroupSummary {
+  id: Uuid;
+  name: string;
+}
+
 export interface UserDto {
   id: Uuid;
   displayName: string;
@@ -12,6 +26,13 @@ export interface UserDto {
   disabled: boolean;
   /** `false` until the user has set a password; a setup link can then sign them in once. */
   passwordSet: boolean;
+  /**
+   * Set for event accounts, which are deleted when this event is archived; `null` for permanent
+   * accounts.
+   */
+  accountEvent: UserAccountEvent | null;
+  /** User groups the user belongs to, in the order they were added. */
+  userGroups: UserGroupSummary[];
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
   /** @format date-time */
@@ -29,6 +50,13 @@ export interface UpdateUserRequest {
    * @maxLength 100
    */
   displayName: string;
+  /**
+   * New email address, or `null` to remove it; only for users with a local login and with
+   * `users.set-email`. It stays unverified until its owner confirms the link sent to it.
+   * @maxLength 254
+   * @pattern ^[^\s@]+@[^\s@]+\.[^\s@]+$
+   */
+  email?: string | null;
   /**
    * New sign-in and TAK login name; only for users with a local login. Apps enrolled with the old
    * name keep working, because client certificates name the user ID.
@@ -64,6 +92,11 @@ export interface SetupLinkDto {
 export interface CreatedUserResponse {
   user: UserDto;
   setupLink: SetupLinkDto;
+}
+
+export interface EventAccountsMadePermanentResponse {
+  /** Event accounts of the event that are now permanent. */
+  accounts: number;
 }
 
 export interface SetupLinkExchangeRequest {

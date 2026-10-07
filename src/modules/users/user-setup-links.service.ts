@@ -56,10 +56,25 @@ function auditEntry(actor: ActorContext, action: string, userId: string) {
 /**
  * Creates a user without a password and returns a single-use setup link for them. Opening the
  * link signs the person in once; they then set their own password, so administrators never know
- * it. The user has no permissions until added to a user group or an event. Requires `users.manage`.
+ * it. The user has no permissions until added to a user group or an event. Requires `users.create`.
  */
 export async function createUser(actor: ActorContext, input: CreateUserRequest): Promise<CreatedUserResponse> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "users.create");
+  const { response } = await createAccountWithSetupLink(actor, input, null, () => Promise.resolve(null));
+  return response;
+}
+
+/**
+ * Creates the login and domain user, then runs `alongside` in the same transaction, for example to
+ * add the new account to an event. Callers check permissions first.
+ * @param accountEventId Event whose archiving deletes the account; `null` for a permanent account.
+ */
+export async function createAccountWithSetupLink<T>(
+  actor: ActorContext,
+  input: CreateUserRequest,
+  accountEventId: string | null,
+  alongside: (transaction: Prisma.TransactionClient, user: { id: string; displayName: string }) => Promise<T>,
+): Promise<{ response: CreatedUserResponse; result: T }> {
   const displayName = input.displayName.trim();
   if (displayName === "") {
     throw validationProblem([{ field: "displayName", code: "REQUIRED", message: "Enter a name." }]);
@@ -74,14 +89,17 @@ export async function createUser(actor: ActorContext, input: CreateUserRequest):
   );
   try {
     await database.user.update({ where: { id: subject.id }, data: { username, displayUsername: username } });
-    const link = await database.$transaction(async (transaction) => {
-      await transaction.domainUser.create({ data: { id: userId, displayName, authSubjectId: subject.id } });
+    const { link, result } = await database.$transaction(async (transaction) => {
+      await transaction.domainUser.create({ data: { id: userId, displayName, authSubjectId: subject.id, accountEventId } });
       const issued = await issueAccountInvite(transaction, actor.principal, userId);
-      await recordAudit(auditEntry(actor, "user.created", userId), transaction);
-      return issued;
+      await recordAudit(
+        { ...auditEntry(actor, "user.created", userId), metadata: accountEventId === null ? {} : { accountEventId } },
+        transaction,
+      );
+      return { link: issued, result: await alongside(transaction, { id: userId, displayName }) };
     });
     const user = await database.domainUser.findUniqueOrThrow({ where: { id: userId }, select: userSelection });
-    return { user: toUserDto(user), setupLink: toSetupLinkDto(link) };
+    return { response: { user: toUserDto(user), setupLink: toSetupLinkDto(link) }, result };
   } catch (error: unknown) {
     await removeIncompleteAuthSubject(subject.id);
     throw isUniqueConstraintError(error) ? usernameTakenProblem() : error;
@@ -100,10 +118,10 @@ function alreadySetUp(): ProblemError {
 
 /**
  * Issues a new setup link for a user who cannot sign in yet, for example after the first one
- * expired. Earlier open links of the user stop working. Requires `users.manage`.
+ * expired. Earlier open links of the user stop working. Requires `users.setup-links`.
  */
 export async function createSetupLink(actor: ActorContext, userId: string): Promise<SetupLinkDto> {
-  await requirePermission(actor.principal, "users.manage");
+  await requirePermission(actor.principal, "users.setup-links");
   const user = await database.domainUser.findUnique({ where: { id: userId }, select: { authSubjectId: true } });
   if (user === null) {
     throw notFoundProblem();

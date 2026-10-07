@@ -164,7 +164,7 @@ void describe("API clients and API keys", () => {
     const response = await request(app)
       .post("/api/v1/api-clients")
       .set("Cookie", manager.cookie)
-      .send({ name: "Escalation", permissions: [{ permission: "users.manage", eventId: null }] })
+      .send({ name: "Escalation", permissions: [{ permission: "users.create", eventId: null }] })
       .expect(403);
     assert.equal((response.body as ProblemBody).code, "FORBIDDEN");
   });

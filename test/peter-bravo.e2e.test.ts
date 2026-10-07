@@ -4,7 +4,7 @@ import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { PERMISSIONS } from "../src/shared/auth/permissions.js";
-import { disconnectDatabase } from "../src/shared/database/database.js";
+import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import {
   clearDatabase,
   createEvent,
@@ -233,16 +233,15 @@ void describe("Peter/Bravo end to end", () => {
     assert.equal(updated.configurationRevision?.number, 2);
   });
 
-  void it("hides the profile from Peter once the event is archived", async () => {
+  void it("deletes Peter's event account once the event is archived", async () => {
     await request(app)
       .post(`/api/v1/events/${eventId}/archive`)
       .set("Cookie", admin.cookie)
       .send({ version: 2 })
       .expect(200);
 
-    await profileAs(peterCookie, 404);
-    const memberships = await request(app).get("/api/v1/me/event-memberships").set("Cookie", peterCookie);
-    assert.deepEqual(memberships.body, []);
-    assert.equal((await profileAs(admin.cookie)).source, "published");
+    await profileAs(peterCookie, 401);
+    assert.equal(await database.externalIdentity.count(), 0);
+    await profileAs(admin.cookie, 404);
   });
 });

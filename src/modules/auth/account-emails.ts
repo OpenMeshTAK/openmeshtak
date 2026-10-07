@@ -1,6 +1,7 @@
 import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
 import { sendEmail, sendEmailInBackground } from "../email/mailer.js";
+import { instanceName } from "../instance-settings/instance-settings.service.js";
 import { isPlaceholderEmail } from "./claim-session.plugin.js";
 
 /** The minimal Better Auth user fields these emails need. */
@@ -15,7 +16,9 @@ function greeting(user: AuthUser): string {
   return `Hello ${user.name},`;
 }
 
-const FOOTER = `\n\n--\nOpenMeshTak · ${config.publicOrigin}\nIf this was not you, contact your organizers.`;
+function footer(name: string): string {
+  return `\n\n--\n${name} · ${config.publicOrigin}\nIf this was not you, contact your organizers.`;
+}
 
 /** Whether the account may receive a password reset: verified, real address and not disabled. */
 async function mayResetPassword(user: AuthUser): Promise<boolean> {
@@ -35,11 +38,12 @@ export async function sendPasswordResetEmail({ user, url }: { user: AuthUser; ur
   if (!(await mayResetPassword(user))) {
     return;
   }
+  const name = await instanceName();
   sendEmailInBackground(
     {
       to: user.email,
-      subject: "Reset your OpenMeshTak password",
-      text: `${greeting(user)}\n\nsomeone asked to reset the password of your OpenMeshTak account. Open this link within 30 minutes to choose a new password:\n\n${url}\n\nThe link works once. If you did not ask for it, ignore this email; your password stays unchanged.${FOOTER}`,
+      subject: `Reset your ${name} password`,
+      text: `${greeting(user)}\n\nsomeone asked to reset the password of your ${name} account. Open this link within 30 minutes to choose a new password:\n\n${url}\n\nThe link works once. If you did not ask for it, ignore this email; your password stays unchanged.${footer(name)}`,
     },
     "password-reset",
   );
@@ -51,10 +55,11 @@ export async function sendPasswordResetEmail({ user, url }: { user: AuthUser; ur
  * the account to another address unnoticed.
  */
 export async function sendVerificationEmail({ user, url }: { user: AuthUser; url: string }): Promise<void> {
+  const name = await instanceName();
   await sendEmail({
     to: user.email,
-    subject: "Confirm your email address for OpenMeshTak",
-    text: `${greeting(user)}\n\nplease confirm that this address belongs to your OpenMeshTak account by opening this link:\n\n${url}\n\nUntil you confirm it, the address is not used for your account.${FOOTER}`,
+    subject: `Confirm your email address for ${name}`,
+    text: `${greeting(user)}\n\nplease confirm that this address belongs to your ${name} account by opening this link:\n\n${url}\n\nUntil you confirm it, the address is not used for your account.${footer(name)}`,
   });
 
   const current = await database.user.findUnique({ where: { id: user.id }, select: { email: true, emailVerified: true } });
@@ -62,19 +67,47 @@ export async function sendVerificationEmail({ user, url }: { user: AuthUser; url
     sendEmailInBackground(
       {
         to: current.email,
-        subject: "Your OpenMeshTak email address is being changed",
-        text: `${greeting(user)}\n\nsomeone asked to change the email address of your OpenMeshTak account to ${user.email}. The change only happens once the new address is confirmed.${FOOTER}`,
+        subject: `Your ${name} email address is being changed`,
+        text: `${greeting(user)}\n\nsomeone asked to change the email address of your ${name} account to ${user.email}. The change only happens once the new address is confirmed.${footer(name)}`,
       },
       "email-change-notice",
     );
   }
 }
 
-const NOTICES: Record<string, { subject: string; body: string }> = {
-  "password.changed": { subject: "Your OpenMeshTak password was changed", body: "the password of your OpenMeshTak account was just changed, and your other sessions were signed out." },
-  "password.reset": { subject: "Your OpenMeshTak password was reset", body: "the password of your OpenMeshTak account was just reset with an email link, and all sessions were signed out." },
-  "passkey.registered": { subject: "A passkey was added to your OpenMeshTak account", body: "a new passkey was just added to your OpenMeshTak account." },
-  "passkey.deleted": { subject: "A passkey was removed from your OpenMeshTak account", body: "a passkey was just removed from your OpenMeshTak account." },
+/**
+ * Tells the previous, verified address that an administrator changed or removed it, because the
+ * address is where password resets go.
+ */
+export async function sendAdministratorEmailChangeNotice(previous: string, userName: string, next: string | null): Promise<void> {
+  const name = await instanceName();
+  sendEmailInBackground(
+    {
+      to: previous,
+      subject: `Your ${name} email address was changed`,
+      text: `Hello ${userName},\n\nan administrator ${next === null ? "removed this email address from" : "changed the email address of"} your ${name} account${next === null ? "" : ` to ${next}`}. Password resets no longer go to this address.${footer(name)}`,
+    },
+    "email-change-notice",
+  );
+}
+
+const NOTICES: Record<string, { subject: (name: string) => string; body: (name: string) => string }> = {
+  "password.changed": {
+    subject: (name) => `Your ${name} password was changed`,
+    body: (name) => `the password of your ${name} account was just changed, and your other sessions were signed out.`,
+  },
+  "password.reset": {
+    subject: (name) => `Your ${name} password was reset`,
+    body: (name) => `the password of your ${name} account was just reset with an email link, and all sessions were signed out.`,
+  },
+  "passkey.registered": {
+    subject: (name) => `A passkey was added to your ${name} account`,
+    body: (name) => `a new passkey was just added to your ${name} account.`,
+  },
+  "passkey.deleted": {
+    subject: (name) => `A passkey was removed from your ${name} account`,
+    body: (name) => `a passkey was just removed from your ${name} account.`,
+  },
 };
 
 /** Tells the verified address of an account about a credential change. Never blocks the change. */
@@ -84,5 +117,6 @@ export async function sendSecurityNotice(authSubjectId: string, event: string): 
   if (notice === undefined || user === null || !user.emailVerified || isPlaceholderEmail(user.email)) {
     return;
   }
-  sendEmailInBackground({ to: user.email, subject: notice.subject, text: `${greeting(user)}\n\n${notice.body}${FOOTER}` }, event);
+  const name = await instanceName();
+  sendEmailInBackground({ to: user.email, subject: notice.subject(name), text: `${greeting(user)}\n\n${notice.body(name)}${footer(name)}` }, event);
 }

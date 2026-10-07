@@ -6,6 +6,7 @@ import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
 import { eventArchivedProblem, requireEventPermission } from "../events/event-access.js";
+import { accountEventIdFor } from "../users/event-accounts.js";
 import type {
   ExternalMemberSyncRequest,
   ExternalMemberSyncResult,
@@ -197,10 +198,11 @@ async function recordSyncIssue(
 /**
  * Finds the user behind an external identity or creates a plain domain user for it. This is the
  * only identity side effect of synchronization: no Better Auth user, credential, email address
- * or session is ever created here.
+ * or session is ever created here. New users are event accounts unless the event keeps accounts.
  */
 async function findOrCreateUser(
   transaction: Transaction,
+  eventId: string,
   key: ExternalMemberKey,
   username: string,
 ): Promise<string> {
@@ -217,7 +219,8 @@ async function findOrCreateUser(
   }
 
   const userId = randomUUID();
-  await transaction.domainUser.create({ data: { id: userId, displayName: username } });
+  const event = await transaction.event.findUniqueOrThrow({ where: { id: eventId }, select: { id: true, permanentAccounts: true } });
+  await transaction.domainUser.create({ data: { id: userId, displayName: username, accountEventId: accountEventIdFor(event) } });
   await transaction.externalIdentity.create({
     data: { id: randomUUID(), ...key, username, userId },
   });
@@ -244,7 +247,7 @@ async function upsertMember(
   existing: ExistingMember | null,
   resolution: Resolution,
 ): Promise<ExternalMemberSyncResult> {
-  const userId = await findOrCreateUser(transaction, key, request.username);
+  const userId = await findOrCreateUser(transaction, eventId, key, request.username);
   const data = { username: request.username, ...resolution };
 
   let change: "created" | "updated" | "unchanged";
