@@ -26,6 +26,15 @@ void describe("TAK connection package", () => {
     assert.match(preferences, /<entry key="apiSecureServerPort" class="class java.lang.String">8484<\/entry>/);
   });
 
+  void it("names the truststore where ATAK stores it after the import", async () => {
+    const { bytes } = buildConnectionPackage({ hostName: "tak.example.org", streamingPort: 8089, martiPort: 8443, caPems: [await selfSignedPem()] });
+    const files = unzipSync(bytes);
+
+    // The zip keeps certs/, but ATAK moves every .p12 into its cert/ directory before it reads caLocation.
+    assert.ok(files["certs/openmeshtak-truststore.p12"]);
+    assert.match(strFromU8(files["config.pref"] ?? new Uint8Array()), /<entry key="caLocation0" class="class java.lang.String">cert\/openmeshtak-truststore.p12<\/entry>/);
+  });
+
   void it("writes a truststore that Java and ATAK load as trusted certificates", async () => {
     const { bytes } = buildConnectionPackage({
       hostName: "tak.example.org",

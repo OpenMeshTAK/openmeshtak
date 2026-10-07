@@ -8,6 +8,13 @@ import forge from "node-forge";
  */
 const TRUSTSTORE_PASSWORD = "openmeshtak";
 const TRUSTSTORE_PATH = "certs/openmeshtak-truststore.p12";
+/**
+ * Where ATAK finds the truststore after the import. It moves every .p12 of a package into its own
+ * `cert/` directory and resolves `caLocation` against its storage root, so the preference must
+ * name that location, not the path inside the zip. Otherwise the connection gets no truststore
+ * and certificate enrollment stops before it contacts the server.
+ */
+const TRUSTSTORE_LOCATION = "cert/openmeshtak-truststore.p12";
 
 export interface ConnectionPackageInput {
   hostName: string;
@@ -121,7 +128,7 @@ function preferences(input: ConnectionPackageInput): string {
     <entry key="description0" class="class java.lang.String">${description}</entry>
     <entry key="enabled0" class="class java.lang.Boolean">true</entry>
     <entry key="connectString0" class="class java.lang.String">${connectString}</entry>
-    <entry key="caLocation0" class="class java.lang.String">${TRUSTSTORE_PATH}</entry>
+    <entry key="caLocation0" class="class java.lang.String">${TRUSTSTORE_LOCATION}</entry>
     <entry key="caPassword0" class="class java.lang.String">${TRUSTSTORE_PASSWORD}</entry>
     <entry key="enrollForCertificateWithTrust0" class="class java.lang.Boolean">true</entry>
     <entry key="useAuth0" class="class java.lang.Boolean">true</entry>
