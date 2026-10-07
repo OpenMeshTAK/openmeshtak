@@ -1,4 +1,5 @@
 import { createHash, createPublicKey, randomBytes, randomUUID } from "node:crypto";
+import { EventEmitter } from "node:events";
 import type { TakClientCertificate } from "../../generated/prisma/client.js";
 import { database } from "../../shared/database/database.js";
 import { activeCertificateAuthority, decryptCaKey, fingerprintOf } from "./certificate-authority.js";
@@ -8,6 +9,12 @@ const DAY = 86_400_000;
 const MINIMUM_RSA_BITS = 2048;
 
 export class CertificateRequestError extends Error {}
+
+/**
+ * Announces issued and revoked client certificates, so an open setup dialog can confirm the
+ * enrollment and the administrator list stays current.
+ */
+export const certificateEvents = new EventEmitter<{ issued: [TakClientCertificate]; revoked: [TakClientCertificate] }>();
 
 /** ATAK sends the CSR as bare base64, iTAK and tools may send PEM; both are accepted. */
 function parseRequest(body: string): x509.Pkcs10CertificateRequest {
@@ -98,6 +105,7 @@ export async function issueClientCertificate(
       notAfter,
     },
   });
+  certificateEvents.emit("issued", row);
   return { certificate, row };
 }
 

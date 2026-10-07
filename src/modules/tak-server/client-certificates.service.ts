@@ -1,4 +1,5 @@
 import type { TakClientCertificate } from "../../generated/prisma/client.js";
+import { certificateEvents } from "./client-certificates.js";
 import { type AuditActor, recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
@@ -90,6 +91,7 @@ export async function revokeCertificate(actor: RevokingActor, certificate: TakCl
     });
   }
   takConnections.disconnectCertificate(certificate.id);
+  certificateEvents.emit("revoked", certificate);
 }
 
 async function revokedDto(certificateId: string): Promise<TakClientCertificateDto> {

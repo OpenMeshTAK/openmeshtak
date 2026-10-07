@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import type { TakAcmeSettings, TakServerCertificate } from "../../generated/prisma/client.js";
 import { database } from "../../shared/database/database.js";
 import { sanitizeLogMessage } from "../../shared/logging/sanitize.js";
@@ -33,7 +34,8 @@ function safeFailureReason(error: unknown): string {
   return sanitizeLogMessage(reason).slice(0, 500);
 }
 
-class TakAcmeManager {
+/** Emits `changed` when an issuance starts or ends, so the administrator page can show its progress. */
+class TakAcmeManager extends EventEmitter<{ changed: [] }> {
   private timer: NodeJS.Timeout | null = null;
   private renewal: Promise<TakServerCertificate | null> | null = null;
 
@@ -62,9 +64,13 @@ class TakAcmeManager {
   }
 
   private run(force: boolean, now: Date): Promise<TakServerCertificate | null> {
-    this.renewal ??= this.runOnce(force, now).finally(() => {
-      this.renewal = null;
-    });
+    if (this.renewal === null) {
+      this.renewal = this.runOnce(force, now).finally(() => {
+        this.renewal = null;
+        this.emit("changed");
+      });
+      this.emit("changed");
+    }
     return this.renewal;
   }
 

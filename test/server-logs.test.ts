@@ -6,7 +6,8 @@ import type { Express } from "express";
 import { io, type Socket } from "socket.io-client";
 import request from "supertest";
 import { createApp } from "../src/app.js";
-import { attachRealtime, REALTIME_PATH, SERVER_LOGS_NAMESPACE } from "../src/modules/server-logs/server-logs.realtime.js";
+import { attachServerLogStream, SERVER_LOGS_NAMESPACE } from "../src/modules/server-logs/server-logs.realtime.js";
+import { createRealtimeServer, REALTIME_PATH } from "../src/shared/realtime/realtime-server.js";
 import { config } from "../src/shared/config/config.js";
 import { disconnectDatabase } from "../src/shared/database/database.js";
 import { createLogger } from "../src/shared/logging/logger.js";
@@ -82,7 +83,8 @@ void describe("server log", () => {
 
   void it("pushes new lines over the realtime socket to permitted viewers from the Web origin", async () => {
     const httpServer = createServer(app);
-    const realtime = attachRealtime(httpServer);
+    const realtime = createRealtimeServer(httpServer);
+    attachServerLogStream(realtime);
     await new Promise<void>((resolve) => httpServer.listen(0, "127.0.0.1", resolve));
     const { port } = httpServer.address() as AddressInfo;
     const connect = (cookie: string, origin = new URL(config.publicOrigin).origin): Socket =>
@@ -90,6 +92,8 @@ void describe("server log", () => {
         path: REALTIME_PATH,
         transports: ["websocket"],
         reconnection: false,
+    // Each socket needs its own connection, otherwise they share the first one's cookie.
+    forceNew: true,
         extraHeaders: { cookie, origin },
       });
     const outcome = (socket: Socket): Promise<string> =>

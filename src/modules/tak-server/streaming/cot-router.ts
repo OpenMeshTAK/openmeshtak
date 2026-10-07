@@ -45,9 +45,23 @@ export interface LiveConnection {
  */
 export class CotRouter {
   private readonly peers = new Map<string, CotPeer>();
+  private readonly listeners = new Set<(eventIds: CotScope) => void>();
+
+  /** Calls `listener` with the affected events whenever connections or their items change. */
+  onChange(listener: (eventIds: CotScope) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private changed(eventIds: CotScope): void {
+    for (const listener of this.listeners) {
+      listener(eventIds);
+    }
+  }
 
   join(peer: CotPeer): void {
     this.peers.set(peer.id, peer);
+    this.changed(peer.scope);
     for (const other of this.peers.values()) {
       if (other !== peer && other.lastSituationalAwareness !== null && scopesOverlap(peer.scope, other.scope)) {
         peer.send(other.lastSituationalAwareness);
@@ -56,7 +70,11 @@ export class CotRouter {
   }
 
   leave(peerId: string): void {
+    const peer = this.peers.get(peerId);
     this.peers.delete(peerId);
+    if (peer !== undefined) {
+      this.changed(peer.scope);
+    }
   }
 
   publish(sender: CotPeer, xml: string): void {
@@ -77,6 +95,7 @@ export class CotRouter {
         peer.items.delete(oldest);
       }
     }
+    this.changed(peer.scope);
   }
 
   /** What is happening in one event right now: its connected apps and their current, not yet stale items. */

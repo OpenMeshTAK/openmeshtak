@@ -1,4 +1,5 @@
 import { auth } from "../auth/auth.js";
+import { sessionNotices } from "../auth/session.realtime.js";
 import { sendAdministratorEmailChangeNotice } from "../auth/account-emails.js";
 import { isPlaceholderEmail, placeholderEmailFor } from "../auth/claim-session.plugin.js";
 import { config } from "../../shared/config/config.js";
@@ -250,6 +251,7 @@ export async function revokeUserSessions(actor: ActorContext, id: string): Promi
       user.authSubjectId === null ? { count: 0 } : await transaction.session.deleteMany({ where: { userId: user.authSubjectId } });
     await recordAudit(auditEntry(actor, "user.sessions-revoked", id, { sessions: deleted.count }), transaction);
   });
+  sessionNotices.emit("ended", id);
 }
 
 function cannotDisableSelf(): ProblemError {
@@ -282,6 +284,9 @@ export async function setUserDisabled(actor: ActorContext, id: string, disabled:
     }
     await recordAudit(auditEntry(actor, disabled ? "user.disabled" : "user.enabled", id), transaction);
   });
+  if (disabled) {
+    sessionNotices.emit("ended", id);
+  }
   return toUserDto(await findForUpdate(id));
 }
 

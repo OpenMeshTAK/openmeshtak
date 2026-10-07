@@ -5,12 +5,20 @@ import { backfillUsernames } from "./modules/users/usernames.js";
 import { config } from "./shared/config/config.js";
 import { getRootKey } from "./shared/crypto/root-key.js";
 import { firmwareProfiles } from "./modules/meshtastic-firmware/firmware-profiles.js";
-import { attachRealtime } from "./modules/server-logs/server-logs.realtime.js";
+import { attachSessionStream } from "./modules/auth/session.realtime.js";
+import { attachPackageChangeStream } from "./modules/data-packages/package-changes.realtime.js";
+import { attachEventMemberStream } from "./modules/event-members/event-members.realtime.js";
+import { attachProfileUpdateStream } from "./modules/profiles/profile-updates.realtime.js";
+import { attachServerLogStream } from "./modules/server-logs/server-logs.realtime.js";
+import { attachTakTrafficStream } from "./modules/tak-server/live-traffic.realtime.js";
+import { attachMyTakCertificateStream } from "./modules/tak-server/my-tak-certificates.realtime.js";
+import { attachTakServerStream } from "./modules/tak-server/tak-server.realtime.js";
 import { takListeners } from "./modules/tak-server/tak-listeners.js";
 import { scheduleTrafficCleanup } from "./modules/tak-server/traffic-recording.js";
 import { takAcmeManager } from "./modules/tak-server/acme-manager.js";
 import { connectDatabase, disconnectDatabase } from "./shared/database/database.js";
 import { logger } from "./shared/logging/logger.js";
+import { createRealtimeServer } from "./shared/realtime/realtime-server.js";
 import { writeBootstrapOperatorNotice } from "./shared/logging/operator-output.js";
 
 async function startServer(): Promise<void> {
@@ -42,7 +50,15 @@ async function startServer(): Promise<void> {
       "OpenMeshTak Core started",
     );
   });
-  const realtime = attachRealtime(server);
+  const realtime = createRealtimeServer(server);
+  attachServerLogStream(realtime);
+  attachTakTrafficStream(realtime);
+  attachMyTakCertificateStream(realtime);
+  attachPackageChangeStream(realtime);
+  attachEventMemberStream(realtime);
+  attachProfileUpdateStream(realtime);
+  attachSessionStream(realtime);
+  attachTakServerStream(realtime);
 
   scheduleTrafficCleanup();
   takAcmeManager.start();
