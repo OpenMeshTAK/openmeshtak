@@ -83,7 +83,19 @@ To serve iTAK when `8443` is taken on the host:
 
 - **Dedicated address (recommended):** give the TAK host name its own public IPv4/IPv6 address and publish Core's ports only on that address, so `8443` there belongs to OpenMeshTak.
 - **SNI passthrough:** a layer-4 router such as HAProxy in TCP mode or nginx `stream` with `ssl_preread` owns public `8443` and forwards connections for the TAK host name unchanged to Core and everything else to the other service. It must not terminate TLS, because Core checks the client certificate itself. This only works if the other service can be moved to a private port; CloudPanel documents no supported way to move its administration port.
-- **Move the other service** off public `8443`, if it supports that.
+- **Move the other service** off public `8443`, if it supports that. For CloudPanel, see below.
+
+#### CloudPanel on the same host
+
+CloudPanel serves its administration on public `8443` and offers no setting to change that. Its panel runs on its own nginx (`clp-nginx`), separate from the nginx for websites. If you already reach the panel through a CloudPanel custom domain on `443`, which proxies to `https://127.0.0.1:8443`, the panel only needs to listen on loopback:
+
+1. Back up `/home/clp/services/nginx/sites-enabled/cloudpanel.conf`, then change its `listen 8443 ssl http2;` to `listen 127.0.0.1:8443 ssl http2;` and `listen [::]:8443 ssl http2;` to `listen [::1]:8443 ssl http2;`.
+2. Check the file with `nginx -t -c /home/clp/services/nginx/nginx.conf`, then run `systemctl restart clp-nginx`. A reload is not enough: nginx keeps the old wildcard socket and the new loopback address cannot be bound.
+3. Confirm with `ss -tlnp | grep 8443` that the panel listens only on `127.0.0.1` and `[::1]`, and that the panel domain still works.
+4. Publish Core's Marti port on the public address only, for example `"203.0.113.10:8443:8443"`. A plain `"8443:8443"` binds `0.0.0.0` and collides with the panel on loopback. Add an IPv6 mapping only if the TAK host name has an AAAA record.
+5. Set Marti to `8443` on the TAK server page. ATAK devices set up with the old port need to be set up again.
+
+This edits a file CloudPanel generates, so a CloudPanel update can restore the public listener. Check `ss -tlnp | grep 8443` after updates; if CloudPanel holds `0.0.0.0:8443` again, Core cannot start and step 1 needs repeating.
 
 Before relying on one of these setups, test enrollment, Data Package download and CoT with the ATAK and iTAK versions your participants use.
 
