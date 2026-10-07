@@ -18,7 +18,8 @@ import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
-import type { UpdateUserRequest, UserDto, UserPage } from "./user.dto.js";
+import type { CreatedUserResponse, CreateUserRequest, SetupLinkDto, UpdateUserRequest, UserDto, UserPage } from "./user.dto.js";
+import { createSetupLink, createUser } from "./user-setup-links.service.js";
 import { getUser, listUsers, revokeUserSessions, sendUserPasswordReset, setUserDisabled, updateUser } from "./users.service.js";
 
 /** Global OpenMeshTak users. Event participation is managed separately per event. */
@@ -47,6 +48,21 @@ export class UsersController extends Controller {
     @Query() search?: string,
   ): Promise<UserPage> {
     return listUsers(requestContext(request).principal, limit, cursor, search);
+  }
+
+  /**
+   * Creates a user without a password and returns a single-use setup link, valid for seven days.
+   * The person opens it, signs in once and sets their own password. The new user has no
+   * permissions until added to a user group or an event. Requires `users.manage`.
+   */
+  @Post()
+  @SuccessResponse(201, "User created")
+  @Response<ProblemDetails>(409, "Username taken")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async createUser(@Request() request: unknown, @Body() body: CreateUserRequest): Promise<CreatedUserResponse> {
+    const created = await createUser(requestContext(request), body);
+    this.setStatus(201);
+    return created;
   }
 
   @Get("{userId}")
@@ -96,6 +112,20 @@ export class UsersController extends Controller {
   public async sendUserPasswordReset(@Request() request: unknown, @Path() userId: Uuid): Promise<void> {
     await sendUserPasswordReset(requestContext(request), userId);
     this.setStatus(202);
+  }
+
+  /**
+   * Issues a new single-use setup link for a user who has not set a password yet. Earlier links
+   * of the user stop working. Requires `users.manage`.
+   */
+  @Post("{userId}/setup-link")
+  @SuccessResponse(201, "Setup link created")
+  @Response<ProblemDetails>(404, "Not found")
+  @Response<ProblemDetails>(409, "The user can already sign in")
+  public async createSetupLink(@Request() request: unknown, @Path() userId: Uuid): Promise<SetupLinkDto> {
+    const link = await createSetupLink(requestContext(request), userId);
+    this.setStatus(201);
+    return link;
   }
 
   /** Signs the user out everywhere. Requires `users.manage`. */

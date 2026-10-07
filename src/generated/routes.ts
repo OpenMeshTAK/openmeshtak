@@ -6,6 +6,8 @@ import {  fetchMiddlewares, ExpressTemplateService } from '@tsoa/runtime';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { UsersController } from './../modules/users/users.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { SetupLinkExchangeController } from './../modules/users/setup-link-exchange.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { UserGroupsController } from './../modules/user-groups/user-groups.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakTrafficRecordingController } from './../modules/tak-server/traffic-recording.controller.js';
@@ -29,6 +31,12 @@ import { TakAcmeSettingsController } from './../modules/tak-server/acme-settings
 import { TakConfigurationController } from './../modules/tak-configuration/tak-configuration.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SetupController } from './../modules/setup/setup.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { RegistrationController } from './../modules/registration/registration.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { RegistrationSettingsController } from './../modules/registration/registration-admin.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { RegistrationInvitesController } from './../modules/registration/registration-admin.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberProfileController } from './../modules/profiles/profiles.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -153,6 +161,7 @@ const models: TsoaRoute.Models = {
             "username": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "email": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "disabled": {"dataType":"boolean","required":true},
+            "passwordSet": {"dataType":"boolean","required":true},
             "version": {"dataType":"double","required":true},
             "createdAt": {"dataType":"string","required":true},
         },
@@ -177,12 +186,55 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SetupLinkDto": {
+        "dataType": "refObject",
+        "properties": {
+            "url": {"dataType":"string","required":true},
+            "expiresAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreatedUserResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "user": {"ref":"UserDto","required":true},
+            "setupLink": {"ref":"SetupLinkDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateUserRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "displayName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "username": {"dataType":"string","validators":{"pattern":{"value":"^[a-z0-9._-]{3,32}$"}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdateUserRequest": {
         "dataType": "refObject",
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
             "displayName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "username": {"dataType":"string","validators":{"pattern":{"value":"^[a-z0-9._-]{3,32}$"}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SetupLinkExchangeResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "user": {"dataType":"nestedObjectLiteral","nestedProperties":{"displayName":{"dataType":"string","required":true},"id":{"ref":"Uuid","required":true}},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SetupLinkExchangeRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "token": {"dataType":"string","required":true,"validators":{"maxLength":{"value":200}}},
         },
         "additionalProperties": false,
     },
@@ -530,6 +582,83 @@ const models: TsoaRoute.Models = {
             "username": {"dataType":"string","required":true,"validators":{"pattern":{"value":"^[a-z0-9._-]{3,32}$"}}},
             "password": {"dataType":"string","required":true,"validators":{"minLength":{"value":12},"maxLength":{"value":128}}},
             "token": {"dataType":"string","required":true,"validators":{"minLength":{"value":48},"maxLength":{"value":128}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RegistrationMode": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["closed"]},{"dataType":"enum","enums":["invite"]},{"dataType":"enum","enums":["open"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RegistrationStatusDto": {
+        "dataType": "refObject",
+        "properties": {
+            "mode": {"ref":"RegistrationMode","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RegisterResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "user": {"dataType":"nestedObjectLiteral","nestedProperties":{"username":{"dataType":"string","required":true},"displayName":{"dataType":"string","required":true},"id":{"ref":"Uuid","required":true}},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RegisterRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "displayName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "username": {"dataType":"string","required":true,"validators":{"pattern":{"value":"^[a-z0-9._-]{3,32}$"}}},
+            "password": {"dataType":"string","required":true,"validators":{"minLength":{"value":12},"maxLength":{"value":128}}},
+            "inviteToken": {"dataType":"string","validators":{"maxLength":{"value":200}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RegistrationSettingsDto": {
+        "dataType": "refObject",
+        "properties": {
+            "mode": {"ref":"RegistrationMode","required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateRegistrationSettingsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "mode": {"ref":"RegistrationMode","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AccountInviteStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["open"]},{"dataType":"enum","enums":["consumed"]},{"dataType":"enum","enums":["revoked"]},{"dataType":"enum","enums":["expired"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RegistrationInviteDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "status": {"ref":"AccountInviteStatus","required":true},
+            "expiresAt": {"dataType":"string","required":true},
+            "consumedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "revokedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "createdAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreatedRegistrationInviteResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "invite": {"ref":"RegistrationInviteDto","required":true},
+            "inviteUrl": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -2322,6 +2451,38 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsUsersController_createUser: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateUserRequest"},
+        };
+        app.post('/api/v1/users',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(UsersController)),
+            ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.createUser)),
+
+            async function UsersController_createUser(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsUsersController_createUser, request, response });
+
+                const controller = new UsersController();
+
+              await templateService.apiHandler({
+                methodName: 'createUser',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsUsersController_getUser: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
@@ -2483,6 +2644,38 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsUsersController_createSetupLink: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/users/:userId/setup-link',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(UsersController)),
+            ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.createSetupLink)),
+
+            async function UsersController_createSetupLink(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsUsersController_createSetupLink, request, response });
+
+                const controller = new UsersController();
+
+              await templateService.apiHandler({
+                methodName: 'createSetupLink',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsUsersController_revokeUserSessions: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 userId: {"in":"path","name":"userId","required":true,"ref":"Uuid"},
@@ -2509,6 +2702,37 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSetupLinkExchangeController_exchangeSetupLink: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"SetupLinkExchangeRequest"},
+        };
+        app.post('/api/v1/auth/setup-links/exchange',
+            ...(fetchMiddlewares<RequestHandler>(SetupLinkExchangeController)),
+            ...(fetchMiddlewares<RequestHandler>(SetupLinkExchangeController.prototype.exchangeSetupLink)),
+
+            async function SetupLinkExchangeController_exchangeSetupLink(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSetupLinkExchangeController_exchangeSetupLink, request, response });
+
+                const controller = new SetupLinkExchangeController();
+
+              await templateService.apiHandler({
+                methodName: 'exchangeSetupLink',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);
@@ -3529,6 +3753,223 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRegistrationController_getRegistrationStatus: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/v1/registration',
+            ...(fetchMiddlewares<RequestHandler>(RegistrationController)),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationController.prototype.getRegistrationStatus)),
+
+            async function RegistrationController_getRegistrationStatus(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsRegistrationController_getRegistrationStatus, request, response });
+
+                const controller = new RegistrationController();
+
+              await templateService.apiHandler({
+                methodName: 'getRegistrationStatus',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRegistrationController_register: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"RegisterRequest"},
+        };
+        app.post('/api/v1/registration',
+            ...(fetchMiddlewares<RequestHandler>(RegistrationController)),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationController.prototype.register)),
+
+            async function RegistrationController_register(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsRegistrationController_register, request, response });
+
+                const controller = new RegistrationController();
+
+              await templateService.apiHandler({
+                methodName: 'register',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRegistrationSettingsController_getRegistrationSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/registration-settings',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationSettingsController.prototype.getRegistrationSettings)),
+
+            async function RegistrationSettingsController_getRegistrationSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsRegistrationSettingsController_getRegistrationSettings, request, response });
+
+                const controller = new RegistrationSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getRegistrationSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRegistrationSettingsController_updateRegistrationSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateRegistrationSettingsRequest"},
+        };
+        app.put('/api/v1/registration-settings',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationSettingsController.prototype.updateRegistrationSettings)),
+
+            async function RegistrationSettingsController_updateRegistrationSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsRegistrationSettingsController_updateRegistrationSettings, request, response });
+
+                const controller = new RegistrationSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateRegistrationSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRegistrationInvitesController_listRegistrationInvites: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/registration-invites',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationInvitesController)),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationInvitesController.prototype.listRegistrationInvites)),
+
+            async function RegistrationInvitesController_listRegistrationInvites(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsRegistrationInvitesController_listRegistrationInvites, request, response });
+
+                const controller = new RegistrationInvitesController();
+
+              await templateService.apiHandler({
+                methodName: 'listRegistrationInvites',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRegistrationInvitesController_createRegistrationInvite: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.post('/api/v1/registration-invites',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationInvitesController)),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationInvitesController.prototype.createRegistrationInvite)),
+
+            async function RegistrationInvitesController_createRegistrationInvite(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsRegistrationInvitesController_createRegistrationInvite, request, response });
+
+                const controller = new RegistrationInvitesController();
+
+              await templateService.apiHandler({
+                methodName: 'createRegistrationInvite',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRegistrationInvitesController_revokeRegistrationInvite: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                inviteId: {"in":"path","name":"inviteId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/registration-invites/:inviteId/revoke',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationInvitesController)),
+            ...(fetchMiddlewares<RequestHandler>(RegistrationInvitesController.prototype.revokeRegistrationInvite)),
+
+            async function RegistrationInvitesController_revokeRegistrationInvite(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsRegistrationInvitesController_revokeRegistrationInvite, request, response });
+
+                const controller = new RegistrationInvitesController();
+
+              await templateService.apiHandler({
+                methodName: 'revokeRegistrationInvite',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

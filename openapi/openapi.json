@@ -98,6 +98,10 @@
 						"type": "boolean",
 						"description": "Disabled users cannot sign in, keep no sessions and lose TAK access."
 					},
+					"passwordSet": {
+						"type": "boolean",
+						"description": "`false` until the user has set a password; a setup link can then sign them in once."
+					},
 					"version": {
 						"type": "number",
 						"format": "double",
@@ -114,6 +118,7 @@
 					"username",
 					"email",
 					"disabled",
+					"passwordSet",
 					"version",
 					"createdAt"
 				],
@@ -156,6 +161,59 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"SetupLinkDto": {
+				"properties": {
+					"url": {
+						"type": "string",
+						"description": "Single-use link for the user, returned exactly once. The token travels in the URL fragment,\nwhich browsers never send to the server; the Web application exchanges it in a request body."
+					},
+					"expiresAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"url",
+					"expiresAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatedUserResponse": {
+				"properties": {
+					"user": {
+						"$ref": "#/components/schemas/UserDto"
+					},
+					"setupLink": {
+						"$ref": "#/components/schemas/SetupLinkDto"
+					}
+				},
+				"required": [
+					"user",
+					"setupLink"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateUserRequest": {
+				"properties": {
+					"displayName": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"username": {
+						"type": "string",
+						"description": "Sign-in and TAK login name; derived from the display name when omitted. The person may still\nchange it while setting up the account.",
+						"pattern": "^[a-z0-9._-]{3,32}$"
+					}
+				},
+				"required": [
+					"displayName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"UpdateUserRequest": {
 				"properties": {
 					"version": {
@@ -177,6 +235,43 @@
 				"required": [
 					"version",
 					"displayName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SetupLinkExchangeResponse": {
+				"properties": {
+					"user": {
+						"properties": {
+							"displayName": {
+								"type": "string"
+							},
+							"id": {
+								"$ref": "#/components/schemas/Uuid"
+							}
+						},
+						"required": [
+							"displayName",
+							"id"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"user"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SetupLinkExchangeRequest": {
+				"properties": {
+					"token": {
+						"type": "string",
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"token"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1217,6 +1312,186 @@
 					"username",
 					"password",
 					"token"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegistrationMode": {
+				"type": "string",
+				"enum": [
+					"closed",
+					"invite",
+					"open"
+				],
+				"description": "Who may create their own account: nobody (`closed`, the default), people holding a\nregistration invite (`invite`), or anyone who can reach the instance (`open`)."
+			},
+			"RegistrationStatusDto": {
+				"properties": {
+					"mode": {
+						"$ref": "#/components/schemas/RegistrationMode"
+					}
+				},
+				"required": [
+					"mode"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegisterResponse": {
+				"properties": {
+					"user": {
+						"properties": {
+							"username": {
+								"type": "string"
+							},
+							"displayName": {
+								"type": "string"
+							},
+							"id": {
+								"$ref": "#/components/schemas/Uuid"
+							}
+						},
+						"required": [
+							"username",
+							"displayName",
+							"id"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"user"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegisterRequest": {
+				"properties": {
+					"displayName": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"username": {
+						"type": "string",
+						"description": "Sign-in and TAK login name: 3 to 32 lowercase letters, digits, dots, underscores or hyphens.",
+						"pattern": "^[a-z0-9._-]{3,32}$"
+					},
+					"password": {
+						"type": "string",
+						"minLength": 12,
+						"maxLength": 128
+					},
+					"inviteToken": {
+						"type": "string",
+						"description": "Registration invite; required while registration is invite-only.",
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"displayName",
+					"username",
+					"password"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegistrationSettingsDto": {
+				"properties": {
+					"mode": {
+						"$ref": "#/components/schemas/RegistrationMode"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; `0` while the defaults were never saved."
+					}
+				},
+				"required": [
+					"mode",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateRegistrationSettingsRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0
+					},
+					"mode": {
+						"$ref": "#/components/schemas/RegistrationMode"
+					}
+				},
+				"required": [
+					"version",
+					"mode"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AccountInviteStatus": {
+				"type": "string",
+				"enum": [
+					"open",
+					"consumed",
+					"revoked",
+					"expired"
+				]
+			},
+			"RegistrationInviteDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"status": {
+						"$ref": "#/components/schemas/AccountInviteStatus"
+					},
+					"expiresAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"consumedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"revokedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"status",
+					"expiresAt",
+					"consumedAt",
+					"revokedAt",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatedRegistrationInviteResponse": {
+				"properties": {
+					"invite": {
+						"$ref": "#/components/schemas/RegistrationInviteDto"
+					},
+					"inviteUrl": {
+						"type": "string",
+						"description": "Single-use registration link, returned exactly once. The token travels in the URL fragment,\nwhich browsers never send to the server."
+					}
+				},
+				"required": [
+					"invite",
+					"inviteUrl"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -6224,6 +6499,84 @@
 						}
 					}
 				]
+			},
+			"post": {
+				"operationId": "CreateUser",
+				"responses": {
+					"201": {
+						"description": "User created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreatedUserResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Username taken",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates a user without a password and returns a single-use setup link, valid for seven days.\nThe person opens it, signs in once and sets their own password. The new user has no\npermissions until added to a user group or an event. Requires `users.manage`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateUserRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/users/{userId}": {
@@ -6601,6 +6954,85 @@
 				]
 			}
 		},
+		"/users/{userId}/setup-link": {
+			"post": {
+				"operationId": "CreateSetupLink",
+				"responses": {
+					"201": {
+						"description": "Setup link created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SetupLinkDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "The user can already sign in",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Issues a new single-use setup link for a user who has not set a password yet. Earlier links\nof the user stop working. Requires `users.manage`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "userId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
 		"/users/{userId}/revoke-sessions": {
 			"post": {
 				"operationId": "RevokeUserSessions",
@@ -6661,6 +7093,59 @@
 						}
 					}
 				]
+			}
+		},
+		"/auth/setup-links/exchange": {
+			"post": {
+				"operationId": "ExchangeSetupLink",
+				"responses": {
+					"200": {
+						"description": "Session established",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SetupLinkExchangeResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Setup link not usable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many attempts",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Exchanges a single-use setup link of an administrator-created user for a browser session, so\nthe person can set their first password. The token is sent in the body, never in the URL.\nEvery unusable link returns the same `401`.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SetupLinkExchangeRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/user-groups": {
@@ -8704,6 +9189,408 @@
 						}
 					}
 				}
+			}
+		},
+		"/registration": {
+			"get": {
+				"operationId": "GetRegistrationStatus",
+				"responses": {
+					"200": {
+						"description": "Registration status",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RegistrationStatusDto"
+								}
+							}
+						}
+					}
+				},
+				"description": "Reports whether people may create their own account. Reveals nothing else.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "Register",
+				"responses": {
+					"201": {
+						"description": "Account created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RegisterResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Invite not usable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Registration closed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Username taken",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many attempts",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Creates an account and signs it in, if registration is open or invite-only with a usable\ninvite. New accounts have no permissions until an administrator grants some.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/registration-settings": {
+			"get": {
+				"operationId": "GetRegistrationSettings",
+				"responses": {
+					"200": {
+						"description": "Registration settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RegistrationSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Who may create their own account. Requires `users.manage`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateRegistrationSettings",
+				"responses": {
+					"200": {
+						"description": "Registration settings saved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RegistrationSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Closes registration, makes it invite-only or opens it to everyone. Requires `users.manage`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateRegistrationSettingsRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/registration-invites": {
+			"get": {
+				"operationId": "ListRegistrationInvites",
+				"responses": {
+					"200": {
+						"description": "Registration invites",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/RegistrationInviteDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The 50 most recent registration invites, newest first. Requires `users.manage`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "CreateRegistrationInvite",
+				"responses": {
+					"201": {
+						"description": "Registration invite created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreatedRegistrationInviteResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Issues a single-use registration link, valid for seven days, for invite-only registration.\nThe link is returned once. Requires `users.manage`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/registration-invites/{inviteId}/revoke": {
+			"post": {
+				"operationId": "RevokeRegistrationInvite",
+				"responses": {
+					"200": {
+						"description": "Registration invite revoked",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RegistrationInviteDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Revokes an unused invite immediately. Requires `users.manage`.",
+				"tags": [
+					"Users"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "inviteId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/events/{eventId}/members/{memberId}/profile": {

@@ -10,6 +10,8 @@ export interface UserDto {
   email: string | null;
   /** Disabled users cannot sign in, keep no sessions and lose TAK access. */
   disabled: boolean;
+  /** `false` until the user has set a password; a setup link can then sign them in once. */
+  passwordSet: boolean;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
   /** @format date-time */
@@ -33,6 +35,47 @@ export interface UpdateUserRequest {
    * @pattern ^[a-z0-9._-]{3,32}$
    */
   username?: string;
+}
+
+export interface CreateUserRequest {
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  displayName: string;
+  /**
+   * Sign-in and TAK login name; derived from the display name when omitted. The person may still
+   * change it while setting up the account.
+   * @pattern ^[a-z0-9._-]{3,32}$
+   */
+  username?: string;
+}
+
+export interface SetupLinkDto {
+  /**
+   * Single-use link for the user, returned exactly once. The token travels in the URL fragment,
+   * which browsers never send to the server; the Web application exchanges it in a request body.
+   */
+  url: string;
+  /** @format date-time */
+  expiresAt: string;
+}
+
+export interface CreatedUserResponse {
+  user: UserDto;
+  setupLink: SetupLinkDto;
+}
+
+export interface SetupLinkExchangeRequest {
+  /** @maxLength 200 */
+  token: string;
+}
+
+export interface SetupLinkExchangeResponse {
+  user: {
+    id: Uuid;
+    displayName: string;
+  };
 }
 
 export interface UserPage {

@@ -19,6 +19,10 @@ const PUBLIC_OPERATIONS = new Set([
   "GET /setup",
   "POST /setup",
   "POST /auth/claims/exchange",
+  "POST /auth/setup-links/exchange",
+  // Registration mode, and sign-up itself while an administrator allows it.
+  "GET /registration",
+  "POST /registration",
   // The short-lived, hashed link token is the credential (download grants).
   "GET /downloads/{token}",
 ]);

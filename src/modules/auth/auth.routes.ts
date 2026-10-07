@@ -7,9 +7,9 @@ import { getTraceId } from "../../shared/logging/request-logging.js";
 const handler = toNodeHandler(auth);
 
 /**
- * Better Auth endpoints OpenMeshTak does not offer: accounts come from setup, administrators and
- * access links, never from public sign-up, and a public username lookup would let anyone collect
- * valid TAK login names. OpenMeshTak checks availability itself inside account setup.
+ * Better Auth endpoints OpenMeshTak does not offer. Self-registration goes through OpenMeshTak's
+ * own `/registration`, which honors the administrator's registration mode and creates the domain
+ * user; a public username lookup would let anyone collect valid TAK login names.
  */
 const BLOCKED_PATHS = new Set([`${AUTH_BASE_PATH}/sign-up/email`, `${AUTH_BASE_PATH}/is-username-available`]);
 

@@ -24,7 +24,13 @@ export const userSelection = {
   disabledAt: true,
   version: true,
   createdAt: true,
-  authSubject: { select: { email: true, username: true } },
+  authSubject: {
+    select: {
+      email: true,
+      username: true,
+      accounts: { where: { providerId: "credential", password: { not: null } }, select: { id: true }, take: 1 },
+    },
+  },
 } as const;
 
 interface UserRow {
@@ -33,7 +39,7 @@ interface UserRow {
   disabledAt: Date | null;
   version: number;
   createdAt: Date;
-  authSubject: { email: string; username: string | null } | null;
+  authSubject: { email: string; username: string | null; accounts: { id: string }[] } | null;
 }
 
 export function toUserDto(row: UserRow): UserDto {
@@ -47,6 +53,7 @@ export function toUserDto(row: UserRow): UserDto {
         ? null
         : row.authSubject.email,
     disabled: row.disabledAt !== null,
+    passwordSet: (row.authSubject?.accounts.length ?? 0) > 0,
     version: row.version,
     createdAt: row.createdAt.toISOString(),
   };

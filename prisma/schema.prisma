@@ -142,6 +142,7 @@ model DomainUser {
   takEnrollmentTokens   TakEnrollmentToken[]
   takClientCertificates TakClientCertificate[]
   downloadGrants        DownloadGrant[]
+  accountInvites        AccountInvite[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 }
@@ -855,6 +856,34 @@ model MapSettings {
   maxZoom         Int      @default(19)
   version         Int      @default(1)
   updatedAt       DateTime @updatedAt
+}
+
+/// Single-use link onto the instance; only the hash of its token is stored. With `userId` it is a
+/// setup link: it signs in that administrator-created user, who then picks a password. Without
+/// `userId` it is a registration invite that allows one sign-up while registration is invite-only.
+model AccountInvite {
+  id           String      @id
+  userId       String?
+  tokenHash    String      @unique
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  revokedAt    DateTime?
+  /// Safe actor reference ("user" or "api-client") of whoever issued the link.
+  issuedByType String
+  issuedById   String
+  user         DomainUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+
+  @@index([userId])
+}
+
+/// Whether people may create their own account. A missing row means "closed".
+model RegistrationSettings {
+  id        String   @id
+  /// "closed", "invite" (needs a registration invite) or "open".
+  mode      String
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt
 }
 
 /// Short-lived link to one generated artifact, so a phone can download it without a browser
