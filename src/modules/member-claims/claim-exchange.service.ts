@@ -1,9 +1,7 @@
-import type { Prisma } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { database } from "../../shared/database/database.js";
 import { ProblemError } from "../../shared/errors/problem-error.js";
-import { auth } from "../auth/auth.js";
-import { placeholderEmailFor } from "../auth/claim-session.plugin.js";
+import { hasOwnSignIn, openLinkSession } from "../auth/auth-subjects.js";
 import type { ClaimExchangeResponse } from "./member-claim.dto.js";
 import { CLAIM_TOKEN_PREFIX, hashClaimToken } from "./member-claims.service.js";
 
@@ -25,11 +23,7 @@ function invalidClaim(): ProblemError {
   });
 }
 
-/**
- * A claim may only bootstrap accounts that cannot sign in yet. When the member already has a
- * password or passkey, a leaked or mis-sent link must not become a session of that account, which
- * could hold administrative rights.
- */
+/** A claim only bootstraps accounts that cannot sign in yet; see `hasOwnSignIn`. */
 function signInRequired(): ProblemError {
   return new ProblemError({
     type: "urn:openmeshtak:problem:sign-in-required",
@@ -38,20 +32,6 @@ function signInRequired(): ProblemError {
     detail: "This account has its own sign-in. Sign in with your password or passkey instead.",
     code: "SIGN_IN_REQUIRED",
   });
-}
-
-async function hasOwnSignIn(transaction: Prisma.TransactionClient, authSubjectId: string | null): Promise<boolean> {
-  if (authSubjectId === null) {
-    return false;
-  }
-  const [password, passkey] = await Promise.all([
-    transaction.account.findFirst({
-      where: { userId: authSubjectId, providerId: "credential", password: { not: null } },
-      select: { id: true },
-    }),
-    transaction.passkey.findFirst({ where: { userId: authSubjectId }, select: { id: true } }),
-  ]);
-  return password !== null || passkey !== null;
 }
 
 interface ConsumedClaim {
@@ -147,26 +127,7 @@ export async function exchangeClaim(token: string, traceId: string): Promise<Cla
   }
 
   const claim = await consumeClaim(token, traceId);
-  const session = await auth.api.createClaimSession({
-    body: {
-      ...(claim.authSubjectId === null ? {} : { authSubjectId: claim.authSubjectId }),
-      name: claim.displayName,
-      placeholderEmail: placeholderEmailFor(claim.userId),
-    },
-    returnHeaders: true,
-  });
-
-  if (claim.authSubjectId === null) {
-    const linked = await database.domainUser.updateMany({
-      where: { id: claim.userId, authSubjectId: null },
-      data: { authSubjectId: session.response.authSubjectId },
-    });
-    if (linked.count !== 1) {
-      // Another exchange linked a subject first. Fail closed instead of returning a session for
-      // an authentication subject that is not linked to this user.
-      throw new Error("Claim exchange lost the authentication-subject link race.");
-    }
-  }
+  const responseHeaders = await openLinkSession(claim);
 
   await recordAudit({
     actor: { type: "system" },
@@ -183,6 +144,6 @@ export async function exchangeClaim(token: string, traceId: string): Promise<Cla
       user: { id: claim.userId, displayName: claim.displayName },
       eventId: claim.eventId,
     },
-    responseHeaders: session.headers,
+    responseHeaders,
   };
 }

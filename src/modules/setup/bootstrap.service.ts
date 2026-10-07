@@ -5,6 +5,7 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { auth } from "../auth/auth.js";
+import { removeIncompleteAuthSubject } from "../auth/auth-subjects.js";
 import { ADMINISTRATORS_SYSTEM_KEY } from "../user-groups/system-groups.js";
 import { INSTANCE_SCOPE_KEY, PERMISSIONS } from "../../shared/auth/permissions.js";
 import { config } from "../../shared/config/config.js";
@@ -138,14 +139,6 @@ async function findValidChallenge(token: string): Promise<{ id: string } | null>
   }
 
   return { id: challenge.id };
-}
-
-async function removeIncompleteAuthSubject(authSubjectId: string): Promise<void> {
-  await database.$transaction([
-    database.session.deleteMany({ where: { userId: authSubjectId } }),
-    database.account.deleteMany({ where: { userId: authSubjectId } }),
-    database.user.deleteMany({ where: { id: authSubjectId } }),
-  ]);
 }
 
 export async function createInitialAdministrator(
