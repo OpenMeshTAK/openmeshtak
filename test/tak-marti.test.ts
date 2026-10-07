@@ -142,6 +142,16 @@ void describe("TAK Marti Data Package API", () => {
     assert.equal((await names(operator)).length, 2);
   });
 
+  void it("lists results ATAK can parse", async () => {
+    await publishPackage("Everyone", null);
+    const client = await enrollTakClient(app, await memberOf(bravoId, "Peter"));
+    const response = await get(client, "/Marti/sync/search?keywords=missionpackage&tool=public", client.caPems);
+    const [result] = (JSON.parse(response.body.toString("utf8")) as { results: Array<{ PrimaryKey: unknown }> }).results;
+
+    // ATAK reads PrimaryKey as a non-negative int and drops the whole list otherwise.
+    assert.ok(Number.isInteger(result?.PrimaryKey) && (result?.PrimaryKey as number) >= 0 && (result?.PrimaryKey as number) <= 2 ** 31 - 1);
+  });
+
   void it("downloads a package by hash only when it is visible and audits it", async () => {
     await publishPackage("Bravo only", [bravoId]);
     const bravo = await enrollTakClient(app, await memberOf(bravoId, "Peter"));

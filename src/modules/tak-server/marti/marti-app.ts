@@ -30,6 +30,14 @@ function martiTime(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, ".000Z");
 }
 
+/**
+ * ATAK reads `PrimaryKey` as a non-negative Java int and drops the whole result list otherwise.
+ * It downloads by hash and never sends the key back, so a stable number from the hash is enough.
+ */
+function primaryKeyOf(sha256: string): number {
+  return Number.parseInt(sha256.slice(0, 7), 16);
+}
+
 async function search(_request: Request, response: Response<unknown, Locals>): Promise<void> {
   const { client } = response.locals;
   const visible = await visiblePackagesFor(client.userId, client.access);
@@ -47,7 +55,7 @@ async function search(_request: Request, response: Response<unknown, Locals>): P
         MIMEType: "application/x-zip-compressed",
         Size: String(summary.size),
         SubmissionUser: "OpenMeshTak",
-        PrimaryKey: item.latest.id,
+        PrimaryKey: primaryKeyOf(summary.sha256),
         Tool: "public",
       };
     }),
