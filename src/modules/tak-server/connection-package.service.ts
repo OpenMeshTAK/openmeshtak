@@ -1,26 +1,28 @@
-import { X509Certificate } from "node:crypto";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { forbidden } from "../../shared/auth/permission-check.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
 import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { buildConnectionPackage } from "./connection-package.js";
-import { currentServerCertificate } from "./server-certificate.js";
+import { currentServerCertificate, publicTrustAnchor } from "./server-certificate.js";
 import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
 
 /**
  * What the TAK app must trust for the server certificate: the OpenMeshTak CAs for an issued
- * certificate, or the intermediates of an added public chain, which TAK apps accept as trust
- * anchors in their own truststore.
+ * certificate, or the actual public root of an added certificate. ATAK's native enrollment client
+ * does not complete a chain when its custom truststore contains only cross-signed intermediates.
  */
 async function trustAnchors(hostName: string): Promise<string[]> {
   const certificate = await currentServerCertificate(hostName);
   if (certificate.source === "issued") {
     return (await trustedCertificateAuthorities()).map(({ certificatePem }) => certificatePem);
   }
-  const blocks = certificate.certificateChainPem.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g) ?? [];
-  return blocks.slice(1).map((pem) => new X509Certificate(pem).toString());
+  const anchor = publicTrustAnchor(certificate.certificateChainPem);
+  if (anchor === null) {
+    throw new Error("The active public TAK server certificate no longer chains to a trusted root.");
+  }
+  return [anchor];
 }
 
 /** The connection Data Package for the signed-in user's TAK app; contains no secrets. */

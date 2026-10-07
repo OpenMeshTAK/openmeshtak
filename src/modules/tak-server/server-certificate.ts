@@ -50,21 +50,30 @@ function parseChain(pem: string): X509Certificate[] {
  * signature. A certificate devices would not trust out of the box is rejected, because then the
  * OpenMeshTak CA would serve clients better.
  */
-function chainsToPublicRoot(chain: X509Certificate[], now: Date, trustedRoots: readonly string[]): boolean {
+function findPublicTrustAnchor(chain: X509Certificate[], now: Date, trustedRoots: readonly string[]): X509Certificate | null {
   const roots = trustedRoots.map((pem) => new X509Certificate(pem));
   let current = chain[0];
   for (let depth = 0; current !== undefined && depth < 6; depth += 1) {
     if (new Date(current.validFrom) > now || new Date(current.validTo) < now) {
-      return false;
+      return null;
     }
     const issuer = current;
     const root = roots.find((candidate) => issuer.checkIssued(candidate) && issuer.verify(candidate.publicKey));
     if (root !== undefined) {
-      return true;
+      return root;
     }
     current = chain.find((candidate) => issuer.checkIssued(candidate) && issuer.verify(candidate.publicKey) && candidate !== issuer);
   }
-  return false;
+  return null;
+}
+
+/** The public root that completes a stored leaf-first server chain, for client truststores. */
+export function publicTrustAnchor(
+  chainPem: string,
+  options: { now?: Date; trustedRoots?: readonly string[] } = {},
+): string | null {
+  const root = findPublicTrustAnchor(parseChain(chainPem), options.now ?? new Date(), options.trustedRoots ?? rootCertificates);
+  return root?.toString() ?? null;
 }
 
 function parseKey(pem: string): KeyObject {
@@ -95,7 +104,7 @@ function checkAddedCertificate(chainPem: string, privateKeyPem: string, hostName
   if ((new Date(leaf.validTo).getTime() - now.getTime()) / DAY < MINIMUM_REMAINING_DAYS) {
     throw certificateProblem("certificateChainPem", `The certificate expires in less than ${String(MINIMUM_REMAINING_DAYS)} days.`);
   }
-  if (!chainsToPublicRoot(chain, now, options.trustedRoots)) {
+  if (findPublicTrustAnchor(chain, now, options.trustedRoots) === null) {
     throw certificateProblem("certificateChainPem", "The chain does not lead to a publicly trusted root. Include the intermediate certificates.");
   }
   return { chain, leaf, keyPem: key.export({ type: "pkcs8", format: "pem" }).toString() };
