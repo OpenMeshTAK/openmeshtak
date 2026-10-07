@@ -6,7 +6,12 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { setEmailDeliveryForTests, type OutgoingEmail } from "../src/modules/email/mailer.js";
 import { activeCertificateAuthority } from "../src/modules/tak-server/certificate-authority.js";
-import { addServerCertificate, currentServerCertificate, publicTrustAnchor } from "../src/modules/tak-server/server-certificate.js";
+import {
+  addServerCertificate,
+  currentServerCertificate,
+  publicTrustAnchor,
+  publicTrustAnchors,
+} from "../src/modules/tak-server/server-certificate.js";
 import { exportPrivateKeyPem, generateRsaKeyPair, RSA_SIGNING, x509 } from "../src/modules/tak-server/x509.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createUser, type TestUser } from "./support/identity.js";
@@ -113,6 +118,10 @@ void describe("TAK server settings", () => {
     const added = await addServerCertificate(chain.chainPem, chain.keyPem, "tak.example.org", { trustedRoots: [chain.rootPem] });
     assert.equal((await currentServerCertificate("tak.example.org")).id, added.id);
     assert.equal(publicTrustAnchor(chain.chainPem, { trustedRoots: [chain.rootPem] }), new X509Certificate(chain.rootPem).toString());
+    assert.deepEqual(
+      publicTrustAnchors(chain.chainPem, { trustedRoots: [chain.rootPem] })?.map((pem) => new X509Certificate(pem).subject),
+      ["CN=Test R10", "CN=Test Public Root"],
+    );
 
     await assert.rejects(addServerCertificate(chain.chainPem, chain.keyPem, "other.example.org", { trustedRoots: [chain.rootPem] }));
     const leafOnly = chain.chainPem.slice(0, chain.chainPem.indexOf("-----END CERTIFICATE-----") + 25);

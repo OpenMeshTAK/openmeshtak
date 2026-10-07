@@ -72,8 +72,27 @@ export function publicTrustAnchor(
   chainPem: string,
   options: { now?: Date; trustedRoots?: readonly string[] } = {},
 ): string | null {
-  const root = findPublicTrustAnchor(parseChain(chainPem), options.now ?? new Date(), options.trustedRoots ?? rootCertificates);
-  return root?.toString() ?? null;
+  return publicTrustAnchors(chainPem, options)?.at(-1) ?? null;
+}
+
+/** Every CA from a public server chain, including the matching self-signed trust root. */
+export function publicTrustAnchors(
+  chainPem: string,
+  options: { now?: Date; trustedRoots?: readonly string[] } = {},
+): string[] | null {
+  const chain = parseChain(chainPem);
+  const root = findPublicTrustAnchor(chain, options.now ?? new Date(), options.trustedRoots ?? rootCertificates);
+  if (root === null) {
+    return null;
+  }
+  const seen = new Set<string>();
+  return [...chain.slice(1), root].flatMap((certificate) => {
+    if (seen.has(certificate.fingerprint256)) {
+      return [];
+    }
+    seen.add(certificate.fingerprint256);
+    return [certificate.toString()];
+  });
 }
 
 function parseKey(pem: string): KeyObject {
@@ -222,11 +241,11 @@ export async function serverTrustAnchors(hostName: string, now = new Date()): Pr
   if (certificate.source === "issued") {
     return (await trustedCertificateAuthorities(now)).map(({ certificatePem }) => certificatePem);
   }
-  const anchor = publicTrustAnchor(certificate.certificateChainPem, { now });
-  if (anchor === null) {
+  const anchors = publicTrustAnchors(certificate.certificateChainPem, { now });
+  if (anchors === null) {
     throw new Error("The active public TAK server certificate no longer chains to a trusted root.");
   }
-  return [anchor];
+  return anchors;
 }
 
 /**
