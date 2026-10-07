@@ -23,6 +23,8 @@ const environmentSchema = z.object({
   MESHTASTIC_FIRMWARE_PROFILE_DIRS: z.string().min(1).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PUBLIC_ORIGIN: z.url().default("http://localhost:3000"),
+  /** The root key itself, base64; an alternative to mounting it as a file. */
+  ROOT_ENCRYPTION_KEY: z.string().min(1).optional(),
   ROOT_ENCRYPTION_KEY_FILE: z.string().min(1).optional(),
   TRUST_PROXY: booleanFromString.default(false),
   /** Built Web app that Core serves on the same origin; the image sets it, development uses Vite. */
@@ -47,10 +49,14 @@ if (
 
 if (
   environment.NODE_ENV === "production" &&
+  environment.ROOT_ENCRYPTION_KEY === undefined &&
   environment.ROOT_ENCRYPTION_KEY_FILE === undefined
 ) {
-  throw new Error("ROOT_ENCRYPTION_KEY_FILE is required in production.");
+  throw new Error("ROOT_ENCRYPTION_KEY or ROOT_ENCRYPTION_KEY_FILE is required in production.");
 }
+
+// Keep the key out of the environment that child processes inherit; the root-key loader reads it from config.
+delete process.env.ROOT_ENCRYPTION_KEY;
 
 if (
   environment.NODE_ENV === "production" &&
@@ -70,6 +76,7 @@ export const config = Object.freeze({
   nodeEnvironment: environment.NODE_ENV,
   port: environment.APP_PORT,
   publicOrigin: environment.PUBLIC_ORIGIN,
+  rootEncryptionKey: environment.ROOT_ENCRYPTION_KEY,
   rootEncryptionKeyFile: environment.ROOT_ENCRYPTION_KEY_FILE,
   takListenPorts: Object.freeze({
     enrollment: environment.TAK_ENROLLMENT_LISTEN_PORT,

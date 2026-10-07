@@ -31,17 +31,39 @@ function loadOrCreateDevelopmentKey(): Buffer {
   return decodeRootKey(readFileSync(DEVELOPMENT_KEY_FILE, "utf8"), DEVELOPMENT_KEY_FILE);
 }
 
-function loadRootKey(): Buffer {
-  if (config.rootEncryptionKeyFile !== undefined) {
-    return decodeRootKey(
-      readFileSync(config.rootEncryptionKeyFile, "utf8"),
-      "ROOT_ENCRYPTION_KEY_FILE",
-    );
+export interface RootKeySource {
+  key: string | undefined;
+  file: string | undefined;
+  nodeEnvironment: "development" | "test" | "production";
+}
+
+/**
+ * The key comes from `ROOT_ENCRYPTION_KEY` or from the file in `ROOT_ENCRYPTION_KEY_FILE`. The
+ * image always sets the file path, so only an existing file next to a set key is a conflict: two
+ * different keys would make it unclear which one encrypted the stored secrets.
+ */
+export function resolveRootKey(source: RootKeySource): Buffer {
+  if (source.key !== undefined) {
+    if (source.file !== undefined && existsSync(source.file)) {
+      throw new Error("Set either ROOT_ENCRYPTION_KEY or the ROOT_ENCRYPTION_KEY_FILE secret, not both.");
+    }
+    return decodeRootKey(source.key, "ROOT_ENCRYPTION_KEY");
+  }
+  if (source.file !== undefined) {
+    return decodeRootKey(readFileSync(source.file, "utf8"), "ROOT_ENCRYPTION_KEY_FILE");
   }
   // Tests run against throwaway databases, so a key that lives only in this process is enough.
-  return config.nodeEnvironment === "test"
+  return source.nodeEnvironment === "test"
     ? randomBytes(ROOT_KEY_BYTES)
     : loadOrCreateDevelopmentKey();
+}
+
+function loadRootKey(): Buffer {
+  return resolveRootKey({
+    key: config.rootEncryptionKey,
+    file: config.rootEncryptionKeyFile,
+    nodeEnvironment: config.nodeEnvironment,
+  });
 }
 
 let rootKey: Buffer | undefined;
