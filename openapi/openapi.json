@@ -836,7 +836,7 @@
 					"expiresAt": {
 						"type": "string",
 						"nullable": true,
-						"description": "When the QR token expires: the end of the user's latest active event, otherwise in 30 days.\n`null` without QR enrollment.",
+						"description": "When the QR token expires, from the token lifetime of the user's active events: a number of\ndays, or the event end. `null` when it does not expire (an event without end date) or when\n`atakEnrollmentUrl` is `null`. Users without an active event get 30 days.",
 						"format": "date-time"
 					},
 					"hostName": {
@@ -3141,6 +3141,13 @@
 						"nullable": true,
 						"format": "date-time"
 					},
+					"takLoginTokenDays": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Days a TAK login token (QR code or typed instead of the password) stays valid. `0` means until\nthe event ends, and without an end date for good. Tokens stop working anyway once the user\nloses TAK access.",
+						"minimum": 0,
+						"maximum": 3650
+					},
 					"createdAt": {
 						"type": "string",
 						"format": "date-time"
@@ -3162,6 +3169,7 @@
 					"version",
 					"startsAt",
 					"endsAt",
+					"takLoginTokenDays",
 					"createdAt",
 					"updatedAt",
 					"overview"
@@ -3221,6 +3229,13 @@
 						"nullable": true,
 						"format": "date-time"
 					},
+					"takLoginTokenDays": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Days a TAK login token (QR code or typed instead of the password) stays valid. `0` means until\nthe event ends, and without an end date for good. Tokens stop working anyway once the user\nloses TAK access.",
+						"minimum": 0,
+						"maximum": 3650
+					},
 					"createdAt": {
 						"type": "string",
 						"format": "date-time"
@@ -3239,6 +3254,7 @@
 					"version",
 					"startsAt",
 					"endsAt",
+					"takLoginTokenDays",
 					"createdAt",
 					"updatedAt"
 				],
@@ -3272,6 +3288,13 @@
 						"nullable": true,
 						"description": "Descriptive end instant; it never changes the lifecycle state.",
 						"format": "date-time"
+					},
+					"takLoginTokenDays": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Days a TAK login token (QR code or typed instead of the password) stays valid. `0` means until\nthe event ends, and without an end date for good. Defaults to `0`. Tokens stop working anyway once the user\nloses TAK access.",
+						"minimum": 0,
+						"maximum": 3650
 					}
 				},
 				"required": [
@@ -3312,6 +3335,13 @@
 						"type": "string",
 						"nullable": true,
 						"format": "date-time"
+					},
+					"takLoginTokenDays": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Days a TAK login token (QR code or typed instead of the password) stays valid. `0` means until\nthe event ends, and without an end date for good. Omitted keeps the current value. Tokens stop working anyway once the user\nloses TAK access.",
+						"minimum": 0,
+						"maximum": 3650
 					}
 				},
 				"required": [
@@ -8330,7 +8360,7 @@
 						}
 					}
 				},
-				"description": "Returns the TAK login of the signed-in user (account username, used with the account\npassword) and a fresh QR token in the ATAK enrollment link, valid until the end of the user's\nlatest active event. Members of active events and holders of `tak-server.admin-access` may\nenroll. QR tokens never carry the account password.",
+				"description": "Returns the TAK login of the signed-in user (account username, used with the account\npassword) and a fresh QR token in the ATAK enrollment link. The token lifetime of the user's\nactive events decides how long it is valid (`expiresAt`, `null` for no time limit). Members of\nactive events and holders of `tak-server.admin-access` may\nenroll. QR tokens never carry the account password.",
 				"tags": [
 					"TAK server"
 				],

@@ -15,7 +15,7 @@ import { x509 } from "./x509.js";
 import { auth } from "../auth/auth.js";
 import { normalizeUsername } from "../users/usernames.js";
 
-/** QR tokens of accounts without an event end date stay valid this long. */
+/** QR tokens of users without an active event, such as administrators, stay valid this long. */
 const FALLBACK_QR_TOKEN_DAYS = 30;
 const DAY = 24 * 60 * 60_000;
 
@@ -34,16 +34,30 @@ function notReady(): ProblemError {
 }
 
 /**
- * A QR token lasts until the latest end of the user's active events, so a TAK app can re-enroll
- * with it during the event, for example after its certificate expired.
+ * When a QR token expires, so a TAK app can re-enroll with it during the event, for example after
+ * its certificate expired. Each active event sets the lifetime in days; 0 means until the event
+ * ends, and without an end date for good. The most generous of the user's active events wins;
+ * `null` means no time limit. Losing TAK access ends every token anyway.
  */
-async function qrTokenExpiry(userId: string, now: Date): Promise<Date> {
-  const latest = await database.event.findFirst({
-    where: { status: "active", endsAt: { gt: now }, members: { some: { userId } } },
-    orderBy: { endsAt: "desc" },
-    select: { endsAt: true },
+async function qrTokenExpiry(userId: string, now: Date): Promise<Date | null> {
+  const events = await database.event.findMany({
+    where: { status: "active", members: { some: { userId } } },
+    select: { endsAt: true, takLoginTokenDays: true },
   });
-  return latest?.endsAt ?? new Date(now.getTime() + FALLBACK_QR_TOKEN_DAYS * DAY);
+  if (events.length === 0) {
+    return new Date(now.getTime() + FALLBACK_QR_TOKEN_DAYS * DAY);
+  }
+  let latest = now.getTime();
+  for (const event of events) {
+    if (event.takLoginTokenDays > 0) {
+      latest = Math.max(latest, now.getTime() + event.takLoginTokenDays * DAY);
+    } else if (event.endsAt === null) {
+      return null;
+    } else {
+      latest = Math.max(latest, event.endsAt.getTime());
+    }
+  }
+  return new Date(latest);
 }
 
 /**
@@ -97,7 +111,7 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
         targetId: id,
         result: "success",
         traceId: actor.traceId,
-        metadata: { expiresAt: expiresAt.toISOString() },
+        metadata: { expiresAt: expiresAt?.toISOString() ?? null },
       },
       transaction,
     );
@@ -107,7 +121,7 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
   const query = new URLSearchParams({ host, username, token });
   return {
     ...login,
-    expiresAt: expiresAt.toISOString(),
+    expiresAt: expiresAt?.toISOString() ?? null,
     atakEnrollmentUrl: `tak://com.atakmap.app/enroll?${query.toString()}`,
   };
 }
@@ -153,7 +167,7 @@ async function authenticateEnrollmentLogin(authorization: string | undefined, no
   }
 
   const token = await database.takEnrollmentToken.findUnique({ where: { tokenHash: hashToken(credentials.password) } });
-  if (token !== null && token.userId === domainUser.id && token.expiresAt > now) {
+  if (token !== null && token.userId === domainUser.id && (token.expiresAt === null || token.expiresAt > now)) {
     return { userId: domainUser.id, username: user.username, tokenId: token.id };
   }
   return (await passwordMatches(user.id, credentials.password))

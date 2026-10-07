@@ -6,8 +6,9 @@ export interface TakEnrollmentDto {
   /** The account username, the TAK login name. */
   username: string;
   /**
-   * When the QR token expires: the end of the user's latest active event, otherwise in 30 days.
-   * `null` without QR enrollment.
+   * When the QR token expires, from the token lifetime of the user's active events: a number of
+   * days, or the event end. `null` when it does not expire (an event without end date) or when
+   * `atakEnrollmentUrl` is `null`. Users without an active event get 30 days.
    * @format date-time
    */
   expiresAt: string | null;

@@ -25,6 +25,7 @@ interface EventBody {
   status: string;
   version: number;
   startsAt: string | null;
+  takLoginTokenDays: number;
 }
 
 interface PageBody<T> {
@@ -119,6 +120,21 @@ void describe("events", () => {
       .send({ name: "Duplicate", slug: "lightsim-2027", timeZone: "UTC" })
       .expect(409);
     assert.equal((response.body as ProblemBody).code, "SLUG_CONFLICT");
+  });
+
+  void it("stores the TAK login token lifetime and keeps it when an update leaves it out", async () => {
+    const event = await createEvent("token-days");
+    assert.equal(event.takLoginTokenDays, 0);
+
+    const put = (body: Record<string, unknown>) => request(app).put(`/api/v1/events/${event.id}`).set("Cookie", admin.cookie).send(body);
+    const set = await put(updateBody(event, { takLoginTokenDays: 14 })).expect(200);
+    assert.equal((set.body as EventBody).takLoginTokenDays, 14);
+
+    const kept = await put(updateBody(set.body as EventBody)).expect(200);
+    assert.equal((kept.body as EventBody).takLoginTokenDays, 14);
+
+    await put(updateBody(kept.body as EventBody, { takLoginTokenDays: -1 })).expect(422);
+    await put(updateBody(kept.body as EventBody, { takLoginTokenDays: 1.5 })).expect(422);
   });
 
   void it("updates with optimistic concurrency", async () => {

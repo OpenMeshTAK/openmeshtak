@@ -14,8 +14,9 @@ import { createTakEnrollment } from "./enrollment.service.js";
 export class TakEnrollmentsController extends Controller {
   /**
    * Returns the TAK login of the signed-in user (account username, used with the account
-   * password) and a fresh QR token in the ATAK enrollment link, valid until the end of the user's
-   * latest active event. Members of active events and holders of `tak-server.admin-access` may
+   * password) and a fresh QR token in the ATAK enrollment link. The token lifetime of the user's
+   * active events decides how long it is valid (`expiresAt`, `null` for no time limit). Members of
+   * active events and holders of `tak-server.admin-access` may
    * enroll. QR tokens never carry the account password.
    */
   @Post()

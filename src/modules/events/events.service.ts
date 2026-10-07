@@ -41,6 +41,7 @@ interface EventRow {
   version: number;
   startsAt: Date | null;
   endsAt: Date | null;
+  takLoginTokenDays: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +52,8 @@ interface EventSettings {
   timeZone: string;
   startsAt: Date | null;
   endsAt: Date | null;
+  /** Left out on updates that keep the current value. */
+  takLoginTokenDays?: number;
 }
 
 export function toEventDto(row: EventRow): EventDto {
@@ -63,6 +66,7 @@ export function toEventDto(row: EventRow): EventDto {
     version: row.version,
     startsAt: row.startsAt?.toISOString() ?? null,
     endsAt: row.endsAt?.toISOString() ?? null,
+    takLoginTokenDays: row.takLoginTokenDays,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -74,6 +78,7 @@ function validateSettings(input: {
   timeZone: string;
   startsAt?: string | null | undefined;
   endsAt?: string | null | undefined;
+  takLoginTokenDays?: number | undefined;
 }): EventSettings {
   const errors: ProblemFieldError[] = [];
   const timeZone = canonicalIanaTimeZone(input.timeZone);
@@ -94,7 +99,11 @@ function validateSettings(input: {
     throw validationProblem(errors);
   }
 
-  return { name: input.name, slug: input.slug, timeZone, startsAt, endsAt };
+  const settings: EventSettings = { name: input.name, slug: input.slug, timeZone, startsAt, endsAt };
+  if (input.takLoginTokenDays !== undefined) {
+    settings.takLoginTokenDays = input.takLoginTokenDays;
+  }
+  return settings;
 }
 
 export async function listEvents(

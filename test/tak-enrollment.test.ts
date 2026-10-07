@@ -132,15 +132,39 @@ void describe("TAK certificate enrollment", () => {
     assert.notEqual(stored.tokenHash, qrCredentials(created).token, "only the hash is stored");
   });
 
-  void it("keeps the QR token valid until the latest event ends, otherwise for 30 days", async () => {
+  void it("takes the QR token lifetime from the event: days, until the end, or without a limit", async () => {
+    const DAY = 24 * 60 * 60_000;
+    const near = (expiresAt: string | null, days: number): boolean =>
+      Math.abs(new Date(expiresAt ?? "").getTime() - (Date.now() + days * DAY)) < 60_000;
     await enableServer();
     await usePublicCertificate();
-    const fallback = new Date((await enroll(member)).expiresAt ?? "").getTime();
-    assert.ok(Math.abs(fallback - (Date.now() + 30 * 24 * 60 * 60_000)) < 60_000);
 
-    const endsAt = new Date(Date.now() + 3 * 24 * 60 * 60_000);
+    // Lifetime 0 and no end date: valid for good, and the token still works.
+    const unlimited = await enroll(member);
+    assert.equal(unlimited.expiresAt, null);
+    await signClient(qrCredentials(unlimited), await csrFor("peter")).expect(200);
+
+    const endsAt = new Date(Date.now() + 3 * DAY);
     await database.event.update({ where: { id: eventId }, data: { endsAt } });
     assert.equal((await enroll(member)).expiresAt, endsAt.toISOString());
+
+    await database.event.update({ where: { id: eventId }, data: { takLoginTokenDays: 10 } });
+    assert.ok(near((await enroll(member)).expiresAt, 10));
+
+    // Another active event with a longer lifetime wins.
+    const longer = await createEvent();
+    await database.event.update({ where: { id: longer }, data: { status: "active", takLoginTokenDays: 20 } });
+    const role = await database.eventRole.create({ data: { id: randomUUID(), eventId: longer, name: "P", slug: "p" } });
+    const group = await database.eventGroup.create({ data: { id: randomUUID(), eventId: longer, name: "C", slug: "c", shortNamePrefix: "C" } });
+    await database.eventMember.create({
+      data: { id: randomUUID(), eventId: longer, userId: member.id, eventRoleId: role.id, eventGroupId: group.id, username: "Peter", callsign: "Peter", shortNameNumber: 1 },
+    });
+    assert.ok(near((await enroll(member)).expiresAt, 20));
+
+    // Without an active event, e.g. an administrator, the token lasts 30 days.
+    await database.event.updateMany({ data: { status: "archived" } });
+    const administrator = await createUser("Operator", [{ permission: "tak-server.admin-access" }]);
+    assert.ok(near((await enroll(administrator)).expiresAt, 30));
   });
 
   void it("signs the CSR of an app that logs in with the username and account password", async () => {

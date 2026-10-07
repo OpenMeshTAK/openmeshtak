@@ -22,6 +22,8 @@ model Event {
   version                 Int                          @default(1)
   startsAt                DateTime?
   endsAt                  DateTime?
+  /// Days a TAK login token stays valid; 0 means until the event ends, without an end for good.
+  takLoginTokenDays       Int                          @default(0)
   createdAt               DateTime                     @default(now())
   updatedAt               DateTime                     @updatedAt
   permissionGrants        PermissionGrant[]
@@ -763,13 +765,14 @@ model TakServerSettings {
   updatedAt             DateTime @updatedAt
 }
 
-/// Short-lived, single-use password for TAK certificate enrollment, so the account password never
-/// reaches a TAK app. Only the SHA-256 hash is stored.
+/// TAK login token: the app sends it with the username instead of the account password, from the
+/// ATAK QR code or typed by hand. Only the SHA-256 hash is stored.
 model TakEnrollmentToken {
   id        String     @id
   userId    String
   tokenHash String     @unique
-  expiresAt DateTime
+  /// null: valid without a time limit, as long as the user keeps TAK access.
+  expiresAt DateTime?
   usedAt    DateTime?
   user      DomainUser @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
