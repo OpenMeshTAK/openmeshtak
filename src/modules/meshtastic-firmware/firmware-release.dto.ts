@@ -17,8 +17,9 @@ export interface FirmwareReleaseDto {
 
 export interface FirmwareReleaseListDto {
   /**
-   * `current`: the latest lookup succeeded; `cached`: the latest lookup failed and the list is the
-   * last successful one; `unknown`: no lookup has succeeded yet; `disabled`: lookups are switched off.
+   * `current`: downloaded within the last 12 hours; `cached`: the last downloaded list, older than
+   * 12 hours because the flasher could not be reached or a refresh is underway; `unknown`: no list
+   * has ever been downloaded; `disabled`: lookups are switched off.
    */
   status: "current" | "cached" | "unknown" | "disabled";
   /** When the shown list was downloaded; null without a list. */

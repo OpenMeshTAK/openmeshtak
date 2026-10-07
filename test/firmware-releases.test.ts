@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { after, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
@@ -58,33 +61,50 @@ void describe("firmware release feed", () => {
     ]);
   });
 
-  void it("keeps the last list when a later lookup fails and retries only after a pause", async () => {
-    let now = 0;
+  void it("refreshes after 12 hours and keeps the old list while the flasher is unreachable", async () => {
+    let now = Date.parse("2026-10-07T12:00:00Z");
     const { fetcher, calls } = fakeFetcher([ok, offline]);
-    const feed = new FirmwareReleaseFeed(fetcher, () => now);
+    const feed = new FirmwareReleaseFeed(fetcher, () => now, null);
 
-    const first = await feed.state();
-    assert.equal(first.snapshot?.releases.length, 5);
-    assert.equal(first.lastLookupFailed, false);
+    const first = await feed.current();
+    assert.equal(first?.releases.length, 5);
+    assert.ok(first !== null && feed.isFresh(first));
 
-    now += 7 * 60 * 60 * 1000;
-    await feed.state(); // returns the cached list and refreshes in the background
+    now += 13 * 60 * 60 * 1000;
+    const stale = await feed.current(); // the old list, refreshed in the background
     await new Promise((resolve) => setImmediate(resolve));
-    const afterFailure = await feed.state();
-    assert.equal(afterFailure.lastLookupFailed, true);
-    assert.equal(afterFailure.snapshot?.releases.length, 5);
     assert.equal(calls(), 2);
+    assert.equal(stale?.releases.length, 5);
+    assert.ok(stale !== null && !feed.isFresh(stale));
 
     now += 60 * 1000;
-    await feed.state();
-    assert.equal(calls(), 2);
+    await feed.current();
+    assert.equal(calls(), 2, "waits before retrying a failed lookup");
+  });
+
+  void it("restores the list from its cache file after a restart", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "openmeshtak-releases-"));
+    const cacheFile = join(directory, "releases.json");
+    try {
+      await new FirmwareReleaseFeed(fakeFetcher([ok]).fetcher, Date.now, cacheFile).current();
+      const cached = JSON.parse(await readFile(cacheFile, "utf8")) as { releases: { stable: Array<Record<string, unknown>> } };
+      assert.deepEqual(Object.keys(cached.releases.stable[0] ?? {}), ["id", "title"]);
+
+      const { fetcher, calls } = fakeFetcher([offline]);
+      const restarted = await new FirmwareReleaseFeed(fetcher, Date.now, cacheFile).current();
+      assert.equal(restarted?.releases.length, 5);
+      assert.equal(calls(), 0, "a fresh cached list needs no lookup");
+
+      await writeFile(cacheFile, "{damaged");
+      assert.equal(await new FirmwareReleaseFeed(fakeFetcher([offline]).fetcher, Date.now, cacheFile).current(), null);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 
   void it("reports no list while the flasher has never been reached", async () => {
     const { fetcher } = fakeFetcher([offline]);
-    const state = await new FirmwareReleaseFeed(fetcher).state();
-    assert.equal(state.snapshot, null);
-    assert.equal(state.lastLookupFailed, true);
+    assert.equal(await new FirmwareReleaseFeed(fetcher, Date.now, null).current(), null);
   });
 });
 
@@ -104,7 +124,7 @@ void describe("firmware releases API", () => {
   });
 
   void it("marks releases against the shipped profiles", async () => {
-    useFirmwareReleaseFeed(new FirmwareReleaseFeed(fakeFetcher([ok]).fetcher));
+    useFirmwareReleaseFeed(new FirmwareReleaseFeed(fakeFetcher([ok]).fetcher, Date.now, null));
     const list = (await request(app).get("/api/v1/meshtastic/firmware-releases").set("Cookie", admin.cookie).expect(200)).body as FirmwareReleaseListDto;
     assert.equal(list.status, "current");
     assert.ok(list.fetchedAt !== null);
@@ -122,14 +142,14 @@ void describe("firmware releases API", () => {
   });
 
   void it("returns an unknown list when the flasher cannot be reached", async () => {
-    useFirmwareReleaseFeed(new FirmwareReleaseFeed(fakeFetcher([offline]).fetcher));
+    useFirmwareReleaseFeed(new FirmwareReleaseFeed(fakeFetcher([offline]).fetcher, Date.now, null));
     const list = (await request(app).get("/api/v1/meshtastic/firmware-releases").set("Cookie", admin.cookie).expect(200)).body as FirmwareReleaseListDto;
     assert.deepEqual(list, { status: "unknown", fetchedAt: null, releases: [] });
   });
 
   void it("stops looking up releases once switched off", async () => {
     const { fetcher, calls } = fakeFetcher([ok]);
-    useFirmwareReleaseFeed(new FirmwareReleaseFeed(fetcher));
+    useFirmwareReleaseFeed(new FirmwareReleaseFeed(fetcher, Date.now, null));
     const settings = (await request(app).get("/api/v1/meshtastic/firmware-releases/settings").set("Cookie", admin.cookie).expect(200)).body as unknown;
     assert.deepEqual(settings, { checkEnabled: true, version: 0 });
 

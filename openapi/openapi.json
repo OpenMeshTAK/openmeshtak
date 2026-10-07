@@ -2007,7 +2007,7 @@
 							"unknown",
 							"disabled"
 						],
-						"description": "`current`: the latest lookup succeeded; `cached`: the latest lookup failed and the list is the\nlast successful one; `unknown`: no lookup has succeeded yet; `disabled`: lookups are switched off."
+						"description": "`current`: downloaded within the last 12 hours; `cached`: the last downloaded list, older than\n12 hours because the flasher could not be reached or a refresh is underway; `unknown`: no list\nhas ever been downloaded; `disabled`: lookups are switched off."
 					},
 					"fetchedAt": {
 						"type": "string",
@@ -10073,7 +10073,7 @@
 						}
 					}
 				},
-				"description": "Lists full releases, newest first. When the flasher cannot be reached, the last downloaded\nlist is returned; without one the list is unknown. Requires `events.manage` for at least one\nevent.",
+				"description": "Lists full releases, newest first. When the flasher cannot be reached, the last downloaded\r\nlist is returned; without one the list is unknown. Requires `events.manage` for at least one\r\nevent.",
 				"tags": [
 					"Meshtastic firmware profiles"
 				],

@@ -53,13 +53,13 @@ export async function listFirmwareReleases(principal: Principal): Promise<Firmwa
   if (!(await loadSettings()).checkEnabled) {
     return { status: "disabled", fetchedAt: null, releases: [] };
   }
-  const { snapshot, lastLookupFailed } = await feed.state();
+  const snapshot = await feed.current();
   if (snapshot === null) {
     return { status: "unknown", fetchedAt: null, releases: [] };
   }
   const profiles = await firmwareProfiles();
   return {
-    status: lastLookupFailed ? "cached" : "current",
+    status: feed.isFresh(snapshot) ? "current" : "cached",
     fetchedAt: snapshot.fetchedAt.toISOString(),
     releases: snapshot.releases.map((release) => toReleaseDto(release, profiles)),
   };
