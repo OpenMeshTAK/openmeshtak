@@ -10,7 +10,7 @@ import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
 import type { TakEnrollmentDto } from "./enrollment.dto.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
-import { hasPublicServerCertificate } from "./server-certificate.js";
+import { hasPublicServerCertificate, serverTrustAnchors } from "./server-certificate.js";
 import { x509 } from "./x509.js";
 import { auth } from "../auth/auth.js";
 import { normalizeUsername } from "../users/usernames.js";
@@ -176,7 +176,7 @@ async function authenticateEnrollmentLogin(authorization: string | undefined, no
 }
 
 export interface SignedEnrollment {
-  /** DER certificates as base64, the client certificate first. */
+  /** DER certificates as base64: the client certificate and every CA the TAK connection must trust. */
   signedCertificate: string;
   authorities: string[];
 }
@@ -227,10 +227,23 @@ export async function signEnrollmentRequest(
     },
   });
 
-  const authorities = await trustedCertificateAuthorities(now);
+  const authorityPems = (await trustedCertificateAuthorities(now)).map(({ certificatePem }) => certificatePem);
+  if (settings.hostName !== null) {
+    authorityPems.push(...(await serverTrustAnchors(settings.hostName, now)));
+  }
+  const seen = new Set<string>();
+  const authorities = authorityPems.flatMap((certificatePem) => {
+    const authority = new x509.X509Certificate(certificatePem);
+    const fingerprint = Buffer.from(authority.rawData).toString("base64");
+    if (seen.has(fingerprint)) {
+      return [];
+    }
+    seen.add(fingerprint);
+    return [base64Der(authority)];
+  });
   return {
     signedCertificate: base64Der(certificate),
-    authorities: authorities.map(({ certificatePem }) => base64Der(new x509.X509Certificate(certificatePem))),
+    authorities,
   };
 }
 

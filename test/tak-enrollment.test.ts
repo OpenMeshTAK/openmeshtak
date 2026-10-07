@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID, X509Certificate } from "node:crypto";
+import { rootCertificates } from "node:tls";
 import { after, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
@@ -19,17 +20,15 @@ interface EnrollmentBody {
   atakEnrollmentUrl: string | null;
 }
 
-/**
- * Pretends the listeners present a publicly trusted certificate, which QR enrollment needs. The
- * enrollment app never reads its PEM, so placeholder contents are enough here.
- */
-async function usePublicCertificate(): Promise<void> {
+/** Pretends the listeners present a certificate chaining directly to a bundled public root. */
+async function usePublicCertificate(): Promise<X509Certificate> {
+  const root = new X509Certificate(rootCertificates[0] ?? "");
   await database.takServerCertificate.create({
     data: {
       id: randomUUID(),
       source: "acme",
       hostName: "tak.example.org",
-      certificateChainPem: "placeholder",
+      certificateChainPem: root.toString(),
       keyEnvelope: "placeholder",
       fingerprintSha256: "placeholder",
       subject: "CN=tak.example.org",
@@ -37,6 +36,7 @@ async function usePublicCertificate(): Promise<void> {
       activeSlot: "active",
     },
   });
+  return root;
 }
 
 const PASSWORD = "A-secure-test-password-123!";
@@ -188,9 +188,16 @@ void describe("TAK certificate enrollment", () => {
 
   void it("enrolls repeatedly with the QR token and rejects wrong logins", async () => {
     await enableServer();
-    await usePublicCertificate();
+    const publicRoot = await usePublicCertificate();
     const credentials = qrCredentials(await enroll(member));
-    await signClient(credentials, await csrFor("peter")).expect(200);
+    const first = await signClient(credentials, await csrFor("peter")).expect(200);
+    const authorities = Object.entries(JSON.parse(first.text) as Record<string, string>)
+      .filter(([key]) => /^ca\d+$/.test(key))
+      .map(([, value]) => new X509Certificate(Buffer.from(value, "base64")));
+    assert.ok(
+      authorities.some(({ fingerprint256 }) => fingerprint256 === publicRoot.fingerprint256),
+      "the QR-enrolled connection trusts the public server root",
+    );
     await signClient(credentials, await csrFor("peter")).expect(200);
 
     await signClient(credentials, await csrFor("someone-else")).expect(400);

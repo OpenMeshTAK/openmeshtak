@@ -4,7 +4,7 @@ import type { TakServerCertificate } from "../../generated/prisma/client.js";
 import { decryptSecret, encryptSecret } from "../../shared/crypto/secret-box.js";
 import { database } from "../../shared/database/database.js";
 import { validationProblem } from "../../shared/errors/problem-error.js";
-import { activeCertificateAuthority, decryptCaKey, fingerprintOf } from "./certificate-authority.js";
+import { activeCertificateAuthority, decryptCaKey, fingerprintOf, trustedCertificateAuthorities } from "./certificate-authority.js";
 import { exportPrivateKeyPem, generateRsaKeyPair, keyMatchesCertificate, signingAlgorithmFor, signingKeyFromPem, x509 } from "./x509.js";
 
 const ACTIVE = "active";
@@ -214,6 +214,19 @@ export async function currentServerCertificate(hostName: string, now = new Date(
     return active;
   }
   return issueServerCertificate(hostName);
+}
+
+/** CA certificates a TAK client needs to trust the certificate presented by the server listeners. */
+export async function serverTrustAnchors(hostName: string, now = new Date()): Promise<string[]> {
+  const certificate = await currentServerCertificate(hostName, now);
+  if (certificate.source === "issued") {
+    return (await trustedCertificateAuthorities(now)).map(({ certificatePem }) => certificatePem);
+  }
+  const anchor = publicTrustAnchor(certificate.certificateChainPem, { now });
+  if (anchor === null) {
+    throw new Error("The active public TAK server certificate no longer chains to a trusted root.");
+  }
+  return [anchor];
 }
 
 /**
