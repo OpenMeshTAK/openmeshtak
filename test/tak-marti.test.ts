@@ -137,8 +137,9 @@ void describe("TAK Marti Data Package API", () => {
     const charlie = await enrollTakClient(app, await memberOf(charlieId, "Anna"));
     const operator = await enrollTakClient(app, await createUser("Operator", [{ permission: "tak-server.admin-access" }]));
 
-    assert.deepEqual((await names(bravo)).map(({ Name }) => Name).sort(), ["Bravo_only-r1.zip", "Everyone-r1.zip"]);
-    assert.deepEqual((await names(charlie)).map(({ Name }) => Name), ["Everyone-r1.zip"]);
+    // Names without ".zip": ATAK appends the extension itself when it saves a download.
+    assert.deepEqual((await names(bravo)).map(({ Name }) => Name).sort(), ["Bravo_only-r1", "Everyone-r1"]);
+    assert.deepEqual((await names(charlie)).map(({ Name }) => Name), ["Everyone-r1"]);
     assert.equal((await names(operator)).length, 2);
   });
 

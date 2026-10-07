@@ -46,7 +46,8 @@ async function search(_request: Request, response: Response<unknown, Locals>): P
       const summary = await exportSummary(item);
       return {
         UID: summary.sha256,
-        Name: summary.fileName,
+        // ATAK treats Name as the package name and appends ".zip" itself when it saves the file.
+        Name: summary.fileName.replace(/\.zip$/i, ""),
         Hash: summary.sha256,
         CreatorUid: "OpenMeshTak",
         SubmissionDateTime: martiTime(item.latest.createdAt),
