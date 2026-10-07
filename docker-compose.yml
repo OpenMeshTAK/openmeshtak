@@ -9,18 +9,18 @@
 # without it, stored secrets such as channel keys and the TAK CA key cannot be decrypted. To keep it
 # out of .env, put it in a file instead and use the commented secret lines below.
 #
-# Your reverse proxy (CloudPanel, nginx, ...) terminates HTTPS for PUBLIC_HOST and forwards to
-# http://127.0.0.1:8080. The bootstrap token for the first administrator is in `docker compose
-# logs core`. TRUST_PROXY makes Core take the client address from the last X-Forwarded-For entry,
-# which your proxy adds, so rate limits apply per client. Without it every request seems to come
-# from the Docker gateway and all clients share one limit. This is only safe while 8080 is
-# published on 127.0.0.1: if anything else can reach it, set TRUST_PROXY=false in .env.
+# Your reverse proxy (nginx, Caddy, a hosting panel, ...) terminates HTTPS for PUBLIC_HOST and
+# forwards to http://127.0.0.1:8080. The bootstrap token for the first administrator is in
+# `docker compose logs core`. TRUST_PROXY makes Core take the client address from the last
+# X-Forwarded-For entry, which your proxy adds, so rate limits apply per client. Without it every
+# request seems to come from the Docker gateway and all clients share one limit. This is only safe
+# while 8080 is published on 127.0.0.1; if anything else can reach it, set TRUST_PROXY=false.
 #
 # The TAK ports go straight to Core, which terminates mutual TLS itself. The left side of each
 # mapping is the public port and must match the TAK server page in the Web app, the only source
-# for QR codes and profiles. If 8443 is taken (CloudPanel's own administration uses it), publish
-# Data Packages on e.g. "8484:8443" and enter 8484 on the TAK server page. Keep 8446 and 8089:
-# ATAK Quick Connect expects them.
+# for QR codes and profiles. If 8443 is taken (some hosting panels use it), publish Data Packages
+# on e.g. "8484:8443" and enter 8484 on the TAK server page; iTAK then gets no server Data
+# Packages. Keep 8446 and 8089: ATAK Quick Connect expects them.
 
 name: openmeshtak
 
