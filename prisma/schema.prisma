@@ -921,6 +921,29 @@ model RegistrationSettings {
   updatedAt DateTime @updatedAt
 }
 
+/// Result of a POST sent with an `Idempotency-Key`, so a retry returns the original response
+/// instead of repeating the work. Kept for 24 hours; only routes without secrets in their response
+/// use it.
+model IdempotencyRecord {
+  id                  String   @id
+  /// Safe actor reference ("user" or "api-client") of the caller the key belongs to.
+  principalType       String
+  principalId         String
+  path                String
+  key                 String
+  /// SHA-256 of the canonical query and body; a different request with the same key is refused.
+  requestHash         String
+  /// Null while the first request is still running.
+  responseStatus      Int?
+  responseContentType String?
+  responseBody        String?
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
+
+  @@unique([principalType, principalId, path, key])
+  @@index([expiresAt])
+}
+
 /// Short-lived link to one generated artifact, so a phone can download it without a browser
 /// session, e.g. after scanning a QR code. Only the hash of the link token is stored.
 model DownloadGrant {

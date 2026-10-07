@@ -19,6 +19,8 @@ export default tseslint.config(
       "no-console": "error",
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-import-type-side-effects": "error",
+      // tsoa documents some parameters, such as Idempotency-Key, that a middleware handles instead.
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
   {

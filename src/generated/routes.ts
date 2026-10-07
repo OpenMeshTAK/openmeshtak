@@ -5388,6 +5388,7 @@ export function RegisterRoutes(app: Router) {
         const argsEventsController_createEvent: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 body: {"in":"body","name":"body","required":true,"ref":"CreateEventRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -5651,6 +5652,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 body: {"in":"body","name":"body","required":true,"ref":"CreateEventRoleRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/roles',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -5956,6 +5958,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 body: {"in":"body","name":"body","required":true,"ref":"CreateEventMemberRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/members',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -6156,6 +6159,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 body: {"in":"body","name":"body","required":true,"ref":"CreateEventGroupRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/groups',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -6322,6 +6326,7 @@ export function RegisterRoutes(app: Router) {
         const argsConfigurationRevisionsController_publishConfiguration: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/configuration-revisions',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -6581,6 +6586,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/data-packages/:packageId/revisions',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -6718,6 +6724,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
                 body: {"in":"body","name":"body","required":true,"ref":"CreatePackageObjectRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/data-packages/:packageId/objects',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -6923,6 +6930,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
                 body: {"in":"body","name":"body","required":true,"ref":"CreatePackageLayerRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/data-packages/:packageId/layers',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -7198,6 +7206,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 body: {"in":"body","name":"body","required":true,"ref":"CreateDataPackageCopyRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/data-package-copies',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -7507,6 +7516,7 @@ export function RegisterRoutes(app: Router) {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 body: {"in":"body","name":"body","required":true,"ref":"CreateDataPackageRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
         };
         app.post('/api/v1/events/:eventId/data-packages',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),

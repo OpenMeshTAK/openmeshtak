@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Middlewares,
   Path,
   Post,
@@ -15,6 +16,7 @@ import {
   Tags,
 } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
+import { idempotent } from "../../shared/http/idempotency.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
@@ -62,15 +64,20 @@ export class EventsController extends Controller {
     return listEvents(requestContext(request).principal, { limit, cursor, status });
   }
 
-  /** Creates a new event in the `draft` state. Requires instance-wide `events.manage`. */
+  /**
+   * Creates a new event in the `draft` state. Requires instance-wide `events.manage`.
+   * @param _idempotencyKey Makes retries safe: a repeated request returns the original response.
+   */
   @Post()
+  @Middlewares(idempotent)
   @SuccessResponse(201, "Event created")
   @Response<ProblemDetails>(403, "Access denied")
-  @Response<ProblemDetails>(409, "Slug already in use")
+  @Response<ProblemDetails>(409, "Slug already in use; Idempotency-Key conflict")
   @Response<ProblemDetails>(422, "Validation failed")
   public async createEvent(
     @Request() request: unknown,
     @Body() body: CreateEventRequest,
+    @Header("Idempotency-Key") _idempotencyKey?: string,
   ): Promise<EventDto> {
     const created = await createEvent(requestContext(request), body);
     this.setStatus(201);

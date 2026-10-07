@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Middlewares,
   Path,
   Post,
@@ -16,6 +17,7 @@ import {
   Tags,
 } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
+import { idempotent } from "../../shared/http/idempotency.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
@@ -63,15 +65,20 @@ export class EventRolesController extends Controller {
     return listEventRoles(requestContext(request).principal, eventId, limit, cursor);
   }
 
+  /**
+   * @param _idempotencyKey Makes retries safe: a repeated request returns the original response.
+   */
   @Post()
+  @Middlewares(idempotent)
   @SuccessResponse(201, "Event role created")
   @Response<ProblemDetails>(403, "Access denied")
-  @Response<ProblemDetails>(409, "Slug already in use or event archived")
+  @Response<ProblemDetails>(409, "Slug already in use or event archived; Idempotency-Key conflict")
   @Response<ProblemDetails>(422, "Validation failed")
   public async createEventRole(
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Body() body: CreateEventRoleRequest,
+    @Header("Idempotency-Key") _idempotencyKey?: string,
   ): Promise<EventRoleDto> {
     const created = await createEventRole(requestContext(request), eventId, body);
     this.setStatus(201);

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Middlewares,
   Path,
   Post,
@@ -16,6 +17,7 @@ import {
   Tags,
 } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
+import { idempotent } from "../../shared/http/idempotency.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
@@ -61,15 +63,20 @@ export class DataPackagesController extends Controller {
     return listDataPackages(requestContext(request).principal, eventId, limit, cursor);
   }
 
-  /** Creates a data package with one empty layer. */
+  /**
+   * Creates a data package with one empty layer.
+   * @param _idempotencyKey Makes retries safe: a repeated request returns the original response.
+   */
   @Post()
+  @Middlewares(idempotent)
   @SuccessResponse(201, "Data package created")
-  @Response<ProblemDetails>(409, "Event archived")
+  @Response<ProblemDetails>(409, "Event archived; Idempotency-Key conflict")
   @Response<ProblemDetails>(422, "Validation failed")
   public async createDataPackage(
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Body() body: CreateDataPackageRequest,
+    @Header("Idempotency-Key") _idempotencyKey?: string,
   ): Promise<DataPackageDto> {
     const created = await createDataPackage(requestContext(request), eventId, body);
     this.setStatus(201);

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Middlewares,
   Path,
   Post,
@@ -16,6 +17,7 @@ import {
   Tags,
 } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
+import { idempotent } from "../../shared/http/idempotency.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
@@ -57,15 +59,20 @@ export class PackageObjectsController extends Controller {
     return listObjects(requestContext(request).principal, eventId, packageId, layerId, limit, cursor);
   }
 
+  /**
+   * @param _idempotencyKey Makes retries safe: a repeated request returns the original response.
+   */
   @Post()
+  @Middlewares(idempotent)
   @SuccessResponse(201, "Package object created")
-  @Response<ProblemDetails>(409, "Layer locked, too many objects or event archived")
+  @Response<ProblemDetails>(409, "Layer locked, too many objects or event archived; Idempotency-Key conflict")
   @Response<ProblemDetails>(422, "Invalid geometry or other validation failure")
   public async createPackageObject(
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Path() packageId: Uuid,
     @Body() body: CreatePackageObjectRequest,
+    @Header("Idempotency-Key") _idempotencyKey?: string,
   ): Promise<PackageObjectDto> {
     const created = await createObject(requestContext(request), eventId, packageId, body);
     this.setStatus(201);

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Middlewares,
   Path,
   Post,
@@ -16,6 +17,7 @@ import {
   Tags,
 } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
+import { idempotent } from "../../shared/http/idempotency.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
@@ -66,15 +68,18 @@ export class EventMembersController extends Controller {
   /**
    * Adds an existing OpenMeshTak user to the event. Members from external systems use the
    * external-member upsert instead. Requires `members.manage`.
+   * @param _idempotencyKey Makes retries safe: a repeated request returns the original response.
    */
   @Post()
+  @Middlewares(idempotent)
   @SuccessResponse(201, "Event member created")
-  @Response<ProblemDetails>(409, "Already a member, callsign or short-name conflict, or event archived")
+  @Response<ProblemDetails>(409, "Already a member, callsign or short-name conflict, or event archived; Idempotency-Key conflict")
   @Response<ProblemDetails>(422, "Validation failed")
   public async createEventMember(
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Body() body: CreateEventMemberRequest,
+    @Header("Idempotency-Key") _idempotencyKey?: string,
   ): Promise<EventMemberDto> {
     const created = await createEventMember(requestContext(request), eventId, body);
     this.setStatus(201);

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Header,
   Middlewares,
   Path,
   Post,
@@ -13,6 +14,7 @@ import {
   Tags,
 } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
+import { idempotent } from "../../shared/http/idempotency.js";
 import { allowQueryParameters } from "../../shared/http/query-allowlist.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
@@ -48,14 +50,19 @@ export class PackageRevisionsController extends Controller {
     return listRevisions(requestContext(request).principal, eventId, packageId, limit, cursor);
   }
 
-  /** Publishes the current draft. Requires `data-packages.publish`. */
+  /**
+   * Publishes the current draft. Requires `data-packages.publish`.
+   * @param _idempotencyKey Makes retries safe: a repeated request returns the original response.
+   */
   @Post()
+  @Middlewares(idempotent)
   @SuccessResponse(200, "Published, or the unchanged latest revision")
-  @Response<ProblemDetails>(409, "Event archived")
+  @Response<ProblemDetails>(409, "Event archived; Idempotency-Key conflict")
   public async publishDataPackage(
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Path() packageId: Uuid,
+    @Header("Idempotency-Key") _idempotencyKey?: string,
   ): Promise<PublishDataPackageResponse> {
     return publishDataPackage(requestContext(request), eventId, packageId);
   }
