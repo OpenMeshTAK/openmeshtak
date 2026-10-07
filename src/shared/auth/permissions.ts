@@ -34,6 +34,7 @@ export const PERMISSIONS = [
   "email.manage",
   "settings.manage",
   "audit.read",
+  "server-logs.read",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -61,6 +62,7 @@ const INSTANCE_ONLY_PERMISSIONS: ReadonlySet<Permission> = new Set<Permission>([
   "email.manage",
   "settings.manage",
   "audit.read",
+  "server-logs.read",
 ]);
 
 export const INSTANCE_SCOPE_KEY = "instance";

@@ -1,3 +1,4 @@
+import type { IncomingHttpHeaders } from "node:http";
 import type { Request } from "express";
 import { auth } from "../../modules/auth/auth.js";
 import { authenticateApiKey } from "../../modules/api-clients/api-key-authentication.js";
@@ -9,10 +10,10 @@ import type { Principal, ApiClientPrincipal, UserPrincipal } from "./principal.j
 export const SESSION_SECURITY = "sessionCookie";
 export const API_CLIENT_SECURITY = "apiClientBearer";
 
-function requestHeaders(request: Request): Headers {
+function requestHeaders(incoming: IncomingHttpHeaders): Headers {
   const headers = new Headers();
 
-  for (const [name, value] of Object.entries(request.headers)) {
+  for (const [name, value] of Object.entries(incoming)) {
     if (Array.isArray(value)) {
       for (const item of value) {
         headers.append(name, item);
@@ -36,9 +37,10 @@ function authenticationRequired(): ProblemError {
   });
 }
 
-async function authenticateSession(request: Request): Promise<UserPrincipal> {
+/** Also authenticates the realtime socket handshake, which carries the same session cookie. */
+export async function authenticateSession(incoming: IncomingHttpHeaders): Promise<UserPrincipal> {
   const session = await auth.api.getSession({
-    headers: requestHeaders(request),
+    headers: requestHeaders(incoming),
   });
 
   if (session === null) {
@@ -88,7 +90,7 @@ export async function expressAuthentication(
 ): Promise<Principal> {
   switch (securityName) {
     case SESSION_SECURITY:
-      return authenticateSession(request);
+      return authenticateSession(request.headers);
     case API_CLIENT_SECURITY:
       return authenticateApiClient(request);
     default:

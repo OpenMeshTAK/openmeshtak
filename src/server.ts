@@ -5,6 +5,7 @@ import { backfillUsernames } from "./modules/users/usernames.js";
 import { config } from "./shared/config/config.js";
 import { getRootKey } from "./shared/crypto/root-key.js";
 import { firmwareProfiles } from "./modules/meshtastic-firmware/firmware-profiles.js";
+import { attachRealtime } from "./modules/server-logs/server-logs.realtime.js";
 import { takListeners } from "./modules/tak-server/tak-listeners.js";
 import { scheduleTrafficCleanup } from "./modules/tak-server/traffic-recording.js";
 import { takAcmeManager } from "./modules/tak-server/acme-manager.js";
@@ -41,6 +42,7 @@ async function startServer(): Promise<void> {
       "OpenMeshTak Core started",
     );
   });
+  const realtime = attachRealtime(server);
 
   scheduleTrafficCleanup();
   takAcmeManager.start();
@@ -50,7 +52,8 @@ async function startServer(): Promise<void> {
     void takListeners.stop();
     takAcmeManager.stop();
 
-    server.close(() => {
+    // Closing Socket.IO disconnects open viewers and then closes the HTTP server itself.
+    void realtime.close(() => {
       void disconnectDatabase()
         .then(() => {
           logger.info({ event: "server_stopped" }, "Server stopped");

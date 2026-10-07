@@ -63,6 +63,8 @@ To build the image from source, check out `openmeshtak-web` next to this reposit
 
 `docker build --build-context web=../openmeshtak-web -t ghcr.io/openmeshtak/openmeshtak:dev .`
 
+The live server log under `Settings → Server log` uses Socket.IO at `/api/realtime`. Let the reverse proxy pass WebSocket upgrades (`Upgrade` and `Connection` headers) for `PUBLIC_HOST`; without them the log still works over HTTP long-polling, only less efficiently.
+
 ### TAK listen ports
 
 Core listens on `TAK_ENROLLMENT_LISTEN_PORT`, `TAK_MARTI_LISTEN_PORT` and `TAK_STREAMING_LISTEN_PORT` (default 8446, 8443, 8089) inside the container. These are container values only; the public ports that devices receive come from the TAK server page. If one of the listen ports cannot be bound, Core does not start, so a TAK server never runs half.

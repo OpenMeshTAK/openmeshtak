@@ -382,7 +382,8 @@
 					"tak-server.admin-access",
 					"email.manage",
 					"settings.manage",
-					"audit.read"
+					"audit.read",
+					"server-logs.read"
 				]
 			},
 			"PermissionGrantDto": {
@@ -1407,6 +1408,77 @@
 					"username",
 					"password",
 					"token"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ServerLogLevel": {
+				"type": "string",
+				"enum": [
+					"trace",
+					"debug",
+					"info",
+					"warn",
+					"error",
+					"fatal"
+				]
+			},
+			"ServerLogEntryDto": {
+				"properties": {
+					"sequence": {
+						"type": "number",
+						"format": "double",
+						"description": "Increases by one per line since Core started; poll with the last one seen."
+					},
+					"time": {
+						"type": "string",
+						"nullable": true,
+						"description": "ISO 8601 time the line was written."
+					},
+					"level": {
+						"$ref": "#/components/schemas/ServerLogLevel"
+					},
+					"message": {
+						"type": "string"
+					},
+					"details": {
+						"type": "string",
+						"nullable": true,
+						"description": "The remaining structured fields as JSON, already sanitized like the container log."
+					}
+				},
+				"required": [
+					"sequence",
+					"time",
+					"level",
+					"message",
+					"details"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ServerLogPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ServerLogEntryDto"
+						},
+						"type": "array"
+					},
+					"latestSequence": {
+						"type": "number",
+						"format": "double",
+						"description": "Pass as `after` on the next request to receive only newer lines."
+					},
+					"reset": {
+						"type": "boolean",
+						"description": "True when `items` starts a fresh view: no `after` was given or Core restarted since."
+					}
+				},
+				"required": [
+					"items",
+					"latestSequence",
+					"reset"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -9754,6 +9826,74 @@
 						}
 					}
 				}
+			}
+		},
+		"/server-logs": {
+			"get": {
+				"operationId": "ListServerLogs",
+				"responses": {
+					"200": {
+						"description": "Server log lines",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ServerLogPage"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Core's most recent log lines from memory, sanitized like the container log. Without `after`\nit returns the newest lines; with `after` only lines written since. Requires instance-wide\n`server-logs.read`.",
+				"tags": [
+					"Server log"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "after",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 0
+						}
+					}
+				]
 			}
 		},
 		"/registration": {
