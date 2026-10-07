@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { randomBytes } from "node:crypto";
 import { z } from "zod";
 
 const booleanFromString = z
@@ -11,7 +10,6 @@ const environmentSchema = z.object({
   SWAGGER_ENABLED: booleanFromString.optional(),
   APP_HOST: z.string().min(1).default("127.0.0.1"),
   APP_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
-  BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BOOTSTRAP_TOKEN_TTL_MINUTES: z.coerce.number().int().min(5).max(60).default(15),
   DATABASE_URL: z
     .string()
@@ -47,10 +45,6 @@ if (
   throw new Error("APP_PORT and the TAK listen ports must all differ.");
 }
 
-if (environment.NODE_ENV === "production" && environment.BETTER_AUTH_SECRET === undefined) {
-  throw new Error("BETTER_AUTH_SECRET is required in production.");
-}
-
 if (
   environment.NODE_ENV === "production" &&
   environment.ROOT_ENCRYPTION_KEY_FILE === undefined
@@ -67,7 +61,6 @@ if (
 
 export const config = Object.freeze({
   apiDocsEnabled: environment.SWAGGER_ENABLED ?? environment.NODE_ENV !== "production",
-  authSecret: environment.BETTER_AUTH_SECRET ?? randomBytes(32).toString("base64url"),
   bootstrapTokenTtlMinutes: environment.BOOTSTRAP_TOKEN_TTL_MINUTES,
   databaseUrl: environment.DATABASE_URL,
   dataDirectory: environment.DATA_DIRECTORY,

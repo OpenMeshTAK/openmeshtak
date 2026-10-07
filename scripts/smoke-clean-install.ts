@@ -88,7 +88,6 @@ async function smokeCleanInstall(): Promise<void> {
     ...process.env,
     APP_HOST: "127.0.0.1",
     APP_PORT: String(port),
-    BETTER_AUTH_SECRET: randomBytes(48).toString("base64url"),
     DATABASE_URL: `file:${databasePath.replaceAll("\\", "/")}`,
     DATA_DIRECTORY: dataDirectory,
     LOG_LEVEL: "silent",

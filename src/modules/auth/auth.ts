@@ -1,9 +1,11 @@
+import { hkdfSync } from "node:crypto";
 import { passkey } from "@better-auth/passkey";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { username } from "better-auth/plugins";
 import { config } from "../../shared/config/config.js";
+import { getRootKey } from "../../shared/crypto/root-key.js";
 import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
 import { RECENT_AUTHENTICATION_MAX_AGE_SECONDS } from "../../shared/auth/permission-check.js";
@@ -15,6 +17,15 @@ import { isValidUsername, USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from "../us
 export const AUTH_BASE_PATH = "/api/auth";
 
 const publicOrigin = new URL(config.publicOrigin);
+
+/**
+ * Better Auth signs sessions with a key derived from the deployment root key, so operators manage
+ * one secret. Its own HKDF label keeps it independent of the secret-box keys. Rotating the root
+ * key therefore also ends every session.
+ */
+const authSecret = Buffer.from(
+  hkdfSync("sha256", getRootKey(), Buffer.alloc(0), "openmeshtak:better-auth:v1", 32),
+).toString("base64url");
 
 export const auth = betterAuth({
   appName: "OpenMeshTak",
@@ -87,7 +98,7 @@ export const auth = betterAuth({
       logger[level]({ event: "better_auth_log", details }, message);
     },
   },
-  secret: config.authSecret,
+  secret: authSecret,
   trustedOrigins: [config.publicOrigin],
   rateLimit: {
     enabled: true,

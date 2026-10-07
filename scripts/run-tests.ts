@@ -40,7 +40,6 @@ const testConcurrency = Number.isSafeInteger(requestedConcurrency) && requestedC
   : Math.min(10, availableParallelism());
 const testEnvironment = {
   ...process.env,
-  BETTER_AUTH_SECRET: "openmeshtak-test-secret-not-for-production",
   DATABASE_URL: `file:./server/data/db/${testDatabaseFile}`,
   DATA_DIRECTORY: testDataDirectory,
   LOG_LEVEL: "silent",
