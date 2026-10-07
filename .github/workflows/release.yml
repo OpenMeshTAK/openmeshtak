@@ -128,15 +128,25 @@ jobs:
       - name: Verify generated API client is committed
         run: git diff --exit-code -- src/generated/api
 
-  image:
+  image-build:
     needs: [verify, verify-web]
-    runs-on: ubuntu-latest
+    name: Image (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions:
       contents: read
       packages: write
-      attestations: write
       id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+            artifact: linux-amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            artifact: linux-arm64
 
     steps:
       - name: Check out repository
@@ -150,9 +160,6 @@ jobs:
           token: ${{ secrets.WEB_REPOSITORY_TOKEN || github.token }}
           path: openmeshtak-web
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -163,8 +170,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 0.2.1 is tagged 0.2.1 and 0.2; stable releases also move `latest`. Pre-releases get only
-      # their exact version.
+      # Labels and per-platform annotations are identical on both native builds. Tags are attached
+      # after the two digests have been assembled into one multi-platform image.
       - name: Image tags and labels
         id: meta
         uses: docker/metadata-action@v5
@@ -185,22 +192,112 @@ jobs:
             org.opencontainers.image.description=OpenMeshTak Core with the Web app and the built-in TAK server
             org.opencontainers.image.licenses=AGPL-3.0-only
 
-      # Buildx attaches provenance and an SBOM attestation to the pushed image.
-      - name: Build and push
+      # Building ARM64 on its native runner avoids the expensive QEMU compilation path. Each job
+      # pushes an untagged digest; the image job below creates the tagged multi-platform manifest.
+      - name: Build and push by digest
         id: push
         uses: docker/build-push-action@v6
         with:
           context: .
           build-contexts: web=./openmeshtak-web
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
           provenance: mode=max
           sbom: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true,oci-mediatypes=true
+
+      - name: Export image digest
+        shell: bash
+        run: |
+          mkdir -p "${RUNNER_TEMP}/digests"
+          digest="${{ steps.push.outputs.digest }}"
+          touch "${RUNNER_TEMP}/digests/${digest#sha256:}"
+
+      - name: Upload image digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-digest-${{ matrix.artifact }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  image:
+    needs: [verify, verify-web, image-build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      digest: ${{ steps.manifest.outputs.digest }}
+
+    steps:
+      - name: Download image digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: image-digest-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 0.2.1 is tagged 0.2.1 and 0.2; stable releases also move `latest`. Pre-releases get only
+      # their exact version. Index annotations make the metadata visible on the multi-arch image.
+      - name: Image tags and annotations
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ needs.verify.outputs.prerelease == 'false' }}
+          annotations: |
+            org.opencontainers.image.title=OpenMeshTak
+            org.opencontainers.image.description=OpenMeshTak Core with the Web app and the built-in TAK server
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
+      - name: Create and verify multi-platform image
+        id: manifest
+        working-directory: ${{ runner.temp }}/digests
+        shell: bash
+        run: |
+          tag_args=()
+          while IFS= read -r tag; do
+            if [ -n "$tag" ]; then tag_args+=("--tag=$tag"); fi
+          done <<< "$DOCKER_METADATA_OUTPUT_TAGS"
+
+          annotation_args=()
+          while IFS= read -r annotation; do
+            if [ -n "$annotation" ]; then annotation_args+=("--annotation=$annotation"); fi
+          done <<< "$DOCKER_METADATA_OUTPUT_ANNOTATIONS"
+
+          image_args=()
+          for digest_file in *; do
+            image_args+=("${IMAGE}@sha256:${digest_file}")
+          done
+
+          docker buildx imagetools create "${tag_args[@]}" "${annotation_args[@]}" "${image_args[@]}"
+
+          manifest_json="$(docker buildx imagetools inspect "${IMAGE}:${{ needs.verify.outputs.version }}" --format '{{json .Manifest}}')"
+          jq -e '[.manifests[] | select(.platform.os == "linux") | .platform.architecture] | sort == ["amd64", "arm64"]' <<< "$manifest_json"
+          digest="$(jq -r '.digest' <<< "$manifest_json")"
+          test "$digest" != "null"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
       # GitHub artifact attestations need a public repository on the free plan, so private
       # releases skip this step; verify with `gh attestation verify oci://<image> -R <repo>`.
@@ -209,7 +306,7 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ env.IMAGE }}
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.manifest.outputs.digest }}
           push-to-registry: true
 
   release:
