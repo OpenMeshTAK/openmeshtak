@@ -128,8 +128,9 @@ jobs:
       - name: Verify generated API client is committed
         run: git diff --exit-code -- src/generated/api
 
+  # Builds start right away, in parallel with the checks: they only push untagged digests, and the
+  # image job below tags and publishes nothing until verify and verify-web have passed.
   image-build:
-    needs: [verify, verify-web]
     name: Image (${{ matrix.platform }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -172,7 +173,7 @@ jobs:
 
       # Labels and per-platform annotations are identical on both native builds. Tags are attached
       # after the two digests have been assembled into one multi-platform image.
-      - name: Image tags and labels
+      - name: Image labels
         id: meta
         uses: docker/metadata-action@v6
         env:
@@ -180,10 +181,6 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           flavor: latest=false
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ needs.verify.outputs.prerelease == 'false' }}
           labels: |
             org.opencontainers.image.title=OpenMeshTak
             org.opencontainers.image.licenses=AGPL-3.0-only
@@ -194,6 +191,8 @@ jobs:
 
       # Building ARM64 on its native runner avoids the expensive QEMU compilation path. Each job
       # pushes an untagged digest; the image job below creates the tagged multi-platform manifest.
+      # The layer cache lives in its own GHCR package because GitHub's Actions cache is scoped to
+      # the ref, and every release runs on a new tag that could not read the previous one.
       - name: Build and push by digest
         id: push
         uses: docker/build-push-action@v7
@@ -205,6 +204,8 @@ jobs:
           annotations: ${{ steps.meta.outputs.annotations }}
           provenance: mode=max
           sbom: true
+          cache-from: type=registry,ref=${{ env.IMAGE }}-buildcache:${{ matrix.artifact }}
+          cache-to: type=registry,ref=${{ env.IMAGE }}-buildcache:${{ matrix.artifact }},mode=max,image-manifest=true,oci-mediatypes=true
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true,oci-mediatypes=true
 
       - name: Export image digest
