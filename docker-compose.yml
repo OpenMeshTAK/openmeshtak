@@ -3,12 +3,11 @@
 #
 #   OPENMESHTAK_VERSION=0.1.0            # optional, default latest; pin it to upgrade deliberately
 #   PUBLIC_HOST=openmeshtak.example.org  # public HTTPS host name of the Web app
+#   ROOT_ENCRYPTION_KEY=...              # once: openssl rand -base64 32
 #
-# Create the root encryption key once and back it up separately; without it, stored secrets such
-# as channel keys and the TAK CA key cannot be decrypted:
-#
-#   openssl rand -base64 32 > root_encryption_key
-#   docker compose up -d
+# The root key is the installation's only secret. Back it up separately and never change it:
+# without it, stored secrets such as channel keys and the TAK CA key cannot be decrypted. To keep it
+# out of .env, put it in a file instead and use the commented secret lines below.
 #
 # Your reverse proxy (CloudPanel, nginx, ...) terminates HTTPS for PUBLIC_HOST and forwards to
 # http://127.0.0.1:8080. The bootstrap token for the first administrator is in `docker compose
@@ -31,13 +30,15 @@ services:
     restart: unless-stopped
     environment:
       PUBLIC_ORIGIN: https://${PUBLIC_HOST:?Set PUBLIC_HOST in .env}
+      # Or keep the key in a file: remove this line and uncomment both secret blocks.
+      ROOT_ENCRYPTION_KEY: ${ROOT_ENCRYPTION_KEY:?Set ROOT_ENCRYPTION_KEY in .env}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       # Only the reverse proxy reaches port 8080 below, so its X-Forwarded-For entry is trusted.
       TRUST_PROXY: ${TRUST_PROXY:-true}
       # Swagger UI at https://<PUBLIC_HOST>/api/docs
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
-    secrets:
-      - root_encryption_key
+    # secrets:
+    #   - root_encryption_key
     volumes:
       - core-data:/server/data
     ports:
@@ -48,10 +49,9 @@ services:
       - "8443:8443"
       - "8089:8089"
 
-secrets:
-  # Kept outside the database and the data volume.
-  root_encryption_key:
-    file: ./root_encryption_key
+# secrets:
+#   root_encryption_key:
+#     file: ./root_encryption_key
 
 volumes:
   core-data:

@@ -52,8 +52,8 @@ pnpm smoke:clean-install
 
 OpenMeshTak ships as one image, `ghcr.io/openmeshtak/openmeshtak`: Core serves the Web app, the API and the built-in TAK server. `docker-compose.yml` is a sample deployment behind an existing reverse proxy such as CloudPanel or nginx; its comments list the required `.env` values.
 
-1. `openssl rand -base64 32 > root_encryption_key` once, and back the file up separately.
-2. Create `.env` with `PUBLIC_HOST`. `OPENMESHTAK_VERSION` defaults to `latest`; pin it to upgrade deliberately, because Core applies database migrations on start.
+1. Create `.env` with `PUBLIC_HOST` and `ROOT_ENCRYPTION_KEY` (once: `openssl rand -base64 32`). Back the key up separately; it encrypts every stored secret. To keep it out of `.env`, mount it as the `root_encryption_key` secret file instead, as the compose comments show; setting both is refused.
+2. `OPENMESHTAK_VERSION` defaults to `latest`; pin it to upgrade deliberately, because Core applies database migrations on start.
 3. Check the host ports: `sh scripts/preflight.sh`
 4. `docker compose up -d`, then point the reverse proxy for `PUBLIC_HOST` at `http://127.0.0.1:8080`. The sample sets `TRUST_PROXY=true`, so Core takes the client address from the last `X-Forwarded-For` entry, the one the proxy adds, and rate limits apply per client. Keep port 8080 on `127.0.0.1`; if anything other than the proxy can reach it, set `TRUST_PROXY=false` in `.env`.
 5. Complete setup with the bootstrap token from `docker compose logs core`, then set up the TAK server page.
