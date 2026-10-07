@@ -67,6 +67,26 @@ To build the image from source, check out `openmeshtak-web` next to this reposit
 
 Core listens on `TAK_ENROLLMENT_LISTEN_PORT`, `TAK_MARTI_LISTEN_PORT` and `TAK_STREAMING_LISTEN_PORT` (default 8446, 8443, 8089) inside the container. These are container values only; the public ports that devices receive come from the TAK server page. If one of the listen ports cannot be bound, Core does not start, so a TAK server never runs half.
 
+### Public TAK ports
+
+TAK apps expect the standard public ports. Keep them free on the TAK host name whenever possible:
+
+| Port | Service | Used by |
+| --- | --- | --- |
+| `8446` | Certificate enrollment | ATAK QR code, connection package and Quick Connect |
+| `8443` | Marti API (Data Packages) | ATAK and iTAK |
+| `8089` | CoT streaming | ATAK and iTAK |
+
+The Marti port can be changed on the TAK server page, for example to `8484` when a hosting panel such as CloudPanel already owns `8443`. ATAK learns the new port from its enrollment profile. **iTAK does not:** iTAK 2.12.3 ignores the port in its connection package and always requests Data Packages on `8443`. With another Marti port, iTAK still connects and exchanges CoT on `8089`, but it cannot list or download Data Packages from the server.
+
+To serve iTAK when `8443` is taken on the host:
+
+- **Dedicated address (recommended):** give the TAK host name its own public IPv4/IPv6 address and publish Core's ports only on that address, so `8443` there belongs to OpenMeshTak.
+- **SNI passthrough:** a layer-4 router such as HAProxy in TCP mode or nginx `stream` with `ssl_preread` owns public `8443` and forwards connections for the TAK host name unchanged to Core and everything else to the other service. It must not terminate TLS, because Core checks the client certificate itself. This only works if the other service can be moved to a private port; CloudPanel documents no supported way to move its administration port.
+- **Move the other service** off public `8443`, if it supports that.
+
+Before relying on one of these setups, test enrollment, Data Package download and CoT with the ATAK and iTAK versions your participants use.
+
 ### API documentation
 
 Swagger UI is served at `https://<PUBLIC_HOST>/api/docs` when `SWAGGER_ENABLED=true` (off by default in production, on in development). The OpenAPI document is always available at `/api/openapi.json`.
