@@ -22,18 +22,87 @@ function escapeXml(value: string): string {
   return value.replace(/[<>&"']/g, (character) => `&#${String(character.charCodeAt(0))};`);
 }
 
+const OID = {
+  data: "1.2.840.113549.1.7.1",
+  certBag: "1.2.840.113549.1.12.10.1.3",
+  x509Certificate: "1.2.840.113549.1.9.22.1",
+  friendlyName: "1.2.840.113549.1.9.20",
+  sha1: "1.3.14.3.2.26",
+};
+/** Oracle's "trusted key usage" bag attribute; Java keeps a key-less certificate only with it. */
+const ORACLE_TRUSTED_KEY_USAGE = "2.16.840.1.113894.746875.1.1";
+const ANY_EXTENDED_KEY_USAGE = "2.5.29.37.0";
+const MAC_ITERATIONS = 2048;
+
+const { asn1 } = forge;
+
+function sequence(...items: forge.asn1.Asn1[]): forge.asn1.Asn1 {
+  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, items);
+}
+
+function set(...items: forge.asn1.Asn1[]): forge.asn1.Asn1 {
+  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, items);
+}
+
+function oid(value: string): forge.asn1.Asn1 {
+  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, asn1.oidToDer(value).getBytes());
+}
+
+function octets(bytes: string): forge.asn1.Asn1 {
+  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, bytes);
+}
+
+function explicit(item: forge.asn1.Asn1): forge.asn1.Asn1 {
+  return asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [item]);
+}
+
+/** PKCS#7 `data` ContentInfo around DER content. */
+function dataContent(content: forge.asn1.Asn1): forge.asn1.Asn1 {
+  return sequence(oid(OID.data), explicit(octets(asn1.toDer(content).getBytes())));
+}
+
+function trustedCertificateBag(pem: string, alias: string): forge.asn1.Asn1 {
+  const der = asn1.toDer(forge.pki.certificateToAsn1(forge.pki.certificateFromPem(pem))).getBytes();
+  const friendlyName = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BMPSTRING, false, alias);
+  return sequence(
+    oid(OID.certBag),
+    explicit(sequence(oid(OID.x509Certificate), explicit(octets(der)))),
+    set(
+      sequence(oid(OID.friendlyName), set(friendlyName)),
+      sequence(oid(ORACLE_TRUSTED_KEY_USAGE), set(oid(ANY_EXTENDED_KEY_USAGE))),
+    ),
+  );
+}
+
 /**
  * node-forge is used only to WRITE this PKCS#12 file. Its RSA signature verification has an
  * unpatched advisory (GHSA-86w9-cpqp-85rv, ignored in pnpm audit for that reason); never use
  * node-forge to verify signatures or parse untrusted certificates.
  *
- * A PKCS#12 truststore with the CA certificates and no key. Triple-DES is the legacy PKCS#12
- * encryption that every ATAK version reads; it protects nothing secret here.
+ * A PKCS#12 truststore with the CA certificates and no key, laid out like `keytool -importcert`
+ * writes it. forge's own builder is not used: it tags certificates with a localKeyID, so Java and
+ * ATAK treat them as halves of a missing key pair and load an empty truststore. Each certificate
+ * needs its own alias and the Oracle trusted-key-usage attribute instead. The certificates are
+ * public, so the bags stay unencrypted; the password only keys the integrity MAC.
  */
 function truststore(caPems: string[]): Uint8Array {
-  const certificates = caPems.map((pem) => forge.pki.certificateFromPem(pem));
-  const asn1 = forge.pkcs12.toPkcs12Asn1(null, certificates, TRUSTSTORE_PASSWORD, { algorithm: "3des", friendlyName: "OpenMeshTak CA" });
-  return Uint8Array.from(Buffer.from(forge.asn1.toDer(asn1).getBytes(), "binary"));
+  const bags = caPems.map((pem, index) => trustedCertificateBag(pem, `openmeshtak-ca-${String(index + 1)}`));
+  const authenticatedSafe = sequence(dataContent(sequence(...bags)));
+  const salt = forge.random.getBytesSync(20);
+  const macKey = forge.pkcs12.generateKey(TRUSTSTORE_PASSWORD, forge.util.createBuffer(salt), 3, MAC_ITERATIONS, 20);
+  const hmac = forge.hmac.create();
+  hmac.start("sha1", macKey);
+  hmac.update(asn1.toDer(authenticatedSafe).getBytes());
+  const pfx = sequence(
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, asn1.integerToDer(3).getBytes()),
+    dataContent(authenticatedSafe),
+    sequence(
+      sequence(sequence(oid(OID.sha1), asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, "")), octets(hmac.digest().getBytes())),
+      octets(salt),
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, asn1.integerToDer(MAC_ITERATIONS).getBytes()),
+    ),
+  );
+  return Uint8Array.from(Buffer.from(asn1.toDer(pfx).getBytes(), "binary"));
 }
 
 /**
