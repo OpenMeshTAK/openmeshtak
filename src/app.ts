@@ -9,6 +9,7 @@ import { RegisterRoutes } from "./generated/routes.js";
 import { config } from "./shared/config/config.js";
 import { errorHandler, notFoundHandler } from "./shared/errors/problem.js";
 import { apiResponseHeaders, rejectCrossSiteRequests } from "./shared/http/browser-security.js";
+import { trustProxySetting } from "./shared/http/trust-proxy.js";
 import { mountWebApp } from "./shared/http/web-app.js";
 import { requestLogging } from "./shared/logging/request-logging.js";
 
@@ -21,7 +22,7 @@ export function createApp(): Express {
   const app = express();
 
   app.disable("x-powered-by");
-  app.set("trust proxy", config.trustProxy);
+  app.set("trust proxy", trustProxySetting(config.trustProxy));
   // The Web app is never framed; API responses add their own strict CSP.
   app.use(helmet({ contentSecurityPolicy: false, frameguard: { action: "deny" } }));
   app.use(requestLogging);
