@@ -3,7 +3,6 @@
 #
 #   OPENMESHTAK_VERSION=0.1.0            # optional, default latest; pin it to upgrade deliberately
 #   PUBLIC_HOST=openmeshtak.example.org  # public HTTPS host name of the Web app
-#   BETTER_AUTH_SECRET=...               # at least 32 random characters: openssl rand -base64 48
 #
 # Create the root encryption key once and back it up separately; without it, stored secrets such
 # as channel keys and the TAK CA key cannot be decrypted:
@@ -13,7 +12,10 @@
 #
 # Your reverse proxy (CloudPanel, nginx, ...) terminates HTTPS for PUBLIC_HOST and forwards to
 # http://127.0.0.1:8080. The bootstrap token for the first administrator is in `docker compose
-# logs core`.
+# logs core`. TRUST_PROXY makes Core take the client address from the last X-Forwarded-For entry,
+# which your proxy adds, so rate limits apply per client. Without it every request seems to come
+# from the Docker gateway and all clients share one limit. This is only safe while 8080 is
+# published on 127.0.0.1: if anything else can reach it, set TRUST_PROXY=false in .env.
 #
 # The TAK ports go straight to Core, which terminates mutual TLS itself. The left side of each
 # mapping is the public port and must match the TAK server page in the Web app, the only source
@@ -29,8 +31,9 @@ services:
     restart: unless-stopped
     environment:
       PUBLIC_ORIGIN: https://${PUBLIC_HOST:?Set PUBLIC_HOST in .env}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Only the reverse proxy reaches port 8080 below, so its X-Forwarded-For entry is trusted.
+      TRUST_PROXY: ${TRUST_PROXY:-true}
       # Swagger UI at https://<PUBLIC_HOST>/api/docs
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
     secrets:
