@@ -1,6 +1,6 @@
 {
   "name": "openmeshtak",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "OpenMeshTak Core API server",
   "license": "AGPL-3.0-only",
