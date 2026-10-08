@@ -5,6 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import { mountAuthRoutes } from "./modules/auth/auth.routes.js";
 import { createApiKeyFailureRateLimit } from "./modules/api-clients/api-key-rate-limit.js";
 import { announceEventChanges } from "./modules/events/event-changes.js";
+import { acmeHttpChallengeResponse } from "./modules/tak-server/http-challenge.js";
 import { RegisterRoutes } from "./generated/routes.js";
 import { config } from "./shared/config/config.js";
 import { errorHandler, notFoundHandler } from "./shared/errors/problem.js";
@@ -26,6 +27,15 @@ export function createApp(): Express {
   // The Web app is never framed; API responses add their own strict CSP.
   app.use(helmet({ contentSecurityPolicy: false, frameguard: { action: "deny" } }));
   app.use(requestLogging);
+  // Let's Encrypt fetches HTTP-01 challenges here through the reverse proxy of the Web address.
+  app.get("/.well-known/acme-challenge/:token", (request, response, next) => {
+    const keyAuthorization = acmeHttpChallengeResponse(request.params.token);
+    if (keyAuthorization === undefined) {
+      next();
+      return;
+    }
+    response.type("text/plain").send(keyAuthorization);
+  });
   // Swagger UI under /api/docs keeps Helmet's defaults; it needs scripts and styles.
   app.use(["/api/v1", "/api/auth"], apiResponseHeaders);
   mountAuthRoutes(app);

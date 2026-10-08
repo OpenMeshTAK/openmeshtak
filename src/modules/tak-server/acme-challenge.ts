@@ -1,5 +1,6 @@
 import type { TakAcmeSettings } from "../../generated/prisma/client.js";
 import { CloudflareDnsChallengeSolver } from "./cloudflare-dns.js";
+import { HttpChallengeSolver } from "./http-challenge.js";
 
 /** Input shared by every ACME challenge implementation. */
 export interface AcmeChallengeInput {
@@ -30,6 +31,7 @@ export interface AcmeSolverDescriptor {
 }
 
 export const ACME_SOLVERS: readonly AcmeSolverDescriptor[] = [
+  { challengeType: "http-01", provider: "web-address", label: "HTTP-01 · Web address" },
   { challengeType: "dns-01", provider: "cloudflare", label: "DNS-01 · Cloudflare" },
 ];
 
@@ -40,6 +42,9 @@ export function isSupportedAcmeSolver(challengeType: string, provider: string): 
 export function createAcmeChallengeSolver(settings: TakAcmeSettings): AcmeChallengeSolver {
   if (settings.challengeType === "dns-01" && settings.provider === "cloudflare") {
     return new CloudflareDnsChallengeSolver(settings.cloudflareZoneId ?? "", settings.apiTokenEnvelope ?? "");
+  }
+  if (settings.challengeType === "http-01" && settings.provider === "web-address") {
+    return new HttpChallengeSolver();
   }
   throw new Error(`Unsupported ACME challenge solver: ${settings.challengeType}/${settings.provider}.`);
 }

@@ -5,6 +5,8 @@ import request from "supertest";
 import type { TakServerCertificate } from "../src/generated/prisma/client.js";
 import { createApp } from "../src/app.js";
 import { setAcmeIssuerForTests } from "../src/modules/tak-server/acme-manager.js";
+import { httpChallengeHostProblem } from "../src/modules/tak-server/acme-settings.service.js";
+import { HttpChallengeSolver } from "../src/modules/tak-server/http-challenge.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createUser, type TestUser } from "./support/identity.js";
 
@@ -74,7 +76,7 @@ void describe("TAK ACME settings", () => {
   });
 
   void it("rejects solvers not shipped by this Core version and DNS-01 for an IP address", async () => {
-    await acmeSettings(0, { challengeType: "http-01", provider: "built-in", apiToken: API_TOKEN }).expect(422);
+    await acmeSettings(0, { challengeType: "dns-01", provider: "route53", apiToken: API_TOKEN }).expect(422);
     await serverSettings(1, "192.0.2.10").expect(200);
     const response = await acmeSettings(0, { enabled: true, apiToken: API_TOKEN }).expect(422);
     assert.match(JSON.stringify(response.body), /DNS_HOST_REQUIRED/);
@@ -105,6 +107,29 @@ void describe("TAK ACME settings", () => {
     assert.ok(issued >= 1, "saving or the explicit renewal invokes the configured issuer");
     assert.equal((renewed.body as { lastError: string | null }).lastError, null);
     assert.ok((renewed.body as { lastSuccessAt: string | null }).lastSuccessAt);
+  });
+
+  void it("allows HTTP-01 only when the TAK host is the Web host", async () => {
+    const mismatch = await acmeSettings(0, { challengeType: "http-01", provider: "web-address", cloudflareZoneId: null, enabled: true }).expect(422);
+    assert.match(JSON.stringify(mismatch.body), /HTTP_CHALLENGE_HOST_MISMATCH/);
+
+    // The comparison itself; test Cores run on localhost, which the TAK settings refuse as host name.
+    assert.equal(httpChallengeHostProblem("TAK.example.org", "https://tak.example.org"), null);
+    assert.equal(httpChallengeHostProblem("tak.example.org", "https://web.example.org")?.code, "HTTP_CHALLENGE_HOST_MISMATCH");
+  });
+
+  void it("serves a pending HTTP-01 key authorization until the challenge is removed", async () => {
+    const presented = await new HttpChallengeSolver().present({
+      identifier: "localhost",
+      challengeType: "http-01",
+      keyAuthorization: "token-123.thumbprint",
+    });
+    const served = await request(app).get("/.well-known/acme-challenge/token-123").expect(200);
+    assert.equal(served.text, "token-123.thumbprint");
+
+    await presented.remove();
+    await request(app).get("/.well-known/acme-challenge/token-123").expect(404);
+    await request(app).get("/.well-known/acme-challenge/unknown").expect(404);
   });
 
   void it("requires tak-server.manage", async () => {

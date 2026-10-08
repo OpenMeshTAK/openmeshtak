@@ -2,6 +2,7 @@ import type { TakAcmeSettings } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission, requireRecentAuthentication } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
+import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import { ProblemError, notFoundProblem, validationProblem, versionConflictProblem, type ProblemFieldError } from "../../shared/errors/problem-error.js";
@@ -43,6 +44,19 @@ export async function getTakAcmeSettings(principal: Principal): Promise<TakAcmeS
   return toDto(await loadTakAcmeSettings());
 }
 
+/** Let's Encrypt reaches an HTTP-01 challenge only through the reverse proxy of the Web address. */
+export function httpChallengeHostProblem(takHostName: string, publicOrigin: string): ProblemFieldError | null {
+  const webHostName = new URL(publicOrigin).hostname;
+  if (takHostName.toLowerCase() === webHostName.toLowerCase()) {
+    return null;
+  }
+  return {
+    field: "challengeType",
+    code: "HTTP_CHALLENGE_HOST_MISMATCH",
+    message: `HTTP-01 works only when the TAK host name is the Web host name ${webHostName}. Use DNS-01 instead.`,
+  };
+}
+
 async function problemsFor(input: UpdateTakAcmeSettingsRequest, current: TakAcmeSettings): Promise<ProblemFieldError[]> {
   const problems: ProblemFieldError[] = [];
   if (!isSupportedAcmeSolver(input.challengeType, input.provider)) {
@@ -63,10 +77,17 @@ async function problemsFor(input: UpdateTakAcmeSettingsRequest, current: TakAcme
   }
   const server = await loadTakServerSettings();
   if (server.hostName === null || /^\d+(?:\.\d+){3}$/.test(server.hostName)) {
-    problems.push({ field: "hostName", code: "DNS_HOST_REQUIRED", message: "DNS-01 requires a configured DNS host name, not an IP address." });
+    problems.push({ field: "hostName", code: "DNS_HOST_REQUIRED", message: "Let's Encrypt requires a configured DNS host name, not an IP address." });
   }
   if (input.email === null) {
     problems.push({ field: "email", code: "REQUIRED", message: "Required for ACME certificate issuance." });
+  }
+  if (input.challengeType === "http-01") {
+    const mismatch = server.hostName === null ? null : httpChallengeHostProblem(server.hostName, config.publicOrigin);
+    if (mismatch !== null) {
+      problems.push(mismatch);
+    }
+    return problems;
   }
   if (input.cloudflareZoneId === null) {
     problems.push({ field: "cloudflareZoneId", code: "REQUIRED", message: "Required for the Cloudflare solver." });
