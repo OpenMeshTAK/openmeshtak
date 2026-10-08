@@ -6,6 +6,7 @@ import { logger } from "../../shared/logging/logger.js";
 import { issueAcmeCertificate, testAcmeSetup } from "./acme-certificate.js";
 import { ACME_SETTINGS_ID, loadTakAcmeSettings } from "./acme-settings.js";
 import { warnAboutExpiringCertificate } from "./certificate-expiry.js";
+import { reloadCertificateFiles } from "./certificate-files.js";
 import { activeServerCertificate } from "./server-certificate.js";
 import { takListeners } from "./tak-listeners.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
@@ -58,9 +59,12 @@ class TakAcmeManager extends EventEmitter<{ changed: [] }> {
     void this.check();
   }
 
-  /** Renews when due, then warns administrators if the public certificate is about to expire anyway. */
+  /** Renews when due, reloads the proxy's files, then warns if the certificate is about to expire anyway. */
   private async check(): Promise<void> {
     await this.ensureDue().catch(() => undefined);
+    if ((await reloadCertificateFiles()) !== null) {
+      await takListeners.reload();
+    }
     await warnAboutExpiringCertificate().catch((error: unknown) => {
       logger.error({ error, event: "tak_certificate_expiry_check_failed" }, "TAK certificate expiry check failed");
     });

@@ -363,11 +363,20 @@ const models: TsoaRoute.Models = {
     "TakServerCertificateDto": {
         "dataType": "refObject",
         "properties": {
-            "source": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["issued"]},{"dataType":"enum","enums":["added"]},{"dataType":"enum","enums":["acme"]}],"required":true},
+            "source": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["issued"]},{"dataType":"enum","enums":["added"]},{"dataType":"enum","enums":["acme"]},{"dataType":"enum","enums":["file"]}],"required":true},
             "hostName": {"dataType":"string","required":true},
             "subject": {"dataType":"string","required":true},
             "fingerprintSha256": {"dataType":"string","required":true},
             "notAfter": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakCertificateFilesDto": {
+        "dataType": "refObject",
+        "properties": {
+            "certificateFile": {"dataType":"string","required":true},
+            "keyFile": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -382,6 +391,8 @@ const models: TsoaRoute.Models = {
             "streamingPort": {"dataType":"double","required":true},
             "clientCertificateDays": {"dataType":"double","required":true},
             "serverCertificate": {"dataType":"union","subSchemas":[{"ref":"TakServerCertificateDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "certificateFiles": {"dataType":"union","subSchemas":[{"ref":"TakCertificateFilesDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "certificateDirectory": {"dataType":"string","required":true},
             "endpointChangedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "validClientCertificates": {"dataType":"integer","required":true},
             "clientCertificatesToReEnroll": {"dataType":"integer","required":true},
@@ -418,6 +429,15 @@ const models: TsoaRoute.Models = {
         "properties": {
             "certificateChainPem": {"dataType":"string","required":true,"validators":{"maxLength":{"value":50000}}},
             "privateKeyPem": {"dataType":"string","required":true,"validators":{"maxLength":{"value":20000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UseTakCertificateFilesRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "certificateFile": {"dataType":"string","required":true,"validators":{"maxLength":{"value":500}}},
+            "keyFile": {"dataType":"string","required":true,"validators":{"maxLength":{"value":500}}},
         },
         "additionalProperties": false,
     },
@@ -3432,6 +3452,38 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'removeTakServerCertificate',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakServerSettingsController_useTakCertificateFiles: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"UseTakCertificateFilesRequest"},
+        };
+        app.put('/api/v1/tak-server/server-certificate/files',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakServerSettingsController.prototype.useTakCertificateFiles)),
+
+            async function TakServerSettingsController_useTakCertificateFiles(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakServerSettingsController_useTakCertificateFiles, request, response });
+
+                const controller = new TakServerSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'useTakCertificateFiles',
                 controller,
                 response,
                 next,

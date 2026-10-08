@@ -27,6 +27,8 @@ const environmentSchema = z.object({
   ROOT_ENCRYPTION_KEY: z.string().min(1).optional(),
   ROOT_ENCRYPTION_KEY_FILE: z.string().min(1).optional(),
   TRUST_PROXY: booleanFromString.default(false),
+  /** Where the reverse proxy's certificate files are mounted read-only, if Core should use them. */
+  TAK_CERTIFICATE_DIRECTORY: z.string().min(1).default("./server/certs"),
   /** Built Web app that Core serves on the same origin; the image sets it, development uses Vite. */
   WEB_ROOT: z.string().min(1).optional(),
   /**
@@ -78,6 +80,7 @@ export const config = Object.freeze({
   publicOrigin: environment.PUBLIC_ORIGIN,
   rootEncryptionKey: environment.ROOT_ENCRYPTION_KEY,
   rootEncryptionKeyFile: environment.ROOT_ENCRYPTION_KEY_FILE,
+  takCertificateDirectory: environment.TAK_CERTIFICATE_DIRECTORY,
   takListenPorts: Object.freeze({
     enrollment: environment.TAK_ENROLLMENT_LISTEN_PORT,
     marti: environment.TAK_MARTI_LISTEN_PORT,

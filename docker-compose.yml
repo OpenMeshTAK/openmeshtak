@@ -41,6 +41,9 @@ services:
     #   - root_encryption_key
     volumes:
       - core-data:/server/data
+      # To reuse your reverse proxy's certificate for the TAK host, mount its certificate directory
+      # read-only and choose "Reverse proxy files" on the TAK server page, e.g. for certbot:
+      # - /etc/letsencrypt:/server/certs:ro
     ports:
       # Web app and API, for the reverse proxy only.
       - "127.0.0.1:8080:3000"

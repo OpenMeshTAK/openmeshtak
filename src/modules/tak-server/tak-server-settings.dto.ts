@@ -1,7 +1,7 @@
 /** The certificate the TAK listeners present. The private key is never returned. */
 export interface TakServerCertificateDto {
-  /** OpenMeshTak-issued, administrator-added, or obtained automatically through ACME. */
-  source: "issued" | "added" | "acme";
+  /** OpenMeshTak-issued, administrator-added, obtained automatically through ACME, or read from the reverse proxy's files. */
+  source: "issued" | "added" | "acme" | "file";
   hostName: string;
   subject: string;
   fingerprintSha256: string;
@@ -21,6 +21,10 @@ export interface TakServerSettingsDto {
   clientCertificateDays: number;
   /** `null` until the server first starts or a certificate is added. */
   serverCertificate: TakServerCertificateDto | null;
+  /** The reverse proxy's certificate files Core reads, relative to `certificateDirectory`; `null` unless used. */
+  certificateFiles: TakCertificateFilesDto | null;
+  /** Where the proxy's certificate directory must be mounted for `certificateFiles`. */
+  certificateDirectory: string;
   /**
    * When the public host name or a port last changed after setup; `null` if never. Apps enrolled
    * before it may still use the old endpoint.
@@ -101,4 +105,19 @@ export interface AddTakServerCertificateRequest {
    * @maxLength 20000
    */
   privateKeyPem: string;
+}
+
+export interface TakCertificateFilesDto {
+  /** Full chain, server certificate first, e.g. `live/tak.example.org/fullchain.pem`. */
+  certificateFile: string;
+  /** Unencrypted private key, e.g. `live/tak.example.org/privkey.pem`. */
+  keyFile: string;
+}
+
+/** Use the reverse proxy's certificate files; both paths are relative to the mounted directory. */
+export interface UseTakCertificateFilesRequest {
+  /** @maxLength 500 */
+  certificateFile: string;
+  /** @maxLength 500 */
+  keyFile: string;
 }

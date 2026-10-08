@@ -10,6 +10,7 @@ import { ACME_SOLVERS, isSupportedAcmeSolver } from "./acme-challenge.js";
 import { safeFailureReason, takAcmeManager } from "./acme-manager.js";
 import { ACME_SETTINGS_ID, encryptAcmeApiToken, loadTakAcmeSettings } from "./acme-settings.js";
 import type { TakAcmeSettingsDto, TakAcmeTestResultDto, UpdateTakAcmeSettingsRequest } from "./acme-settings.dto.js";
+import { forgetCertificateFiles } from "./certificate-files.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+$/;
@@ -167,6 +168,8 @@ export async function updateTakAcmeSettings(
   });
 
   if (normalized.enabled) {
+    // Let's Encrypt replaces the proxy's files as the certificate source.
+    await forgetCertificateFiles();
     void takAcmeManager.ensureDue().catch(() => undefined);
   }
   return toDto(await loadTakAcmeSettings());

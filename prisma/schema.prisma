@@ -776,6 +776,10 @@ model TakServerSettings {
   /// When the public host name or a public port last changed after setup. Apps enrolled before it
   /// may still use the old endpoint and must enroll again.
   endpointChangedAt     DateTime?
+  /// Server certificate files of the reverse proxy, relative to TAK_CERTIFICATE_DIRECTORY; null
+  /// unless the certificate source is the proxy's files. Core reloads them when they change.
+  certificateFile       String?
+  certificateKeyFile    String?
   version               Int      @default(1)
   updatedAt             DateTime @updatedAt
 }

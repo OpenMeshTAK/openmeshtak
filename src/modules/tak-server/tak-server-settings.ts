@@ -10,6 +10,8 @@ const DEFAULTS = {
   streamingPort: 8089,
   clientCertificateDays: 365,
   endpointChangedAt: null,
+  certificateFile: null,
+  certificateKeyFile: null,
 };
 /** DNS name with at least one dot, or an IPv4 address; devices must be able to reach it. */
 export const HOST_NAME =

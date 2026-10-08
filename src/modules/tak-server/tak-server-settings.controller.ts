@@ -5,12 +5,14 @@ import type {
   AddTakServerCertificateRequest,
   TakServerSettingsDto,
   UpdateTakServerSettingsRequest,
+  UseTakCertificateFilesRequest,
 } from "./tak-server-settings.dto.js";
 import {
   addTakServerCertificate,
   getTakServerSettings,
   removeTakServerCertificate,
   updateTakServerSettings,
+  useTakCertificateFiles,
 } from "./tak-server-settings.service.js";
 
 /** Settings of the built-in TAK server. Requires `tak-server.manage`. */
@@ -54,12 +56,26 @@ export class TakServerSettingsController extends Controller {
   }
 
   /**
-   * Removes an added or ACME certificate and disables ACME; the server then uses one issued by the
+   * Removes an added, ACME or file certificate and disables ACME and the file reload; the server then uses one issued by the
    * OpenMeshTak CA.
    */
   @Delete("server-certificate")
   @SuccessResponse(200, "Server certificate removed")
   public async removeTakServerCertificate(@Request() request: unknown): Promise<TakServerSettingsDto> {
     return removeTakServerCertificate(requestContext(request));
+  }
+
+  /**
+   * Uses the reverse proxy's certificate files, mounted read-only below `certificateDirectory`.
+   * Core reloads them every twelve hours, so a certificate the proxy renews is picked up. Disables ACME.
+   */
+  @Put("server-certificate/files")
+  @SuccessResponse(200, "Certificate files in use")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async useTakCertificateFiles(
+    @Request() request: unknown,
+    @Body() body: UseTakCertificateFilesRequest,
+  ): Promise<TakServerSettingsDto> {
+    return useTakCertificateFiles(requestContext(request), body);
   }
 }

@@ -2,6 +2,7 @@ import type { TakServerCertificate } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission, requireRecentAuthentication } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
+import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import {
@@ -21,11 +22,13 @@ import { takListeners } from "./tak-listeners.js";
 import { HOST_NAME, loadTakServerSettings, SETTINGS_ID } from "./tak-server-settings.js";
 import type {
   AddTakServerCertificateRequest,
+  UseTakCertificateFilesRequest,
   TakServerCertificateDto,
   TakServerSettingsDto,
   UpdateTakServerSettingsRequest,
 } from "./tak-server-settings.dto.js";
 import { disableTakAcmeAutomation } from "./acme-settings.service.js";
+import { forgetCertificateFiles, useCertificateFiles } from "./certificate-files.js";
 
 function certificateDto(certificate: TakServerCertificate | null): TakServerCertificateDto | null {
   return certificate === null
@@ -50,6 +53,11 @@ async function toDto(now = new Date()): Promise<TakServerSettingsDto> {
     streamingPort: settings.streamingPort,
     clientCertificateDays: settings.clientCertificateDays,
     serverCertificate: certificateDto(await activeServerCertificate()),
+    certificateFiles:
+      settings.certificateFile === null || settings.certificateKeyFile === null
+        ? null
+        : { certificateFile: settings.certificateFile, keyFile: settings.certificateKeyFile },
+    certificateDirectory: config.takCertificateDirectory,
     endpointChangedAt: endpointChangedAt?.toISOString() ?? null,
     validClientCertificates: await countValidClientCertificates(now),
     clientCertificatesToReEnroll: endpointChangedAt === null ? 0 : await countValidClientCertificates(now, endpointChangedAt),
@@ -201,6 +209,7 @@ export async function addTakServerCertificate(
   }
   const added = await addServerCertificate(input.certificateChainPem, input.privateKeyPem, hostName);
   await disableTakAcmeAutomation();
+  await forgetCertificateFiles();
   await serverCertificateAudit(actor, "tak-server.server-certificate-added", {
     hostName,
     subject: added.subject,
@@ -216,8 +225,30 @@ export async function removeTakServerCertificate(actor: ActorContext): Promise<T
   await requirePermission(actor.principal, "tak-server.manage");
   requireRecentUser(actor);
   await disableTakAcmeAutomation();
+  await forgetCertificateFiles();
   await removePublicServerCertificate();
   await serverCertificateAudit(actor, "tak-server.server-certificate-removed", {});
+  void takListeners.reload();
+  return toDto();
+}
+
+/** Uses the reverse proxy's certificate files and keeps reloading them when the proxy renews them. */
+export async function useTakCertificateFiles(actor: ActorContext, input: UseTakCertificateFilesRequest): Promise<TakServerSettingsDto> {
+  await requirePermission(actor.principal, "tak-server.manage");
+  requireRecentUser(actor);
+  const { hostName } = await loadTakServerSettings();
+  if (hostName === null) {
+    throw validationProblem([{ field: "hostName", code: "HOST_NAME_REQUIRED", message: "Save the TAK host name first." }]);
+  }
+  const used = await useCertificateFiles(hostName, input);
+  await disableTakAcmeAutomation();
+  await serverCertificateAudit(actor, "tak-server.server-certificate-files-used", {
+    hostName,
+    certificateFile: input.certificateFile.trim(),
+    keyFile: input.keyFile.trim(),
+    subject: used.subject,
+    notAfter: used.notAfter.toISOString(),
+  });
   void takListeners.reload();
   return toDto();
 }

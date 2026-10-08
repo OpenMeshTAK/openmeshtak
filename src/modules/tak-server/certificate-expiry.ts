@@ -57,6 +57,9 @@ async function adviceFor(certificate: TakServerCertificate): Promise<string> {
     const reason = acme.lastError === null ? "" : ` The last attempt failed with: ${acme.lastError}`;
     return `Let's Encrypt has not renewed it yet.${reason} Check the TAK server settings and use "Test setup" to find the problem.`;
   }
+  if (certificate.source === "file") {
+    return "OpenMeshTak reads it from your reverse proxy's certificate files, and they have not been renewed. Check the proxy's certificate renewal, for example certbot or Caddy.";
+  }
   return "OpenMeshTak cannot renew an uploaded certificate. Upload the renewed one on the TAK server page before it expires.";
 }
 

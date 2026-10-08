@@ -8,6 +8,14 @@ import { activeCertificateAuthority, decryptCaKey, fingerprintOf, trustedCertifi
 import { exportPrivateKeyPem, generateRsaKeyPair, keyMatchesCertificate, signingAlgorithmFor, signingKeyFromPem, x509 } from "./x509.js";
 
 const ACTIVE = "active";
+
+/** Publicly trusted certificates: uploaded, obtained through ACME, or read from the reverse proxy's files. */
+export const PUBLIC_CERTIFICATE_SOURCES = ["added", "acme", "file"] as const;
+export type PublicCertificateSource = (typeof PUBLIC_CERTIFICATE_SOURCES)[number];
+
+export function isPublicCertificate(certificate: TakServerCertificate | null): boolean {
+  return certificate !== null && (PUBLIC_CERTIFICATE_SOURCES as readonly string[]).includes(certificate.source);
+}
 const ISSUED_SERVER_DAYS = 397;
 /** Issued certificates are renewed this long before they expire. */
 const RENEW_BEFORE_DAYS = 30;
@@ -20,7 +28,7 @@ interface AddOptions {
   /** Public roots devices trust; Node's bundled Mozilla store unless a test supplies its own. */
   trustedRoots: readonly string[];
   /** `added` for administrator uploads or `acme` for a certificate obtained by Core. */
-  source?: "added" | "acme";
+  source?: PublicCertificateSource;
 }
 
 function encryptServerKey(id: string, privateKeyPem: string): string {
@@ -225,7 +233,7 @@ function issuedStillValid(certificate: TakServerCertificate, hostName: string, c
  */
 export async function currentServerCertificate(hostName: string, now = new Date()): Promise<TakServerCertificate> {
   const active = await database.takServerCertificate.findUnique({ where: { activeSlot: ACTIVE } });
-  if ((active?.source === "added" || active?.source === "acme") && active.hostName === hostName && active.notAfter > now) {
+  if (active !== null && isPublicCertificate(active) && active.hostName === hostName && active.notAfter > now) {
     return active;
   }
   const authority = await activeCertificateAuthority();
@@ -255,7 +263,7 @@ export async function serverTrustAnchors(hostName: string, now = new Date()): Pr
  */
 export async function hasPublicServerCertificate(hostName: string, now = new Date()): Promise<boolean> {
   const active = await activeServerCertificate();
-  return (active?.source === "added" || active?.source === "acme") && active.hostName === hostName && active.notAfter > now;
+  return active !== null && isPublicCertificate(active) && active.hostName === hostName && active.notAfter > now;
 }
 
 /** The active certificate without issuing one, for status displays. */
@@ -266,7 +274,7 @@ export function activeServerCertificate(): Promise<TakServerCertificate | null> 
 /** Drops an added or ACME certificate so the next start issues one from the OpenMeshTak CA again. */
 export async function removePublicServerCertificate(): Promise<void> {
   await database.takServerCertificate.updateMany({
-    where: { activeSlot: ACTIVE, source: { in: ["added", "acme"] } },
+    where: { activeSlot: ACTIVE, source: { in: [...PUBLIC_CERTIFICATE_SOURCES] } },
     data: { activeSlot: null },
   });
 }
