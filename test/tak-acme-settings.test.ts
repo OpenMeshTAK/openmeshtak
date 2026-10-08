@@ -99,6 +99,7 @@ void describe("TAK ACME settings", () => {
         subject: `CN=${hostName}`,
         notAfter: new Date(now.getTime() + 90 * 86_400_000),
         activeSlot: "active",
+        expiryWarningSentAt: null,
         createdAt: now,
       } satisfies TakServerCertificate);
     });

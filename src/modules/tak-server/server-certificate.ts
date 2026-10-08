@@ -138,7 +138,7 @@ function summaryOf(leaf: X509Certificate) {
 }
 
 /** Replaces the active server certificate, keeping only one active row. */
-async function activate(data: Omit<TakServerCertificate, "activeSlot" | "createdAt">): Promise<TakServerCertificate> {
+async function activate(data: Omit<TakServerCertificate, "activeSlot" | "createdAt" | "expiryWarningSentAt">): Promise<TakServerCertificate> {
   return database.$transaction(async (transaction) => {
     await transaction.takServerCertificate.updateMany({ where: { activeSlot: ACTIVE }, data: { activeSlot: null } });
     return transaction.takServerCertificate.create({ data: { ...data, activeSlot: ACTIVE } });

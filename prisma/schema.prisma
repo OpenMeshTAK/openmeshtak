@@ -740,6 +740,8 @@ model TakServerCertificate {
   notAfter            DateTime
   /// "active" on exactly one row.
   activeSlot          String?  @unique
+  /// When administrators were last warned that this certificate is about to expire.
+  expiryWarningSentAt DateTime?
   createdAt           DateTime @default(now())
 }
 
