@@ -9,4 +9,8 @@ export interface MemberDataPackageDto {
   revision: number;
   /** @format date-time */
   publishedAt: string;
+  /** The built-in TAK server installs it in the app right after the app enrolls. */
+  installOnEnrollment: boolean;
+  /** The built-in TAK server installs it, and every new revision, whenever the app connects. */
+  installOnConnection: boolean;
 }

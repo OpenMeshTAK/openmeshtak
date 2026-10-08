@@ -13,7 +13,13 @@ export const eventMemberSelection = {
   shortNameNumber: true,
   createdAt: true,
   updatedAt: true,
-  user: { select: { displayName: true } },
+  // Expiry is checked in the mapper, because a selection is built once and cannot hold "now".
+  user: {
+    select: {
+      displayName: true,
+      takClientCertificates: { where: { revokedAt: null }, select: { notAfter: true } },
+    },
+  },
   eventRole: { select: { id: true, slug: true, name: true } },
   eventGroup: { select: { id: true, slug: true, name: true, shortNamePrefix: true } },
 } satisfies Prisma.EventMemberSelect;
@@ -21,6 +27,7 @@ export const eventMemberSelection = {
 export type EventMemberRow = Prisma.EventMemberGetPayload<{ select: typeof eventMemberSelection }>;
 
 export function toEventMemberDto(row: EventMemberRow): EventMemberDto {
+  const now = new Date();
   return {
     id: row.id,
     eventId: row.eventId,
@@ -32,6 +39,7 @@ export function toEventMemberDto(row: EventMemberRow): EventMemberDto {
     shortName: shortNameFor(row.eventGroup.shortNamePrefix, row.shortNameNumber),
     eventRole: row.eventRole,
     eventGroup: { id: row.eventGroup.id, slug: row.eventGroup.slug, name: row.eventGroup.name },
+    enrolledTakApps: row.user.takClientCertificates.filter(({ notAfter }) => notAfter > now).length,
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

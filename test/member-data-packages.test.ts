@@ -95,6 +95,15 @@ void describe("member data packages", () => {
     assert.deepEqual(await names(admin, annaMemberId), ["Everyone"], "members.read previews the list");
   });
 
+  void it("tells the member how the TAK server delivers each package", async () => {
+    const id = await createPackage("Everyone", null);
+    await database.dataPackage.update({ where: { id }, data: { installOnConnection: true } });
+    const response = await request(app).get(memberPackagesUrl(peterMemberId)).set("Cookie", peter.cookie).expect(200);
+    const [listed] = response.body as Array<{ installOnEnrollment: boolean; installOnConnection: boolean }>;
+    assert.equal(listed?.installOnEnrollment, false);
+    assert.equal(listed?.installOnConnection, true);
+  });
+
   void it("lets members download only their own packages and audits it", async () => {
     const bravoPackage = await createPackage("Bravo only", [bravoId]);
 

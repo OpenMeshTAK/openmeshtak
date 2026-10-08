@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
@@ -76,6 +77,31 @@ void describe("event members", () => {
       .get(`/api/v1/events/${eventId}/members/${member.id}`)
       .set("Authorization", `Bearer ${reader}`)
       .expect(200);
+  });
+
+  void it("counts the TAK apps that may still connect", async () => {
+    const certificate = (suffix: string, notAfter: Date, revokedAt: Date | null = null) => ({
+      id: randomUUID(),
+      userId: member.userId,
+      caId: randomUUID(),
+      serialNumber: `serial-${suffix}`,
+      fingerprintSha256: `fingerprint-${suffix}`,
+      commonName: "Peter",
+      notBefore: new Date(Date.now() - 86_400_000),
+      notAfter,
+      revokedAt,
+    });
+    const later = new Date(Date.now() + 86_400_000);
+    await database.takClientCertificate.createMany({
+      data: [
+        certificate("valid", later),
+        certificate("revoked", later, new Date()),
+        certificate("expired", new Date(Date.now() - 1000)),
+      ],
+    });
+
+    const read = await request(app).get(`/api/v1/events/${eventId}/members/${member.id}`).set("Cookie", admin.cookie).expect(200);
+    assert.equal((read.body as { enrolledTakApps: number }).enrolledTakApps, 1);
   });
 
   void it("conceals members of other events", async () => {

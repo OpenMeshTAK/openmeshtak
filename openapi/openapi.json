@@ -3160,6 +3160,14 @@
 					"publishedAt": {
 						"type": "string",
 						"format": "date-time"
+					},
+					"installOnEnrollment": {
+						"type": "boolean",
+						"description": "The built-in TAK server installs it in the app right after the app enrolls."
+					},
+					"installOnConnection": {
+						"type": "boolean",
+						"description": "The built-in TAK server installs it, and every new revision, whenever the app connects."
 					}
 				},
 				"required": [
@@ -3167,7 +3175,9 @@
 					"name",
 					"description",
 					"revision",
-					"publishedAt"
+					"publishedAt",
+					"installOnEnrollment",
+					"installOnConnection"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -4121,6 +4131,11 @@
 					"eventGroup": {
 						"$ref": "#/components/schemas/EventAssignmentSummary"
 					},
+					"enrolledTakApps": {
+						"type": "number",
+						"format": "double",
+						"description": "TAK apps the member's user has enrolled with the built-in TAK server and that may still\nconnect (valid client certificates). Certificates belong to the user, not to one event."
+					},
 					"version": {
 						"type": "number",
 						"format": "double"
@@ -4145,6 +4160,7 @@
 					"shortName",
 					"eventRole",
 					"eventGroup",
+					"enrolledTakApps",
 					"version",
 					"createdAt",
 					"updatedAt"

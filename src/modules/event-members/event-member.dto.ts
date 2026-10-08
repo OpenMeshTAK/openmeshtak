@@ -36,6 +36,11 @@ export interface EventMemberDto {
   shortName: string | null;
   eventRole: EventAssignmentSummary;
   eventGroup: EventAssignmentSummary;
+  /**
+   * TAK apps the member's user has enrolled with the built-in TAK server and that may still
+   * connect (valid client certificates). Certificates belong to the user, not to one event.
+   */
+  enrolledTakApps: number;
   version: number;
   /** @format date-time */
   createdAt: string;

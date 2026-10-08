@@ -77,6 +77,8 @@ export async function listMemberDataPackages(
     description: dataPackage.description,
     revision: latest.number,
     publishedAt: latest.createdAt.toISOString(),
+    installOnEnrollment: dataPackage.installOnEnrollment,
+    installOnConnection: dataPackage.installOnConnection,
   }));
 }
 
