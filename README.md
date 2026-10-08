@@ -1,5 +1,9 @@
 # OpenMeshTak Core
 
+[![License](https://img.shields.io/github/license/OpenMeshTAK/openmeshtak)](LICENSE) [![Release](https://img.shields.io/github/v/release/OpenMeshTAK/openmeshtak)](https://github.com/OpenMeshTAK/openmeshtak/releases) [![CI](https://github.com/OpenMeshTAK/openmeshtak/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenMeshTAK/openmeshtak/actions/workflows/ci.yml)
+
+📖 Documentation: https://openmeshtak.github.io/openmeshtak-docs/
+
 OpenMeshTak Core is the authoritative API and backend for the OpenMeshTak ecosystem. It owns identity, authorization, events, memberships, mission content, provisioning, artifact generation, storage, integrations and the built-in TAK services.
 
 OpenMeshTak is under active development. Client and firmware compatibility is published only after the corresponding real-client test has passed; the presence of a generator or protocol implementation is not by itself a compatibility claim.
