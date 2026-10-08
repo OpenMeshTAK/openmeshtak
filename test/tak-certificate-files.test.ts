@@ -71,6 +71,18 @@ void describe("TAK certificate files of the reverse proxy", () => {
     rmSync(path.join(path.dirname(directory), "outside.pem"), { force: true });
   });
 
+  void it("names the files next to a path that was not found", async () => {
+    await writeChain();
+    await assert.rejects(
+      useCertificateFiles(HOST, { ...files, certificateFile: `live/${HOST}/fullchain.crt` }, { directory }),
+      (error) => error instanceof ProblemError && error.errors?.[0]?.message.includes(`live/${HOST}/fullchain.pem, live/${HOST}/privkey.pem`) === true,
+    );
+    await assert.rejects(
+      useCertificateFiles(HOST, { ...files, certificateFile: "live/tak.example.com/fullchain.pem" }, { directory }),
+      (error) => error instanceof ProblemError && error.errors?.[0]?.message.includes(`live/${HOST}/`) === true,
+    );
+  });
+
   void it("reports certificate problems on the file fields", async () => {
     const chain = await writeChain();
     await assert.rejects(

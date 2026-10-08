@@ -1,5 +1,5 @@
 import { X509Certificate } from "node:crypto";
-import { readFile, realpath } from "node:fs/promises";
+import { readdir, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { TakServerCertificate } from "../../generated/prisma/client.js";
 import { config } from "../../shared/config/config.js";
@@ -29,8 +29,42 @@ interface FileOptions {
 
 type FileField = "certificateFile" | "keyFile";
 
+const CERTIFICATE_FILE_PATTERN = /.(?:pem|crt|cer|key)$/i;
+const MAX_SUGGESTIONS = 10;
+
 function fileProblem(field: FileField, message: string): ProblemError {
   return validationProblem([{ field, code: "INVALID_CERTIFICATE_FILE", message }]);
+}
+
+function isBelow(root: string, candidate: string): boolean {
+  return candidate === root || candidate.startsWith(root + path.sep);
+}
+
+/**
+ * Lists what is in the closest existing directory of a path that was not found, so a typo in a
+ * host name or file name is easy to spot. Only names of certificate-like files and subdirectories
+ * below the mount are shown, never contents, and only to administrators saving these settings.
+ */
+async function nearbyEntries(root: string, missing: string): Promise<string[]> {
+  let directory = path.dirname(missing);
+  while (isBelow(root, directory)) {
+    try {
+      const real = await realpath(directory);
+      if (!isBelow(root, real)) {
+        return [];
+      }
+      const entries = await readdir(real, { withFileTypes: true });
+      const relativeDirectory = path.relative(root, directory);
+      return entries
+        .filter((entry) => entry.isDirectory() || CERTIFICATE_FILE_PATTERN.test(entry.name))
+        .map((entry) => path.posix.join(relativeDirectory.split(path.sep).join("/"), entry.name) + (entry.isDirectory() ? "/" : ""))
+        .sort()
+        .slice(0, MAX_SUGGESTIONS);
+    } catch {
+      directory = path.dirname(directory);
+    }
+  }
+  return [];
 }
 
 /** Resolves a relative path below the mounted directory, following symlinks such as certbot's `live/` links. */
@@ -40,12 +74,18 @@ async function resolveBelow(directory: string, relative: string, field: FileFiel
     throw fileProblem(field, `Enter a path relative to ${directory}.`);
   }
   let root: string;
-  let file: string;
   try {
     root = await realpath(directory);
+  } catch {
+    throw fileProblem(field, `${directory} was not found. Check that the proxy's certificate directory is mounted there.`);
+  }
+  let file: string;
+  try {
     file = await realpath(path.resolve(root, trimmed));
   } catch {
-    throw fileProblem(field, `The file was not found below ${directory}. Check that the proxy's certificate directory is mounted there.`);
+    const nearby = await nearbyEntries(root, path.resolve(root, trimmed));
+    const hint = nearby.length === 0 ? "" : ` Found there: ${nearby.join(", ")}.`;
+    throw fileProblem(field, `The file was not found below ${directory}.${hint}`);
   }
   if (!file.startsWith(root + path.sep)) {
     throw fileProblem(field, `The file must be below ${directory}.`);
