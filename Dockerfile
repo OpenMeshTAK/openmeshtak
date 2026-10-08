@@ -56,6 +56,7 @@ COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/openapi ./openapi
 COPY --from=build --chown=node:node /app/firmware-profiles ./firmware-profiles
+COPY --from=build --chown=node:node /app/assets ./assets
 COPY --from=web-build --chown=node:node /web/dist ./web
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh && mkdir -p /server/data && chown -R node:node /server/data

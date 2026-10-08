@@ -1,16 +1,26 @@
+import { readFile } from "node:fs/promises";
 import nodemailer, { type Transporter } from "nodemailer";
 import type { EmailSettings } from "../../generated/prisma/client.js";
 import { decryptSecret, encryptSecret } from "../../shared/crypto/secret-box.js";
 import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
+import { EMAIL_LOGO_CID, type RenderedEmail } from "./email-layout.js";
 
 export const EMAIL_SETTINGS_ID = "email";
 
-export interface OutgoingEmail {
+/** The body always comes from `renderEmail`, the only place that writes HTML and escapes values. */
+export interface OutgoingEmail extends RenderedEmail {
   to: string;
   subject: string;
-  /** Plain text only: no HTML rendering means no injection through user-provided names. */
-  text: string;
+}
+
+const LOGO_FILE = new URL("../../../assets/email-logo.png", import.meta.url);
+let logo: Promise<Buffer> | null = null;
+
+/** Attached inline instead of linked, so clients that block remote images still show it. */
+function emailLogo(): Promise<Buffer> {
+  logo ??= readFile(LOGO_FILE);
+  return logo;
 }
 
 export class EmailNotConfiguredError extends Error {}
@@ -71,6 +81,8 @@ export async function sendEmail(email: OutgoingEmail, settings?: EmailSettings):
     to: email.to,
     subject: email.subject,
     text: email.text,
+    html: email.html,
+    attachments: [{ filename: "logo.png", content: await emailLogo(), cid: EMAIL_LOGO_CID }],
   });
 }
 

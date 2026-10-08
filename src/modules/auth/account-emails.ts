@@ -1,5 +1,5 @@
-import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
+import { renderEmail, type EmailContent } from "../email/email-layout.js";
 import { sendEmail, sendEmailInBackground } from "../email/mailer.js";
 import { instanceName } from "../instance-settings/instance-settings.service.js";
 import { isPlaceholderEmail } from "./claim-session.plugin.js";
@@ -12,12 +12,11 @@ interface AuthUser {
   emailVerified: boolean;
 }
 
-function greeting(user: AuthUser): string {
-  return `Hello ${user.name},`;
-}
+const NOT_YOU = "If this was not you, contact your organizers.";
 
-function footer(name: string): string {
-  return `\n\n--\n${name} · ${config.publicOrigin}\nIf this was not you, contact your organizers.`;
+/** Every account email greets the person and ends with the same hint in the footer. */
+function accountEmail(name: string, userName: string, content: Omit<EmailContent, "instanceName" | "greeting" | "footerNote">) {
+  return renderEmail({ ...content, instanceName: name, greeting: `Hello ${userName},`, footerNote: NOT_YOU });
 }
 
 /** Whether the account may receive a password reset: verified, real address and not disabled. */
@@ -43,7 +42,12 @@ export async function sendPasswordResetEmail({ user, url }: { user: AuthUser; ur
     {
       to: user.email,
       subject: `Reset your ${name} password`,
-      text: `${greeting(user)}\n\nsomeone asked to reset the password of your ${name} account. Open this link within 30 minutes to choose a new password:\n\n${url}\n\nThe link works once. If you did not ask for it, ignore this email; your password stays unchanged.${footer(name)}`,
+      ...accountEmail(name, user.name, {
+        title: "Reset your password",
+        paragraphs: [`someone asked to reset the password of your ${name} account. Open this link within 30 minutes to choose a new password.`],
+        action: { label: "Choose a new password", url },
+        note: "The link works once. If you did not ask for it, ignore this email; your password stays unchanged.",
+      }),
     },
     "password-reset",
   );
@@ -59,7 +63,12 @@ export async function sendVerificationEmail({ user, url }: { user: AuthUser; url
   await sendEmail({
     to: user.email,
     subject: `Confirm your email address for ${name}`,
-    text: `${greeting(user)}\n\nplease confirm that this address belongs to your ${name} account by opening this link:\n\n${url}\n\nUntil you confirm it, the address is not used for your account.${footer(name)}`,
+    ...accountEmail(name, user.name, {
+      title: "Confirm your email address",
+      paragraphs: [`please confirm that this address belongs to your ${name} account.`],
+      action: { label: "Confirm email address", url },
+      note: "Until you confirm it, the address is not used for your account.",
+    }),
   });
 
   const current = await database.user.findUnique({ where: { id: user.id }, select: { email: true, emailVerified: true } });
@@ -68,7 +77,12 @@ export async function sendVerificationEmail({ user, url }: { user: AuthUser; url
       {
         to: current.email,
         subject: `Your ${name} email address is being changed`,
-        text: `${greeting(user)}\n\nsomeone asked to change the email address of your ${name} account to ${user.email}. The change only happens once the new address is confirmed.${footer(name)}`,
+        ...accountEmail(name, user.name, {
+          title: "Email address change requested",
+          paragraphs: [
+            `someone asked to change the email address of your ${name} account to ${user.email}. The change only happens once the new address is confirmed.`,
+          ],
+        }),
       },
       "email-change-notice",
     );
@@ -85,27 +99,36 @@ export async function sendAdministratorEmailChangeNotice(previous: string, userN
     {
       to: previous,
       subject: `Your ${name} email address was changed`,
-      text: `Hello ${userName},\n\nan administrator ${next === null ? "removed this email address from" : "changed the email address of"} your ${name} account${next === null ? "" : ` to ${next}`}. Password resets no longer go to this address.${footer(name)}`,
+      ...accountEmail(name, userName, {
+        title: next === null ? "Email address removed" : "Email address changed",
+        paragraphs: [
+          `an administrator ${next === null ? "removed this email address from" : "changed the email address of"} your ${name} account${next === null ? "" : ` to ${next}`}. Password resets no longer go to this address.`,
+        ],
+      }),
     },
     "email-change-notice",
   );
 }
 
-const NOTICES: Record<string, { subject: (name: string) => string; body: (name: string) => string }> = {
+const NOTICES: Record<string, { subject: (name: string) => string; title: string; body: (name: string) => string }> = {
   "password.changed": {
     subject: (name) => `Your ${name} password was changed`,
+    title: "Password changed",
     body: (name) => `the password of your ${name} account was just changed, and your other sessions were signed out.`,
   },
   "password.reset": {
     subject: (name) => `Your ${name} password was reset`,
+    title: "Password reset",
     body: (name) => `the password of your ${name} account was just reset with an email link, and all sessions were signed out.`,
   },
   "passkey.registered": {
     subject: (name) => `A passkey was added to your ${name} account`,
+    title: "New passkey added",
     body: (name) => `a new passkey was just added to your ${name} account.`,
   },
   "passkey.deleted": {
     subject: (name) => `A passkey was removed from your ${name} account`,
+    title: "Passkey removed",
     body: (name) => `a passkey was just removed from your ${name} account.`,
   },
 };
@@ -118,5 +141,8 @@ export async function sendSecurityNotice(authSubjectId: string, event: string): 
     return;
   }
   const name = await instanceName();
-  sendEmailInBackground({ to: user.email, subject: notice.subject(name), text: `${greeting(user)}\n\n${notice.body(name)}${footer(name)}` }, event);
+  sendEmailInBackground(
+    { to: user.email, subject: notice.subject(name), ...accountEmail(name, user.name, { title: notice.title, paragraphs: [notice.body(name)] }) },
+    event,
+  );
 }

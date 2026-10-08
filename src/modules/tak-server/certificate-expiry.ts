@@ -3,6 +3,7 @@ import { config } from "../../shared/config/config.js";
 import { INSTANCE_SCOPE_KEY } from "../../shared/auth/permissions.js";
 import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
+import { renderEmail } from "../email/email-layout.js";
 import { sendEmailInBackground } from "../email/mailer.js";
 import { instanceName } from "../instance-settings/instance-settings.service.js";
 import { loadTakAcmeSettings } from "./acme-settings.js";
@@ -87,7 +88,17 @@ export async function warnAboutExpiringCertificate(now = new Date()): Promise<vo
       {
         to,
         subject: `${name}: the TAK server certificate expires in ${String(Math.ceil((certificate.notAfter.getTime() - now.getTime()) / DAY))} days`,
-        text: `Hello,\n\nthe certificate of the TAK server ${certificate.hostName} expires on ${expires}.\n\n${advice}\n\nOnce it has expired, the TAK server uses its own certificate authority, and TAK apps that were set up by QR code can no longer connect.\n\n--\n${name} · ${config.publicOrigin}`,
+        ...renderEmail({
+          instanceName: name,
+          title: "TAK server certificate expires soon",
+          greeting: "Hello,",
+          paragraphs: [
+            `the certificate of the TAK server ${certificate.hostName} expires on ${expires}.`,
+            advice,
+            "Once it has expired, the TAK server uses its own certificate authority, and TAK apps that were set up by QR code can no longer connect.",
+          ],
+          action: { label: "Open TAK server settings", url: new URL("/admin/settings/tak-server", config.publicOrigin).href },
+        }),
       },
       "tak-certificate-expiry",
     );

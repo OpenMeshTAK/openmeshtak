@@ -1,5 +1,8 @@
 import { isPlaceholderEmail } from "../auth/claim-session.plugin.js";
+import { renderEmail } from "../email/email-layout.js";
 import { sendEmailInBackground } from "../email/mailer.js";
+import { instanceName } from "../instance-settings/instance-settings.service.js";
+import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
 
 /** The public address that QR codes, profiles and enrolled apps point to. */
@@ -51,6 +54,7 @@ export async function notifyEndpointChange(endpoint: TakEndpoint, now: Date): Pr
     where: { takClientCertificates: { some: validCertificates(now) } },
     select: { displayName: true, authSubject: { select: { email: true, emailVerified: true } } },
   });
+  const name = await instanceName();
   for (const user of users) {
     const address = user.authSubject;
     if (address === null || !address.emailVerified || isPlaceholderEmail(address.email)) {
@@ -60,10 +64,16 @@ export async function notifyEndpointChange(endpoint: TakEndpoint, now: Date): Pr
       {
         to: address.email,
         subject: "Set up your TAK app again",
-        text: `Hello ${user.displayName},
-
-the OpenMeshTak TAK server moved to ${endpoint.hostName ?? "a new address"} (enrollment port ${String(endpoint.enrollmentPort)}, streaming port ${String(endpoint.streamingPort)}, Data Package port ${String(endpoint.martiPort)}). Your TAK app still uses the old address and cannot connect until you set it up again: open OpenMeshTak, choose "Connect a TAK app" and follow the steps.
-`,
+        ...renderEmail({
+          instanceName: name,
+          title: "Set up your TAK app again",
+          greeting: `Hello ${user.displayName},`,
+          paragraphs: [
+            `the TAK server moved to ${endpoint.hostName ?? "a new address"} (enrollment port ${String(endpoint.enrollmentPort)}, streaming port ${String(endpoint.streamingPort)}, Data Package port ${String(endpoint.martiPort)}).`,
+            `Your TAK app still uses the old address and cannot connect until you set it up again: open ${name}, choose "Connect a TAK app" and follow the steps.`,
+          ],
+          action: { label: `Open ${name}`, url: config.publicOrigin },
+        }),
       },
       "tak-endpoint-changed",
     );

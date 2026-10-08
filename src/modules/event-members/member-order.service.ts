@@ -1,10 +1,13 @@
 import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
+import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
 import { isPlaceholderEmail } from "../auth/claim-session.plugin.js";
+import { renderEmail } from "../email/email-layout.js";
 import { sendEmailInBackground } from "../email/mailer.js";
 import { eventArchivedProblem, requireEventPermission } from "../events/event-access.js";
+import { instanceName } from "../instance-settings/instance-settings.service.js";
 import type { EventMemberDto } from "./event-member.dto.js";
 import { eventMemberSelection, toEventMemberDto } from "./event-member.mapper.js";
 import { memberIdentityConflictProblem, shortNameFits } from "./member-identity.js";
@@ -28,6 +31,7 @@ interface Renumbering {
 /** Tells affected members their new short name; the radio keeps the old one until re-provisioned. */
 async function notifyRenumbered(eventId: string, prefix: string | null, changes: Renumbering[]): Promise<void> {
   const event = await database.event.findUnique({ where: { id: eventId }, select: { name: true } });
+  const name = await instanceName();
   const members = await database.eventMember.findMany({
     where: { id: { in: changes.map(({ memberId }) => memberId) } },
     select: { id: true, callsign: true, user: { select: { authSubject: { select: { email: true, emailVerified: true } } } } },
@@ -43,10 +47,15 @@ async function notifyRenumbered(eventId: string, prefix: string | null, changes:
       {
         to: address.email,
         subject: `Your Meshtastic short name for ${event?.name ?? "your event"} changed`,
-        text: `Hello ${member.callsign},
-
-your Meshtastic short name changed${before} to ${prefix ?? ""}${String(change.to)}. Your radio keeps the old short name until you download your settings file again from the OpenMeshTak dashboard and import it.
-`,
+        ...renderEmail({
+          instanceName: name,
+          title: "Your Meshtastic short name changed",
+          greeting: `Hello ${member.callsign},`,
+          paragraphs: [
+            `your Meshtastic short name changed${before} to ${prefix ?? ""}${String(change.to)}. Your radio keeps the old short name until you download your settings file again from the dashboard and import it.`,
+          ],
+          action: { label: "Open dashboard", url: config.publicOrigin },
+        }),
       },
       "short-name-changed",
     );
