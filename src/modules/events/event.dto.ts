@@ -39,6 +39,12 @@ export interface EventDto {
    * of event accounts that are deleted when the event is archived.
    */
   permanentAccounts: boolean;
+  /**
+   * The event provisions Meshtastic radios. When off, profiles carry no Meshtastic part, radio
+   * downloads are unavailable and channels and radio settings stay stored but unused. Like other
+   * configuration it reaches participants of an active event with the next published revision.
+   */
+  meshtasticEnabled: boolean;
   /** @format date-time */
   createdAt: string;
   /** @format date-time */
@@ -92,6 +98,8 @@ export interface CreateEventRequest {
    * of event accounts that are deleted when the event is archived. Defaults to `false`.
    */
   permanentAccounts?: boolean;
+  /** The event provisions Meshtastic radios. Defaults to `false`, a TAK-only event. */
+  meshtasticEnabled?: boolean;
 }
 
 export interface UpdateEventRequest {
@@ -130,6 +138,8 @@ export interface UpdateEventRequest {
    * of event accounts that are deleted when the event is archived. Omitted keeps the current value.
    */
   permanentAccounts?: boolean;
+  /** The event provisions Meshtastic radios. Omitted keeps the current value. */
+  meshtasticEnabled?: boolean;
 }
 
 export interface EventTransitionRequest {

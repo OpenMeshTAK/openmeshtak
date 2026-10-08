@@ -20,23 +20,22 @@ export interface ProfileChannel {
   keyHolder: boolean;
 }
 
+/** The built-in TAK server participants enroll with from the dashboard. */
+export interface ProfileTakServer {
+  /** `null` while the TAK server is not enabled. */
+  hostName: string | null;
+  streamingPort: number;
+}
+
 /**
- * Connection through the Meshtastic app's local TAK server. `meshChannel` is the value for the
- * app's "TAK Mesh Channel": the channel's slot on this member's device, or `null` while that
- * channel has not reached the device yet (then the primary channel is used).
+ * The Meshtastic app's local TAK server, which carries CoT over the mesh when there is no network.
+ * `meshChannel` is the value for the app's "TAK Mesh Channel": the channel's slot on this member's
+ * device, or `null` while that channel has not reached the device yet (then the primary channel
+ * is used).
  */
-export type ProfileTakConnection =
-  | {
-      mode: "meshtastic-local-server";
-      meshChannel: { name: string; slot: number } | null;
-    }
-  | {
-      /** Enroll with the built-in TAK server from the dashboard. */
-      mode: "built-in-server";
-      /** `null` while the TAK server is not enabled. */
-      hostName: string | null;
-      streamingPort: number;
-    };
+export interface ProfileMeshtasticTakServer {
+  meshChannel: { name: string; slot: number } | null;
+}
 
 /** The Meshtastic firmware a participant must flash before importing OpenMeshTak settings. */
 export interface ProfileFirmware {
@@ -81,9 +80,12 @@ export interface ResolvedProfileDto {
     role: TakRole;
     /** The group's TAK server groups for an external TAK server; the built-in server ignores them. */
     serverGroups: string[];
-    /** How this member connects ATAK/iTAK; `null` when the event gives no guidance. */
-    connection: ProfileTakConnection | null;
+    /** Every member enrolls with the built-in TAK server for Data Packages and CoT over the network. */
+    server: ProfileTakServer;
+    /** Meshtastic events also connect ATAK/iTAK to the Meshtastic app; `null` otherwise. */
+    meshtasticLocalServer: ProfileMeshtasticTakServer | null;
   };
+  /** `null` when the event does not use Meshtastic. */
   meshtastic: {
     longName: string;
     /** `null` only in previews while the group has no short-name prefix. */
@@ -92,7 +94,7 @@ export interface ResolvedProfileDto {
     channels: ProfileChannel[];
     /** `null` for configurations published before events had a firmware version. */
     firmware: ProfileFirmware | null;
-  };
+  } | null;
 }
 
 export interface MyEventMembershipDto {

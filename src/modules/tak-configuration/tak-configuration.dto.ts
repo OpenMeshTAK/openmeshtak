@@ -1,17 +1,12 @@
 import type { Uuid } from "../../shared/http/uuid.js";
 
 /**
- * - `none`: OpenMeshTak gives no TAK connection guidance.
- * - `meshtastic-local-server`: each participant enables the Meshtastic app's local TAK server and
- *   connects ATAK/iTAK on the same phone to it. The app creates its own certificates, so
- *   OpenMeshTak provides guidance and settings, not a ready-made connection package.
- * - `built-in-server`: participants enroll ATAK/iTAK with the built-in OpenMeshTak TAK server.
+ * TAK settings of a Meshtastic event. Every event sends TAK clients to the built-in TAK server;
+ * Meshtastic events (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's
+ * local TAK server, which carries CoT over this channel.
  */
-export type TakConnectionMode = "none" | "meshtastic-local-server" | "built-in-server";
-
 export interface TakConfigurationDto {
   eventId: Uuid;
-  mode: TakConnectionMode;
   /** Channel for the app's "TAK Mesh Channel"; `null` uses the primary channel. */
   meshChannelId: Uuid | null;
   /** Optimistic-concurrency version; 0 until first saved. */
@@ -27,6 +22,5 @@ export interface UpdateTakConfigurationRequest {
    * @minimum 0
    */
   version: number;
-  mode: TakConnectionMode;
   meshChannelId: Uuid | null;
 }

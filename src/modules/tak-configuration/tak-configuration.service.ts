@@ -5,29 +5,22 @@ import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import { validationProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
 import { requireMutableEvent, requireReadableEvent } from "../events/event-access.js";
-import type {
-  TakConfigurationDto,
-  TakConnectionMode,
-  UpdateTakConfigurationRequest,
-} from "./tak-configuration.dto.js";
+import type { TakConfigurationDto, UpdateTakConfigurationRequest } from "./tak-configuration.dto.js";
 
 type TakClient = Pick<Prisma.TransactionClient, "takConfiguration">;
 
 export interface CurrentTakConfiguration {
-  mode: TakConnectionMode;
   meshChannelId: string | null;
 }
 
-/** Events without a stored row use no TAK connection guidance. */
 export async function loadTakConfiguration(client: TakClient, eventId: string): Promise<CurrentTakConfiguration> {
   const row = await client.takConfiguration.findUnique({ where: { eventId } });
-  return { mode: (row?.mode ?? "none") as TakConnectionMode, meshChannelId: row?.meshChannelId ?? null };
+  return { meshChannelId: row?.meshChannelId ?? null };
 }
 
 function toDto(eventId: string, row: TakConfiguration | null): TakConfigurationDto {
   return {
     eventId,
-    mode: (row?.mode ?? "none") as TakConnectionMode,
     meshChannelId: row?.meshChannelId ?? null,
     version: row?.version ?? 0,
     updatedAt: row?.updatedAt.toISOString() ?? null,
@@ -39,9 +32,9 @@ export async function getTakConfiguration(principal: Principal, eventId: string)
   return toDto(eventId, await database.takConfiguration.findUnique({ where: { eventId } }));
 }
 
-/** The mesh channel only matters for the Meshtastic local server and must belong to the event. */
+/** The mesh channel must belong to the event. */
 async function validatedChannel(eventId: string, input: UpdateTakConfigurationRequest): Promise<string | null> {
-  if (input.mode !== "meshtastic-local-server" || input.meshChannelId === null) {
+  if (input.meshChannelId === null) {
     return null;
   }
   const channel = await database.meshtasticChannel.findFirst({
@@ -64,7 +57,7 @@ export async function updateTakConfiguration(
 ): Promise<TakConfigurationDto> {
   await requireMutableEvent(actor.principal, eventId);
   const meshChannelId = await validatedChannel(eventId, input);
-  const data = { mode: input.mode, meshChannelId };
+  const data = { meshChannelId };
 
   await database.$transaction(async (transaction) => {
     if (input.version === 0) {
@@ -95,7 +88,7 @@ export async function updateTakConfiguration(
         targetId: eventId,
         result: "success",
         traceId: actor.traceId,
-        metadata: { mode: input.mode, meshChannelId },
+        metadata: { meshChannelId },
       },
       transaction,
     );

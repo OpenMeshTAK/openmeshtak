@@ -4,7 +4,7 @@ import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { PERMISSIONS } from "../src/shared/auth/permissions.js";
-import { disconnectDatabase } from "../src/shared/database/database.js";
+import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import {
   clearDatabase,
   createEvent,
@@ -98,7 +98,7 @@ void describe("event configuration revisions", () => {
     const detail = (
       await request(app).get(url(`/configuration-revisions/${id}`)).set("Cookie", admin.cookie).expect(200)
     ).body as RevisionBody;
-    assert.equal(detail.snapshot.schemaVersion, 5);
+    assert.equal(detail.snapshot.schemaVersion, 6);
     assert.deepEqual(detail.snapshot.roles.map(({ slug }) => slug), ["participant"]);
     assert.equal(detail.snapshot.groups[0]?.provisioning.tak.team, "Cyan");
   });
@@ -133,6 +133,48 @@ void describe("event configuration revisions", () => {
     await request(app).delete(url(`/groups/${group.id}`)).set("Cookie", admin.cookie).expect(204);
     const unpublishable = await publish().expect(409);
     assert.equal((unpublishable.body as { code: string }).code, "EVENT_NOT_READY");
+  });
+
+  void it("activates a TAK-only event without its stored radio setup and publishes the switch", async () => {
+    const createChannel = (name: string) =>
+      request(app)
+        .post(url("/meshtastic/channels"))
+        .set("Cookie", admin.cookie)
+        .send({ name, audience: { groupIds: [], roleIds: [], memberIds: [] } })
+        .expect(201);
+    await createChannel("Event");
+    await createChannel("Empty");
+    await database.eventGroup.update({ where: { id: group.id }, data: { shortNamePrefix: null } });
+    const event = await request(app)
+      .put(url())
+      .set("Cookie", admin.cookie)
+      .send({ version: 1, name: "Test event", slug: `event-${eventId}`, timeZone: "Europe/Berlin", startsAt: null, endsAt: null, meshtasticEnabled: false })
+      .expect(200);
+    assert.equal((event.body as { meshtasticEnabled: boolean }).meshtasticEnabled, false);
+
+    await transition("activate", 2);
+    const [first] = await revisions();
+    const listed = await request(app).get(url("/configuration-revisions")).set("Cookie", admin.cookie);
+    const id = (listed.body as { items: Array<{ id: string }> }).items[0]?.id ?? "";
+    const detail = (await request(app).get(url(`/configuration-revisions/${id}`)).set("Cookie", admin.cookie).expect(200))
+      .body as { snapshot: Record<string, unknown> };
+    assert.equal(first?.reason, "activation");
+    assert.equal(detail.snapshot.meshtasticEnabled, false);
+    assert.deepEqual(detail.snapshot.channels, []);
+    assert.equal(detail.snapshot.meshtastic, null);
+    assert.deepEqual(detail.snapshot.tak, { meshChannelId: null });
+
+    // Switching Meshtastic on brings the stored radio setup back, and with it its open problems.
+    await request(app)
+      .put(url())
+      .set("Cookie", admin.cookie)
+      .send({ version: 3, name: "Test event", slug: `event-${eventId}`, timeZone: "Europe/Berlin", startsAt: null, endsAt: null, meshtasticEnabled: true })
+      .expect(200);
+    const refused = await publish().expect(409);
+    assert.deepEqual(
+      (refused.body as { errors: Array<{ field: string }> }).errors.map(({ field }) => field),
+      ["groups.bravo.provisioning.shortNamePrefix", "channels.Empty.audience"],
+    );
   });
 
   void it("publishes changes, skips unchanged configurations and keeps old snapshots immutable", async () => {

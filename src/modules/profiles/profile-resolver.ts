@@ -5,7 +5,7 @@ import type {
 } from "../event-configuration/configuration-snapshot.js";
 import type { TakRole } from "../event-groups/provisioning-values.js";
 import { shortNameFor } from "../event-members/member-identity.js";
-import { resolveTakConnection, type TakServerAddress } from "./profile-tak.js";
+import { resolveMeshtasticTakServer, type TakServerAddress } from "./profile-tak.js";
 import { resolveProfileChannels, type LiveChannelState } from "./profile-channels.js";
 import type { ProfileAssignment, ProfileFirmware, ResolvedProfileDto } from "./profile.dto.js";
 
@@ -22,6 +22,7 @@ export interface ProfileMember {
 
 export interface ProfileInputs {
   member: ProfileMember;
+  meshtasticEnabled: boolean;
   role: ProfileAssignment & { takRoleOverride: TakRole | null };
   group: SnapshotGroup;
   channels: SnapshotChannel[];
@@ -42,6 +43,7 @@ export interface ProfileInputs {
  */
 export function resolveProfile({
   member,
+  meshtasticEnabled,
   role,
   group,
   channels,
@@ -73,13 +75,16 @@ export function resolveProfile({
       team: provisioning.tak.team,
       role: role.takRoleOverride ?? provisioning.tak.role,
       serverGroups: provisioning.tak.serverGroups,
-      connection: resolveTakConnection(tak, memberChannels, takServer),
+      server: takServer,
+      meshtasticLocalServer: meshtasticEnabled ? resolveMeshtasticTakServer(tak, memberChannels) : null,
     },
-    meshtastic: {
-      longName: member.callsign,
-      shortName: shortNameFor(provisioning.shortNamePrefix, member.shortNameNumber),
-      channels: memberChannels,
-      firmware,
-    },
+    meshtastic: meshtasticEnabled
+      ? {
+          longName: member.callsign,
+          shortName: shortNameFor(provisioning.shortNamePrefix, member.shortNameNumber),
+          channels: memberChannels,
+          firmware,
+        }
+      : null,
   };
 }

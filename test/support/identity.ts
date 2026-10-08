@@ -110,10 +110,17 @@ export async function createUser(
   return { id, authSubjectId: signUp.response.user.id, cookie };
 }
 
-export async function createEvent(): Promise<string> {
+/** Creates a draft event. Meshtastic is on by default because most tests exercise radio provisioning. */
+export async function createEvent(options: { meshtasticEnabled?: boolean } = {}): Promise<string> {
   const id = randomUUID();
   await database.event.create({
-    data: { id, name: "Test event", slug: `event-${id}`, timeZone: "Europe/Berlin" },
+    data: {
+      id,
+      name: "Test event",
+      slug: `event-${id}`,
+      timeZone: "Europe/Berlin",
+      meshtasticEnabled: options.meshtasticEnabled ?? true,
+    },
   });
   return id;
 }

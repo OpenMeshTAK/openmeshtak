@@ -34,7 +34,7 @@ export async function getChannelHandout(
   }
 
   const profile = await getMemberProfile(actor.principal, eventId, memberId);
-  const published = profile.meshtastic.channels.find(
+  const published = profile.meshtastic?.channels.find(
     (channel) => channel.id === channelId && channel.keyHolder,
   );
   if (published === undefined) {

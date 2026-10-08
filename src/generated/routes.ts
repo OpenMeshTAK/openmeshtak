@@ -597,16 +597,10 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "TakConnectionMode": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["none"]},{"dataType":"enum","enums":["meshtastic-local-server"]},{"dataType":"enum","enums":["built-in-server"]}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TakConfigurationDto": {
         "dataType": "refObject",
         "properties": {
             "eventId": {"ref":"Uuid","required":true},
-            "mode": {"ref":"TakConnectionMode","required":true},
             "meshChannelId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
             "version": {"dataType":"double","required":true},
             "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
@@ -618,7 +612,6 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
-            "mode": {"ref":"TakConnectionMode","required":true},
             "meshChannelId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
@@ -775,9 +768,21 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["Team Member"]},{"dataType":"enum","enums":["Team Lead"]},{"dataType":"enum","enums":["HQ"]},{"dataType":"enum","enums":["Sniper"]},{"dataType":"enum","enums":["Medic"]},{"dataType":"enum","enums":["Forward Observer"]},{"dataType":"enum","enums":["RTO"]},{"dataType":"enum","enums":["K9"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ProfileTakConnection": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"meshChannel":{"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"slot":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},"mode":{"dataType":"enum","enums":["meshtastic-local-server"],"required":true}}},{"dataType":"nestedObjectLiteral","nestedProperties":{"streamingPort":{"dataType":"double","required":true},"hostName":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"mode":{"dataType":"enum","enums":["built-in-server"],"required":true}}}],"validators":{}},
+    "ProfileTakServer": {
+        "dataType": "refObject",
+        "properties": {
+            "hostName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "streamingPort": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ProfileMeshtasticTakServer": {
+        "dataType": "refObject",
+        "properties": {
+            "meshChannel": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"slot":{"dataType":"double","required":true},"name":{"dataType":"string","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ProfileChannel": {
@@ -821,8 +826,8 @@ const models: TsoaRoute.Models = {
             "callsign": {"dataType":"string","required":true},
             "eventRole": {"ref":"ProfileAssignment","required":true},
             "group": {"ref":"ProfileAssignment","required":true},
-            "tak": {"dataType":"nestedObjectLiteral","nestedProperties":{"connection":{"dataType":"union","subSchemas":[{"ref":"ProfileTakConnection"},{"dataType":"enum","enums":[null]}],"required":true},"serverGroups":{"dataType":"array","array":{"dataType":"string"},"required":true},"role":{"ref":"TakRole","required":true},"team":{"ref":"TakTeam","required":true},"callsign":{"dataType":"string","required":true}},"required":true},
-            "meshtastic": {"dataType":"nestedObjectLiteral","nestedProperties":{"firmware":{"dataType":"union","subSchemas":[{"ref":"ProfileFirmware"},{"dataType":"enum","enums":[null]}],"required":true},"channels":{"dataType":"array","array":{"dataType":"refObject","ref":"ProfileChannel"},"required":true},"shortName":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"longName":{"dataType":"string","required":true}},"required":true},
+            "tak": {"dataType":"nestedObjectLiteral","nestedProperties":{"meshtasticLocalServer":{"dataType":"union","subSchemas":[{"ref":"ProfileMeshtasticTakServer"},{"dataType":"enum","enums":[null]}],"required":true},"server":{"ref":"ProfileTakServer","required":true},"serverGroups":{"dataType":"array","array":{"dataType":"string"},"required":true},"role":{"ref":"TakRole","required":true},"team":{"ref":"TakTeam","required":true},"callsign":{"dataType":"string","required":true}},"required":true},
+            "meshtastic": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"firmware":{"dataType":"union","subSchemas":[{"ref":"ProfileFirmware"},{"dataType":"enum","enums":[null]}],"required":true},"channels":{"dataType":"array","array":{"dataType":"refObject","ref":"ProfileChannel"},"required":true},"shortName":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},"longName":{"dataType":"string","required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -1356,6 +1361,7 @@ const models: TsoaRoute.Models = {
             "endsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "takLoginTokenDays": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":3650}}},
             "permanentAccounts": {"dataType":"boolean","required":true},
+            "meshtasticEnabled": {"dataType":"boolean","required":true},
             "createdAt": {"dataType":"string","required":true},
             "updatedAt": {"dataType":"string","required":true},
             "overview": {"ref":"EventOverview","required":true},
@@ -1385,6 +1391,7 @@ const models: TsoaRoute.Models = {
             "endsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "takLoginTokenDays": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":3650}}},
             "permanentAccounts": {"dataType":"boolean","required":true},
+            "meshtasticEnabled": {"dataType":"boolean","required":true},
             "createdAt": {"dataType":"string","required":true},
             "updatedAt": {"dataType":"string","required":true},
         },
@@ -1401,6 +1408,7 @@ const models: TsoaRoute.Models = {
             "endsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},
             "takLoginTokenDays": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":3650}}},
             "permanentAccounts": {"dataType":"boolean"},
+            "meshtasticEnabled": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },
@@ -1416,6 +1424,7 @@ const models: TsoaRoute.Models = {
             "endsAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "takLoginTokenDays": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":3650}}},
             "permanentAccounts": {"dataType":"boolean"},
+            "meshtasticEnabled": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },
@@ -1814,7 +1823,6 @@ const models: TsoaRoute.Models = {
     "CurrentTakConfiguration": {
         "dataType": "refObject",
         "properties": {
-            "mode": {"ref":"TakConnectionMode","required":true},
             "meshChannelId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
@@ -1828,7 +1836,8 @@ const models: TsoaRoute.Models = {
     "ConfigurationSnapshot": {
         "dataType": "refObject",
         "properties": {
-            "schemaVersion": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]},{"dataType":"enum","enums":[3]},{"dataType":"enum","enums":[4]},{"dataType":"enum","enums":[5]}],"required":true},
+            "schemaVersion": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]},{"dataType":"enum","enums":[3]},{"dataType":"enum","enums":[4]},{"dataType":"enum","enums":[5]},{"dataType":"enum","enums":[6]}],"required":true},
+            "meshtasticEnabled": {"dataType":"boolean","required":true},
             "roles": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotRole"},"required":true},
             "groups": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotGroup"},"required":true},
             "channels": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotChannel"},"required":true},

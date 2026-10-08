@@ -1,5 +1,5 @@
 import type { SnapshotTak } from "../event-configuration/configuration-snapshot.js";
-import type { ProfileChannel, ProfileTakConnection } from "./profile.dto.js";
+import type { ProfileChannel, ProfileMeshtasticTakServer } from "./profile.dto.js";
 
 /** Where the built-in TAK server is reached; the host name is `null` while it is disabled. */
 export interface TakServerAddress {
@@ -18,24 +18,18 @@ export function deviceChannels(channels: readonly ProfileChannel[]): ProfileChan
 }
 
 /**
- * The member's TAK connection. The app's "TAK Mesh Channel" setting takes a slot on the device,
- * so the event's chosen channel is translated into this member's slot; the primary channel is
- * slot 0 and also the fallback when no channel is chosen.
+ * The member's Meshtastic app TAK server. The app's "TAK Mesh Channel" setting takes a slot on the
+ * device, so the event's chosen channel is translated into this member's slot; the primary channel
+ * is slot 0 and also the fallback when no channel is chosen.
  */
-export function resolveTakConnection(
+export function resolveMeshtasticTakServer(
   tak: SnapshotTak | null,
   channels: readonly ProfileChannel[],
-  takServer: TakServerAddress,
-): ProfileTakConnection | null {
-  if (tak?.mode === "built-in-server") {
-    return { mode: "built-in-server", ...takServer };
-  }
-  if (tak === null || tak.mode !== "meshtastic-local-server") {
-    return null;
-  }
+): ProfileMeshtasticTakServer {
+  const meshChannelId = tak?.meshChannelId ?? null;
   const onDevice = deviceChannels(channels);
   const slot =
-    tak.meshChannelId === null ? (onDevice.length > 0 ? 0 : -1) : onDevice.findIndex(({ id }) => id === tak.meshChannelId);
+    meshChannelId === null ? (onDevice.length > 0 ? 0 : -1) : onDevice.findIndex(({ id }) => id === meshChannelId);
   const channel = onDevice[slot];
-  return { mode: "meshtastic-local-server", meshChannel: channel === undefined ? null : { name: channel.name, slot } };
+  return { meshChannel: channel === undefined ? null : { name: channel.name, slot } };
 }

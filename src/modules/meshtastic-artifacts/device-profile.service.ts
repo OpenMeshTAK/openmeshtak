@@ -63,9 +63,9 @@ async function publishedFirmware(eventId: string) {
 function managedValue(key: ManagedFieldKey, profile: ResolvedProfileDto): DeviceProfileValue | null {
   switch (key) {
     case "longName":
-      return profile.meshtastic.longName;
+      return profile.meshtastic?.longName ?? null;
     case "shortName":
-      return profile.meshtastic.shortName;
+      return profile.meshtastic?.shortName ?? null;
     case "moduleConfig.tak.team":
       return profile.tak.team.replaceAll(" ", "_");
     case "moduleConfig.tak.role":
@@ -104,7 +104,7 @@ function checkManagedValue(firmware: LoadedFirmwareProfile, field: LoadedFirmwar
  * out entirely and the device keeps its current channels until the key holder shares them.
  */
 function deliverableChannels(profile: ResolvedProfileDto): ProfileChannel[] {
-  return deviceChannels(profile.meshtastic.channels);
+  return deviceChannels(profile.meshtastic?.channels ?? []);
 }
 
 function fileNameFor(callsign: string, line: string): string {
@@ -210,6 +210,15 @@ export async function generateDeviceProfile(
   // for the member, so their audience, key-holder status and channel releases decide the secrets.
   const { onBehalf } = await requireMemberArtifactAccess(actor.principal, eventId, memberId);
   const profile = await getMemberProfile(actor.principal, eventId, memberId);
+  if (profile.meshtastic === null) {
+    throw new ProblemError({
+      type: "urn:openmeshtak:problem:meshtastic-disabled",
+      title: "Event does not use Meshtastic",
+      status: 409,
+      detail: "This event has no Meshtastic radio setup.",
+      code: "MESHTASTIC_DISABLED",
+    });
+  }
   const { revision, meshtastic, profile: firmware } = await publishedFirmware(eventId);
 
   const published = deliverableChannels(profile);

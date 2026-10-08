@@ -54,16 +54,25 @@ export interface SnapshotMeshtastic {
   settings: FirmwareSettingsDocument;
 }
 
-/** How TAK clients connect; `null` in revisions created before version 4. */
+/**
+ * The Meshtastic app's TAK mesh channel; `null` in revisions created before version 4. Revisions
+ * before version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced.
+ */
 export type SnapshotTak = CurrentTakConfiguration;
 
 /**
  * Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.
  * Version 2 added `channels` in device order, the first being the primary channel; version 3
- * added `meshtastic`; version 4 added `tak`.
+ * added `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added
+ * `meshtasticEnabled`.
  */
 export interface ConfigurationSnapshot {
-  schemaVersion: 1 | 2 | 3 | 4 | 5;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
+  /**
+   * Whether the event provisions Meshtastic radios; `true` in revisions before version 6. When
+   * `false`, `channels` is empty and `meshtastic` is `null`.
+   */
+  meshtasticEnabled: boolean;
   roles: SnapshotRole[];
   groups: SnapshotGroup[];
   channels: SnapshotChannel[];
@@ -80,7 +89,8 @@ export async function buildConfigurationSnapshot(
   transaction: Prisma.TransactionClient,
   eventId: string,
 ): Promise<ConfigurationSnapshot> {
-  const [roles, groups, channels, meshtastic, tak] = await Promise.all([
+  const [event, roles, groups, channels, meshtastic, tak] = await Promise.all([
+    transaction.event.findUniqueOrThrow({ where: { id: eventId }, select: { meshtasticEnabled: true } }),
     transaction.eventRole.findMany({
       where: { eventId },
       orderBy: { slug: "asc" },
@@ -96,9 +106,12 @@ export async function buildConfigurationSnapshot(
     loadTakConfiguration(transaction, eventId),
   ]);
   const { firmware } = meshtastic;
+  // A TAK-only event keeps its stored channels and radio settings for later, but publishes none.
+  const { meshtasticEnabled } = event;
 
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
+    meshtasticEnabled,
     roles: roles.map((role) => ({ ...role, takRoleOverride: role.takRoleOverride as TakRole | null })),
     groups: groups.map((group) => ({
       id: group.id,
@@ -106,7 +119,7 @@ export async function buildConfigurationSnapshot(
       name: group.name,
       provisioning: toGroupProvisioning(group),
     })),
-    channels: channels.map((channel) => ({
+    channels: (meshtasticEnabled ? channels : []).map((channel) => ({
       id: channel.id,
       name: channel.name,
       uplinkEnabled: channel.uplinkEnabled,
@@ -119,7 +132,7 @@ export async function buildConfigurationSnapshot(
     })),
     // Readiness checks keep unresolvable firmware out of published revisions.
     meshtastic:
-      firmware === null
+      !meshtasticEnabled || firmware === null
         ? null
         : {
             firmwareVersion: meshtastic.firmwareVersion,
@@ -128,7 +141,7 @@ export async function buildConfigurationSnapshot(
             profileSha256: firmware.profile.sha256,
             settings: meshtastic.settings,
           },
-    tak,
+    tak: { meshChannelId: meshtasticEnabled ? tak.meshChannelId : null },
   };
 }
 
@@ -142,16 +155,18 @@ export function hashConfigurationSnapshot(snapshot: ConfigurationSnapshot): stri
  * Meshtastic configuration.
  */
 export function parseConfigurationSnapshot(value: Prisma.JsonValue): ConfigurationSnapshot {
-  const snapshot = value as unknown as Omit<ConfigurationSnapshot, "channels" | "meshtastic" | "tak"> & {
+  const snapshot = value as unknown as Omit<ConfigurationSnapshot, "meshtasticEnabled" | "channels" | "meshtastic" | "tak"> & {
+    meshtasticEnabled?: boolean;
     channels?: SnapshotChannel[];
     meshtastic?: SnapshotMeshtastic | null;
     tak?: SnapshotTak | null;
   };
   return {
     ...snapshot,
+    meshtasticEnabled: snapshot.meshtasticEnabled ?? true,
     roles: snapshot.roles.map((role) => ({ ...role, takRoleOverride: role.takRoleOverride ?? null })),
     channels: snapshot.channels ?? [],
     meshtastic: snapshot.meshtastic ?? null,
-    tak: snapshot.tak ?? null,
+    tak: snapshot.tak === undefined || snapshot.tak === null ? null : { meshChannelId: snapshot.tak.meshChannelId },
   };
 }

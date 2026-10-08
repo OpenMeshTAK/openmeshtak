@@ -168,6 +168,7 @@ async function loadMemberProfile(
 
   const profile = resolveProfile({
     member,
+    meshtasticEnabled: snapshot.meshtasticEnabled,
     role: { slug: role.slug, name: role.name, takRoleOverride: role.takRoleOverride },
     group,
     channels: snapshot.channels,

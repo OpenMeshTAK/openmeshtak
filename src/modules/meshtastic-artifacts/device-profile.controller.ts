@@ -21,7 +21,7 @@ export class DeviceProfileController extends Controller {
   @Get()
   @Produces("application/octet-stream")
   @SuccessResponse(200, "Meshtastic device profile")
-  @Response<ProblemDetails>(409, "Meshtastic configuration not published")
+  @Response<ProblemDetails>(409, "Meshtastic configuration not published or event without Meshtastic")
   public async getMeshtasticDeviceProfile(
     @Request() request: unknown,
     @Path() eventId: Uuid,

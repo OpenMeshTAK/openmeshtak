@@ -43,6 +43,7 @@ interface EventRow {
   endsAt: Date | null;
   takLoginTokenDays: number;
   permanentAccounts: boolean;
+  meshtasticEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +58,8 @@ interface EventSettings {
   takLoginTokenDays?: number;
   /** Left out on updates that keep the current value. */
   permanentAccounts?: boolean;
+  /** Left out on updates that keep the current value. */
+  meshtasticEnabled?: boolean;
 }
 
 export function toEventDto(row: EventRow): EventDto {
@@ -71,6 +74,7 @@ export function toEventDto(row: EventRow): EventDto {
     endsAt: row.endsAt?.toISOString() ?? null,
     takLoginTokenDays: row.takLoginTokenDays,
     permanentAccounts: row.permanentAccounts,
+    meshtasticEnabled: row.meshtasticEnabled,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -84,6 +88,7 @@ function validateSettings(input: {
   endsAt?: string | null | undefined;
   takLoginTokenDays?: number | undefined;
   permanentAccounts?: boolean | undefined;
+  meshtasticEnabled?: boolean | undefined;
 }): EventSettings {
   const errors: ProblemFieldError[] = [];
   const timeZone = canonicalIanaTimeZone(input.timeZone);
@@ -110,6 +115,9 @@ function validateSettings(input: {
   }
   if (input.permanentAccounts !== undefined) {
     settings.permanentAccounts = input.permanentAccounts;
+  }
+  if (input.meshtasticEnabled !== undefined) {
+    settings.meshtasticEnabled = input.meshtasticEnabled;
   }
   return settings;
 }

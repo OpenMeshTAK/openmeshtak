@@ -166,6 +166,16 @@ void describe("Meshtastic device profiles", () => {
     assert.equal(audits.includes("event-wifi-secret"), false);
   });
 
+  void it("drops the radio setup once a TAK-only configuration is published", async () => {
+    await database.event.update({ where: { id: eventId }, data: { meshtasticEnabled: false } });
+    await request(app).post(`/api/v1/events/${eventId}/configuration-revisions`).set("Cookie", admin.cookie).expect(200);
+
+    const profile = await request(app).get(`/api/v1/events/${eventId}/members/${memberId}/profile`).set("Cookie", member.cookie).expect(200);
+    assert.equal((profile.body as { meshtastic: unknown }).meshtastic, null);
+    const refused = await request(app).get(deviceProfileUrl(memberId)).set("Cookie", member.cookie).expect(409);
+    assert.equal((refused.body as { code: string }).code, "MESHTASTIC_DISABLED");
+  });
+
   void it("serves the file only to the member themself or an on-behalf operator", async () => {
     const reader = await createUser("Reader", [{ permission: "members.read", eventId }]);
     const otherEvent = await createEvent();

@@ -8,7 +8,7 @@ import { loadMeshtasticConfiguration } from "../meshtastic-configuration/current
  * Collects every unmet activation requirement at once so administrators can fix them together.
  * Activation, reactivation and publishing all require a ready configuration.
  */
-export async function activationProblems(event: Pick<Event, "id">): Promise<ProblemFieldError[]> {
+export async function activationProblems(event: Pick<Event, "id" | "meshtasticEnabled">): Promise<ProblemFieldError[]> {
   const [roles, groups] = await Promise.all([
     database.eventRole.count({ where: { eventId: event.id } }),
     database.eventGroup.count({ where: { eventId: event.id } }),
@@ -20,6 +20,10 @@ export async function activationProblems(event: Pick<Event, "id">): Promise<Prob
   }
   if (groups === 0) {
     problems.push({ field: "groups", code: "REQUIRED", message: "Add at least one event group." });
+  }
+  // A TAK-only event publishes no radio setup, so its stored radio settings need not be complete.
+  if (!event.meshtasticEnabled) {
+    return problems;
   }
 
   const groupsWithoutPrefix = await database.eventGroup.findMany({

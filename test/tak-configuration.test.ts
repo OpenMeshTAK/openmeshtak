@@ -10,7 +10,10 @@ import { clearDatabase, createEvent, createUser, type TestUser } from "./support
 import { enableTakServer } from "./support/tak.js";
 
 interface ProfileBody {
-  tak: { connection: { mode: string; meshChannel: { name: string; slot: number } | null } | null };
+  tak: {
+    server: { hostName: string | null; streamingPort: number };
+    meshtasticLocalServer: { meshChannel: { name: string; slot: number } | null } | null;
+  };
 }
 
 const none = { groupIds: [], roleIds: [], memberIds: [] };
@@ -35,9 +38,9 @@ async function createChannel(name: string, groupIds: string[]): Promise<string> 
   return (response.body as { id: string }).id;
 }
 
-async function connection(memberId: string): Promise<ProfileBody["tak"]["connection"]> {
+async function tak(memberId: string): Promise<ProfileBody["tak"]> {
   const response = await request(app).get(url(`/members/${memberId}/profile`)).set("Cookie", admin.cookie).expect(200);
-  return (response.body as ProfileBody).tak.connection;
+  return (response.body as ProfileBody).tak;
 }
 
 void describe("TAK configuration", () => {
@@ -73,10 +76,17 @@ void describe("TAK configuration", () => {
     await disconnectDatabase();
   });
 
-  void it("gives no guidance until a mode is chosen", async () => {
+  void it("connects members of Meshtastic events to the TAK server and the Meshtastic app", async () => {
     const configuration = await request(app).get(url("/tak/configuration")).set("Cookie", admin.cookie).expect(200);
-    assert.deepEqual(configuration.body, { eventId, mode: "none", meshChannelId: null, version: 0, updatedAt: null });
-    assert.equal(await connection(bravoMemberId), null);
+    assert.deepEqual(configuration.body, { eventId, meshChannelId: null, version: 0, updatedAt: null });
+    assert.deepEqual(await tak(bravoMemberId), {
+      ...(await tak(bravoMemberId)),
+      server: { hostName: null, streamingPort: 8089 },
+      meshtasticLocalServer: { meshChannel: null },
+    });
+
+    await enableTakServer(app, admin);
+    assert.deepEqual((await tak(bravoMemberId)).server, { hostName: "tak.example.org", streamingPort: 8089 });
   });
 
   void it("translates the chosen mesh channel into each member's device slot", async () => {
@@ -86,46 +96,39 @@ void describe("TAK configuration", () => {
     await request(app)
       .put(url("/tak/configuration"))
       .set("Cookie", admin.cookie)
-      .send({ version: 0, mode: "meshtastic-local-server", meshChannelId: takChannel })
+      .send({ version: 0, meshChannelId: takChannel })
       .expect(200);
 
-    assert.deepEqual(await connection(bravoMemberId), {
-      mode: "meshtastic-local-server",
-      meshChannel: { name: "TAK", slot: 1 },
-    });
+    assert.deepEqual((await tak(bravoMemberId)).meshtasticLocalServer, { meshChannel: { name: "TAK", slot: 1 } });
     // Charlie does not receive the TAK channel, so the app falls back to the primary channel.
-    assert.deepEqual(await connection(charlieMemberId), { mode: "meshtastic-local-server", meshChannel: null });
+    assert.deepEqual((await tak(charlieMemberId)).meshtasticLocalServer, { meshChannel: null });
   });
 
-  void it("points members to the built-in TAK server once it is enabled", async () => {
-    await request(app)
-      .put(url("/tak/configuration"))
-      .set("Cookie", admin.cookie)
-      .send({ version: 0, mode: "built-in-server", meshChannelId: null })
-      .expect(200);
-    assert.deepEqual(await connection(bravoMemberId), { mode: "built-in-server", hostName: null, streamingPort: 8089 });
-
-    await enableTakServer(app, admin);
-    assert.deepEqual(await connection(bravoMemberId), { mode: "built-in-server", hostName: "tak.example.org", streamingPort: 8089 });
+  void it("leaves the Meshtastic app out of TAK-only events", async () => {
+    await createChannel("Event", []);
+    await database.event.update({ where: { id: eventId }, data: { meshtasticEnabled: false } });
+    const profile = await tak(bravoMemberId);
+    assert.equal(profile.meshtasticLocalServer, null);
+    assert.deepEqual(profile.server, { hostName: null, streamingPort: 8089 });
   });
 
   void it("rejects channels of other events and stale versions", async () => {
     const response = await request(app)
       .put(url("/tak/configuration"))
       .set("Cookie", admin.cookie)
-      .send({ version: 0, mode: "meshtastic-local-server", meshChannelId: randomUUID() })
+      .send({ version: 0, meshChannelId: randomUUID() })
       .expect(422);
     assert.equal((response.body as { errors: Array<{ field: string }> }).errors[0]?.field, "meshChannelId");
 
     await request(app)
       .put(url("/tak/configuration"))
       .set("Cookie", admin.cookie)
-      .send({ version: 0, mode: "meshtastic-local-server", meshChannelId: null })
+      .send({ version: 0, meshChannelId: null })
       .expect(200);
     await request(app)
       .put(url("/tak/configuration"))
       .set("Cookie", admin.cookie)
-      .send({ version: 0, mode: "none", meshChannelId: null })
+      .send({ version: 0, meshChannelId: null })
       .expect(409);
   });
 });

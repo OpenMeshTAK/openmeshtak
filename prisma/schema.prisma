@@ -26,6 +26,9 @@ model Event {
   takLoginTokenDays       Int                          @default(0)
   /// Accounts created for this event are permanent instead of being deleted when it is archived.
   permanentAccounts       Boolean                      @default(false)
+  /// The event provisions Meshtastic radios. Off for TAK-only events; channels and radio settings
+  /// stay stored while it is off but are left out of revisions, profiles and downloads.
+  meshtasticEnabled       Boolean                      @default(false)
   createdAt              DateTime                     @default(now())
   updatedAt               DateTime                     @updatedAt
   permissionGrants        PermissionGrant[]
@@ -689,12 +692,11 @@ model DataPackageAudience {
   @@index([eventMemberId])
 }
 
-/// How the event's TAK clients connect. RC1 offers the Meshtastic app's local TAK server: ATAK/iTAK
-/// on the same phone connect to the app, which carries CoT over the chosen mesh channel.
+/// TAK connection details of a Meshtastic event. Whether TAK clients use the Meshtastic app's local
+/// TAK server or the built-in server follows `Event.meshtasticEnabled`; here only the mesh channel
+/// the app carries CoT over is chosen.
 model TakConfiguration {
   eventId       String             @id
-  /// "none" or "meshtastic-local-server".
-  mode          String             @default("none")
   /// Channel the app's "TAK Mesh Channel" should use; null means the primary channel.
   meshChannelId String?
   version       Int                @default(1)
