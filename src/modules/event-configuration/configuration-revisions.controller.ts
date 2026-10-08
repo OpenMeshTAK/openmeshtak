@@ -21,11 +21,13 @@ import type { Uuid } from "../../shared/http/uuid.js";
 import type {
   ConfigurationRevisionDto,
   ConfigurationRevisionPage,
+  PendingConfigurationChangesDto,
   PublishConfigurationResponse,
 } from "./configuration-revision.dto.js";
 import {
   getConfigurationRevision,
   listConfigurationRevisions,
+  pendingConfigurationChanges,
   publishConfiguration,
 } from "./configuration-revisions.service.js";
 
@@ -75,6 +77,16 @@ export class ConfigurationRevisionsController extends Controller {
     @Header("Idempotency-Key") _idempotencyKey?: string,
   ): Promise<PublishConfigurationResponse> {
     return publishConfiguration(requestContext(request), eventId);
+  }
+
+  /** Lists what publishing would change compared with the published revision. Requires `events.read`. */
+  @Get("pending-changes")
+  @SuccessResponse(200, "Pending configuration changes")
+  public async getPendingConfigurationChanges(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+  ): Promise<PendingConfigurationChangesDto> {
+    return pendingConfigurationChanges(requestContext(request).principal, eventId);
   }
 
   @Get("{revisionId}")

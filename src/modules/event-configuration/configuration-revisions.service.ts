@@ -19,8 +19,10 @@ import type {
   ConfigurationRevisionPage,
   ConfigurationRevisionReason,
   ConfigurationRevisionSummaryDto,
+  PendingConfigurationChangesDto,
   PublishConfigurationResponse,
 } from "./configuration-revision.dto.js";
+import { diffConfigurationSnapshots } from "./configuration-changes.js";
 import {
   buildConfigurationSnapshot,
   hashConfigurationSnapshot,
@@ -123,6 +125,28 @@ export async function publishConfiguration(
     createConfigurationRevision(transaction, actor, eventId, "publish", { skipIfUnchanged: true }),
   );
   return { created: result.created, revision: toDto(result.revision) };
+}
+
+/** Compares the current configuration with the published revision, as publishing would. */
+export async function pendingConfigurationChanges(
+  principal: Principal,
+  eventId: string,
+): Promise<PendingConfigurationChangesDto> {
+  const event = await requireReadableEvent(principal, eventId);
+  const latest = await latestConfigurationRevision(database, eventId);
+  if (latest === null || event.status !== "active") {
+    return { publishedRevision: latest?.number ?? null, changes: [] };
+  }
+  const current = await buildConfigurationSnapshot(database, eventId);
+  if (hashConfigurationSnapshot(current) === latest.snapshotHash) {
+    return { publishedRevision: latest.number, changes: [] };
+  }
+  const changes = diffConfigurationSnapshots(parseConfigurationSnapshot(latest.snapshot), current);
+  // An older snapshot format hashes differently even when nothing an administrator set changed.
+  return {
+    publishedRevision: latest.number,
+    changes: changes.length > 0 ? changes : [{ area: "event", kind: "changed", name: "Configuration format update", fields: [] }],
+  };
 }
 
 export async function listConfigurationRevisions(

@@ -23,6 +23,28 @@ export interface ConfigurationRevisionPage {
   page: PageInfo;
 }
 
+export type ConfigurationChangeArea = "event" | "roles" | "groups" | "channels" | "meshtastic" | "tak";
+export type ConfigurationChangeKind = "added" | "removed" | "changed";
+
+export interface ConfigurationChangeDto {
+  area: ConfigurationChangeArea;
+  kind: ConfigurationChangeKind;
+  /** Name of the role, group or channel, a Meshtastic setting key, or a short description. */
+  name: string;
+  /** Dotted paths of the changed fields of a changed item; empty otherwise. */
+  fields: string[];
+}
+
+export interface PendingConfigurationChangesDto {
+  /** Number of the revision participants receive; `null` before the first one. */
+  publishedRevision: number | null;
+  /**
+   * What publishing would change. Empty when nothing is pending, and always empty for drafts
+   * (activation publishes) and archived events (read-only).
+   */
+  changes: ConfigurationChangeDto[];
+}
+
 export interface PublishConfigurationResponse {
   /** `false` when the configuration was unchanged and the latest revision is returned instead. */
   created: boolean;

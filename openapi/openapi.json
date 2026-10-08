@@ -4938,6 +4938,77 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ConfigurationChangeArea": {
+				"type": "string",
+				"enum": [
+					"event",
+					"roles",
+					"groups",
+					"channels",
+					"meshtastic",
+					"tak"
+				]
+			},
+			"ConfigurationChangeKind": {
+				"type": "string",
+				"enum": [
+					"added",
+					"removed",
+					"changed"
+				]
+			},
+			"ConfigurationChangeDto": {
+				"properties": {
+					"area": {
+						"$ref": "#/components/schemas/ConfigurationChangeArea"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/ConfigurationChangeKind"
+					},
+					"name": {
+						"type": "string",
+						"description": "Name of the role, group or channel, a Meshtastic setting key, or a short description."
+					},
+					"fields": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Dotted paths of the changed fields of a changed item; empty otherwise."
+					}
+				},
+				"required": [
+					"area",
+					"kind",
+					"name",
+					"fields"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PendingConfigurationChangesDto": {
+				"properties": {
+					"publishedRevision": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Number of the revision participants receive; `null` before the first one."
+					},
+					"changes": {
+						"items": {
+							"$ref": "#/components/schemas/ConfigurationChangeDto"
+						},
+						"type": "array",
+						"description": "What publishing would change. Empty when nothing is pending, and always empty for drafts\n(activation publishes) and archived events (read-only)."
+					}
+				},
+				"required": [
+					"publishedRevision",
+					"changes"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SmtpSecurity": {
 				"type": "string",
 				"enum": [
@@ -15674,6 +15745,65 @@
 						"required": false,
 						"schema": {
 							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/configuration-revisions/pending-changes": {
+			"get": {
+				"operationId": "GetPendingConfigurationChanges",
+				"responses": {
+					"200": {
+						"description": "Pending configuration changes",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PendingConfigurationChangesDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists what publishing would change compared with the published revision. Requires `events.read`.",
+				"tags": [
+					"Events"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
 						}
 					}
 				]

@@ -72,4 +72,31 @@ void describe("event overview", () => {
     const published = await overview();
     assert.deepEqual([published.publishedRevision, published.unpublishedChanges], [2, false]);
   });
+
+  void it("lists the changes that publishing would deliver", async () => {
+    const pending = async (): Promise<unknown> =>
+      (await request(app).get(url("/configuration-revisions/pending-changes")).set("Cookie", admin.cookie).expect(200)).body;
+    assert.deepEqual(await pending(), { publishedRevision: null, changes: [] });
+
+    await request(app).post(url("/activate")).set("Cookie", admin.cookie).send({ version: 1 }).expect(200);
+    assert.deepEqual(await pending(), { publishedRevision: 1, changes: [] });
+
+    await request(app).post(url("/roles")).set("Cookie", admin.cookie).send({ name: "Medic", slug: "medic" }).expect(201);
+    const roles = (await request(app).get(url("/roles")).set("Cookie", admin.cookie).expect(200)).body as { items: Array<{ id: string; slug: string; version: number }> };
+    const participant = roles.items.find(({ slug }) => slug === "participant");
+    assert.ok(participant);
+    await request(app)
+      .put(url(`/roles/${participant.id}`))
+      .set("Cookie", admin.cookie)
+      .send({ name: "Rifleman", slug: "participant", description: null, version: participant.version })
+      .expect(200);
+
+    assert.deepEqual(await pending(), {
+      publishedRevision: 1,
+      changes: [
+        { area: "roles", kind: "added", name: "Medic", fields: [] },
+        { area: "roles", kind: "changed", name: "Rifleman", fields: ["name"] },
+      ],
+    });
+  });
 });

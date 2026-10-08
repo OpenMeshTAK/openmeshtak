@@ -1872,6 +1872,36 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationChangeArea": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["event"]},{"dataType":"enum","enums":["roles"]},{"dataType":"enum","enums":["groups"]},{"dataType":"enum","enums":["channels"]},{"dataType":"enum","enums":["meshtastic"]},{"dataType":"enum","enums":["tak"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationChangeKind": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["added"]},{"dataType":"enum","enums":["removed"]},{"dataType":"enum","enums":["changed"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationChangeDto": {
+        "dataType": "refObject",
+        "properties": {
+            "area": {"ref":"ConfigurationChangeArea","required":true},
+            "kind": {"ref":"ConfigurationChangeKind","required":true},
+            "name": {"dataType":"string","required":true},
+            "fields": {"dataType":"array","array":{"dataType":"string"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PendingConfigurationChangesDto": {
+        "dataType": "refObject",
+        "properties": {
+            "publishedRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "changes": {"dataType":"array","array":{"dataType":"refObject","ref":"ConfigurationChangeDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SmtpSecurity": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["starttls"]},{"dataType":"enum","enums":["tls"]},{"dataType":"enum","enums":["none"]}],"validators":{}},
@@ -6449,6 +6479,38 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'publishConfiguration',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsConfigurationRevisionsController_getPendingConfigurationChanges: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/configuration-revisions/pending-changes',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController)),
+            ...(fetchMiddlewares<RequestHandler>(ConfigurationRevisionsController.prototype.getPendingConfigurationChanges)),
+
+            async function ConfigurationRevisionsController_getPendingConfigurationChanges(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsConfigurationRevisionsController_getPendingConfigurationChanges, request, response });
+
+                const controller = new ConfigurationRevisionsController();
+
+              await templateService.apiHandler({
+                methodName: 'getPendingConfigurationChanges',
                 controller,
                 response,
                 next,
