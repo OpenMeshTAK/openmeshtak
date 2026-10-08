@@ -56,13 +56,12 @@ function peerIn(eventId: string): CotPeer {
     id: "peer-1",
     scope: new Set([eventId]),
     send: () => undefined,
-    lastSituationalAwareness: null,
     userId: "00000000-0000-0000-0000-000000000000",
     certificateId: "certificate-1",
     callsign: "ALPHA",
+    deviceUid: null,
     connectedAt: new Date(),
     lastSeenAt: new Date(),
-    items: new Map(),
   };
 }
 
@@ -108,7 +107,7 @@ void describe("realtime streams", () => {
     const peer = peerIn(eventId);
     router.join(peer);
     const now = Date.now();
-    router.remember(peer, { uid: "ALPHA-1", type: "a-f-G", callsign: "ALPHA", lat: 52.4, lon: 13.1, time: new Date(now), stale: new Date(now + 60_000) });
+    router.remember(peer, { uid: "ALPHA-1", type: "a-f-G", callsign: "ALPHA", lat: 52.4, lon: 13.1, time: new Date(now), stale: new Date(now + 60_000) }, "<event/>");
     await new Promise((resolve) => setTimeout(resolve, 800));
     assert.deepEqual(snapshots.at(-1)?.items.map(({ uid }) => uid), ["ALPHA-1"]);
 

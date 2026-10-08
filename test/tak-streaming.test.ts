@@ -8,7 +8,8 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { trustedCertificateAuthorities } from "../src/modules/tak-server/certificate-authority.js";
 import { decryptServerKey, currentServerCertificate } from "../src/modules/tak-server/server-certificate.js";
-import { CotFrameReader } from "../src/modules/tak-server/streaming/cot-frames.js";
+import { CotFrameReader, ProtobufFrameReader, frameTakMessage } from "../src/modules/tak-server/streaming/cot-frames.js";
+import { takMessageToXml, xmlToTakMessage } from "../src/modules/tak-server/streaming/cot-protobuf.js";
 import { purgeExpiredTraffic } from "../src/modules/tak-server/traffic-recording.js";
 import { createStreamingServer } from "../src/modules/tak-server/streaming/streaming-server.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
@@ -20,7 +21,13 @@ let server: Server;
 let port: number;
 const sockets: TLSSocket[] = [];
 
+/** An app's own position beacon, which names its software in `takv`. */
 function positionEvent(uid: string, type = "a-f-G-U-C"): string {
+  return markerEvent(uid, type).replace("<detail>", '<detail><takv platform="ATAK-CIV" version="5.6.0"/>');
+}
+
+/** A marker or other item with a callsign but without `takv`. */
+function markerEvent(uid: string, type = "a-h-G"): string {
   const now = new Date().toISOString();
   const stale = new Date(Date.now() + 300_000).toISOString();
   return (
@@ -62,6 +69,63 @@ async function open(client: EnrolledClient): Promise<StreamClient> {
     async next(predicate, timeoutMs = 1000) {
       const deadline = Date.now() + timeoutMs;
       while (Date.now() < deadline) {
+        const match = received.find(predicate);
+        if (match !== undefined) {
+          return match;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      return null;
+    },
+  };
+}
+
+/** A client that negotiates TAK Protocol version 1 and then speaks only framed Protobuf. */
+async function openProtobuf(client: EnrolledClient): Promise<StreamClient> {
+  const socket = connect({ host: "127.0.0.1", port, servername: "tak.example.org", cert: client.certificatePem, key: client.privateKeyPem, ca: client.caPems });
+  sockets.push(socket);
+  const received: string[] = [];
+  const frames = new ProtobufFrameReader();
+  let pending = Buffer.alloc(0);
+  let negotiated = false;
+  socket.on("data", (chunk: Buffer) => {
+    if (negotiated) {
+      received.push(...frames.push(chunk).map((payload) => takMessageToXml(payload) ?? "invalid"));
+      return;
+    }
+    pending = Buffer.concat([pending, chunk]);
+    const offer = /uid="([^"]+)" type="t-x-takp-v"/.exec(pending.toString("utf8"));
+    if (offer !== null && !pending.includes("TakRequest")) {
+      const now = new Date().toISOString();
+      socket.write(
+        `<?xml version="1.0" encoding="UTF-8"?><event version="2.0" uid="${offer[1] ?? ""}" type="t-x-takp-q" how="m-g" time="${now}" start="${now}" stale="${now}">` +
+          '<point lat="0.0" lon="0.0" hae="0.0" ce="999999" le="999999"/><detail><TakControl><TakRequest version="1"/></TakControl></detail></event>',
+      );
+      pending = Buffer.concat([pending, Buffer.from("TakRequest")]);
+    }
+    const response = pending.indexOf('<TakResponse status="true"/>');
+    if (response !== -1) {
+      const end = pending.indexOf("</event>", response) + "</event>".length;
+      negotiated = true;
+      received.push(...frames.push(pending.subarray(end)).map((payload) => takMessageToXml(payload) ?? "invalid"));
+    }
+  });
+  socket.on("error", () => undefined);
+  await new Promise<void>((resolve, reject) => {
+    socket.once("secureConnect", resolve);
+    socket.once("error", reject);
+  });
+  const deadline = Date.now() + 2000;
+  while (!negotiated && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.ok(negotiated, "server accepted TAK Protocol version 1");
+  return {
+    socket,
+    received,
+    async next(predicate, timeoutMs = 1000) {
+      const until = Date.now() + timeoutMs;
+      while (Date.now() < until) {
         const match = received.find(predicate);
         if (match !== undefined) {
           return match;
@@ -143,6 +207,40 @@ void describe("TAK CoT streaming", () => {
     assert.ok(await charlie.next((xml) => xml.includes('uid="ALPHA-GROUPS"')), "other group of the same event receives it");
   });
 
+  void it("delivers addressed events only to their recipients and keeps them out of the live view", async () => {
+    const bravo = await activeEvent();
+    const alpha = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha")));
+    const beta = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Beta")));
+    const gamma = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Gamma")));
+    beta.socket.write(positionEvent("BETA"));
+    // A marker has a callsign too, but must not rename the app it came from.
+    beta.socket.write(markerEvent("BETA-MARKER"));
+    gamma.socket.write(positionEvent("GAMMA"));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const directMessage = (uid: string, dest: string): string =>
+      markerEvent(uid, "b-t-f").replace(
+        '<detail><contact callsign="' + uid + '"/></detail>',
+        `<detail><__chat chatroom="BETA" senderCallsign="ALPHA"/><remarks>hello</remarks><marti>${dest}</marti></detail>`,
+      );
+    alpha.socket.write(directMessage("GeoChat.ALPHA.BETA.1", '<dest callsign="BETA"/>'));
+    assert.ok(await beta.next((xml) => xml.includes("GeoChat.ALPHA.BETA.1")), "addressed callsign receives it");
+    assert.equal(await gamma.next((xml) => xml.includes("GeoChat.ALPHA.BETA.1"), 300), null, "others in the event do not");
+
+    alpha.socket.write(directMessage("GeoChat.ALPHA.GAMMA.1", '<dest uid="GAMMA"/>'));
+    assert.ok(await gamma.next((xml) => xml.includes("GeoChat.ALPHA.GAMMA.1")), "addressed device UID receives it");
+    assert.equal(await beta.next((xml) => xml.includes("GeoChat.ALPHA.GAMMA.1"), 300), null);
+
+    alpha.socket.write(directMessage("GeoChat.ALPHA.MISSION.1", '<dest mission="Recon"/>'));
+    assert.equal(await beta.next((xml) => xml.includes("GeoChat.ALPHA.MISSION.1"), 300), null, "unresolvable destinations reach nobody");
+
+    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.view", eventId: bravo.eventId }]);
+    const live = (await request(app).get(`/api/v1/events/${bravo.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(200)).body as {
+      items: Array<{ uid: string }>;
+    };
+    assert.deepEqual(live.items.map(({ uid }) => uid).sort(), ["BETA", "BETA-MARKER", "GAMMA"]);
+  });
+
   void it("shows an event's connections and positions in the live view, only with tak-traffic.view", async () => {
     const bravo = await activeEvent();
     const other = await activeEvent();
@@ -201,6 +299,54 @@ void describe("TAK CoT streaming", () => {
     const takAdmin = await createUser("Operator", [{ permission: "tak-server.admin-access" }]);
     const operator = await open(await enrollTakClient(app, takAdmin));
     assert.ok(await operator.next((xml) => xml.includes('uid="ALPHA-1"')), "late joiner gets the last position");
+  });
+
+  void it("replays the current items of disconnected apps, but no deleted items, chats or the joiner's own items", async () => {
+    const bravo = await activeEvent();
+    const alphaClient = await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha"));
+    const alpha = await open(alphaClient);
+    alpha.socket.write(positionEvent("ALPHA-SA"));
+    alpha.socket.write(markerEvent("MARKER-KEEP"));
+    alpha.socket.write(markerEvent("MARKER-GONE"));
+    alpha.socket.write(markerEvent("GeoChat.ALPHA.All.1", "b-t-f"));
+    alpha.socket.write(markerEvent("DELETE-1", "t-x-d-d").replace("<detail>", '<detail><link uid="MARKER-GONE" relation="none" type="none"/>'));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    alpha.socket.destroy();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const beta = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Beta")));
+    assert.ok(await beta.next((xml) => xml.includes('uid="MARKER-KEEP"')), "marker of a disconnected app");
+    assert.ok(await beta.next((xml) => xml.includes('uid="ALPHA-SA"')), "last position of a disconnected app");
+    assert.equal(beta.received.some((xml) => /uid="(MARKER-GONE|GeoChat\.ALPHA\.All\.1|DELETE-1)"/.test(xml)), false, "no deleted items, chats or deletions");
+
+    const alphaAgain = await open(alphaClient);
+    assert.equal(await alphaAgain.next((xml) => xml.includes('uid="MARKER-KEEP"'), 300), null, "own items are not sent back");
+  });
+
+  void it("switches a client to TAK Protocol version 1 and translates between Protobuf and XML clients", async () => {
+    const bravo = await activeEvent();
+    const xmlClient = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha")));
+    const protobufClient = await openProtobuf(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Beta")));
+    assert.ok(await xmlClient.next((xml) => xml.includes('type="t-x-takp-v"')), "XML clients are offered the protocol too");
+
+    const payload = xmlToTakMessage(positionEvent("BETA-PB"));
+    assert.ok(payload);
+    protobufClient.socket.write(frameTakMessage(payload));
+    const forwarded = await xmlClient.next((xml) => xml.includes('uid="BETA-PB"'));
+    assert.ok(forwarded, "XML client receives the Protobuf client's position as XML");
+    assert.match(forwarded, /<contact callsign="BETA-PB"\/>/);
+
+    xmlClient.socket.write(markerEvent("ALPHA-MARKER"));
+    const received = await protobufClient.next((xml) => xml.includes('uid="ALPHA-MARKER"'));
+    assert.ok(received, "Protobuf client receives the XML client's marker as a framed payload");
+    assert.equal(protobufClient.received.includes("invalid"), false);
+
+    // A ping is answered in the negotiated encoding, and the negotiation itself is never forwarded.
+    const ping = xmlToTakMessage(markerEvent("BETA-PING", "t-x-c-t"));
+    assert.ok(ping);
+    protobufClient.socket.write(frameTakMessage(ping));
+    assert.ok(await protobufClient.next((xml) => xml.includes('type="t-x-c-t-r"')));
+    assert.equal(xmlClient.received.some((xml) => xml.includes("t-x-takp-q")), false);
   });
 
   void it("drops malformed events and disconnects revoked certificates", async () => {

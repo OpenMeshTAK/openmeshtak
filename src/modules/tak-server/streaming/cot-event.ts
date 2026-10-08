@@ -19,6 +19,15 @@ export interface CotEvent {
   isPing: boolean;
   /** Self-reported position and identity (the app's "SA" beacon), kept for late joiners. */
   isSituationalAwareness: boolean;
+  /**
+   * Part of the current picture, such as a position, marker, route or drawing, kept for late
+   * joiners and the live view. Chat messages and control events such as pings are not.
+   */
+  isMapItem: boolean;
+  /** UIDs of items the client deleted (`t-x-d-d` with `detail/link`). */
+  deletedUids: string[];
+  /** The TAK Protocol version a `t-x-takp-q` asks for; such negotiation events are never forwarded. */
+  protocolRequest: number | null;
   /** WGS84 position of the point. */
   lat: number;
   lon: number;
@@ -26,14 +35,64 @@ export interface CotEvent {
   callsign: string | null;
   time: Date;
   stale: Date;
+  /** The explicit recipients from `detail/marti/dest`, or null when the event goes to everyone. */
+  destinations: CotDestinations | null;
   xml: string;
 }
+
+/**
+ * Recipients a client addressed by callsign or device UID, such as a direct GeoChat message or a
+ * marker sent to one person. Destinations the server cannot resolve, such as missions, leave the
+ * lists empty so the event reaches nobody instead of everyone.
+ */
+export interface CotDestinations {
+  callsigns: string[];
+  uids: string[];
+}
+
+const MAX_DESTINATIONS = 100;
 
 const MAX_UID_LENGTH = 200;
 
 function attribute(node: XmlNode, name: string): string | null {
   const value = node[name];
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function nodes(value: unknown): XmlNode[] {
+  const list: unknown[] = Array.isArray(value) ? value : [value];
+  return list.filter((node): node is XmlNode => typeof node === "object" && node !== null);
+}
+
+function protocolRequestOf(type: string, detail: XmlNode | null): number | null {
+  if (type !== "t-x-takp-q" || detail === null) {
+    return null;
+  }
+  const request = nodes(detail.TakControl).flatMap((control) => nodes(control.TakRequest))[0];
+  const version = request === undefined ? Number.NaN : Number(attribute(request, "version"));
+  return Number.isSafeInteger(version) ? version : null;
+}
+
+function deletedUidsOf(type: string, detail: XmlNode | null): string[] {
+  if (type !== "t-x-d-d" || detail === null) {
+    return [];
+  }
+  return nodes(detail.link)
+    .slice(0, MAX_DESTINATIONS)
+    .map((link) => attribute(link, "uid"))
+    .filter((uid) => uid !== null);
+}
+
+function destinationsOf(detail: XmlNode | null): CotDestinations | null {
+  const dests = (detail === null ? [] : nodes(detail.marti)).flatMap((marti) => nodes(marti.dest));
+  if (dests.length === 0) {
+    return null;
+  }
+  const limited = dests.slice(0, MAX_DESTINATIONS);
+  return {
+    callsigns: limited.map((dest) => attribute(dest, "callsign")).filter((value) => value !== null),
+    uids: limited.map((dest) => attribute(dest, "uid")).filter((value) => value !== null),
+  };
 }
 
 function isTime(value: string | null): boolean {
@@ -80,25 +139,51 @@ export function parseCotEvent(xml: string): CotEvent | null {
   ) {
     return null;
   }
-  const detail = event.detail as XmlNode | undefined;
-  const contact = typeof detail === "object" && detail !== null ? (detail.contact as XmlNode | undefined) : undefined;
+  const detail = nodes(event.detail)[0] ?? null;
+  const contact = detail === null ? undefined : (detail.contact as XmlNode | undefined);
   const hasContact = typeof contact === "object" && contact !== null;
   return {
     uid,
     type,
     isPing: type === "t-x-c-t",
-    isSituationalAwareness: hasContact && type.startsWith("a-"),
+    // Markers carry a contact callsign too; only an app's own beacon names its software (`takv`)
+    // or its contact endpoint.
+    isSituationalAwareness: hasContact && type.startsWith("a-") && (detail?.takv !== undefined || attribute(contact, "endpoint") !== null),
+    isMapItem: !type.startsWith("t-") && !type.startsWith("b-t-f"),
+    deletedUids: deletedUidsOf(type, detail),
+    protocolRequest: protocolRequestOf(type, detail),
     lat: Number(attribute(point, "lat")),
     lon: Number(attribute(point, "lon")),
     callsign: hasContact ? (attribute(contact, "callsign")?.slice(0, 100) ?? null) : null,
     time: new Date(attribute(event, "time") ?? ""),
     stale: new Date(attribute(event, "stale") ?? ""),
+    destinations: destinationsOf(detail),
     xml,
   };
 }
 
 function escapeAttribute(value: string): string {
   return value.replace(/[<>&"']/g, (character) => `&#${String(character.charCodeAt(0))};`);
+}
+
+function controlEvent(uid: string, type: string, control: string, now: Date): string {
+  const time = now.toISOString();
+  const stale = new Date(now.getTime() + 60_000).toISOString();
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?><event version="2.0" uid="${escapeAttribute(uid)}" type="${type}" how="m-g" ` +
+    `time="${time}" start="${time}" stale="${stale}"><point lat="0.0" lon="0.0" hae="0.0" ce="999999" le="999999"/>` +
+    `<detail><TakControl>${control}</TakControl></detail></event>`
+  );
+}
+
+/** Tells a client once per connection that it may switch to TAK Protocol version 1. */
+export function protocolSupportOffer(negotiationUid: string, now = new Date()): string {
+  return controlEvent(negotiationUid, "t-x-takp-v", '<TakProtocolSupport version="1"/>', now);
+}
+
+/** Accepts or refuses a client's request to switch the TAK Protocol version. */
+export function protocolResponse(negotiationUid: string, accepted: boolean, now = new Date()): string {
+  return controlEvent(negotiationUid, "t-x-takp-r", `<TakResponse status="${String(accepted)}"/>`, now);
 }
 
 /** The pong a TAK server answers a client ping with. */

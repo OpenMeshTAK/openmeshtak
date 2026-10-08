@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
+import { StringDecoder } from "node:string_decoder";
 import { createServer, type Server, type TLSSocket, type TlsOptions } from "node:tls";
 import { logger } from "../../../shared/logging/logger.js";
 import { authenticateTakClient, type AuthenticatedTakClient } from "../client-authentication.js";
 import { takConnections } from "../tak-connections.js";
 import { trafficRecorder } from "../traffic-recording.js";
-import { parseCotEvent, pongFor } from "./cot-event.js";
-import { CotFrameError, CotFrameReader } from "./cot-frames.js";
+import { parseCotEvent, pongFor, protocolResponse, protocolSupportOffer } from "./cot-event.js";
+import { CotFrameError, CotFrameReader, ProtobufFrameReader, frameTakMessage } from "./cot-frames.js";
+import { takMessageToXml, xmlToTakMessage } from "./cot-protobuf.js";
 import { cotRouter, type CotPeer, type CotRouter } from "./cot-router.js";
 import { cotScopeFor } from "./cot-scope.js";
 
@@ -31,13 +33,27 @@ class RateLimiter {
   }
 }
 
-function sendTo(socket: TLSSocket, xml: string): void {
+/** How a connection encodes CoT: XML until the client switches to TAK Protocol version 1. */
+type StreamEncoding = "xml" | "protobuf";
+
+/** The last conversion, because one published event is sent to many Protobuf clients in a row. */
+let lastConverted: { xml: string; frame: Buffer | null } | null = null;
+
+function protobufFrame(xml: string): Buffer | null {
+  if (lastConverted?.xml !== xml) {
+    const payload = xmlToTakMessage(xml);
+    lastConverted = { xml, frame: payload === null ? null : frameTakMessage(payload) };
+  }
+  return lastConverted.frame;
+}
+
+function sendTo(socket: TLSSocket, data: string | Buffer): void {
   if (socket.writableLength > MAX_PENDING_BYTES) {
     logger.warn({ event: "tak_stream_slow_client" }, "TAK client too slow; disconnecting");
     socket.destroy();
     return;
   }
-  socket.write(xml);
+  socket.write(data);
 }
 
 async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
@@ -48,54 +64,73 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
     return;
   }
 
+  let encoding: StreamEncoding = "xml";
+  const deliver = (xml: string): void => {
+    if (encoding === "xml") {
+      sendTo(socket, xml);
+      return;
+    }
+    const frame = protobufFrame(xml);
+    if (frame !== null) {
+      sendTo(socket, frame);
+    }
+  };
   const peer: CotPeer = {
     id: randomUUID(),
     scope: cotScopeFor(client.access),
-    send: (xml) => sendTo(socket, xml),
-    lastSituationalAwareness: null,
+    send: deliver,
     userId: client.userId,
     certificateId: client.certificate.id,
     callsign: null,
+    deviceUid: null,
     connectedAt: new Date(),
     lastSeenAt: new Date(),
-    items: new Map(),
   };
   const updateScope = (current: AuthenticatedTakClient): void => {
     peer.scope = cotScopeFor(current.access);
   };
   takConnections.track({ socket, certificateDer, client, onAccessChanged: updateScope });
   router.join(peer);
+  const negotiationUid = randomUUID();
+  sendTo(socket, protocolSupportOffer(negotiationUid));
   logger.info({ event: "tak_stream_connected", certificateId: client.certificate.id }, "TAK client connected");
 
-  const frames = new CotFrameReader();
   const limiter = new RateLimiter();
-  socket.setEncoding("utf8");
-  socket.on("data", (chunk: string) => {
-    let events: string[];
-    try {
-      events = frames.push(chunk);
-    } catch (error: unknown) {
-      if (error instanceof CotFrameError) {
-        logger.warn({ event: "tak_stream_oversized_event" }, "TAK client sent an oversized event");
-        socket.destroy();
-        return;
-      }
-      throw error;
+  const handle = (xml: string): void => {
+    const event = parseCotEvent(xml);
+    if (event === null || !limiter.allow()) {
+      return;
     }
-    for (const raw of events) {
-      const event = parseCotEvent(raw);
-      if (event === null || !limiter.allow()) {
-        continue;
+    peer.lastSeenAt = new Date();
+    if (event.isPing) {
+      deliver(pongFor(event));
+      return;
+    }
+    if (event.type.startsWith("t-x-takp")) {
+      if (event.protocolRequest !== null && encoding === "xml") {
+        const accepted = event.protocolRequest === 1;
+        // The response is the last XML the client receives; everything after it is framed.
+        sendTo(socket, protocolResponse(negotiationUid, accepted));
+        if (accepted) {
+          encoding = "protobuf";
+        }
       }
-      peer.lastSeenAt = new Date();
-      if (event.isPing) {
-        sendTo(socket, pongFor(event));
-        continue;
-      }
-      if (event.isSituationalAwareness) {
-        peer.lastSituationalAwareness = event.xml;
-        peer.callsign = event.callsign ?? peer.callsign;
-      }
+      return;
+    }
+    if (event.destinations !== null) {
+      // Addressed events, such as direct chat messages, are private between sender and
+      // recipients: they are neither replayed, shown in the live view nor recorded.
+      router.publish(peer, event.xml, event.destinations);
+      return;
+    }
+    if (event.isSituationalAwareness) {
+      peer.callsign = event.callsign ?? peer.callsign;
+      peer.deviceUid = event.uid;
+    }
+    if (event.deletedUids.length > 0) {
+      router.forget(peer, event.deletedUids);
+    }
+    if (event.isMapItem) {
       const item = {
         uid: event.uid,
         type: event.type,
@@ -105,9 +140,36 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
         time: event.time,
         stale: event.stale,
       };
-      router.remember(peer, item);
+      router.remember(peer, item, event.xml);
       trafficRecorder.record(peer.userId, peer.scope, item);
-      router.publish(peer, event.xml);
+    }
+    router.publish(peer, event.xml);
+  };
+
+  const xmlFrames = new CotFrameReader();
+  const textDecoder = new StringDecoder("utf8");
+  const protobufFrames = new ProtobufFrameReader();
+  socket.on("data", (chunk: Buffer) => {
+    try {
+      if (encoding === "xml") {
+        for (const xml of xmlFrames.push(textDecoder.write(chunk))) {
+          handle(xml);
+        }
+      } else {
+        for (const payload of protobufFrames.push(chunk)) {
+          const xml = takMessageToXml(payload);
+          if (xml !== null) {
+            handle(xml);
+          }
+        }
+      }
+    } catch (error: unknown) {
+      if (error instanceof CotFrameError) {
+        logger.warn({ event: "tak_stream_invalid_frame" }, "TAK client sent an invalid or oversized event");
+        socket.destroy();
+        return;
+      }
+      throw error;
     }
   });
   socket.on("close", () => {
