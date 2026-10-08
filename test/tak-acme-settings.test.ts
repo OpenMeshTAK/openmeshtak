@@ -4,7 +4,7 @@ import type { Express } from "express";
 import request from "supertest";
 import type { TakServerCertificate } from "../src/generated/prisma/client.js";
 import { createApp } from "../src/app.js";
-import { setAcmeIssuerForTests } from "../src/modules/tak-server/acme-manager.js";
+import { setAcmeIssuerForTests, setAcmeTesterForTests } from "../src/modules/tak-server/acme-manager.js";
 import { httpChallengeHostProblem } from "../src/modules/tak-server/acme-settings.service.js";
 import { HttpChallengeSolver } from "../src/modules/tak-server/http-challenge.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
@@ -53,6 +53,7 @@ void describe("TAK ACME settings", () => {
 
   afterEach(() => {
     setAcmeIssuerForTests(null);
+    setAcmeTesterForTests(null);
   });
 
   after(async () => {
@@ -130,6 +131,34 @@ void describe("TAK ACME settings", () => {
     await presented.remove();
     await request(app).get("/.well-known/acme-challenge/token-123").expect(404);
     await request(app).get("/.well-known/acme-challenge/unknown").expect(404);
+  });
+
+  void it("tests the saved settings against staging without installing anything", async () => {
+    setAcmeIssuerForTests(() => Promise.reject(new Error("must not issue")));
+    await acmeSettings(0, { apiToken: API_TOKEN }).expect(200);
+
+    const tested: string[] = [];
+    setAcmeTesterForTests((_settings, hostName) => {
+      tested.push(hostName);
+      return Promise.resolve();
+    });
+    const passed = await request(app).post("/api/v1/tak-server/acme/test").set("Cookie", admin.cookie).expect(200);
+    assert.equal((passed.body as { succeeded: boolean }).succeeded, true);
+    assert.deepEqual(tested, ["tak.example.org"]);
+
+    setAcmeTesterForTests(() => Promise.reject(new Error("DNS record not found")));
+    const failed = await request(app).post("/api/v1/tak-server/acme/test").set("Cookie", admin.cookie).expect(200);
+    assert.deepEqual(failed.body, { succeeded: false, message: "DNS record not found" });
+
+    const settings = await request(app).get("/api/v1/tak-server/acme").set("Cookie", admin.cookie).expect(200);
+    assert.equal((settings.body as { lastError: string | null }).lastError, null);
+    assert.equal(await database.takServerCertificate.count({ where: { source: "acme" } }), 0);
+  });
+
+  void it("refuses a staging test with incomplete settings", async () => {
+    await acmeSettings(0, { cloudflareZoneId: null }).expect(200);
+    const response = await request(app).post("/api/v1/tak-server/acme/test").set("Cookie", admin.cookie).expect(422);
+    assert.match(JSON.stringify(response.body), /cloudflareZoneId/);
   });
 
   void it("requires tak-server.manage", async () => {

@@ -44,3 +44,10 @@ export interface UpdateTakAcmeSettingsRequest {
    */
   apiToken?: string | null;
 }
+
+/** Result of a test run against Let's Encrypt staging. */
+export interface TakAcmeTestResultDto {
+  succeeded: boolean;
+  /** What happened, safe to show to the administrator. */
+  message: string;
+}

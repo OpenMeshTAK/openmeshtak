@@ -1255,6 +1255,24 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakAcmeTestResultDto": {
+				"description": "Result of a test run against Let's Encrypt staging.",
+				"properties": {
+					"succeeded": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string",
+						"description": "What happened, safe to show to the administrator."
+					}
+				},
+				"required": [
+					"succeeded",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TakConnectionMode": {
 				"type": "string",
 				"enum": [
@@ -9608,6 +9626,63 @@
 					}
 				},
 				"description": "Immediately obtains or renews the public certificate with the configured solver.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/tak-server/acme/test": {
+			"post": {
+				"operationId": "Test",
+				"responses": {
+					"200": {
+						"description": "Test finished",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakAcmeTestResultDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Runs the saved settings against Let's Encrypt staging to check the setup without touching the\nproduction rate limits. Nothing is installed; a failure is returned as `succeeded: false`.",
 				"tags": [
 					"TAK server"
 				],

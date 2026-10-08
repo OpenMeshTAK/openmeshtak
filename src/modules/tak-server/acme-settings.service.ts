@@ -7,9 +7,9 @@ import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import { ProblemError, notFoundProblem, validationProblem, versionConflictProblem, type ProblemFieldError } from "../../shared/errors/problem-error.js";
 import { ACME_SOLVERS, isSupportedAcmeSolver } from "./acme-challenge.js";
-import { takAcmeManager } from "./acme-manager.js";
+import { safeFailureReason, takAcmeManager } from "./acme-manager.js";
 import { ACME_SETTINGS_ID, encryptAcmeApiToken, loadTakAcmeSettings } from "./acme-settings.js";
-import type { TakAcmeSettingsDto, UpdateTakAcmeSettingsRequest } from "./acme-settings.dto.js";
+import type { TakAcmeSettingsDto, TakAcmeTestResultDto, UpdateTakAcmeSettingsRequest } from "./acme-settings.dto.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+$/;
@@ -201,6 +201,38 @@ export async function renewTakAcmeCertificate(actor: ActorContext): Promise<TakA
     traceId: actor.traceId,
   });
   return toDto(await loadTakAcmeSettings());
+}
+
+/**
+ * Tries the saved settings against Let's Encrypt staging. Validation problems are rejected like on
+ * save; a failed run is a normal result for the administrator, not an API error.
+ */
+export async function testTakAcmeSetup(actor: ActorContext): Promise<TakAcmeTestResultDto> {
+  await requirePermission(actor.principal, "tak-server.manage");
+  requireRecentUser(actor);
+  const settings = await loadTakAcmeSettings();
+  const problems = await problemsFor({ ...settings, enabled: true }, settings);
+  if (problems.length > 0) {
+    throw validationProblem(problems);
+  }
+
+  let result: TakAcmeTestResultDto;
+  try {
+    await takAcmeManager.testSetup();
+    result = { succeeded: true, message: "Let's Encrypt staging issued a test certificate. The real certificate will work the same way." };
+  } catch (error: unknown) {
+    result = { succeeded: false, message: safeFailureReason(error) };
+  }
+  await recordAudit({
+    actor: actor.principal,
+    action: "tak-server.acme-setup-tested",
+    targetType: "tak-acme-settings",
+    targetId: ACME_SETTINGS_ID,
+    result: result.succeeded ? "success" : "failure",
+    traceId: actor.traceId,
+    metadata: { challengeType: settings.challengeType, provider: settings.provider },
+  });
+  return result;
 }
 
 /** A manually uploaded certificate is an explicit choice and stops automatic replacement. */

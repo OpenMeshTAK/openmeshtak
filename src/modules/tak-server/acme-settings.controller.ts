@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Post, Put, Request, Response, Route, Security, SuccessResponse, Tags } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
-import type { TakAcmeSettingsDto, UpdateTakAcmeSettingsRequest } from "./acme-settings.dto.js";
-import { getTakAcmeSettings, renewTakAcmeCertificate, updateTakAcmeSettings } from "./acme-settings.service.js";
+import type { TakAcmeSettingsDto, TakAcmeTestResultDto, UpdateTakAcmeSettingsRequest } from "./acme-settings.dto.js";
+import { getTakAcmeSettings, renewTakAcmeCertificate, testTakAcmeSetup, updateTakAcmeSettings } from "./acme-settings.service.js";
 
 /** Automatic public certificates for the built-in TAK server. Requires `tak-server.manage`. */
 @Route("tak-server/acme")
@@ -36,5 +36,16 @@ export class TakAcmeSettingsController extends Controller {
   @Response<ProblemDetails>(502, "ACME renewal failed")
   public async renew(@Request() request: unknown): Promise<TakAcmeSettingsDto> {
     return renewTakAcmeCertificate(requestContext(request));
+  }
+
+  /**
+   * Runs the saved settings against Let's Encrypt staging to check the setup without touching the
+   * production rate limits. Nothing is installed; a failure is returned as `succeeded: false`.
+   */
+  @Post("test")
+  @SuccessResponse(200, "Test finished")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async test(@Request() request: unknown): Promise<TakAcmeTestResultDto> {
+    return testTakAcmeSetup(requestContext(request));
   }
 }

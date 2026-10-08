@@ -25,8 +25,12 @@ async function accountKeyFor(settings: TakAcmeSettings): Promise<Buffer> {
   return decryptAcmeAccountKey(current.accountKeyEnvelope);
 }
 
-/** Obtains and activates one public certificate; the caller owns retry and status handling. */
-export async function issueAcmeCertificate(settings: TakAcmeSettings, hostName: string): Promise<TakServerCertificate> {
+/** Runs one ACME order against a directory and returns the certificate chain with its new key. */
+async function obtainCertificate(
+  settings: TakAcmeSettings,
+  hostName: string,
+  directoryUrl: string,
+): Promise<{ certificateChainPem: string; privateKeyPem: string }> {
   if (settings.email === null) {
     throw new Error("The ACME contact email is missing.");
   }
@@ -34,7 +38,7 @@ export async function issueAcmeCertificate(settings: TakAcmeSettings, hostName: 
   const accountKey = await accountKeyFor(settings);
   const [certificateKey, csr] = await acme.crypto.createCsr({ commonName: hostName, altNames: [hostName] });
   const client = new acme.Client({
-    directoryUrl: acme.directory.letsencrypt.production,
+    directoryUrl,
     accountKey,
   });
   const presented = new Map<string, PresentedAcmeChallenge>();
@@ -77,5 +81,20 @@ export async function issueAcmeCertificate(settings: TakAcmeSettings, hostName: 
     }
   }
 
-  return addServerCertificate(certificateChainPem, certificateKey.toString("utf8"), hostName, { source: "acme" });
+  return { certificateChainPem, privateKeyPem: certificateKey.toString("utf8") };
+}
+
+/** Obtains and activates one public certificate; the caller owns retry and status handling. */
+export async function issueAcmeCertificate(settings: TakAcmeSettings, hostName: string): Promise<TakServerCertificate> {
+  const { certificateChainPem, privateKeyPem } = await obtainCertificate(settings, hostName, acme.directory.letsencrypt.production);
+  return addServerCertificate(certificateChainPem, privateKeyPem, hostName, { source: "acme" });
+}
+
+/**
+ * Runs the whole order against Let's Encrypt staging and discards the result. Staging certificates
+ * are not trusted by devices, but the run proves that the solver, DNS and proxy work, without
+ * counting against the production rate limits that a failing setup would quickly hit.
+ */
+export async function testAcmeSetup(settings: TakAcmeSettings, hostName: string): Promise<void> {
+  await obtainCertificate(settings, hostName, acme.directory.letsencrypt.staging);
 }

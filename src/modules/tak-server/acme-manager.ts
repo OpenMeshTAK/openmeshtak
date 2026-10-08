@@ -3,7 +3,7 @@ import type { TakAcmeSettings, TakServerCertificate } from "../../generated/pris
 import { database } from "../../shared/database/database.js";
 import { sanitizeLogMessage } from "../../shared/logging/sanitize.js";
 import { logger } from "../../shared/logging/logger.js";
-import { issueAcmeCertificate } from "./acme-certificate.js";
+import { issueAcmeCertificate, testAcmeSetup } from "./acme-certificate.js";
 import { ACME_SETTINGS_ID, loadTakAcmeSettings } from "./acme-settings.js";
 import { activeServerCertificate } from "./server-certificate.js";
 import { takListeners } from "./tak-listeners.js";
@@ -21,6 +21,15 @@ export function setAcmeIssuerForTests(replacement: AcmeIssuer | null): void {
   issuer = replacement ?? issueAcmeCertificate;
 }
 
+type AcmeTester = (settings: TakAcmeSettings, hostName: string) => Promise<void>;
+
+let tester: AcmeTester = testAcmeSetup;
+
+/** Test seam for the staging test, like {@link setAcmeIssuerForTests}. */
+export function setAcmeTesterForTests(replacement: AcmeTester | null): void {
+  tester = replacement ?? testAcmeSetup;
+}
+
 function renewalDue(certificate: TakServerCertificate | null, hostName: string, now: Date): boolean {
   return (
     certificate?.source !== "acme" ||
@@ -29,7 +38,7 @@ function renewalDue(certificate: TakServerCertificate | null, hostName: string, 
   );
 }
 
-function safeFailureReason(error: unknown): string {
+export function safeFailureReason(error: unknown): string {
   const reason = error instanceof Error ? error.message : "Unknown ACME error";
   return sanitizeLogMessage(reason).slice(0, 500);
 }
@@ -61,6 +70,15 @@ class TakAcmeManager extends EventEmitter<{ changed: [] }> {
 
   renewNow(now = new Date()): Promise<TakServerCertificate | null> {
     return this.run(true, now);
+  }
+
+  /** Runs the saved settings against Let's Encrypt staging; nothing is installed or recorded. */
+  async testSetup(): Promise<void> {
+    const [settings, server] = await Promise.all([loadTakAcmeSettings(), loadTakServerSettings()]);
+    if (server.hostName === null) {
+      throw new Error("Save the TAK host name first.");
+    }
+    await tester(settings, server.hostName);
   }
 
   private run(force: boolean, now: Date): Promise<TakServerCertificate | null> {
