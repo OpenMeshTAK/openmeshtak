@@ -53,7 +53,7 @@
     "@peculiar/x509": "2.1.0",
     "@prisma/adapter-better-sqlite3": "7.10.0",
     "@prisma/client": "7.10.0",
-    "@simplewebauthn/server": "13.3.3",
+    "@simplewebauthn/server": "14.0.3",
     "@tsoa/runtime": "6.6.0",
     "@turf/circle": "7.4.0",
     "@turf/kinks": "7.4.0",
