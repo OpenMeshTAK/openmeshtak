@@ -12,6 +12,8 @@ import { UserGroupsController } from './../modules/user-groups/user-groups.contr
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakTrafficRecordingController } from './../modules/tak-server/traffic-recording.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakTrafficHistoryController } from './../modules/tak-server/traffic-history.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakServerSettingsController } from './../modules/tak-server/tak-server-settings.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { LiveTakTrafficController } from './../modules/tak-server/live-traffic.controller.js';
@@ -368,6 +370,81 @@ const models: TsoaRoute.Models = {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
             "enabled": {"dataType":"boolean","required":true},
             "retentionDays": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":365}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrackSenderDto": {
+        "dataType": "refObject",
+        "properties": {
+            "userId": {"ref":"Uuid","required":true},
+            "displayName": {"dataType":"string","required":true},
+            "eventGroupId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
+            "eventGroupName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrackPointDto": {
+        "dataType": "refObject",
+        "properties": {
+            "time": {"dataType":"string","required":true},
+            "lat": {"dataType":"double","required":true},
+            "lon": {"dataType":"double","required":true},
+            "ce": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "delayed": {"dataType":"boolean","required":true},
+            "approximate": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrackDto": {
+        "dataType": "refObject",
+        "properties": {
+            "uid": {"dataType":"string","required":true},
+            "type": {"dataType":"string","required":true},
+            "callsign": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "selfReported": {"dataType":"boolean","required":true},
+            "sender": {"ref":"TakTrackSenderDto","required":true},
+            "pointCount": {"dataType":"double","required":true},
+            "duplicatesDropped": {"dataType":"double","required":true},
+            "segments": {"dataType":"array","array":{"dataType":"array","array":{"dataType":"refObject","ref":"TakTrackPointDto"}},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrafficHistoryGroupDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrafficHistoryDto": {
+        "dataType": "refObject",
+        "properties": {
+            "from": {"dataType":"string","required":true},
+            "to": {"dataType":"string","required":true},
+            "gapSeconds": {"dataType":"double","required":true},
+            "truncated": {"dataType":"boolean","required":true},
+            "maxPoints": {"dataType":"double","required":true},
+            "tracks": {"dataType":"array","array":{"dataType":"refObject","ref":"TakTrackDto"},"required":true},
+            "groups": {"dataType":"array","array":{"dataType":"refObject","ref":"TakTrafficHistoryGroupDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrafficExportFormat": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["geojson"]},{"dataType":"enum","enums":["gpx"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DeletedTakTrafficDto": {
+        "dataType": "refObject",
+        "properties": {
+            "deleted": {"dataType":"double","required":true},
         },
         "additionalProperties": false,
     },
@@ -3839,6 +3916,114 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'exportTakTraffic',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakTrafficHistoryController_getTakTrafficHistory: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                from: {"in":"query","name":"from","required":true,"dataType":"string"},
+                to: {"in":"query","name":"to","required":true,"dataType":"string"},
+                groupId: {"in":"query","name":"groupId","ref":"Uuid"},
+                uid: {"in":"query","name":"uid","dataType":"string","validators":{"maxLength":{"value":200}}},
+                gapSeconds: {"in":"query","name":"gapSeconds","dataType":"integer","validators":{"isInt":{"errorMsg":"gapSeconds"},"minimum":{"value":30},"maximum":{"value":3600}}},
+        };
+        app.get('/api/v1/events/:eventId/tak-traffic/history',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficHistoryController)),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficHistoryController.prototype.getTakTrafficHistory)),
+
+            async function TakTrafficHistoryController_getTakTrafficHistory(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakTrafficHistoryController_getTakTrafficHistory, request, response });
+
+                const controller = new TakTrafficHistoryController();
+
+              await templateService.apiHandler({
+                methodName: 'getTakTrafficHistory',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakTrafficHistoryController_exportTakTracks: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                format: {"in":"query","name":"format","required":true,"ref":"TakTrafficExportFormat"},
+                from: {"in":"query","name":"from","required":true,"dataType":"string"},
+                to: {"in":"query","name":"to","required":true,"dataType":"string"},
+                groupId: {"in":"query","name":"groupId","ref":"Uuid"},
+                uid: {"in":"query","name":"uid","dataType":"string","validators":{"maxLength":{"value":200}}},
+                gapSeconds: {"in":"query","name":"gapSeconds","dataType":"integer","validators":{"isInt":{"errorMsg":"gapSeconds"},"minimum":{"value":30},"maximum":{"value":3600}}},
+        };
+        app.get('/api/v1/events/:eventId/tak-traffic/history/export',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficHistoryController)),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficHistoryController.prototype.exportTakTracks)),
+
+            async function TakTrafficHistoryController_exportTakTracks(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakTrafficHistoryController_exportTakTracks, request, response });
+
+                const controller = new TakTrafficHistoryController();
+
+              await templateService.apiHandler({
+                methodName: 'exportTakTracks',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakTrafficHistoryController_deleteRecordedTakTraffic: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                uid: {"in":"query","name":"uid","dataType":"string","validators":{"maxLength":{"value":200}}},
+        };
+        app.delete('/api/v1/events/:eventId/tak-traffic/recording/items',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficHistoryController)),
+            ...(fetchMiddlewares<RequestHandler>(TakTrafficHistoryController.prototype.deleteRecordedTakTraffic)),
+
+            async function TakTrafficHistoryController_deleteRecordedTakTraffic(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakTrafficHistoryController_deleteRecordedTakTraffic, request, response });
+
+                const controller = new TakTrafficHistoryController();
+
+              await templateService.apiHandler({
+                methodName: 'deleteRecordedTakTraffic',
                 controller,
                 response,
                 next,
