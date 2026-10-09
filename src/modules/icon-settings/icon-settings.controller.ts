@@ -20,7 +20,7 @@ export class IconSettingsController extends Controller {
   /** The installation-wide library summary. Readable by signed-in users. */
   @Get("settings")
   @SuccessResponse(200, "Icon settings")
-  public async getSettings(@Request() request: unknown): Promise<IconSettingsDto> {
+  public async getIconSettings(@Request() request: unknown): Promise<IconSettingsDto> {
     return getIconSettings(requestContext(request).principal);
   }
 
@@ -36,7 +36,7 @@ export class IconSettingsController extends Controller {
   @Response<ProblemDetails>(413, "Upload too large")
   @Response<ProblemDetails>(415, "Unsupported upload")
   @Response<ProblemDetails>(422, "Invalid icon database")
-  public async updateSettings(@Request() request: unknown, @Query() version: number): Promise<UpdateIconSettingsResult> {
+  public async updateIconSettings(@Request() request: unknown, @Query() version: number): Promise<UpdateIconSettingsResult> {
     const body = (request as { body?: unknown }).body;
     if (!Buffer.isBuffer(body) || body.length === 0) throw new ProblemError({ type: "urn:openmeshtak:problem:unsupported-media-type", title: "Unsupported upload", status: 415, code: "UNSUPPORTED_MEDIA_TYPE", detail: "Send iconsets.sqlite as application/octet-stream." });
     return updateIconSettings(requestContext(request), version, new Uint8Array(body));

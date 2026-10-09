@@ -6287,26 +6287,26 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsIconSettingsController_getSettings: Record<string, TsoaRoute.ParameterSchema> = {
+        const argsIconSettingsController_getIconSettings: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.get('/api/v1/map/icons/settings',
             authenticateMiddleware([{"sessionCookie":[]}]),
             ...(fetchMiddlewares<RequestHandler>(IconSettingsController)),
-            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.getSettings)),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.getIconSettings)),
 
-            async function IconSettingsController_getSettings(request: ExRequest, response: ExResponse, next: any) {
+            async function IconSettingsController_getIconSettings(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_getSettings, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_getIconSettings, request, response });
 
                 const controller = new IconSettingsController();
 
               await templateService.apiHandler({
-                methodName: 'getSettings',
+                methodName: 'getIconSettings',
                 controller,
                 response,
                 next,
@@ -6318,27 +6318,27 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsIconSettingsController_updateSettings: Record<string, TsoaRoute.ParameterSchema> = {
+        const argsIconSettingsController_updateIconSettings: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 version: {"in":"query","name":"version","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"version"},"minimum":{"value":0}}},
         };
         app.put('/api/v1/map/icons/settings',
             authenticateMiddleware([{"sessionCookie":[]}]),
             ...(fetchMiddlewares<RequestHandler>(IconSettingsController)),
-            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.updateSettings)),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.updateIconSettings)),
 
-            async function IconSettingsController_updateSettings(request: ExRequest, response: ExResponse, next: any) {
+            async function IconSettingsController_updateIconSettings(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_updateSettings, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_updateIconSettings, request, response });
 
                 const controller = new IconSettingsController();
 
               await templateService.apiHandler({
-                methodName: 'updateSettings',
+                methodName: 'updateIconSettings',
                 controller,
                 response,
                 next,
