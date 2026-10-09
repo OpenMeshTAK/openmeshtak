@@ -63,7 +63,7 @@ class TrafficRecorder {
   private async recordNow(userId: string, scope: CotScope, item: LiveItem): Promise<void> {
     const recording = await this.recordingEvents();
     const now = Date.now();
-    const eventIds = [...scope].filter((eventId) => recording.has(eventId) && this.due(eventId, item, now));
+    const eventIds = [...scope.keys()].filter((eventId) => recording.has(eventId) && this.due(eventId, item, now));
     if (eventIds.length === 0) {
       return;
     }

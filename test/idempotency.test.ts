@@ -162,6 +162,7 @@ void describe("Idempotency-Key", () => {
       "CreateEventRole",
       "CreatePackageLayer",
       "CreatePackageObject",
+      "CreateTakGroup",
       "PublishConfiguration",
       "PublishDataPackage",
     ]);

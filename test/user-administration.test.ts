@@ -91,7 +91,7 @@ void describe("user administration", () => {
     await request(app).get("/api/v1/principal").set("Cookie", peter.cookie).expect(401);
     assert.equal(await database.session.count({ where: { userId: peter.authSubjectId } }), 0);
     await assert.rejects(auth.api.signInEmail({ body: { email: await emailOf(peter), password: "A-secure-test-password-123!" } }));
-    assert.deepEqual(await takAccessFor(peter.id), { admin: false, eventIds: [] });
+    assert.deepEqual(await takAccessFor(peter.id), { admin: false, eventIds: [], views: {} });
 
     await request(app).post(`/api/v1/users/${peter.id}/enable`).set("Cookie", admin.cookie).expect(200);
     const signedIn = await auth.api.signInEmail({ body: { email: await emailOf(peter), password: "A-secure-test-password-123!" } });

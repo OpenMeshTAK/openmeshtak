@@ -15,6 +15,7 @@ import { attachMyTakCertificateStream } from "./modules/tak-server/my-tak-certif
 import { attachTakServerStream } from "./modules/tak-server/tak-server.realtime.js";
 import { takListeners } from "./modules/tak-server/tak-listeners.js";
 import { scheduleTrafficCleanup } from "./modules/tak-server/traffic-recording.js";
+import { scheduleUnusedPackageCleanup } from "./modules/tak-server/unused-packages.js";
 import { takAcmeManager } from "./modules/tak-server/acme-manager.js";
 import { connectDatabase, disconnectDatabase } from "./shared/database/database.js";
 import { logger } from "./shared/logging/logger.js";
@@ -61,6 +62,7 @@ async function startServer(): Promise<void> {
   attachTakServerStream(realtime);
 
   scheduleTrafficCleanup();
+  scheduleUnusedPackageCleanup();
   takAcmeManager.start();
 
   const shutdown = (signal: NodeJS.Signals): void => {

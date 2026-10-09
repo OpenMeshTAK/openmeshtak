@@ -20,6 +20,7 @@ interface SettingsBody {
   enabled: boolean;
   hostName: string | null;
   version: number;
+  unusedPackageHours: number;
   serverCertificate: { source: string; hostName: string } | null;
 }
 
@@ -61,6 +62,13 @@ void describe("TAK server settings", () => {
     const saved = (await save({ version: 0, hostName: " TAK.Example.org ", enabled: true }).expect(200)).body as SettingsBody;
     assert.deepEqual([saved.hostName, saved.enabled, saved.version], ["tak.example.org", true, 1]);
     await save({ version: 0, hostName: "tak.example.org" }).expect(409);
+
+    // Unused package expiry defaults to 24 hours and keeps its value when an update omits it.
+    assert.equal(saved.unusedPackageHours, 24);
+    await save({ version: 1, hostName: "tak.example.org", enabled: true, unusedPackageHours: 0 }).expect(422);
+    const longer = (await save({ version: 1, hostName: "tak.example.org", enabled: true, unusedPackageHours: 48 }).expect(200)).body as SettingsBody;
+    const kept = (await save({ version: longer.version, hostName: "tak.example.org", enabled: true }).expect(200)).body as SettingsBody;
+    assert.equal(kept.unusedPackageHours, 48);
   });
 
   void it("issues the server certificate from the OpenMeshTak CA for the host name", async () => {

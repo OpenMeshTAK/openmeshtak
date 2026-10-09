@@ -5,7 +5,7 @@ import { requestContext } from "../../shared/http/request-context.js";
 import type { TakEnrollmentDto } from "./enrollment.dto.js";
 import { createConnectionPackage } from "./connection-package.service.js";
 import { createTakEnrollment } from "./enrollment.service.js";
-import { createItakConnectionPackage } from "./itak-connection-package.service.js";
+import { createCertificatePackage } from "./itak-connection-package.service.js";
 
 @Route("me/tak-enrollments")
 @Tags("TAK server")
@@ -67,7 +67,31 @@ export class ItakConnectionPackageController extends Controller {
   @SuccessResponse(200, "iTAK Connection Data Package")
   @Response<ProblemDetails>(409, "TAK server not enabled, or an earlier iTAK package certificate is still valid")
   public async getItakConnectionPackage(@Request() request: unknown): Promise<Readable> {
-    const { fileName, bytes } = await createItakConnectionPackage(requestContext(request));
+    const { fileName, bytes } = await createCertificatePackage(requestContext(request), "itak");
+    this.setHeader("Content-Type", "application/zip");
+    this.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    this.setHeader("Cache-Control", "no-store");
+    return Readable.from([Buffer.from(bytes)]);
+  }
+}
+
+@Route("me/wintak-connection-package")
+@Tags("TAK server")
+@Security("sessionCookie")
+@Response<ProblemDetails>(401, "Authentication required")
+@Response<ProblemDetails>(403, "No TAK access")
+export class WintakConnectionPackageController extends Controller {
+  /**
+   * A WinTAK connection package in the iTAK layout, with a newly issued user-bound client identity.
+   * WinTAK cannot enroll with a username and password, so it imports this ready-made certificate.
+   * The private client key exists only in this download.
+   */
+  @Get()
+  @Produces("application/zip")
+  @SuccessResponse(200, "WinTAK Connection Data Package")
+  @Response<ProblemDetails>(409, "TAK server not enabled, or an earlier WinTAK package certificate is still valid")
+  public async getWintakConnectionPackage(@Request() request: unknown): Promise<Readable> {
+    const { fileName, bytes } = await createCertificatePackage(requestContext(request), "wintak");
     this.setHeader("Content-Type", "application/zip");
     this.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
     this.setHeader("Cache-Control", "no-store");

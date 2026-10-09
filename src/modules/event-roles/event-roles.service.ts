@@ -34,6 +34,7 @@ function toDto(row: EventRole): EventRoleDto {
     slug: row.slug,
     description: row.description,
     takRoleOverride: row.takRoleOverride as TakRole | null,
+    seesAllTakGroups: row.seesAllTakGroups,
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -111,6 +112,7 @@ export async function createEventRole(
             slug: input.slug,
             description: input.description ?? null,
             takRoleOverride: input.takRoleOverride ?? null,
+            seesAllTakGroups: input.seesAllTakGroups ?? false,
           },
         });
         await recordAudit(audit(actor, "event-role.created", row), transaction);
@@ -143,6 +145,7 @@ export async function updateEventRole(
           slug: input.slug,
           description: input.description,
           ...(input.takRoleOverride === undefined ? {} : { takRoleOverride: input.takRoleOverride }),
+          ...(input.seesAllTakGroups === undefined ? {} : { seesAllTakGroups: input.seesAllTakGroups }),
           version: { increment: 1 },
         },
       });

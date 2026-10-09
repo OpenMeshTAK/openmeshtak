@@ -32,13 +32,15 @@ interface Response {
   body: Buffer;
 }
 
-function get(client: EnrolledClient | null, path: string, caPems: string[]): Promise<Response> {
+function get(client: EnrolledClient | null, path: string, caPems: string[], method = "GET", json?: unknown): Promise<Response> {
   return new Promise((resolve, reject) => {
     const outgoing = httpsRequest(
       {
         host: "127.0.0.1",
         port,
         path,
+        method,
+        headers: json === undefined ? {} : { "content-type": "application/json" },
         servername: "tak.example.org",
         ca: caPems,
         ...(client === null ? {} : { cert: client.certificatePem, key: client.privateKeyPem }),
@@ -50,7 +52,7 @@ function get(client: EnrolledClient | null, path: string, caPems: string[]): Pro
       },
     );
     outgoing.on("error", reject);
-    outgoing.end();
+    outgoing.end(json === undefined ? undefined : JSON.stringify(json));
   });
 }
 
@@ -276,7 +278,7 @@ void describe("TAK Marti Data Package API", () => {
     const bravo = await enrollTakClient(app, await memberOf(bravoId, "Peter"));
     const peer = (id: string, scope: string, deviceUid: string, callsign: string): CotPeer => ({
       id,
-      scope: new Set([scope]),
+      scope: new Map([[scope, { groupId: null, seesAll: true, receives: null, sends: null }]]),
       send: () => undefined,
       userId: admin.id,
       certificateId: id,
@@ -310,6 +312,39 @@ void describe("TAK Marti Data Package API", () => {
       ],
     );
     assert.match(body.data[0]?.lastEventTime ?? "", /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+  });
+
+  void it("lists the member's TAK groups for the app only when the event shows them, and lets the app switch them off", async () => {
+    const user = await memberOf(bravoId, "Peter");
+    const bravo = await enrollTakClient(app, user);
+    const memberId = (await database.eventMember.findFirstOrThrow({ where: { userId: user.id } })).id;
+    const groupsUrl = `/api/v1/events/${eventId}/tak/groups`;
+    const medics = (await request(app)
+      .post(groupsUrl)
+      .set("Cookie", admin.cookie)
+      .send({ name: "Medics", members: [{ memberId, receive: true, send: true }] })
+      .expect(201)).body as { id: string; receiverCount: number; members: unknown[] };
+    assert.equal(medics.receiverCount, 1);
+    await request(app).post(groupsUrl).set("Cookie", admin.cookie).send({ name: "Medics" }).expect(409);
+    await request(app).post(groupsUrl).set("Cookie", admin.cookie).send({ name: "HQ", members: [{ memberId: randomUUID(), receive: true, send: false }] }).expect(422);
+
+    const list = async (): Promise<Array<{ name: string; direction: string; active: boolean; created: string; bitpos: number }>> => {
+      const response = await get(bravo, "/Marti/api/groups/all?useCache=true&clientUid=ANDROID-PETER", bravo.caPems);
+      const body = JSON.parse(response.body.toString("utf8")) as { type: string; data: Array<{ name: string; direction: string; active: boolean; created: string; bitpos: number }> };
+      assert.equal(body.type, "com.bbn.marti.remote.groups.Group");
+      return body.data;
+    };
+    await database.takConfiguration.create({ data: { eventId, groupMode: "advanced", groupsInApp: false } });
+    assert.deepEqual(await list(), [], "hidden while the event does not show groups in the app");
+
+    await database.takConfiguration.update({ where: { eventId }, data: { groupsInApp: true } });
+    const shown = await list();
+    assert.deepEqual(shown.map(({ name, direction, active }) => [name, direction, active]), [["Medics", "IN", true], ["Medics", "OUT", true]]);
+    assert.match(shown[0]?.created ?? "", /^\d{4}-\d\d-\d\d$/);
+
+    const switched = shown.map((entry) => ({ ...entry, active: entry.direction === "OUT" }));
+    assert.equal((await get(bravo, "/Marti/api/groups/active?clientUid=ANDROID-PETER", bravo.caPems, "PUT", switched)).status, 200);
+    assert.deepEqual((await list()).map(({ direction, active }) => [direction, active]), [["IN", false], ["OUT", true]]);
   });
 
   void it("refuses clients without a certificate and revoked certificates", async () => {

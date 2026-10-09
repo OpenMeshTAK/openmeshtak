@@ -82,6 +82,8 @@ void describe("TAK configuration", () => {
       eventId,
       meshChannelId: null,
       atakSettings: { coordinateFormat: null, altitudeReference: null, altitudeUnit: null, speedUnit: null, distanceUnit: null, northReference: null },
+      groupMode: "off",
+      groupsInApp: false,
       atakPreferenceFile: null,
       version: 0,
       updatedAt: null,

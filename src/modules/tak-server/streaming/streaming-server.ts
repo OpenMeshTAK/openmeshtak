@@ -3,6 +3,7 @@ import { StringDecoder } from "node:string_decoder";
 import { createServer, type Server, type TLSSocket, type TlsOptions } from "node:tls";
 import { logger } from "../../../shared/logging/logger.js";
 import { authenticateTakClient, type AuthenticatedTakClient } from "../client-authentication.js";
+import { noteCertificateConnected, noteCertificateDevice } from "../client-certificates.service.js";
 import { takConnections } from "../tak-connections.js";
 import { trafficRecorder } from "../traffic-recording.js";
 import { parseCotEvent, pongFor, protocolResponse, protocolSupportOffer } from "./cot-event.js";
@@ -10,6 +11,7 @@ import { CotFrameError, CotFrameReader, ProtobufFrameReader, frameTakMessage } f
 import { takMessageToXml, xmlToTakMessage } from "./cot-protobuf.js";
 import { cotRouter, type CotPeer, type CotRouter } from "./cot-router.js";
 import { cotScopeFor } from "./cot-scope.js";
+import { takGroupActivity } from "../tak-group-activity.js";
 
 /** Sustained events per second a client may send; bursts up to the bucket size are fine. */
 const EVENTS_PER_SECOND = 20;
@@ -86,14 +88,24 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
     connectedAt: new Date(),
     lastSeenAt: new Date(),
   };
-  const updateScope = (current: AuthenticatedTakClient): void => {
-    peer.scope = cotScopeFor(current.access);
+  let access = client.access;
+  // Groups the app switched off apply once its device UID is known from its own position.
+  const updateScope = (current: AuthenticatedTakClient = { ...client, access }): void => {
+    access = current.access;
+    peer.scope = cotScopeFor(access, takGroupActivity.inactiveFor(peer.userId, peer.deviceUid));
   };
   takConnections.track({ socket, certificateDer, client, onAccessChanged: updateScope });
   router.join(peer);
   const negotiationUid = randomUUID();
   sendTo(socket, protocolSupportOffer(negotiationUid));
   logger.info({ event: "tak_stream_connected", certificateId: client.certificate.id }, "TAK client connected");
+  const certificateId = client.certificate.id;
+  const noteFailed = (error: unknown): void => {
+    logger.warn({ error, event: "tak_certificate_note_failed", certificateId }, "TAK certificate usage could not be recorded");
+  };
+  noteCertificateConnected(certificateId).catch(noteFailed);
+  // Beacons repeat every few seconds; the device is only written when its description changes.
+  let notedDevice = "";
 
   const limiter = new RateLimiter();
   const handle = (xml: string): void => {
@@ -125,8 +137,23 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
     }
     if (event.isSituationalAwareness) {
       peer.callsign = event.callsign ?? peer.callsign;
-      peer.deviceUid = event.uid;
+      if (peer.deviceUid !== event.uid) {
+        peer.deviceUid = event.uid;
+        updateScope();
+      }
       router.identify(peer);
+      const device = {
+        name: event.software?.device ?? null,
+        app: event.software?.platform ?? null,
+        appVersion: event.software?.version ?? null,
+        os: event.software?.os ?? null,
+        callsign: event.callsign,
+      };
+      const described = JSON.stringify(device);
+      if (described !== notedDevice) {
+        notedDevice = described;
+        noteCertificateDevice(certificateId, device).catch(noteFailed);
+      }
     }
     if (event.deletedUids.length > 0) {
       router.forget(peer, event.deletedUids);

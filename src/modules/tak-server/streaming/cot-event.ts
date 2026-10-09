@@ -33,6 +33,8 @@ export interface CotEvent {
   lon: number;
   /** Display name from `detail/contact` for positions, or from `detail/contact` of markers when set. */
   callsign: string | null;
+  /** The sending app's own description from `detail/takv`, present in its position beacon. */
+  software: CotSoftware | null;
   time: Date;
   stale: Date;
   /** The explicit recipients from `detail/marti/dest`, or null when the event goes to everyone. */
@@ -50,7 +52,16 @@ export interface CotDestinations {
   uids: string[];
 }
 
+/** `detail/takv`: device model, TAK app, its version and the operating system, as the app reports them. */
+export interface CotSoftware {
+  device: string | null;
+  platform: string | null;
+  version: string | null;
+  os: string | null;
+}
+
 const MAX_DESTINATIONS = 100;
+const MAX_SOFTWARE_LENGTH = 100;
 
 const MAX_UID_LENGTH = 200;
 
@@ -62,6 +73,15 @@ function attribute(node: XmlNode, name: string): string | null {
 function nodes(value: unknown): XmlNode[] {
   const list: unknown[] = Array.isArray(value) ? value : [value];
   return list.filter((node): node is XmlNode => typeof node === "object" && node !== null);
+}
+
+function softwareOf(detail: XmlNode | null): CotSoftware | null {
+  const takv = detail === null ? undefined : nodes(detail.takv)[0];
+  if (takv === undefined) {
+    return null;
+  }
+  const value = (name: string): string | null => attribute(takv, name)?.slice(0, MAX_SOFTWARE_LENGTH) ?? null;
+  return { device: value("device"), platform: value("platform"), version: value("version"), os: value("os") };
 }
 
 function protocolRequestOf(type: string, detail: XmlNode | null): number | null {
@@ -155,6 +175,7 @@ export function parseCotEvent(xml: string): CotEvent | null {
     lat: Number(attribute(point, "lat")),
     lon: Number(attribute(point, "lon")),
     callsign: hasContact ? (attribute(contact, "callsign")?.slice(0, 100) ?? null) : null,
+    software: softwareOf(detail),
     time: new Date(attribute(event, "time") ?? ""),
     stale: new Date(attribute(event, "stale") ?? ""),
     destinations: destinationsOf(detail),

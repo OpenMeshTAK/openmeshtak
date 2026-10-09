@@ -56,7 +56,9 @@ void describe("TAK client certificates", () => {
     const client = await enrollTakClient(app, member);
     const authenticated = await authenticateTakClient(client.certificateDer);
     assert.equal(authenticated?.userId, member.id);
-    assert.deepEqual(authenticated?.access, { admin: false, eventIds: [eventId] });
+    assert.deepEqual(authenticated?.access.eventIds, [eventId]);
+    assert.equal(authenticated.access.admin, false);
+    assert.equal(authenticated.access.views[eventId]?.seesAll, true, "events without TAK groups show everything");
 
     await database.event.update({ where: { id: eventId }, data: { status: "archived" } });
     assert.equal(await authenticateTakClient(client.certificateDer), null, "archived event, no access");

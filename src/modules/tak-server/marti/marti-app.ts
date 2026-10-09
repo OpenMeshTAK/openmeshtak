@@ -5,8 +5,10 @@ import { logger } from "../../../shared/logging/logger.js";
 import { buildAtakExport } from "../../data-packages/package-atak.service.js";
 import { authenticateTakClient, type AuthenticatedTakClient } from "../client-authentication.js";
 import { cotRouter } from "../streaming/cot-router.js";
+import { cotScopeFor } from "../streaming/cot-scope.js";
 import { loadTakServerSettings } from "../tak-server-settings.js";
 import { cotHistory, latestCot } from "./cot-history.js";
+import { allGroups, setActiveGroups } from "./server-groups.js";
 import { sendDeviceProfile } from "./profile-response.js";
 import { exportSummary, visiblePackagesFor, type VisiblePackage } from "./visible-packages.js";
 
@@ -124,7 +126,7 @@ async function connectionProfile(request: Request, response: Response<unknown, L
  */
 function clientEndPoints(_request: Request, response: Response<unknown, Locals>): void {
   const { client } = response.locals;
-  const data = cotRouter.contacts(new Set(client.access.eventIds)).map((device) => ({
+  const data = cotRouter.contacts(cotScopeFor(client.access)).map((device) => ({
     uid: device.uid,
     callsign: device.callsign,
     lastEventTime: device.lastEventTime.toISOString(),
@@ -151,8 +153,8 @@ function wrap(handler: (request: Request, response: Response<unknown, Locals>) =
 
 /**
  * The Marti API subset Core offers TAK apps: server information, read-only access to published
- * Data Packages, device profiles and the recorded CoT history of events that record their
- * traffic. Uploads and missions are not offered, so their endpoints answer 403 or 404.
+ * Data Packages, device profiles, the recorded CoT history of events that record their traffic
+ * and the TAK groups of the advanced group mode. Uploads and missions are not offered, so their endpoints answer 403 or 404.
  */
 export function createMartiApp(): Express {
   const app = express();
@@ -162,6 +164,8 @@ export function createMartiApp(): Express {
   });
   app.get("/Marti/api/version/config", wrap(versionConfig));
   app.get("/Marti/api/clientEndPoints", clientEndPoints);
+  app.get("/Marti/api/groups/all", wrap(allGroups));
+  app.put("/Marti/api/groups/active", express.json({ limit: "64kb" }), wrap(setActiveGroups));
   app.get("/Marti/api/device/profile/connection", wrap(connectionProfile));
   app.get("/Marti/api/cot/xml/:uid/all", wrap(cotHistory));
   app.get("/Marti/api/cot/xml/:uid", wrap(latestCot));

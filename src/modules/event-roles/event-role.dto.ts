@@ -15,6 +15,11 @@ export interface EventRoleDto {
    * `Team Lead` for platoon leaders. `null` keeps the group's role.
    */
   takRoleOverride: TakRole | null;
+  /**
+   * Members of this role see and reach every event group when the event separates TAK groups,
+   * e.g. platoon leaders.
+   */
+  seesAllTakGroups: boolean;
   /** Optimistic-concurrency version; send it back unchanged with updates. */
   version: number;
   /** @format date-time */
@@ -38,6 +43,7 @@ export interface CreateEventRoleRequest {
   /** @maxLength 500 */
   description?: string | null;
   takRoleOverride?: TakRole | null;
+  seesAllTakGroups?: boolean;
 }
 
 export interface UpdateEventRoleRequest {
@@ -57,4 +63,6 @@ export interface UpdateEventRoleRequest {
   description: string | null;
   /** Omit to keep the current override; `null` removes it. */
   takRoleOverride?: TakRole | null;
+  /** Omit to keep the current value. */
+  seesAllTakGroups?: boolean;
 }

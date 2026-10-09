@@ -19,6 +19,8 @@ export interface TakServerSettingsDto {
   streamingPort: number;
   /** Lifetime of newly enrolled client certificates. */
   clientCertificateDays: number;
+  /** Hours after which a downloaded iTAK or WinTAK package that never connected is revoked. */
+  unusedPackageHours: number;
   /** `null` until the server first starts or a certificate is added. */
   serverCertificate: TakServerCertificateDto | null;
   /** The reverse proxy's certificate files Core reads, relative to `certificateDirectory`; `null` unless used. */
@@ -86,6 +88,14 @@ export interface UpdateTakServerSettingsRequest {
    * @maximum 825
    */
   clientCertificateDays: number;
+  /**
+   * Hours after which a downloaded iTAK or WinTAK package that never connected is revoked; kept
+   * when omitted.
+   * @isInt
+   * @minimum 1
+   * @maximum 720
+   */
+  unusedPackageHours?: number;
   /**
    * Required when this update moves a port to a non-standard value, or changes the host name or a
    * port while apps are enrolled. Core never changes a public port on its own.

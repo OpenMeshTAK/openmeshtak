@@ -6,8 +6,7 @@ import { forbidden } from "../../shared/auth/permission-check.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
 import { authenticateTakClient } from "./client-authentication.js";
 import { CertificateRequestError, issueClientCertificate, validateCertificateRequest } from "./client-certificates.js";
-import { revokeReplacedCertificates, validPackageCertificate } from "./client-certificates.service.js";
-import { ITAK_PACKAGE_UID_PREFIX } from "./itak-connection-package.service.js";
+import { revokeReplacedCertificates } from "./client-certificates.service.js";
 import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
 import type { TakEnrollmentDto } from "./enrollment.dto.js";
@@ -94,7 +93,7 @@ export async function createTakEnrollment(actor: ActorContext, now = new Date())
     enrollmentPort: settings.enrollmentPort,
     martiPort: settings.martiPort,
     streamingPort: settings.streamingPort,
-    itakPackageCertificateId: (await validPackageCertificate(userId, ITAK_PACKAGE_UID_PREFIX, now))?.id ?? null,
+    unusedPackageHours: settings.unusedPackageHours,
   };
   if (!(await hasPublicServerCertificate(settings.hostName, now))) {
     return { ...login, atakEnrollmentUrl: null, itakQrString: null, expiresAt: null };

@@ -54,7 +54,7 @@ function outcome(socket: Socket): Promise<string> {
 function peerIn(eventId: string): CotPeer {
   return {
     id: "peer-1",
-    scope: new Set([eventId]),
+    scope: new Map([[eventId, { groupId: null, seesAll: true, receives: null, sends: null }]]),
     send: () => undefined,
     userId: "00000000-0000-0000-0000-000000000000",
     certificateId: "certificate-1",

@@ -5,7 +5,6 @@ import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error.js";
 import { issueClientCertificate } from "./client-certificates.js";
-import { validPackageCertificate } from "./client-certificates.service.js";
 import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { buildItakConnectionPackage } from "./itak-connection-package.js";
 import { serverTrustAnchors } from "./server-certificate.js";
@@ -13,24 +12,26 @@ import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
 import { exportPrivateKeyPem, generateRsaKeyPair, RSA_SIGNING, x509 } from "./x509.js";
 
-/** Device UID prefix of certificates issued inside a downloaded iTAK package. */
-export const ITAK_PACKAGE_UID_PREFIX = "ITAK-PACKAGE-";
+/** Apps that get a package with a ready-made client identity instead of enrolling. */
+export type CertificatePackageApp = "itak" | "wintak";
 
-/** Refuses a second iTAK package while the certificate of an earlier one is still valid. */
-export async function requireNoValidItakPackage(userId: string): Promise<void> {
-  if ((await validPackageCertificate(userId, ITAK_PACKAGE_UID_PREFIX)) !== null) {
-    throw new ProblemError({
-      type: "urn:openmeshtak:problem:tak-package-certificate-exists",
-      title: "iTAK package already issued",
-      status: 409,
-      detail: "You already have a valid iTAK package certificate. Revoke it under your enrolled TAK apps to download a new package.",
-      code: "TAK_PACKAGE_CERTIFICATE_EXISTS",
-    });
-  }
-}
+/** Device UID prefix of the certificates issued inside downloaded packages, per app. */
+const packageApps = {
+  itak: { name: "iTAK", uidPrefix: "ITAK-PACKAGE-" },
+  wintak: { name: "WinTAK", uidPrefix: "WINTAK-PACKAGE-" },
+} as const satisfies Record<CertificatePackageApp, { name: "iTAK" | "WinTAK"; uidPrefix: string }>;
 
-/** iTAK package with an ephemeral generated key and a user-bound client certificate. */
-export async function createItakConnectionPackage(actor: ActorContext): Promise<{ fileName: string; bytes: Uint8Array }> {
+export const PACKAGE_UID_PREFIXES: readonly string[] = Object.values(packageApps).map(({ uidPrefix }) => uidPrefix);
+
+/**
+ * A package with an ephemeral generated key and a user-bound client certificate. A user may download
+ * any number: each one names itself once its app connects, and one that never connects is revoked
+ * after the configured hours, so forgotten files do not stay valid.
+ */
+export async function createCertificatePackage(
+  actor: ActorContext,
+  app: CertificatePackageApp,
+): Promise<{ fileName: string; bytes: Uint8Array }> {
   if (actor.principal.type !== "user") {
     throw notFoundProblem();
   }
@@ -48,8 +49,6 @@ export async function createItakConnectionPackage(actor: ActorContext): Promise<
     });
   }
 
-  await requireNoValidItakPackage(actor.principal.id);
-
   const { username } = await database.user.findUniqueOrThrow({
     where: { id: actor.principal.authSubjectId },
     select: { username: true },
@@ -64,7 +63,7 @@ export async function createItakConnectionPackage(actor: ActorContext): Promise<
     keys,
     signingAlgorithm: RSA_SIGNING,
   });
-  const clientUid = `${ITAK_PACKAGE_UID_PREFIX}${randomUUID()}`;
+  const clientUid = `${packageApps[app].uidPrefix}${randomUUID()}`;
   const { certificate, row } = await issueClientCertificate(
     actor.principal.id,
     request,
@@ -74,6 +73,7 @@ export async function createItakConnectionPackage(actor: ActorContext): Promise<
   const authorities = await trustedCertificateAuthorities();
   const password = randomBytes(18).toString("base64url");
   const artifact = buildItakConnectionPackage({
+    appName: packageApps[app].name,
     hostName: settings.hostName,
     streamingPort: settings.streamingPort,
     martiPort: settings.martiPort,
@@ -96,12 +96,12 @@ export async function createItakConnectionPackage(actor: ActorContext): Promise<
       fingerprintSha256: row.fingerprintSha256,
       clientUid,
       notAfter: row.notAfter.toISOString(),
-      credential: "authenticated-itak-package",
+      credential: `authenticated-${app}-package`,
     },
   });
   await recordAudit({
     actor: actor.principal,
-    action: "tak-server.itak-connection-package-downloaded",
+    action: `tak-server.${app}-connection-package-downloaded`,
     targetType: "tak-server",
     targetId: "tak-server",
     result: "success",

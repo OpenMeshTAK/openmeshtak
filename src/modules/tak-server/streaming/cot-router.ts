@@ -1,5 +1,5 @@
 import type { CotDestinations } from "./cot-event.js";
-import { scopesOverlap, type CotScope } from "./cot-scope.js";
+import { canReach, sharesEvent, type CotScope } from "./cot-scope.js";
 
 /** The newest state of one CoT item (a position or marker), kept in memory for the live view. */
 export interface LiveItem {
@@ -107,7 +107,7 @@ export class CotRouter {
     this.peerItems.set(peer.id, new Set());
     this.changed(peer.scope);
     for (const retained of this.current(now)) {
-      if (retained.certificateId !== peer.certificateId && scopesOverlap(peer.scope, retained.scope)) {
+      if (retained.certificateId !== peer.certificateId && canReach(retained.scope, peer.scope)) {
         peer.send(retained.xml);
       }
     }
@@ -128,12 +128,14 @@ export class CotRouter {
   }
 
   /**
-   * Sends an event to the other apps of the sender's events. With destinations, only the addressed
-   * apps of those events receive it, so a direct message never reaches the rest of the event.
+   * Sends an event to the other apps of the sender's events that may see it. With destinations,
+   * only the addressed apps of those events receive it, so a direct message never reaches the rest
+   * of the event; it does cross TAK groups, because the sender chose the recipient.
    */
   publish(sender: CotPeer, xml: string, destinations: CotDestinations | null = null): void {
     for (const receiver of this.peers.values()) {
-      if (receiver !== sender && scopesOverlap(sender.scope, receiver.scope) && isAddressed(receiver, destinations)) {
+      const allowed = destinations === null ? canReach(sender.scope, receiver.scope) : sharesEvent(sender.scope, receiver.scope);
+      if (receiver !== sender && allowed && isAddressed(receiver, destinations)) {
         receiver.send(xml);
       }
     }
@@ -184,16 +186,16 @@ export class CotRouter {
     }
   }
 
-  /** Apps known in any of the given events, connected or not, most recently heard first. */
-  contacts(eventIds: CotScope): KnownDevice[] {
-    return [...this.devices.values()].filter(({ scope }) => scopesOverlap(scope, eventIds)).reverse();
+  /** Apps the viewer may see in its events, connected or not, most recently heard first. */
+  contacts(viewer: CotScope): KnownDevice[] {
+    return [...this.devices.values()].filter(({ scope }) => canReach(scope, viewer)).reverse();
   }
 
   /** Removes items a client deleted, so they are not replayed to later joiners. */
   forget(peer: CotPeer, uids: string[]): void {
     for (const uid of uids) {
       const retained = this.retained.get(uid);
-      if (retained !== undefined && scopesOverlap(peer.scope, retained.scope)) {
+      if (retained !== undefined && canReach(retained.scope, peer.scope)) {
         this.retained.delete(uid);
       }
     }

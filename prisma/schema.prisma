@@ -45,6 +45,7 @@ model Event {
   meshtasticChannels      MeshtasticChannel[]
   meshtasticConfiguration MeshtasticConfiguration?
   takConfiguration        TakConfiguration?
+  takGroups               TakGroup[]
   /// Event accounts; archiving the event deletes them.
   accounts                DomainUser[]                 @relation("EventAccounts")
 }
@@ -302,6 +303,8 @@ model EventRole {
   description       String?
   /// Optional ATAK role that replaces the event group's default TAK role for members of this role.
   takRoleOverride   String?
+  /// Members of this role see and reach every event group when the event separates TAK groups.
+  seesAllTakGroups  Boolean                     @default(false)
   version           Int                         @default(1)
   event             Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   members           EventMember[]
@@ -381,6 +384,7 @@ model EventMember {
   claims            MemberClaim[]
   channelSelections MeshtasticChannelAudience[]
   packageSelections DataPackageAudience[]
+  takGroups         TakGroupMembership[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -704,11 +708,44 @@ model TakConfiguration {
   atakPreferenceFileName String?
   /// Values from the ATAK settings form; they override the same keys of the file.
   atakSettings           Json?
+  /// "off" (the event is the only CoT boundary), "simple" (members only see their event group) or
+  /// "advanced" (free TAK groups with in/out membership per member).
+  groupMode              String             @default("off")
+  /// In advanced mode, TAK apps list their groups and may switch them on and off.
+  groupsInApp            Boolean            @default(false)
   version                Int                @default(1)
   event                  Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   meshChannel            MeshtasticChannel? @relation(fields: [meshChannelId], references: [id], onDelete: SetNull)
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
+}
+
+/// A free TAK group of an event for the advanced group mode, e.g. "Medics".
+model TakGroup {
+  id          String               @id
+  eventId     String
+  name        String
+  description String?
+  version     Int                  @default(1)
+  event       Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  members     TakGroupMembership[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([eventId, name])
+}
+
+/// Whether a member receives the group's traffic (in) and sends into the group (out).
+model TakGroupMembership {
+  groupId  String
+  memberId String
+  receive  Boolean
+  send     Boolean
+  group    TakGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  member   EventMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, memberId])
+  @@index([memberId])
 }
 
 /// Certificate authorities of the built-in TAK server. The active one signs new certificates;
@@ -780,6 +817,8 @@ model TakServerSettings {
   martiPort             Int      @default(8443)
   streamingPort         Int      @default(8089)
   clientCertificateDays Int      @default(365)
+  /// Hours after which a downloaded iTAK or WinTAK package that never connected is revoked.
+  unusedPackageHours    Int      @default(24)
   /// When the public host name or a public port last changed after setup. Apps enrolled before it
   /// may still use the old endpoint and must enroll again.
   endpointChangedAt     DateTime?
@@ -817,6 +856,17 @@ model TakClientCertificate {
   commonName        String
   /// Device UID the app sent during enrollment, if any.
   clientUid         String?
+  /// First and latest streaming connection with this certificate; an iTAK or WinTAK package that
+  /// never connects is revoked after the configured number of hours.
+  firstConnectedAt  DateTime?
+  lastConnectedAt   DateTime?
+  /// What the app reports about itself in its own position beacon (`takv` and `contact`); set by
+  /// the app, so it names the device but proves nothing.
+  deviceName        String?
+  deviceApp         String?
+  deviceAppVersion  String?
+  deviceOs          String?
+  deviceCallsign    String?
   notBefore         DateTime
   notAfter          DateTime
   revokedAt         DateTime?
@@ -964,7 +1014,7 @@ model DownloadGrant {
   tokenHash String     @unique
   /// The user the artifact is generated for and whose access is checked again on download.
   userId    String
-  /// "device-profile", "member-data-package" or "tak-connection-package".
+  /// "device-profile", "member-data-package", "tak-connection-package", "itak-connection-package" or "wintak-connection-package".
   kind      String
   eventId   String?
   memberId  String?

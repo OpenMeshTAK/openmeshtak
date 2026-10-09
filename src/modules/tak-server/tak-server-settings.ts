@@ -9,6 +9,7 @@ const DEFAULTS = {
   martiPort: 8443,
   streamingPort: 8089,
   clientCertificateDays: 365,
+  unusedPackageHours: 24,
   endpointChangedAt: null,
   certificateFile: null,
   certificateKeyFile: null,

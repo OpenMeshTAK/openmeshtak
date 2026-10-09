@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { TakTrafficItem } from "../../../generated/prisma/client.js";
+import type { Prisma, TakTrafficItem } from "../../../generated/prisma/client.js";
 import { recordAudit } from "../../../shared/audit/audit.js";
 import { database } from "../../../shared/database/database.js";
 import type { AuthenticatedTakClient } from "../client-authentication.js";
@@ -35,6 +35,34 @@ async function recordingEventIds(client: AuthenticatedTakClient): Promise<string
     select: { eventId: true },
   });
   return rows.map(({ eventId }) => eventId);
+}
+
+/**
+ * Which recorded items the caller may read: everything of events it sees completely, and in events
+ * that separate TAK groups only items it would have received live: from its own event group (simple
+ * mode) or from members sending into a group it receives from (advanced mode), and from roles that
+ * see every group.
+ */
+async function visibleItems(client: AuthenticatedTakClient, eventIds: string[]): Promise<Prisma.TakTrafficItemWhereInput> {
+  const conditions = await Promise.all(
+    eventIds.map(async (eventId): Promise<Prisma.TakTrafficItemWhereInput> => {
+      const view = client.access.views[eventId];
+      if (view === undefined || view.seesAll) {
+        return { eventId };
+      }
+      // Advanced mode: senders that send into a group the caller receives from; simple mode: the caller's event group.
+      const sameGroup =
+        view.receives === null
+          ? { eventGroupId: view.groupId ?? "" }
+          : { takGroups: { some: { send: true, groupId: { in: view.receives } } } };
+      const hidden = await database.eventMember.findMany({
+        where: { eventId, eventRole: { seesAllTakGroups: false }, NOT: sameGroup },
+        select: { userId: true },
+      });
+      return { eventId, userId: { notIn: hidden.map(({ userId }) => userId) } };
+    }),
+  );
+  return { OR: conditions };
 }
 
 function requestedUid(request: Request): string | null {
@@ -84,7 +112,7 @@ export async function latestCot(request: Request, response: Response<unknown, Lo
   const item =
     uid === null || eventIds.length === 0
       ? null
-      : await database.takTrafficItem.findFirst({ where: { uid, eventId: { in: eventIds } }, orderBy: { time: "desc" } });
+      : await database.takTrafficItem.findFirst({ where: { uid, ...(await visibleItems(client, eventIds)) }, orderBy: { time: "desc" } });
   if (uid === null || item === null) {
     response.status(404).end();
     return;
@@ -107,7 +135,7 @@ export async function cotHistory(request: Request, response: Response<unknown, L
     eventIds.length === 0
       ? []
       : await database.takTrafficItem.findMany({
-          where: { uid, eventId: { in: eventIds }, time: range },
+          where: { uid, time: range, ...(await visibleItems(client, eventIds)) },
           orderBy: { time: "desc" },
           take: MAX_HISTORY_ITEMS,
         });

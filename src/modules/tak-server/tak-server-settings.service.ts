@@ -52,6 +52,7 @@ async function toDto(now = new Date()): Promise<TakServerSettingsDto> {
     martiPort: settings.martiPort,
     streamingPort: settings.streamingPort,
     clientCertificateDays: settings.clientCertificateDays,
+    unusedPackageHours: settings.unusedPackageHours,
     serverCertificate: certificateDto(await activeServerCertificate()),
     certificateFiles:
       settings.certificateFile === null || settings.certificateKeyFile === null

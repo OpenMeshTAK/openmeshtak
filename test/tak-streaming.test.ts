@@ -241,6 +241,82 @@ void describe("TAK CoT streaming", () => {
     assert.deepEqual(live.items.map(({ uid }) => uid).sort(), ["BETA", "BETA-MARKER", "GAMMA"]);
   });
 
+  void it("separates event groups in simple group mode, except for roles that see all groups and direct messages", async () => {
+    const bravo = await activeEvent();
+    const charlieId = randomUUID();
+    const leaderRoleId = randomUUID();
+    await database.eventGroup.create({ data: { id: charlieId, eventId: bravo.eventId, name: "Charlie", slug: "charlie", shortNamePrefix: "C" } });
+    await database.eventRole.create({ data: { id: leaderRoleId, eventId: bravo.eventId, name: "Leader", slug: "leader", seesAllTakGroups: true } });
+    await database.takConfiguration.create({ data: { eventId: bravo.eventId, groupMode: "simple" } });
+    const alpha = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha")));
+    const beta = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Beta")));
+    const charlie = await open(await enrollTakClient(app, await member(bravo.eventId, charlieId, bravo.roleId, "Charlie")));
+    const leader = await open(await enrollTakClient(app, await member(bravo.eventId, charlieId, leaderRoleId, "Leader")));
+    charlie.socket.write(positionEvent("CHARLIE-SA"));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    alpha.socket.write(positionEvent("ALPHA-GROUP"));
+    assert.ok(await beta.next((xml) => xml.includes('uid="ALPHA-GROUP"')), "same group receives it");
+    assert.ok(await leader.next((xml) => xml.includes('uid="ALPHA-GROUP"')), "a role that sees all groups receives it");
+    assert.equal(await charlie.next((xml) => xml.includes('uid="ALPHA-GROUP"'), 300), null, "another group does not");
+
+    leader.socket.write(positionEvent("LEADER-SA"));
+    assert.ok(await alpha.next((xml) => xml.includes('uid="LEADER-SA"')), "everyone sees the leader");
+
+    alpha.socket.write(
+      markerEvent("GeoChat.ALPHA.CHARLIE.1", "b-t-f").replace(
+        '<detail><contact callsign="GeoChat.ALPHA.CHARLIE.1"/></detail>',
+        '<detail><remarks>hello</remarks><marti><dest callsign="CHARLIE-SA"/></marti></detail>',
+      ),
+    );
+    assert.ok(await charlie.next((xml) => xml.includes("GeoChat.ALPHA.CHARLIE.1")), "direct messages cross groups");
+
+    const lateCharlie = await open(await enrollTakClient(app, await member(bravo.eventId, charlieId, bravo.roleId, "Charlie2")));
+    assert.ok(await lateCharlie.next((xml) => xml.includes('uid="LEADER-SA"')));
+    assert.equal(lateCharlie.received.some((xml) => xml.includes('uid="ALPHA-GROUP"')), false, "replay respects groups too");
+  });
+
+  void it("routes by TAK group in and out membership in advanced group mode", async () => {
+    const bravo = await activeEvent();
+    await database.takConfiguration.create({ data: { eventId: bravo.eventId, groupMode: "advanced" } });
+    const users = {
+      alpha: await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha"),
+      medic: await member(bravo.eventId, bravo.groupId, bravo.roleId, "Medic"),
+      outsider: await member(bravo.eventId, bravo.groupId, bravo.roleId, "Outsider"),
+    };
+    const memberIdOf = async (user: TestUser): Promise<string> =>
+      (await database.eventMember.findFirstOrThrow({ where: { userId: user.id, eventId: bravo.eventId } })).id;
+    const alphaGroup = randomUUID();
+    const medicsGroup = randomUUID();
+    await database.takGroup.createMany({
+      data: [
+        { id: alphaGroup, eventId: bravo.eventId, name: "Alpha" },
+        { id: medicsGroup, eventId: bravo.eventId, name: "Medics" },
+      ],
+    });
+    // The medic receives Alpha but only sends to Medics; Alpha receives Medics too.
+    await database.takGroupMembership.createMany({
+      data: [
+        { groupId: alphaGroup, memberId: await memberIdOf(users.alpha), receive: true, send: true },
+        { groupId: medicsGroup, memberId: await memberIdOf(users.alpha), receive: true, send: false },
+        { groupId: alphaGroup, memberId: await memberIdOf(users.medic), receive: true, send: false },
+        { groupId: medicsGroup, memberId: await memberIdOf(users.medic), receive: true, send: true },
+      ],
+    });
+    const alpha = await open(await enrollTakClient(app, users.alpha));
+    const medic = await open(await enrollTakClient(app, users.medic));
+    const outsider = await open(await enrollTakClient(app, users.outsider));
+
+    alpha.socket.write(positionEvent("ALPHA-ADV"));
+    assert.ok(await medic.next((xml) => xml.includes('uid="ALPHA-ADV"')), "the medic receives Alpha");
+    assert.equal(await outsider.next((xml) => xml.includes('uid="ALPHA-ADV"'), 300), null, "members without groups receive nothing");
+
+    medic.socket.write(positionEvent("MEDIC-ADV"));
+    assert.ok(await alpha.next((xml) => xml.includes('uid="MEDIC-ADV"')), "Alpha receives what the medic sends to Medics");
+    outsider.socket.write(positionEvent("OUTSIDER-ADV"));
+    assert.equal(await alpha.next((xml) => xml.includes('uid="OUTSIDER-ADV"'), 300), null, "members without groups reach nobody");
+  });
+
   void it("shows an event's connections and positions in the live view, only with tak-traffic.view", async () => {
     const bravo = await activeEvent();
     const other = await activeEvent();
@@ -287,6 +363,29 @@ void describe("TAK CoT streaming", () => {
     assert.equal(await purgeExpiredTraffic(), 1);
     const reader = await createUser("Reader", [{ permission: "tak-traffic.view", eventId: bravo.eventId }]);
     await request(app).put(url).set("Cookie", reader.cookie).send({ version: 1, enabled: false, retentionDays: 7 }).expect(403);
+  });
+
+  void it("names a certificate after the device that connects with it", async () => {
+    const bravo = await activeEvent();
+    const user = await member(bravo.eventId, bravo.groupId, bravo.roleId, "Peter");
+    const alpha = await open(await enrollTakClient(app, user));
+    alpha.socket.write(
+      markerEvent("PETER-1", "a-f-G-U-C").replace(
+        "<detail>",
+        '<detail><takv device="iPhone 17" platform="iTAK" version="2.12.3" os="26.6.2"/>',
+      ),
+    );
+
+    let certificate = await database.takClientCertificate.findFirstOrThrow({ where: { userId: user.id } });
+    for (let attempt = 0; attempt < 50 && certificate.deviceApp === null; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      certificate = await database.takClientCertificate.findFirstOrThrow({ where: { userId: user.id } });
+    }
+    assert.notEqual(certificate.firstConnectedAt, null);
+    assert.deepEqual(
+      [certificate.deviceName, certificate.deviceApp, certificate.deviceAppVersion, certificate.deviceOs, certificate.deviceCallsign],
+      ["iPhone 17", "iTAK", "2.12.3", "26.6.2", "PETER-1"],
+    );
   });
 
   void it("answers pings, replays positions to late joiners and lets administrators see all events", async () => {

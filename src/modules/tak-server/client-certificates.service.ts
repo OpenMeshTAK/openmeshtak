@@ -31,6 +31,18 @@ function toDto(certificate: CertificateWithUser, endpointChangedAt: Date | null,
     notAfter: certificate.notAfter.toISOString(),
     revokedAt: certificate.revokedAt?.toISOString() ?? null,
     revocationReason: certificate.revocationReason,
+    firstConnectedAt: certificate.firstConnectedAt?.toISOString() ?? null,
+    lastConnectedAt: certificate.lastConnectedAt?.toISOString() ?? null,
+    device:
+      certificate.deviceName === null && certificate.deviceApp === null && certificate.deviceCallsign === null
+        ? null
+        : {
+            name: certificate.deviceName,
+            app: certificate.deviceApp,
+            appVersion: certificate.deviceAppVersion,
+            os: certificate.deviceOs,
+            callsign: certificate.deviceCallsign,
+          },
     issuedForOldEndpoint: endpointChangedAt !== null && certificate.createdAt < endpointChangedAt,
   };
 }
@@ -150,10 +162,31 @@ export async function revokeReplacedCertificates(actor: RevokingActor, replaceme
   }
 }
 
-/**
- * The valid certificate a user already received in a downloaded package of this kind. Packages carry
- * their private key, so Core cannot tell devices apart; a new package needs the old one revoked.
- */
-export async function validPackageCertificate(userId: string, clientUidPrefix: string, now = new Date()): Promise<TakClientCertificate | null> {
-  return database.takClientCertificate.findFirst({ where: validFor(userId, { startsWith: clientUidPrefix }, now) });
+/** Records a streaming connection; the first one marks a downloaded package as in use. */
+export async function noteCertificateConnected(certificateId: string, now = new Date()): Promise<void> {
+  await database.takClientCertificate.updateMany({ where: { id: certificateId, firstConnectedAt: null }, data: { firstConnectedAt: now } });
+  await database.takClientCertificate.update({ where: { id: certificateId }, data: { lastConnectedAt: now } });
+}
+
+/** What an app reports about itself in its own position beacon; every value is optional. */
+export interface ReportedDevice {
+  name: string | null;
+  app: string | null;
+  appVersion: string | null;
+  os: string | null;
+  callsign: string | null;
+}
+
+/** Names the certificate after the device using it, so the certificate list needs no manual labels. */
+export async function noteCertificateDevice(certificateId: string, device: ReportedDevice): Promise<void> {
+  await database.takClientCertificate.update({
+    where: { id: certificateId },
+    data: {
+      deviceName: device.name,
+      deviceApp: device.app,
+      deviceAppVersion: device.appVersion,
+      deviceOs: device.os,
+      deviceCallsign: device.callsign,
+    },
+  });
 }

@@ -21,6 +21,7 @@ void describe("iTAK connection package", () => {
   void it("uses the flat iTAK layout with a client identity and configured Marti port", async () => {
     const client = await identity();
     const { bytes } = buildItakConnectionPackage({
+      appName: "iTAK",
       hostName: "tak.example.org",
       streamingPort: 8089,
       martiPort: 8484,

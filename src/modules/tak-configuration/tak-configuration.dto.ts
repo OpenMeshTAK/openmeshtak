@@ -13,6 +13,8 @@ export interface AtakSettingsDto {
   northReference: "true" | "magnetic" | "grid" | null;
 }
 
+export type TakGroupMode = "off" | "simple" | "advanced";
+
 /** One preference of an uploaded ATAK `.pref` file. */
 export interface AtakPreferenceDto {
   /** The `<preference name>` group, such as `com.atakmap.app_preferences`. */
@@ -39,6 +41,15 @@ export interface TakConfigurationDto {
   /** Channel for the app's "TAK Mesh Channel"; `null` uses the primary channel. */
   meshChannelId: Uuid | null;
   atakSettings: AtakSettingsDto;
+  /**
+   * `off`: every member sees the whole event. `simple`: members see only their event group.
+   * `advanced`: members receive what is sent into the event's TAK groups they receive from
+   * (`/events/{eventId}/tak/groups`). In both separating modes roles with `seesAllTakGroups` see
+   * and reach everyone. Applies to live connections within seconds, without publishing.
+   */
+  groupMode: TakGroupMode;
+  /** In the advanced mode, TAK apps list their groups and may switch them on and off. */
+  groupsInApp: boolean;
   /** `null` until a preference file is uploaded. */
   atakPreferenceFile: AtakPreferenceFileDto | null;
   /** Optimistic-concurrency version; 0 until first saved. */
@@ -57,6 +68,10 @@ export interface UpdateTakConfigurationRequest {
   meshChannelId: Uuid | null;
   /** Omit to keep the current settings. */
   atakSettings?: AtakSettingsDto;
+  /** Omit to keep the current mode. */
+  groupMode?: TakGroupMode;
+  /** Omit to keep the current value. */
+  groupsInApp?: boolean;
 }
 
 export interface AtakPreferenceFileUpload {

@@ -45,6 +45,8 @@ function toDto(eventId: string, row: TakConfiguration | null): TakConfigurationD
     eventId,
     meshChannelId: row?.meshChannelId ?? null,
     atakSettings: readAtakSettings(row?.atakSettings),
+    groupMode: row?.groupMode === "simple" || row?.groupMode === "advanced" ? row.groupMode : "off",
+    groupsInApp: row?.groupsInApp ?? false,
     atakPreferenceFile:
       row?.atakPreferenceFileName === null || row?.atakPreferenceFileName === undefined
         ? null
@@ -134,9 +136,15 @@ export async function updateTakConfiguration(
     validateAtakSettings(input.atakSettings);
     data.atakSettings = { ...input.atakSettings };
   }
+  if (input.groupMode !== undefined) {
+    data.groupMode = input.groupMode;
+  }
+  if (input.groupsInApp !== undefined) {
+    data.groupsInApp = input.groupsInApp;
+  }
   return saveVersioned(actor, eventId, input.version, data, {
     action: "tak-configuration.updated",
-    metadata: { meshChannelId, atakSettingsChanged: input.atakSettings !== undefined },
+    metadata: { meshChannelId, atakSettingsChanged: input.atakSettings !== undefined, groupMode: input.groupMode ?? null },
   });
 }
 

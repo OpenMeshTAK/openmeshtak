@@ -7,6 +7,8 @@ const TRUSTSTORE_FILE = "truststore.p12";
 const CLIENT_FILE = "client.p12";
 
 export interface ItakConnectionPackageInput {
+  /** The app the package is for; WinTAK imports the same layout as iTAK. */
+  appName: "iTAK" | "WinTAK";
   hostName: string;
   streamingPort: number;
   martiPort: number;
@@ -25,14 +27,14 @@ function toBytes(p12: forge.asn1.Asn1): Uint8Array {
   return Uint8Array.from(Buffer.from(forge.asn1.toDer(p12).getBytes(), "binary"));
 }
 
-/** PKCS#12 identity iTAK imports as the TLS client certificate. */
+/** PKCS#12 identity the app imports as the TLS client certificate. */
 function clientIdentity(input: ItakConnectionPackageInput): Uint8Array {
   const key = forge.pki.privateKeyFromPem(input.clientPrivateKeyPem);
   const certificates = [input.clientCertificatePem, ...input.clientCaPems].map((pem) => forge.pki.certificateFromPem(pem));
   return toBytes(
     forge.pkcs12.toPkcs12Asn1(key, certificates, input.password, {
       algorithm: "3des",
-      friendlyName: "OpenMeshTak iTAK",
+      friendlyName: `OpenMeshTak ${input.appName}`,
       generateLocalKeyId: true,
     }),
   );
@@ -72,11 +74,11 @@ function preferences(input: ItakConnectionPackageInput): string {
 `;
 }
 
-function manifest(hostName: string): string {
+function manifest(appName: string, hostName: string): string {
   return `<MissionPackageManifest version="2">
   <Configuration>
     <Parameter name="uid" value="${randomUUID()}"/>
-    <Parameter name="name" value="${escapeXml(`OpenMeshTak iTAK ${hostName}`)}"/>
+    <Parameter name="name" value="${escapeXml(`OpenMeshTak ${appName} ${hostName}`)}"/>
     <Parameter name="onReceiveDelete" value="true"/>
   </Configuration>
   <Contents>
@@ -88,11 +90,14 @@ function manifest(hostName: string): string {
 `;
 }
 
-/** Flat package layout used by iTAK and Meshtastic Apple, with no server private key. */
+/**
+ * Flat package layout used by iTAK and Meshtastic Apple, with no server private key. WinTAK 4.6
+ * imports it as well; it cannot enroll with a login, so it needs this ready-made client identity.
+ */
 export function buildItakConnectionPackage(input: ItakConnectionPackageInput): { fileName: string; bytes: Uint8Array } {
   const bytes = zipSync(
     {
-      "manifest.xml": strToU8(manifest(input.hostName)),
+      "manifest.xml": strToU8(manifest(input.appName, input.hostName)),
       [PREF_FILE]: strToU8(preferences(input)),
       [TRUSTSTORE_FILE]: truststore(input),
       [CLIENT_FILE]: clientIdentity(input),
@@ -100,7 +105,7 @@ export function buildItakConnectionPackage(input: ItakConnectionPackageInput): {
     { level: 6 },
   );
   return {
-    fileName: `OpenMeshTak-iTAK-${input.hostName.replace(/[^a-z0-9.-]/gi, "_")}.zip`,
+    fileName: `OpenMeshTak-${input.appName}-${input.hostName.replace(/[^a-z0-9.-]/gi, "_")}.zip`,
     bytes,
   };
 }

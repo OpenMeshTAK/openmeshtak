@@ -70,8 +70,8 @@ void describe("download grants", () => {
     assert.equal(response.headers["content-type"], "application/zip");
     assert.equal(response.headers["cache-control"], "no-store");
     assert.equal(await database.takClientCertificate.count({ where: { userId: member.id } }), 1);
-    // The package's certificate is still valid, so no second package link is issued.
-    await grant(member, { kind: "itak-connection-package" }).expect(409);
+    // Every package is a device of its own; a second link is issued while the first is valid.
+    await grant(member, { kind: "itak-connection-package" }).expect(201);
   });
 
   void it("refuses expired links, foreign artifacts and users who lost access", async () => {

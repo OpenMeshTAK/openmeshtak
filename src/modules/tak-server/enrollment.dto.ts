@@ -1,5 +1,3 @@
-import type { Uuid } from "../../shared/http/uuid.js";
-
 /**
  * Everything a TAK app needs to connect. Manual setup uses `username` with the account password;
  * the ATAK link and QR code carry a QR token instead, which is shown only in this response.
@@ -32,8 +30,8 @@ export interface TakEnrollmentDto {
    */
   itakQrString: string | null;
   /**
-   * The still valid certificate from an earlier iTAK package download. A new package is refused
-   * until it is revoked, so each downloaded package stays one device.
+   * Hours within which a downloaded iTAK or WinTAK package must connect once; otherwise its
+   * certificate is revoked.
    */
-  itakPackageCertificateId: Uuid | null;
+  unusedPackageHours: number;
 }

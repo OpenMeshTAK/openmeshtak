@@ -9,6 +9,7 @@ import { unzipSync, strFromU8 } from "fflate";
 import forge from "node-forge";
 import { activeCertificateAuthority } from "../src/modules/tak-server/certificate-authority.js";
 import { createEnrollmentApp } from "../src/modules/tak-server/enrollment-app.js";
+import { revokeUnusedPackageCertificates } from "../src/modules/tak-server/unused-packages.js";
 import { generateRsaKeyPair, RSA_SIGNING, x509 } from "../src/modules/tak-server/x509.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser, type TestUser } from "./support/identity.js";
@@ -19,7 +20,7 @@ interface EnrollmentBody {
   expiresAt: string | null;
   atakEnrollmentUrl: string | null;
   itakQrString: string | null;
-  itakPackageCertificateId: string | null;
+  unusedPackageHours: number;
 }
 
 /** Pretends the listeners present a certificate chaining directly to a bundled public root. */
@@ -305,17 +306,38 @@ void describe("TAK certificate enrollment", () => {
     assert.equal(await database.auditEvent.count({ where: { action: "tak-server.client-certificate-issued" } }), 1);
     assert.equal(await database.auditEvent.count({ where: { action: "tak-server.itak-connection-package-downloaded" } }), 1);
 
-    // One package per device: a second download waits until the first certificate is revoked.
-    assert.equal((await enroll(member)).itakPackageCertificateId, certificate.id);
-    const refused = await request(app).get("/api/v1/me/itak-connection-package").set("Cookie", member.cookie).expect(409);
-    assert.equal((refused.body as { code: string }).code, "TAK_PACKAGE_CERTIFICATE_EXISTS");
-    await request(app)
-      .post(`/api/v1/me/tak-certificates/${certificate.id}/revoke`)
-      .set("Cookie", member.cookie)
-      .send({})
-      .expect(200);
-    assert.equal((await enroll(member)).itakPackageCertificateId, null);
+    // Every download is a further device; unused ones expire instead of blocking a new package.
+    assert.equal((await enroll(member)).unusedPackageHours, 24);
     await request(app).get("/api/v1/me/itak-connection-package").set("Cookie", member.cookie).expect(200);
+    assert.equal(await database.takClientCertificate.count({ where: { userId: member.id, revokedAt: null } }), 2);
+  });
+
+  void it("offers a WinTAK package with its own device UID prefix", async () => {
+    await enableServer();
+    await request(app).get("/api/v1/me/itak-connection-package").set("Cookie", member.cookie).expect(200);
+    const response = await request(app).get("/api/v1/me/wintak-connection-package").set("Cookie", member.cookie).expect(200);
+    assert.match(response.headers["content-disposition"] ?? "", /OpenMeshTak-WinTAK-tak\.example\.org\.zip/);
+
+    const certificate = await database.takClientCertificate.findFirstOrThrow({
+      where: { userId: member.id, clientUid: { startsWith: "WINTAK-PACKAGE-" } },
+    });
+    assert.equal(await database.auditEvent.count({ where: { action: "tak-server.wintak-connection-package-downloaded" } }), 1);
+    assert.equal(certificate.revokedAt, null);
+  });
+
+  void it("revokes downloaded packages that never connected within the configured hours", async () => {
+    await enableServer();
+    await request(app).get("/api/v1/me/itak-connection-package").set("Cookie", member.cookie).expect(200);
+    await request(app).get("/api/v1/me/wintak-connection-package").set("Cookie", member.cookie).expect(200);
+    const [unused, used] = await database.takClientCertificate.findMany({ where: { userId: member.id }, orderBy: { createdAt: "asc" } });
+    assert.ok(unused && used);
+    await database.takClientCertificate.update({ where: { id: used.id }, data: { firstConnectedAt: new Date() } });
+
+    assert.equal(await revokeUnusedPackageCertificates(new Date(Date.now() + 23 * 3_600_000)), 0);
+    assert.equal(await revokeUnusedPackageCertificates(new Date(Date.now() + 25 * 3_600_000)), 1);
+    const revoked = await database.takClientCertificate.findUniqueOrThrow({ where: { id: unused.id } });
+    assert.equal(revoked.revocationReason, "Package not imported within 24 hours");
+    assert.equal((await database.takClientCertificate.findUniqueOrThrow({ where: { id: used.id } })).revokedAt, null);
   });
 
   void it("serves the enrollment profile with the public Marti port for a valid TAK login", async () => {

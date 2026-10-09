@@ -686,6 +686,11 @@
 						"format": "double",
 						"description": "Lifetime of newly enrolled client certificates."
 					},
+					"unusedPackageHours": {
+						"type": "number",
+						"format": "double",
+						"description": "Hours after which a downloaded iTAK or WinTAK package that never connected is revoked."
+					},
 					"serverCertificate": {
 						"allOf": [
 							{
@@ -737,6 +742,7 @@
 					"martiPort",
 					"streamingPort",
 					"clientCertificateDays",
+					"unusedPackageHours",
 					"serverCertificate",
 					"certificateFiles",
 					"certificateDirectory",
@@ -800,6 +806,13 @@
 						"format": "int32",
 						"minimum": 1,
 						"maximum": 825
+					},
+					"unusedPackageHours": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Hours after which a downloaded iTAK or WinTAK package that never connected is revoked; kept\nwhen omitted.",
+						"minimum": 1,
+						"maximum": 720
 					},
 					"endpointChange": {
 						"$ref": "#/components/schemas/TakEndpointChangeConfirmation",
@@ -999,14 +1012,10 @@
 						"nullable": true,
 						"description": "QR payload understood by iTAK's server scanner. It configures the SSL streaming endpoint and\niTAK then asks for the user's login. `null` with a private server certificate because the QR\ncannot carry CA trust material."
 					},
-					"itakPackageCertificateId": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/Uuid"
-							}
-						],
-						"nullable": true,
-						"description": "The still valid certificate from an earlier iTAK package download. A new package is refused\nuntil it is revoked, so each downloaded package stays one device."
+					"unusedPackageHours": {
+						"type": "number",
+						"format": "double",
+						"description": "Hours within which a downloaded iTAK or WinTAK package must connect once; otherwise its\ncertificate is revoked."
 					}
 				},
 				"required": [
@@ -1018,7 +1027,43 @@
 					"streamingPort",
 					"atakEnrollmentUrl",
 					"itakQrString",
-					"itakPackageCertificateId"
+					"unusedPackageHours"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakReportedDeviceDto": {
+				"description": "The app's own description from the `takv` and `contact` details of its position beacon. Set by\nthe app, so it names the device but proves nothing.",
+				"properties": {
+					"name": {
+						"type": "string",
+						"nullable": true,
+						"description": "Device model, e.g. `iPhone 17`."
+					},
+					"app": {
+						"type": "string",
+						"nullable": true,
+						"description": "TAK app, e.g. `iTAK` or `WinTAK-CIV`."
+					},
+					"appVersion": {
+						"type": "string",
+						"nullable": true
+					},
+					"os": {
+						"type": "string",
+						"nullable": true
+					},
+					"callsign": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"name",
+					"app",
+					"appVersion",
+					"os",
+					"callsign"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1071,6 +1116,26 @@
 						"type": "string",
 						"nullable": true
 					},
+					"firstConnectedAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "First streaming connection with this certificate; `null` while an app never connected.",
+						"format": "date-time"
+					},
+					"lastConnectedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"device": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakReportedDeviceDto"
+							}
+						],
+						"nullable": true,
+						"description": "What the app last reported about itself; `null` until it sent its own position."
+					},
 					"issuedForOldEndpoint": {
 						"type": "boolean",
 						"description": "Issued before the TAK server's host name or a port last changed; the app may still use the old\nendpoint and must enroll again."
@@ -1088,6 +1153,9 @@
 					"notAfter",
 					"revokedAt",
 					"revocationReason",
+					"firstConnectedAt",
+					"lastConnectedAt",
+					"device",
 					"issuedForOldEndpoint"
 				],
 				"type": "object",
@@ -1326,6 +1394,221 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakGroupSummaryDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"receiverCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Members that receive what is sent into the group."
+					},
+					"senderCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Members that send into the group."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"name",
+					"description",
+					"receiverCount",
+					"senderCount",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakGroupPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/TakGroupSummaryDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakGroupMemberDto": {
+				"description": "A member's place in a TAK group: receiving what is sent into it (in), sending into it (out).",
+				"properties": {
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"receive": {
+						"type": "boolean"
+					},
+					"send": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"memberId",
+					"receive",
+					"send"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakGroupDto": {
+				"description": "A free TAK group of the advanced group mode, e.g. `Medics`. Members are assigned per group;\nroles with `seesAllTakGroups` need no assignment.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"receiverCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Members that receive what is sent into the group."
+					},
+					"senderCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Members that send into the group."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged with updates."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"members": {
+						"items": {
+							"$ref": "#/components/schemas/TakGroupMemberDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"id",
+					"eventId",
+					"name",
+					"description",
+					"receiverCount",
+					"senderCount",
+					"version",
+					"createdAt",
+					"updatedAt",
+					"members"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateTakGroupRequest": {
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 60
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 500
+					},
+					"members": {
+						"items": {
+							"$ref": "#/components/schemas/TakGroupMemberDto"
+						},
+						"type": "array",
+						"maxItems": 5000
+					}
+				},
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateTakGroupRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 60
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 500
+					},
+					"members": {
+						"items": {
+							"$ref": "#/components/schemas/TakGroupMemberDto"
+						},
+						"type": "array",
+						"description": "Replaces the group's members; omit to keep them. Entries with neither `receive` nor `send`\nare dropped.",
+						"maxItems": 5000
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"description"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"AtakSettingsDto": {
 				"description": "ATAK display settings an event sets for its members; `null` leaves the setting to the\nuploaded preference file or to ATAK's default.",
 				"properties": {
@@ -1402,6 +1685,14 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakGroupMode": {
+				"type": "string",
+				"enum": [
+					"off",
+					"simple",
+					"advanced"
+				]
+			},
 			"AtakPreferenceDto": {
 				"description": "One preference of an uploaded ATAK `.pref` file.",
 				"properties": {
@@ -1473,6 +1764,14 @@
 					"atakSettings": {
 						"$ref": "#/components/schemas/AtakSettingsDto"
 					},
+					"groupMode": {
+						"$ref": "#/components/schemas/TakGroupMode",
+						"description": "`off`: every member sees the whole event. `simple`: members see only their event group.\n`advanced`: members receive what is sent into the event's TAK groups they receive from\n(`/events/{eventId}/tak/groups`). In both separating modes roles with `seesAllTakGroups` see\nand reach everyone. Applies to live connections within seconds, without publishing."
+					},
+					"groupsInApp": {
+						"type": "boolean",
+						"description": "In the advanced mode, TAK apps list their groups and may switch them on and off."
+					},
 					"atakPreferenceFile": {
 						"allOf": [
 							{
@@ -1497,6 +1796,8 @@
 					"eventId",
 					"meshChannelId",
 					"atakSettings",
+					"groupMode",
+					"groupsInApp",
 					"atakPreferenceFile",
 					"version",
 					"updatedAt"
@@ -1523,6 +1824,14 @@
 					"atakSettings": {
 						"$ref": "#/components/schemas/AtakSettingsDto",
 						"description": "Omit to keep the current settings."
+					},
+					"groupMode": {
+						"$ref": "#/components/schemas/TakGroupMode",
+						"description": "Omit to keep the current mode."
+					},
+					"groupsInApp": {
+						"type": "boolean",
+						"description": "Omit to keep the current value."
 					}
 				},
 				"required": [
@@ -4039,6 +4348,10 @@
 						"nullable": true,
 						"description": "ATAK role for members of this role, replacing their event group's default TAK role, e.g.\n`Team Lead` for platoon leaders. `null` keeps the group's role."
 					},
+					"seesAllTakGroups": {
+						"type": "boolean",
+						"description": "Members of this role see and reach every event group when the event separates TAK groups,\ne.g. platoon leaders."
+					},
 					"version": {
 						"type": "number",
 						"format": "double",
@@ -4060,6 +4373,7 @@
 					"slug",
 					"description",
 					"takRoleOverride",
+					"seesAllTakGroups",
 					"version",
 					"createdAt",
 					"updatedAt"
@@ -4108,6 +4422,9 @@
 							}
 						],
 						"nullable": true
+					},
+					"seesAllTakGroups": {
+						"type": "boolean"
 					}
 				},
 				"required": [
@@ -4146,6 +4463,10 @@
 						],
 						"nullable": true,
 						"description": "Omit to keep the current override; `null` removes it."
+					},
+					"seesAllTakGroups": {
+						"type": "boolean",
+						"description": "Omit to keep the current value."
 					}
 				},
 				"required": [
@@ -5424,7 +5745,8 @@
 					"device-profile",
 					"member-data-package",
 					"tak-connection-package",
-					"itak-connection-package"
+					"itak-connection-package",
+					"wintak-connection-package"
 				]
 			},
 			"CreateDownloadGrantRequest": {
@@ -9511,6 +9833,64 @@
 				"parameters": []
 			}
 		},
+		"/me/wintak-connection-package": {
+			"get": {
+				"operationId": "GetWintakConnectionPackage",
+				"responses": {
+					"200": {
+						"description": "WinTAK Connection Data Package",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "No TAK access",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "TAK server not enabled, or an earlier WinTAK package certificate is still valid",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "A WinTAK connection package in the iTAK layout, with a newly issued user-bound client identity.\nWinTAK cannot enroll with a username and password, so it imports this ready-made certificate.\nThe private client key exists only in this download.",
+				"tags": [
+					"TAK server"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
 		"/tak-server/client-certificates": {
 			"get": {
 				"operationId": "ListTakClientCertificates",
@@ -10148,6 +10528,448 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/events/{eventId}/tak/groups": {
+			"get": {
+				"operationId": "ListTakGroups",
+				"responses": {
+					"200": {
+						"description": "TAK groups",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakGroupPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the event's TAK groups ordered by creation time, oldest first.",
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateTakGroup",
+				"responses": {
+					"201": {
+						"description": "TAK group created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Name already in use or event archived; Idempotency-Key conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Makes retries safe: a repeated request returns the original response.",
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateTakGroupRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/groups/{groupId}": {
+			"get": {
+				"operationId": "GetTakGroup",
+				"responses": {
+					"200": {
+						"description": "TAK group",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Returns the group with its members.",
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "groupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateTakGroup",
+				"responses": {
+					"200": {
+						"description": "TAK group updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakGroupDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, name already in use or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces name and description, and the members when given. Requires the current `version`.",
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "groupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTakGroupRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteTakGroup",
+				"responses": {
+					"204": {
+						"description": "TAK group deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK groups"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "groupId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/events/{eventId}/tak/configuration": {

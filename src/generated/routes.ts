@@ -22,6 +22,8 @@ import { TakConnectionPackageController } from './../modules/tak-server/enrollme
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ItakConnectionPackageController } from './../modules/tak-server/enrollment.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { WintakConnectionPackageController } from './../modules/tak-server/enrollment.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakClientCertificatesController } from './../modules/tak-server/client-certificates.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MyTakCertificatesController } from './../modules/tak-server/client-certificates.controller.js';
@@ -29,6 +31,8 @@ import { MyTakCertificatesController } from './../modules/tak-server/client-cert
 import { TakCertificateAuthoritiesController } from './../modules/tak-server/certificate-authority.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakAcmeSettingsController } from './../modules/tak-server/acme-settings.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakGroupsController } from './../modules/tak-groups/tak-groups.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakConfigurationController } from './../modules/tak-configuration/tak-configuration.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -390,6 +394,7 @@ const models: TsoaRoute.Models = {
             "martiPort": {"dataType":"double","required":true},
             "streamingPort": {"dataType":"double","required":true},
             "clientCertificateDays": {"dataType":"double","required":true},
+            "unusedPackageHours": {"dataType":"double","required":true},
             "serverCertificate": {"dataType":"union","subSchemas":[{"ref":"TakServerCertificateDto"},{"dataType":"enum","enums":[null]}],"required":true},
             "certificateFiles": {"dataType":"union","subSchemas":[{"ref":"TakCertificateFilesDto"},{"dataType":"enum","enums":[null]}],"required":true},
             "certificateDirectory": {"dataType":"string","required":true},
@@ -419,6 +424,7 @@ const models: TsoaRoute.Models = {
             "martiPort": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":65535}}},
             "streamingPort": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":65535}}},
             "clientCertificateDays": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":825}}},
+            "unusedPackageHours": {"dataType":"integer","validators":{"minimum":{"value":1},"maximum":{"value":720}}},
             "endpointChange": {"ref":"TakEndpointChangeConfirmation"},
         },
         "additionalProperties": false,
@@ -489,7 +495,19 @@ const models: TsoaRoute.Models = {
             "streamingPort": {"dataType":"double","required":true},
             "atakEnrollmentUrl": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "itakQrString": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "itakPackageCertificateId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
+            "unusedPackageHours": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakReportedDeviceDto": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "app": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "appVersion": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "os": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "callsign": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -508,6 +526,9 @@ const models: TsoaRoute.Models = {
             "notAfter": {"dataType":"string","required":true},
             "revokedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "revocationReason": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "firstConnectedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "lastConnectedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "device": {"dataType":"union","subSchemas":[{"ref":"TakReportedDeviceDto"},{"dataType":"enum","enums":[null]}],"required":true},
             "issuedForOldEndpoint": {"dataType":"boolean","required":true},
         },
         "additionalProperties": false,
@@ -597,6 +618,79 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakGroupSummaryDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "receiverCount": {"dataType":"double","required":true},
+            "senderCount": {"dataType":"double","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakGroupPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"TakGroupSummaryDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakGroupMemberDto": {
+        "dataType": "refObject",
+        "properties": {
+            "memberId": {"ref":"Uuid","required":true},
+            "receive": {"dataType":"boolean","required":true},
+            "send": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakGroupDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "eventId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "receiverCount": {"dataType":"double","required":true},
+            "senderCount": {"dataType":"double","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+            "members": {"dataType":"array","array":{"dataType":"refObject","ref":"TakGroupMemberDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateTakGroupRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":60}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":500}}},
+            "members": {"dataType":"array","array":{"dataType":"refObject","ref":"TakGroupMemberDto"},"validators":{"maxItems":{"value":5000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateTakGroupRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":60}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":500}}},
+            "members": {"dataType":"array","array":{"dataType":"refObject","ref":"TakGroupMemberDto"},"validators":{"maxItems":{"value":5000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AtakSettingsDto": {
         "dataType": "refObject",
         "properties": {
@@ -608,6 +702,11 @@ const models: TsoaRoute.Models = {
             "northReference": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["true"]},{"dataType":"enum","enums":["magnetic"]},{"dataType":"enum","enums":["grid"]},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakGroupMode": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["off"]},{"dataType":"enum","enums":["simple"]},{"dataType":"enum","enums":["advanced"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AtakPreferenceDto": {
@@ -636,6 +735,8 @@ const models: TsoaRoute.Models = {
             "eventId": {"ref":"Uuid","required":true},
             "meshChannelId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
             "atakSettings": {"ref":"AtakSettingsDto","required":true},
+            "groupMode": {"ref":"TakGroupMode","required":true},
+            "groupsInApp": {"dataType":"boolean","required":true},
             "atakPreferenceFile": {"dataType":"union","subSchemas":[{"ref":"AtakPreferenceFileDto"},{"dataType":"enum","enums":[null]}],"required":true},
             "version": {"dataType":"double","required":true},
             "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
@@ -649,6 +750,8 @@ const models: TsoaRoute.Models = {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
             "meshChannelId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
             "atakSettings": {"ref":"AtakSettingsDto"},
+            "groupMode": {"ref":"TakGroupMode"},
+            "groupsInApp": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },
@@ -1519,6 +1622,7 @@ const models: TsoaRoute.Models = {
             "slug": {"dataType":"string","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "takRoleOverride": {"dataType":"union","subSchemas":[{"ref":"TakRole"},{"dataType":"enum","enums":[null]}],"required":true},
+            "seesAllTakGroups": {"dataType":"boolean","required":true},
             "version": {"dataType":"double","required":true},
             "createdAt": {"dataType":"string","required":true},
             "updatedAt": {"dataType":"string","required":true},
@@ -1542,6 +1646,7 @@ const models: TsoaRoute.Models = {
             "slug": {"ref":"Slug","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":500}}},
             "takRoleOverride": {"dataType":"union","subSchemas":[{"ref":"TakRole"},{"dataType":"enum","enums":[null]}]},
+            "seesAllTakGroups": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },
@@ -1554,6 +1659,7 @@ const models: TsoaRoute.Models = {
             "slug": {"ref":"Slug","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":500}}},
             "takRoleOverride": {"dataType":"union","subSchemas":[{"ref":"TakRole"},{"dataType":"enum","enums":[null]}]},
+            "seesAllTakGroups": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },
@@ -2038,7 +2144,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DownloadGrantKind": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["device-profile"]},{"dataType":"enum","enums":["member-data-package"]},{"dataType":"enum","enums":["tak-connection-package"]},{"dataType":"enum","enums":["itak-connection-package"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["device-profile"]},{"dataType":"enum","enums":["member-data-package"]},{"dataType":"enum","enums":["tak-connection-package"]},{"dataType":"enum","enums":["itak-connection-package"]},{"dataType":"enum","enums":["wintak-connection-package"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateDownloadGrantRequest": {
@@ -3742,6 +3848,37 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsWintakConnectionPackageController_getWintakConnectionPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/me/wintak-connection-package',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(WintakConnectionPackageController)),
+            ...(fetchMiddlewares<RequestHandler>(WintakConnectionPackageController.prototype.getWintakConnectionPackage)),
+
+            async function WintakConnectionPackageController_getWintakConnectionPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsWintakConnectionPackageController_getWintakConnectionPackage, request, response });
+
+                const controller = new WintakConnectionPackageController();
+
+              await templateService.apiHandler({
+                methodName: 'getWintakConnectionPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsTakClientCertificatesController_listTakClientCertificates: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
@@ -4083,6 +4220,174 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakGroupsController_listTakGroups: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/events/:eventId/tak/groups',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController.prototype.listTakGroups)),
+
+            async function TakGroupsController_listTakGroups(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakGroupsController_listTakGroups, request, response });
+
+                const controller = new TakGroupsController();
+
+              await templateService.apiHandler({
+                methodName: 'listTakGroups',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakGroupsController_createTakGroup: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateTakGroupRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
+        };
+        app.post('/api/v1/events/:eventId/tak/groups',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController.prototype.createTakGroup)),
+
+            async function TakGroupsController_createTakGroup(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakGroupsController_createTakGroup, request, response });
+
+                const controller = new TakGroupsController();
+
+              await templateService.apiHandler({
+                methodName: 'createTakGroup',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakGroupsController_getTakGroup: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                groupId: {"in":"path","name":"groupId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/tak/groups/:groupId',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController.prototype.getTakGroup)),
+
+            async function TakGroupsController_getTakGroup(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakGroupsController_getTakGroup, request, response });
+
+                const controller = new TakGroupsController();
+
+              await templateService.apiHandler({
+                methodName: 'getTakGroup',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakGroupsController_updateTakGroup: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                groupId: {"in":"path","name":"groupId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateTakGroupRequest"},
+        };
+        app.put('/api/v1/events/:eventId/tak/groups/:groupId',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController.prototype.updateTakGroup)),
+
+            async function TakGroupsController_updateTakGroup(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakGroupsController_updateTakGroup, request, response });
+
+                const controller = new TakGroupsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateTakGroup',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakGroupsController_deleteTakGroup: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                groupId: {"in":"path","name":"groupId","required":true,"ref":"Uuid"},
+        };
+        app.delete('/api/v1/events/:eventId/tak/groups/:groupId',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController)),
+            ...(fetchMiddlewares<RequestHandler>(TakGroupsController.prototype.deleteTakGroup)),
+
+            async function TakGroupsController_deleteTakGroup(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakGroupsController_deleteTakGroup, request, response });
+
+                const controller = new TakGroupsController();
+
+              await templateService.apiHandler({
+                methodName: 'deleteTakGroup',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
               });
             } catch (err) {
                 return next(err);
