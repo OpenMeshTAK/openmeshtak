@@ -3986,47 +3986,9 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"MapSettingsDto": {
-				"description": "The Web map's online base map. Defaults to OpenStreetMap until an administrator changes it.",
+			"BaseMapLayerDto": {
+				"description": "One mutually exclusive XYZ base map; package overlays remain separate.",
 				"properties": {
-					"providerName": {
-						"type": "string"
-					},
-					"tileUrlTemplate": {
-						"type": "string",
-						"description": "XYZ tile URL with `{z}`, `{x}` and `{y}`; `{a-c}` selects subdomains."
-					},
-					"attribution": {
-						"type": "string",
-						"description": "Plain-text attribution the provider requires; the Web app shows it on every map."
-					},
-					"maxZoom": {
-						"type": "number",
-						"format": "double"
-					},
-					"version": {
-						"type": "number",
-						"format": "double",
-						"description": "Optimistic-concurrency version; 0 while the default is in use."
-					}
-				},
-				"required": [
-					"providerName",
-					"tileUrlTemplate",
-					"attribution",
-					"maxZoom",
-					"version"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"UpdateMapSettingsRequest": {
-				"properties": {
-					"version": {
-						"type": "integer",
-						"format": "int32",
-						"minimum": 0
-					},
 					"providerName": {
 						"type": "string",
 						"minLength": 1,
@@ -4047,14 +4009,120 @@
 						"format": "int32",
 						"minimum": 1,
 						"maximum": 22
+					},
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
 					}
 				},
 				"required": [
-					"version",
 					"providerName",
 					"tileUrlTemplate",
 					"attribution",
-					"maxZoom"
+					"maxZoom",
+					"id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MapSettingsDto": {
+				"description": "Legacy top-level fields mirror the default layer.",
+				"properties": {
+					"providerName": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"tileUrlTemplate": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 500
+					},
+					"attribution": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 300
+					},
+					"maxZoom": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 22
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 while the default is in use."
+					},
+					"layers": {
+						"items": {
+							"$ref": "#/components/schemas/BaseMapLayerDto"
+						},
+						"type": "array"
+					},
+					"defaultLayerId": {
+						"$ref": "#/components/schemas/Uuid"
+					}
+				},
+				"required": [
+					"providerName",
+					"tileUrlTemplate",
+					"attribution",
+					"maxZoom",
+					"version",
+					"layers",
+					"defaultLayerId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateMapSettingsRequest": {
+				"properties": {
+					"providerName": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"tileUrlTemplate": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 500
+					},
+					"attribution": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 300
+					},
+					"maxZoom": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 22
+					},
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0
+					},
+					"layers": {
+						"items": {
+							"$ref": "#/components/schemas/BaseMapLayerDto"
+						},
+						"type": "array",
+						"description": "Omit to update only the existing default layer, preserving other layers.",
+						"minItems": 1,
+						"maxItems": 10
+					},
+					"defaultLayerId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Must refer to a supplied layer; otherwise the first supplied layer is the default."
+					}
+				},
+				"required": [
+					"providerName",
+					"tileUrlTemplate",
+					"attribution",
+					"maxZoom",
+					"version"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -4095,6 +4163,145 @@
 				"required": [
 					"version",
 					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"IconSettingsDto": {
+				"properties": {
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until the first upload."
+					},
+					"icons": {
+						"type": "number",
+						"format": "double"
+					},
+					"sets": {
+						"type": "number",
+						"format": "double"
+					},
+					"groups": {
+						"type": "number",
+						"format": "double"
+					},
+					"updatedAt": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"version",
+					"icons",
+					"sets",
+					"groups",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportReportEntry": {
+				"properties": {
+					"feature": {
+						"type": "string",
+						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"feature",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateIconSettingsResult": {
+				"properties": {
+					"settings": {
+						"$ref": "#/components/schemas/IconSettingsDto"
+					},
+					"accepted": {
+						"type": "number",
+						"format": "double"
+					},
+					"rejected": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"settings",
+					"accepted",
+					"rejected"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageIconDto": {
+				"description": "Operator-provided PNG icon, identified by its original TAK path.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"path": {
+						"type": "string"
+					},
+					"setName": {
+						"type": "string"
+					},
+					"group": {
+						"type": "string"
+					},
+					"filename": {
+						"type": "string"
+					},
+					"cotType": {
+						"type": "string",
+						"nullable": true
+					},
+					"width": {
+						"type": "number",
+						"format": "double"
+					},
+					"height": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"path",
+					"setName",
+					"group",
+					"filename",
+					"cotType",
+					"width",
+					"height"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"InstanceIconCatalogue": {
+				"properties": {
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"icons": {
+						"items": {
+							"$ref": "#/components/schemas/PackageIconDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"version",
+					"icons"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -6067,7 +6274,10 @@
 					"point",
 					"line",
 					"polygon",
-					"circle"
+					"circle",
+					"rectangle",
+					"ellipse",
+					"route"
 				]
 			},
 			"Position": {
@@ -6180,6 +6390,238 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"RectangleGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Rectangle"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array",
+						"description": "Four corners in drawing order, without a repeated closing position."
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EllipseGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Ellipse"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position",
+						"description": "Centre; axes are semi-axis lengths, matching TAK's ellipse major/minor."
+					},
+					"major": {
+						"type": "number",
+						"format": "double",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"minor": {
+						"type": "number",
+						"format": "double",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"rotation": {
+						"type": "number",
+						"format": "double",
+						"description": "Bearing of the major axis clockwise from north, in degrees.",
+						"minimum": 0,
+						"maximum": 360
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"major",
+					"minor",
+					"rotation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RoutePointId": {
+				"type": "string",
+				"description": "TAK routes refer to their own stable point identifiers in navigation cues.",
+				"minLength": 1,
+				"maxLength": 128,
+				"pattern": "^[^\\u0000-\\u001f]+$"
+			},
+			"RoutePoint": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/RoutePointId"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"waypoint",
+							"checkpoint"
+						]
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"remarks": {
+						"type": "string",
+						"maxLength": 2000
+					}
+				},
+				"required": [
+					"id",
+					"type",
+					"name",
+					"remarks"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteOption": {
+				"type": "string",
+				"maxLength": 64
+			},
+			"RouteOptions": {
+				"properties": {
+					"transportationType": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"method": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"direction": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"routeType": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"order": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"planningMethod": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"prefix": {
+						"$ref": "#/components/schemas/RouteOption"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteCueTrigger": {
+				"properties": {
+					"mode": {
+						"type": "string",
+						"enum": [
+							"d",
+							"t"
+						]
+					},
+					"value": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 2147483647
+					}
+				},
+				"required": [
+					"mode",
+					"value"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteNavigationCue": {
+				"properties": {
+					"pointId": {
+						"$ref": "#/components/schemas/RoutePointId"
+					},
+					"text": {
+						"type": "string",
+						"maxLength": 2000
+					},
+					"voice": {
+						"type": "string",
+						"maxLength": 2000
+					},
+					"triggers": {
+						"items": {
+							"$ref": "#/components/schemas/RouteCueTrigger"
+						},
+						"type": "array",
+						"maxItems": 16
+					}
+				},
+				"required": [
+					"pointId",
+					"text",
+					"voice",
+					"triggers"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Route"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array",
+						"description": "Ordered route positions; each has matching metadata in `points`."
+					},
+					"points": {
+						"items": {
+							"$ref": "#/components/schemas/RoutePoint"
+						},
+						"type": "array",
+						"maxItems": 10000
+					},
+					"options": {
+						"$ref": "#/components/schemas/RouteOptions"
+					},
+					"navigationCues": {
+						"items": {
+							"$ref": "#/components/schemas/RouteNavigationCue"
+						},
+						"type": "array",
+						"maxItems": 1000
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"points",
+					"options",
+					"navigationCues"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"PackageGeometry": {
 				"anyOf": [
 					{
@@ -6193,14 +6635,50 @@
 					},
 					{
 						"$ref": "#/components/schemas/CircleGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/RectangleGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/EllipseGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/RouteGeometry"
 					}
 				],
-				"description": "RFC 7946 geometry in WGS84, plus circles as an explicit domain extension."
+				"description": "RFC 7946 semantics in WGS84, with explicit parametric shapes and ordered TAK routes."
 			},
 			"HexColor": {
 				"type": "string",
 				"description": "Colour as `#RRGGBB`.",
 				"pattern": "^#[0-9A-Fa-f]{6}$"
+			},
+			"StrokeStyle": {
+				"type": "string",
+				"enum": [
+					"solid",
+					"dashed"
+				],
+				"description": "How lines, outlines and circles are drawn; ATAK writes it as `strokeStyle`."
+			},
+			"HeightUnit": {
+				"type": "number",
+				"enum": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				],
+				"description": "ATAK Span display units; the stored height itself is always metres."
+			},
+			"ExtrudeMode": {
+				"type": "string",
+				"enum": [
+					"cylinder",
+					"cone_down"
+				]
 			},
 			"PackageObjectStyle": {
 				"properties": {
@@ -6218,9 +6696,48 @@
 					"fillOpacity": {
 						"type": "number",
 						"format": "double",
-						"description": "Polygon fill opacity; the fill uses `color`.",
+						"description": "Polygon and circle fill opacity.",
 						"minimum": 0,
 						"maximum": 1
+					},
+					"strokeStyle": {
+						"$ref": "#/components/schemas/StrokeStyle",
+						"description": "Line style of lines, outlines and circles; `solid` when left out."
+					},
+					"fillColor": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/HexColor"
+							}
+						],
+						"nullable": true,
+						"description": "Fill colour of areas and circles; `null` or left out fills with `color`."
+					},
+					"height": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Shape extrusion height in metres, independent of coordinate altitude. Null/absent is unknown.",
+						"minimum": -100000,
+						"maximum": 100000
+					},
+					"heightUnit": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/HeightUnit"
+							}
+						],
+						"nullable": true,
+						"description": "Preferred TAK height display unit (0 km, 1 m, 2 mi, 3 yd, 4 ft, 5 NM)."
+					},
+					"extrudeMode": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/ExtrudeMode"
+							}
+						],
+						"nullable": true,
+						"description": "Circle extrusion mode; absent uses the client's default."
 					}
 				},
 				"required": [
@@ -6473,6 +6990,18 @@
 						"format": "double"
 					},
 					"circles": {
+						"type": "number",
+						"format": "double"
+					},
+					"rectangles": {
+						"type": "number",
+						"format": "double"
+					},
+					"ellipses": {
+						"type": "number",
+						"format": "double"
+					},
+					"routes": {
 						"type": "number",
 						"format": "double"
 					},
@@ -6885,23 +7414,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"ImportReportEntry": {
-				"properties": {
-					"feature": {
-						"type": "string",
-						"description": "Which input feature this is about, e.g. `Feature 3 (Rally point)`."
-					},
-					"message": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"feature",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"ImportReport": {
 				"description": "Outcome of a GeoJSON or ATAK import; every input item appears somewhere in it.",
 				"properties": {
@@ -7240,7 +7752,7 @@
 				"additionalProperties": false
 			},
 			"PackageContentDto": {
-				"description": "Map content kept from an imported ATAK Data Package; exported unchanged with its layer.",
+				"description": "Imported map content (exported unchanged), or an operator-provided editor-only icon library.",
 				"properties": {
 					"id": {
 						"$ref": "#/components/schemas/Uuid"
@@ -7253,7 +7765,8 @@
 						"enum": [
 							"offline-map",
 							"nested-data-package",
-							"rubber-sheet"
+							"rubber-sheet",
+							"icon-library"
 						]
 					},
 					"name": {
@@ -7344,6 +7857,30 @@
 					"layerId",
 					"visible",
 					"opacity"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"IconLibraryImportResult": {
+				"properties": {
+					"contentId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"accepted": {
+						"type": "number",
+						"format": "double"
+					},
+					"rejected": {
+						"items": {
+							"$ref": "#/components/schemas/ImportReportEntry"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"contentId",
+					"accepted",
+					"rejected"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -14548,7 +15085,7 @@
 						}
 					}
 				},
-				"description": "The base map the Web app shows. Readable by every signed-in user.",
+				"description": "Available Web base maps and the installation default. Readable by every signed-in user.",
 				"tags": [
 					"Map"
 				],
@@ -14613,7 +15150,7 @@
 						}
 					}
 				},
-				"description": "Changes the base map for everyone. Requires instance-wide `settings.manage`.",
+				"description": "Changes available base maps and their default. Requires instance-wide `settings.manage`.",
 				"tags": [
 					"Map"
 				],
@@ -14731,6 +15268,309 @@
 						}
 					}
 				}
+			}
+		},
+		"/map/icons/settings": {
+			"get": {
+				"operationId": "GetSettings",
+				"responses": {
+					"200": {
+						"description": "Icon settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IconSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The installation-wide library summary. Readable by signed-in users.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateSettings",
+				"responses": {
+					"200": {
+						"description": "Icon database imported",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UpdateIconSettingsResult"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Upload too large",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "Unsupported upload",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid icon database",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Replaces installation-wide PNG icons using raw WinTAK SQLite bytes (10 MiB). Requires settings.manage.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "version",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 0
+						}
+					}
+				]
+			},
+			"delete": {
+				"operationId": "ClearSettings",
+				"responses": {
+					"200": {
+						"description": "Icon database removed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IconSettingsDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Clears shared icons without changing stored marker paths. Requires settings.manage.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "version",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 0
+						}
+					}
+				]
+			}
+		},
+		"/map/icons": {
+			"get": {
+				"operationId": "GetCatalogue",
+				"responses": {
+					"200": {
+						"description": "Icon catalogue",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InstanceIconCatalogue"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Original TAK icon paths and fallback types, shared by all signed-in editors.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/map/icons/{version}/{iconId}/image": {
+			"get": {
+				"operationId": "GetImage",
+				"responses": {
+					"200": {
+						"description": "Icon image",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "One PNG from the current library; stale versions and unknown IDs return 404.",
+				"tags": [
+					"Map"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "version",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"in": "path",
+						"name": "iconId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/health": {
@@ -19359,7 +20199,7 @@
 						}
 					}
 				},
-				"description": "Exports the current draft as KML; `layerId` limits it to one layer. Circles become polygons.",
+				"description": "Exports the current draft as KML; `layerId` limits it to one layer. Circles and ellipses become labelled 64-sided footprints; parametric metadata is retained in ExtendedData.",
 				"tags": [
 					"Data packages"
 				],
@@ -20456,7 +21296,7 @@
 						}
 					}
 				},
-				"description": "Imports an ATAK Data Package (`application/zip`, at most 10 MB) or a single CoT event\n(`application/xml`) into the layer. Markers, freeform shapes, rectangles and circles are\nsupported; the report lists every adjusted, skipped and rejected item.",
+				"description": "Imports an ATAK Data Package (`application/zip`, at most 10 MB) or a single CoT event\n(`application/xml`) into the layer. Markers, freeform shapes, rectangles, circles, ellipses and routes are\nsupported; the report lists every adjusted, skipped and rejected item.",
 				"tags": [
 					"Data packages"
 				],
@@ -20585,6 +21425,313 @@
 						"in": "query",
 						"name": "layerId",
 						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/layers/{layerId}/import/icons": {
+			"post": {
+				"operationId": "ImportPackageIcons",
+				"responses": {
+					"200": {
+						"description": "Icon library imported",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IconLibraryImportResult"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Layer locked, event archived or too many libraries",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Upload too large",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "Unsupported upload",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid icon database",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Imports PNG icons from WinTAK iconsets.sqlite (raw bytes, 10 MB maximum). Requires data-packages.edit; icons are editor-only and do not ship in TAK exports.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "layerId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/contents/{contentId}/icons": {
+			"get": {
+				"operationId": "ListIcons",
+				"responses": {
+					"200": {
+						"description": "Icons",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/PackageIconDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The library's original TAK paths and safe image identifiers. Requires data-packages.read.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/contents/{contentId}/icons/{iconId}/image": {
+			"get": {
+				"operationId": "GetIconImage",
+				"responses": {
+					"200": {
+						"description": "Icon image",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "One validated PNG, served only to an authorized package reader.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "iconId",
+						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
 						}

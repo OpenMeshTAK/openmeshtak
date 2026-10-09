@@ -54,6 +54,9 @@ const EMPTY_SUMMARY: DataPackageContentSummary = {
   lines: 0,
   polygons: 0,
   circles: 0,
+  rectangles: 0,
+  ellipses: 0,
+  routes: 0,
   offlineMaps: 0,
   rubberSheets: 0,
 };
@@ -63,6 +66,9 @@ const OBJECT_KINDS: Record<string, keyof DataPackageContentSummary> = {
   line: "lines",
   polygon: "polygons",
   circle: "circles",
+  rectangle: "rectangles",
+  ellipse: "ellipses",
+  route: "routes",
 };
 
 const CONTENT_KINDS: Record<string, keyof DataPackageContentSummary> = {
@@ -82,7 +88,7 @@ export async function contentSummaries(packageIds: string[]): Promise<Map<string
   const add = (packageId: string, field: keyof DataPackageContentSummary | undefined, count: number) => {
     const summary = summaries.get(packageId);
     if (summary !== undefined && field !== undefined) {
-      summary[field] += count;
+      summary[field] = (summary[field] ?? 0) + count;
     }
   };
   for (const group of objects) {

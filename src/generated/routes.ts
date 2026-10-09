@@ -78,6 +78,8 @@ import { MapSettingsController } from './../modules/map-settings/map-settings.co
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { InstanceSettingsController } from './../modules/instance-settings/instance-settings.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { IconSettingsController } from './../modules/icon-settings/icon-settings.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { HealthController } from './../modules/health/health.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { EventsController } from './../modules/events/events.controller.js';
@@ -121,6 +123,8 @@ import { PackageCopyController } from './../modules/data-packages/package-copy.c
 import { PackageContentController } from './../modules/data-packages/package-content.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageAtakController } from './../modules/data-packages/package-atak.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { IconLibraryController } from './../modules/data-packages/icon-library.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { DataPackagesController } from './../modules/data-packages/data-packages.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -1520,14 +1524,28 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BaseMapLayerDto": {
+        "dataType": "refObject",
+        "properties": {
+            "providerName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "tileUrlTemplate": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":500}}},
+            "attribution": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":300}}},
+            "maxZoom": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":22}}},
+            "id": {"ref":"Uuid","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MapSettingsDto": {
         "dataType": "refObject",
         "properties": {
-            "providerName": {"dataType":"string","required":true},
-            "tileUrlTemplate": {"dataType":"string","required":true},
-            "attribution": {"dataType":"string","required":true},
-            "maxZoom": {"dataType":"double","required":true},
+            "providerName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "tileUrlTemplate": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":500}}},
+            "attribution": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":300}}},
+            "maxZoom": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":22}}},
             "version": {"dataType":"double","required":true},
+            "layers": {"dataType":"array","array":{"dataType":"refObject","ref":"BaseMapLayerDto"},"required":true},
+            "defaultLayerId": {"ref":"Uuid","required":true},
         },
         "additionalProperties": false,
     },
@@ -1535,11 +1553,13 @@ const models: TsoaRoute.Models = {
     "UpdateMapSettingsRequest": {
         "dataType": "refObject",
         "properties": {
-            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
             "providerName": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "tileUrlTemplate": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":500}}},
             "attribution": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":300}}},
             "maxZoom": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":22}}},
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "layers": {"dataType":"array","array":{"dataType":"refObject","ref":"BaseMapLayerDto"},"validators":{"minItems":{"value":1},"maxItems":{"value":10}}},
+            "defaultLayerId": {"ref":"Uuid"},
         },
         "additionalProperties": false,
     },
@@ -1558,6 +1578,61 @@ const models: TsoaRoute.Models = {
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":60}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "IconSettingsDto": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"double","required":true},
+            "icons": {"dataType":"double","required":true},
+            "sets": {"dataType":"double","required":true},
+            "groups": {"dataType":"double","required":true},
+            "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ImportReportEntry": {
+        "dataType": "refObject",
+        "properties": {
+            "feature": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateIconSettingsResult": {
+        "dataType": "refObject",
+        "properties": {
+            "settings": {"ref":"IconSettingsDto","required":true},
+            "accepted": {"dataType":"double","required":true},
+            "rejected": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageIconDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "path": {"dataType":"string","required":true},
+            "setName": {"dataType":"string","required":true},
+            "group": {"dataType":"string","required":true},
+            "filename": {"dataType":"string","required":true},
+            "cotType": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "width": {"dataType":"double","required":true},
+            "height": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "InstanceIconCatalogue": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"double","required":true},
+            "icons": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageIconDto"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -2271,7 +2346,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PackageObjectKind": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["point"]},{"dataType":"enum","enums":["line"]},{"dataType":"enum","enums":["polygon"]},{"dataType":"enum","enums":["circle"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["point"]},{"dataType":"enum","enums":["line"]},{"dataType":"enum","enums":["polygon"]},{"dataType":"enum","enums":["circle"]},{"dataType":"enum","enums":["rectangle"]},{"dataType":"enum","enums":["ellipse"]},{"dataType":"enum","enums":["route"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Position": {
@@ -2316,14 +2391,117 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RectangleGeometry": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["Rectangle"],"required":true},
+            "coordinates": {"dataType":"array","array":{"dataType":"refAlias","ref":"Position"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "EllipseGeometry": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["Ellipse"],"required":true},
+            "coordinates": {"ref":"Position","required":true},
+            "major": {"dataType":"double","required":true,"validators":{"minimum":{"value":0.1},"maximum":{"value":100000}}},
+            "minor": {"dataType":"double","required":true,"validators":{"minimum":{"value":0.1},"maximum":{"value":100000}}},
+            "rotation": {"dataType":"double","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":360}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RoutePointId": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{"minLength":{"value":1},"maxLength":{"value":128},"pattern":{"value":"^[^\\u0000-\\u001f]+$"}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RoutePoint": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"RoutePointId","required":true},
+            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["waypoint"]},{"dataType":"enum","enums":["checkpoint"]}],"required":true},
+            "name": {"dataType":"string","required":true,"validators":{"maxLength":{"value":100}}},
+            "remarks": {"dataType":"string","required":true,"validators":{"maxLength":{"value":2000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RouteOption": {
+        "dataType": "refAlias",
+        "type": {"dataType":"string","validators":{"maxLength":{"value":64}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RouteOptions": {
+        "dataType": "refObject",
+        "properties": {
+            "transportationType": {"ref":"RouteOption"},
+            "method": {"ref":"RouteOption"},
+            "direction": {"ref":"RouteOption"},
+            "routeType": {"ref":"RouteOption"},
+            "order": {"ref":"RouteOption"},
+            "planningMethod": {"ref":"RouteOption"},
+            "prefix": {"ref":"RouteOption"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RouteCueTrigger": {
+        "dataType": "refObject",
+        "properties": {
+            "mode": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["d"]},{"dataType":"enum","enums":["t"]}],"required":true},
+            "value": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":2147483647}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RouteNavigationCue": {
+        "dataType": "refObject",
+        "properties": {
+            "pointId": {"ref":"RoutePointId","required":true},
+            "text": {"dataType":"string","required":true,"validators":{"maxLength":{"value":2000}}},
+            "voice": {"dataType":"string","required":true,"validators":{"maxLength":{"value":2000}}},
+            "triggers": {"dataType":"array","array":{"dataType":"refObject","ref":"RouteCueTrigger"},"required":true,"validators":{"maxItems":{"value":16}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RouteGeometry": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"enum","enums":["Route"],"required":true},
+            "coordinates": {"dataType":"array","array":{"dataType":"refAlias","ref":"Position"},"required":true},
+            "points": {"dataType":"array","array":{"dataType":"refObject","ref":"RoutePoint"},"required":true,"validators":{"maxItems":{"value":10000}}},
+            "options": {"ref":"RouteOptions","required":true},
+            "navigationCues": {"dataType":"array","array":{"dataType":"refObject","ref":"RouteNavigationCue"},"required":true,"validators":{"maxItems":{"value":1000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PackageGeometry": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"ref":"PointGeometry"},{"ref":"LineStringGeometry"},{"ref":"PolygonGeometry"},{"ref":"CircleGeometry"}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"ref":"PointGeometry"},{"ref":"LineStringGeometry"},{"ref":"PolygonGeometry"},{"ref":"CircleGeometry"},{"ref":"RectangleGeometry"},{"ref":"EllipseGeometry"},{"ref":"RouteGeometry"}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "HexColor": {
         "dataType": "refAlias",
         "type": {"dataType":"string","validators":{"pattern":{"value":"^#[0-9A-Fa-f]{6}$"}}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "StrokeStyle": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["solid"]},{"dataType":"enum","enums":["dashed"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "HeightUnit": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[0]},{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]},{"dataType":"enum","enums":[3]},{"dataType":"enum","enums":[4]},{"dataType":"enum","enums":[5]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ExtrudeMode": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["cylinder"]},{"dataType":"enum","enums":["cone_down"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PackageObjectStyle": {
@@ -2332,6 +2510,11 @@ const models: TsoaRoute.Models = {
             "color": {"ref":"HexColor","required":true},
             "strokeWidth": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":20}}},
             "fillOpacity": {"dataType":"double","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":1}}},
+            "strokeStyle": {"ref":"StrokeStyle"},
+            "fillColor": {"dataType":"union","subSchemas":[{"ref":"HexColor"},{"dataType":"enum","enums":[null]}]},
+            "height": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"validators":{"minimum":{"value":-100000},"maximum":{"value":100000}}},
+            "heightUnit": {"dataType":"union","subSchemas":[{"ref":"HeightUnit"},{"dataType":"enum","enums":[null]}]},
+            "extrudeMode": {"dataType":"union","subSchemas":[{"ref":"ExtrudeMode"},{"dataType":"enum","enums":[null]}]},
         },
         "additionalProperties": false,
     },
@@ -2429,6 +2612,9 @@ const models: TsoaRoute.Models = {
             "lines": {"dataType":"double","required":true},
             "polygons": {"dataType":"double","required":true},
             "circles": {"dataType":"double","required":true},
+            "rectangles": {"dataType":"double"},
+            "ellipses": {"dataType":"double"},
+            "routes": {"dataType":"double"},
             "offlineMaps": {"dataType":"double","required":true},
             "rubberSheets": {"dataType":"double","required":true},
         },
@@ -2553,15 +2739,6 @@ const models: TsoaRoute.Models = {
             "geometry": {"ref":"PackageGeometry","required":true},
             "style": {"ref":"PackageObjectStyle","required":true},
             "tak": {"dataType":"union","subSchemas":[{"ref":"TakMarker"},{"dataType":"enum","enums":[null]}],"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ImportReportEntry": {
-        "dataType": "refObject",
-        "properties": {
-            "feature": {"dataType":"string","required":true},
-            "message": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -2695,7 +2872,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "id": {"ref":"Uuid","required":true},
             "layerId": {"ref":"Uuid","required":true},
-            "kind": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["offline-map"]},{"dataType":"enum","enums":["nested-data-package"]},{"dataType":"enum","enums":["rubber-sheet"]}],"required":true},
+            "kind": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["offline-map"]},{"dataType":"enum","enums":["nested-data-package"]},{"dataType":"enum","enums":["rubber-sheet"]},{"dataType":"enum","enums":["icon-library"]}],"required":true},
             "name": {"dataType":"string","required":true},
             "size": {"dataType":"double","required":true},
             "rubberSheet": {"dataType":"union","subSchemas":[{"ref":"RubberSheetDto"},{"dataType":"enum","enums":[null]}],"required":true},
@@ -2715,6 +2892,16 @@ const models: TsoaRoute.Models = {
             "layerId": {"dataType":"string","required":true},
             "visible": {"dataType":"boolean","required":true},
             "opacity": {"dataType":"double","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":1}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "IconLibraryImportResult": {
+        "dataType": "refObject",
+        "properties": {
+            "contentId": {"ref":"Uuid","required":true},
+            "accepted": {"dataType":"double","required":true},
+            "rejected": {"dataType":"array","array":{"dataType":"refObject","ref":"ImportReportEntry"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -6100,6 +6287,165 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIconSettingsController_getSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/map/icons/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.getSettings)),
+
+            async function IconSettingsController_getSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_getSettings, request, response });
+
+                const controller = new IconSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIconSettingsController_updateSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                version: {"in":"query","name":"version","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"version"},"minimum":{"value":0}}},
+        };
+        app.put('/api/v1/map/icons/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.updateSettings)),
+
+            async function IconSettingsController_updateSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_updateSettings, request, response });
+
+                const controller = new IconSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'updateSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIconSettingsController_clearSettings: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                version: {"in":"query","name":"version","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"version"},"minimum":{"value":0}}},
+        };
+        app.delete('/api/v1/map/icons/settings',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.clearSettings)),
+
+            async function IconSettingsController_clearSettings(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_clearSettings, request, response });
+
+                const controller = new IconSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'clearSettings',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIconSettingsController_getCatalogue: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/map/icons',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.getCatalogue)),
+
+            async function IconSettingsController_getCatalogue(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_getCatalogue, request, response });
+
+                const controller = new IconSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getCatalogue',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIconSettingsController_getImage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                version: {"in":"path","name":"version","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"version"},"minimum":{"value":1}}},
+                iconId: {"in":"path","name":"iconId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/map/icons/:version/:iconId/image',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController)),
+            ...(fetchMiddlewares<RequestHandler>(IconSettingsController.prototype.getImage)),
+
+            async function IconSettingsController_getImage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconSettingsController_getImage, request, response });
+
+                const controller = new IconSettingsController();
+
+              await templateService.apiHandler({
+                methodName: 'getImage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsHealthController_getHealth: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/api/v1/health',
@@ -8277,6 +8623,109 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'exportAtakDataPackage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIconLibraryController_importPackageIcons: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                layerId: {"in":"path","name":"layerId","required":true,"ref":"Uuid"},
+        };
+        app.post('/api/v1/events/:eventId/data-packages/:packageId/layers/:layerId/import/icons',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(IconLibraryController)),
+            ...(fetchMiddlewares<RequestHandler>(IconLibraryController.prototype.importPackageIcons)),
+
+            async function IconLibraryController_importPackageIcons(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconLibraryController_importPackageIcons, request, response });
+
+                const controller = new IconLibraryController();
+
+              await templateService.apiHandler({
+                methodName: 'importPackageIcons',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIconLibraryController_listIcons: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                contentId: {"in":"path","name":"contentId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId/icons',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(IconLibraryController)),
+            ...(fetchMiddlewares<RequestHandler>(IconLibraryController.prototype.listIcons)),
+
+            async function IconLibraryController_listIcons(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconLibraryController_listIcons, request, response });
+
+                const controller = new IconLibraryController();
+
+              await templateService.apiHandler({
+                methodName: 'listIcons',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIconLibraryController_getIconImage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                contentId: {"in":"path","name":"contentId","required":true,"ref":"Uuid"},
+                iconId: {"in":"path","name":"iconId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/contents/:contentId/icons/:iconId/image',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(IconLibraryController)),
+            ...(fetchMiddlewares<RequestHandler>(IconLibraryController.prototype.getIconImage)),
+
+            async function IconLibraryController_getIconImage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIconLibraryController_getIconImage, request, response });
+
+                const controller = new IconLibraryController();
+
+              await templateService.apiHandler({
+                methodName: 'getIconImage',
                 controller,
                 response,
                 next,

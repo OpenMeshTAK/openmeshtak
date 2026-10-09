@@ -19,7 +19,7 @@ export async function missionFileByHash(userId: string, access: TakAccess, hash:
     return null;
   }
   for (const { mission, latest } of await visibleMissionsFor(userId, access)) {
-    const file = ((latest.snapshot as unknown as PackageSnapshot).contents ?? []).find(({ sha256 }) => sha256 === hash);
+    const file = ((latest.snapshot as unknown as PackageSnapshot).contents ?? []).find(({ sha256, kind }) => sha256 === hash && kind !== "icon-library");
     if (file !== undefined) {
       const [loaded] = await loadContentFiles([file]);
       return loaded === undefined ? null : { missionId: mission.id, eventId: mission.eventId, file, bytes: loaded.bytes };

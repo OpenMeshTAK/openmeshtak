@@ -6,7 +6,7 @@ import type { PackageSnapshot } from "./package-snapshot.js";
  * uncompressed CoT. Files dominate and are stored as-is, so the real archive is close or smaller.
  */
 export function estimateAtakExportSize(snapshot: PackageSnapshot, publishedAt: Date): number {
-  const files = (snapshot.contents ?? []).reduce((total, content) => total + content.size, 0);
+  const files = (snapshot.contents ?? []).filter((content) => content.kind !== "icon-library").reduce((total, content) => total + content.size, 0);
   const cot = snapshot.objects.reduce(
     (total, object) => total + Buffer.byteLength(objectToCot(object, publishedAt), "utf8"),
     0,

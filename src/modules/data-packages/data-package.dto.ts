@@ -43,6 +43,9 @@ export interface DataPackageContentSummary {
   lines: number;
   polygons: number;
   circles: number;
+  rectangles?: number;
+  ellipses?: number;
+  routes?: number;
   /** Offline map caches, including nested map packages. */
   offlineMaps: number;
   rubberSheets: number;

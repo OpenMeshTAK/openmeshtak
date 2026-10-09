@@ -1,6 +1,8 @@
 import kinks from "@turf/kinks";
 import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
 import type { CircleGeometry, PackageGeometry, PackageObjectKind } from "./package-object.dto.js";
+import { rectangularCorners, shapeFootprint } from "./shape-footprint.js";
+import { routeProblem } from "./route-geometry.js";
 
 /** Bounds one object so drawing, storage and export stay fast. */
 export const MAX_POSITIONS_PER_OBJECT = 10_000;
@@ -10,6 +12,9 @@ const KIND_BY_TYPE: Record<PackageGeometry["type"], PackageObjectKind> = {
   LineString: "line",
   Polygon: "polygon",
   Circle: "circle",
+  Rectangle: "rectangle",
+  Ellipse: "ellipse",
+  Route: "route",
 };
 
 /** Largest circle radius in metres; larger areas belong in a polygon. */
@@ -62,8 +67,11 @@ function hasValidNesting(geometry: PackageGeometry): boolean {
   switch (geometry.type) {
     case "Point":
     case "Circle":
+    case "Ellipse":
       return Array.isArray(geometry.coordinates);
     case "LineString":
+    case "Rectangle":
+    case "Route":
       return isPositionList(geometry.coordinates);
     case "Polygon":
       return Array.isArray(geometry.coordinates) && geometry.coordinates.every(isPositionList);
@@ -76,9 +84,13 @@ function ringsOf(geometry: PackageGeometry): number[][][] {
   switch (geometry.type) {
     case "Point":
     case "Circle":
+    case "Ellipse":
       return [[geometry.coordinates]];
     case "LineString":
+    case "Route":
       return [geometry.coordinates];
+    case "Rectangle":
+      return [[...geometry.coordinates, geometry.coordinates[0] ?? []]];
     case "Polygon":
       return geometry.coordinates;
   }
@@ -92,6 +104,16 @@ function circleCrossesAntimeridian(geometry: CircleGeometry): boolean {
 }
 
 function shapeProblem(geometry: PackageGeometry): string | null {
+  if (geometry.type === "Route") return routeProblem(geometry);
+  if (geometry.type === "Rectangle" && !rectangularCorners(geometry.coordinates)) {
+    return "A rectangle needs four corners in order with right angles and matching opposite sides.";
+  }
+  if (geometry.type === "Ellipse") {
+    if (![geometry.major, geometry.minor].every((axis) => Number.isFinite(axis) && axis >= 0.1 && axis <= MAX_CIRCLE_RADIUS_METRES)
+      || geometry.minor > geometry.major || !Number.isFinite(geometry.rotation) || geometry.rotation < 0 || geometry.rotation > 360) {
+      return "An ellipse needs axes between 0.1 and 100000 metres (minor <= major) and a rotation between 0 and 360 degrees.";
+    }
+  }
   if (geometry.type === "Circle") {
     const radius: unknown = geometry.radius;
     if (typeof radius !== "number" || !Number.isFinite(radius) || radius < 0.1 || radius > MAX_CIRCLE_RADIUS_METRES) {
@@ -140,6 +162,15 @@ export function geometryProblems(geometry: PackageGeometry): ProblemFieldError[]
   const shape = shapeProblem(geometry);
   if (shape !== null) {
     return problem("INVALID_SHAPE", shape);
+  }
+  if (geometry.type === "Ellipse") {
+    // Use the larger axis as a conservative bound, including ellipses centred near the poles.
+    if (circleCrossesAntimeridian({ type: "Circle", coordinates: geometry.coordinates, radius: geometry.major })) {
+      return problem("CROSSES_ANTIMERIDIAN", "Geometry crossing the 180th meridian is not supported yet.");
+    }
+    if (shapeFootprint(geometry).coordinates.flat().some((p) => positionProblem(p) !== null)) {
+      return problem("INVALID_SHAPE", "The ellipse footprint is outside supported coordinates.");
+    }
   }
   if (rings.some(crossesAntimeridian) || (geometry.type === "Circle" && circleCrossesAntimeridian(geometry))) {
     return problem("CROSSES_ANTIMERIDIAN", "Geometry crossing the 180th meridian is not supported yet.");

@@ -9,14 +9,14 @@ import { getMapSettings, updateMapSettings } from "./map-settings.service.js";
 @Security("sessionCookie")
 @Response<ProblemDetails>(401, "Authentication required")
 export class MapSettingsController extends Controller {
-  /** The base map the Web app shows. Readable by every signed-in user. */
+  /** Available Web base maps and the installation default. Readable by every signed-in user. */
   @Get()
   @SuccessResponse(200, "Map settings")
   public async getMapSettings(@Request() request: unknown): Promise<MapSettingsDto> {
     return getMapSettings(requestContext(request).principal);
   }
 
-  /** Changes the base map for everyone. Requires instance-wide `settings.manage`. */
+  /** Changes available base maps and their default. Requires instance-wide `settings.manage`. */
   @Put()
   @SuccessResponse(200, "Map settings updated")
   @Response<ProblemDetails>(403, "Access denied")

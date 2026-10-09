@@ -15,7 +15,7 @@ export interface ContentFile {
  */
 export async function loadContentFiles(contents: readonly PackageSnapshotContent[]): Promise<ContentFile[]> {
   return Promise.all(
-    contents.map(async (content) => {
+    contents.filter((content) => content.kind !== "icon-library").map(async (content) => {
       const blob = await database.storageBlob.findUniqueOrThrow({ where: { id: content.blobId } });
       const bytes = await readBlob(blob.storageKey);
       const sha256 = createHash("sha256").update(bytes).digest("hex");

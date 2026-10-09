@@ -20,7 +20,7 @@ export class PackageKmlController extends Controller {
     return result.kml;
   }
 
-  /** Exports the current draft as KML; `layerId` limits it to one layer. Circles become polygons. */
+  /** Exports the current draft as KML; `layerId` limits it to one layer. Circles and ellipses become labelled 64-sided footprints; parametric metadata is retained in ExtendedData. */
   @Get("kml")
   @Middlewares(allowQueryParameters("layerId"))
   @Produces("application/vnd.google-earth.kml+xml")

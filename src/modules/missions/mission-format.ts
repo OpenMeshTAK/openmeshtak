@@ -74,8 +74,8 @@ export interface MissionFileChange {
 
 /** Files added or replaced (ADD_CONTENT) and removed between two revisions, keyed by content ID. */
 export function fileChangesBetween(previous: PackageSnapshot | null, next: PackageSnapshot, at: Date, creatorUid = ""): MissionFileChange[] {
-  const before = new Map((previous?.contents ?? []).map((file) => [file.id, file]));
-  const after = new Map((next.contents ?? []).map((file) => [file.id, file]));
+  const before = new Map((previous?.contents ?? []).filter((file) => file.kind !== "icon-library").map((file) => [file.id, file]));
+  const after = new Map((next.contents ?? []).filter((file) => file.kind !== "icon-library").map((file) => [file.id, file]));
   const changes: MissionFileChange[] = [];
   for (const file of after.values()) {
     if (before.get(file.id)?.sha256 !== file.sha256) {
@@ -212,7 +212,7 @@ export async function missionJson(mission: DataPackage, latest: PackageRevision,
         details: uidDetails(object),
       };
     }),
-    contents: (snapshot.contents ?? []).map((file) => {
+    contents: (snapshot.contents ?? []).filter((file) => file.kind !== "icon-library").map((file) => {
       const added = fileAdded.get(file.id);
       const at = added?.timestamp ?? latest.createdAt;
       return { data: resourceJson(file, at, added?.creatorUid ?? ""), timestamp: at.toISOString(), creatorUid: added?.creatorUid ?? "" };

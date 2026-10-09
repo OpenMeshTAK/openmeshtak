@@ -44,9 +44,9 @@ function convertDataPackage(bytes: Uint8Array): {
   for (const file of archive.cotFiles) {
     const result = convertCotEvent(file.xml, DEFAULT_STYLE);
     if (result.outcome === "accepted") {
-      conversion.candidates.push(result.candidate);
+      conversion.candidates.push(...result.candidates);
       if (result.changes.length > 0) {
-        conversion.report.changed.push({ feature: result.candidate.name, message: result.changes.join("; ") });
+        conversion.report.changed.push({ feature: result.candidates[0]?.name ?? entryLabel(file.path), message: result.changes.join("; ") });
       }
     } else {
       conversion.report[result.outcome].push({ feature: entryLabel(file.path), message: result.message });

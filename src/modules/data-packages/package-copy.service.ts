@@ -13,6 +13,7 @@ import { MAX_LAYERS_PER_PACKAGE } from "./package-layers.service.js";
 import { MAX_OBJECTS_PER_PACKAGE } from "./package-objects.service.js";
 import { nextPackageSortOrder, requireUniqueMissionName } from "./package-order.js";
 import type { CreateDataPackageCopyRequest } from "./package-copy.dto.js";
+import { copyGeometry } from "./route-geometry.js";
 
 function limitProblem(kind: "layers" | "objects", maximum: number): ProblemError {
   return new ProblemError({
@@ -91,7 +92,7 @@ export async function createDataPackageCopy(
             kind: object.kind,
             name: object.name,
             description: object.description,
-            geometry: object.geometry as unknown as Prisma.InputJsonValue,
+            geometry: copyGeometry(object.geometry) as unknown as Prisma.InputJsonValue,
             style: object.style as unknown as Prisma.InputJsonValue,
             tak: object.tak === null ? Prisma.JsonNull : (object.tak as unknown as Prisma.InputJsonValue),
           })),

@@ -1,6 +1,8 @@
 import circle from "@turf/circle";
 import { XMLBuilder } from "fast-xml-parser";
 import type { PackageGeometry, PackageObjectStyle, Position } from "./package-object.dto.js";
+import { fillColorOf } from "./object-style.js";
+import { shapeFootprint } from "./shape-footprint.js";
 import type { PackageSnapshot, PackageSnapshotObject } from "./package-snapshot.js";
 
 /**
@@ -41,6 +43,7 @@ function geometryOf(geometry: PackageGeometry): Record<string, unknown> {
     case "Point":
       return { Point: { coordinates: coordinates([geometry.coordinates]) } };
     case "LineString":
+    case "Route":
       return { LineString: { tessellate: 1, coordinates: coordinates(geometry.coordinates) } };
     case "Polygon": {
       const [outer, ...holes] = geometry.coordinates;
@@ -56,24 +59,34 @@ function geometryOf(geometry: PackageGeometry): Record<string, unknown> {
       const polygon = circle([lon, lat], geometry.radius, { steps: CIRCLE_STEPS, units: "meters" });
       return { Polygon: { outerBoundaryIs: ring(polygon.geometry.coordinates[0] as Position[]) } };
     }
+    case "Rectangle":
+    case "Ellipse":
+      return geometryOf(shapeFootprint(geometry));
   }
 }
 
 function styleOf(kind: PackageSnapshotObject["kind"], style: PackageObjectStyle): Record<string, unknown> {
-  const filled = kind === "polygon" || kind === "circle";
+  const filled = ["polygon", "circle", "rectangle", "ellipse"].includes(kind);
   return {
     ...(kind === "point" ? { IconStyle: { color: kmlColor(style.color) } } : {}),
     LineStyle: { color: kmlColor(style.color), width: style.strokeWidth },
-    ...(filled ? { PolyStyle: { color: kmlColor(style.color, style.fillOpacity) } } : {}),
+    ...(filled ? { PolyStyle: { color: kmlColor(fillColorOf(style), style.fillOpacity) } } : {}),
   };
 }
 
 function placemark(object: PackageSnapshotObject): Record<string, unknown> {
+  const extra: Array<{ "@_name": string; value: string }> = [];
+  if (["Circle", "Ellipse"].includes(object.geometry.type)) extra.push({ "@_name": "openmeshtak:approximation", value: "64-sided footprint; use CoT or GeoJSON to retain parametric geometry" });
+  if (["Rectangle", "Ellipse", "Route"].includes(object.geometry.type)) extra.push({ "@_name": "openmeshtak:geometry", value: JSON.stringify(object.geometry) });
+  if (object.style.height != null) extra.push({ "@_name": "openmeshtak:height-metres", value: String(object.style.height) });
+  if (object.style.heightUnit != null) extra.push({ "@_name": "openmeshtak:height-unit", value: String(object.style.heightUnit) });
+  if (object.style.extrudeMode != null) extra.push({ "@_name": "openmeshtak:extrude-mode", value: object.style.extrudeMode });
   return {
     "@_id": object.id,
     name: object.name,
     ...(object.description === null ? {} : { description: object.description }),
     Style: styleOf(object.kind, object.style),
+    ...(extra.length === 0 ? {} : { ExtendedData: { Data: extra } }),
     ...geometryOf(object.geometry),
   };
 }

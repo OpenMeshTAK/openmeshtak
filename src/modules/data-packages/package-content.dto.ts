@@ -17,11 +17,11 @@ export interface OfflineMapDto {
   tiles: number;
 }
 
-/** Map content kept from an imported ATAK Data Package; exported unchanged with its layer. */
+/** Imported map content (exported unchanged), or an operator-provided editor-only icon library. */
 export interface PackageContentDto {
   id: Uuid;
   layerId: Uuid;
-  kind: "offline-map" | "nested-data-package" | "rubber-sheet";
+  kind: "offline-map" | "nested-data-package" | "rubber-sheet" | "icon-library";
   name: string;
   /** Size of the stored file in bytes. */
   size: number;

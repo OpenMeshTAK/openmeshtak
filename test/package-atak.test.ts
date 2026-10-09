@@ -79,8 +79,8 @@ void describe("ATAK Data Package import and export", () => {
 
     assert.equal(report.accepted, 3);
     assert.deepEqual(report.changed.map(({ feature }) => feature), ["WATCH"]);
-    assert.deepEqual(report.skipped.map(({ feature }) => feature).sort(), ["attachments/photo.jpg", "d.cot"]);
-    assert.deepEqual(report.rejected, []);
+    assert.deepEqual(report.skipped.map(({ feature }) => feature).sort(), ["attachments/photo.jpg"]);
+    assert.deepEqual(report.rejected.map(({ feature }) => feature), ["d.cot"]);
   });
 
   void it("accepts a single CoT file", async () => {

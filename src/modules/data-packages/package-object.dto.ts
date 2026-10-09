@@ -40,16 +40,111 @@ export interface CircleGeometry {
   radius: number;
 }
 
-/** RFC 7946 geometry in WGS84, plus circles as an explicit domain extension. */
-export type PackageGeometry = PointGeometry | LineStringGeometry | PolygonGeometry | CircleGeometry;
+export interface RectangleGeometry {
+  type: "Rectangle";
+  /** Four corners in drawing order, without a repeated closing position. */
+  coordinates: Position[];
+}
 
-export type PackageObjectKind = "point" | "line" | "polygon" | "circle";
+export interface EllipseGeometry {
+  type: "Ellipse";
+  /** Centre; axes are semi-axis lengths, matching TAK's ellipse major/minor. */
+  coordinates: Position;
+  /**
+   * @minimum 0.1
+   * @maximum 100000
+   */
+  major: number;
+  /**
+   * @minimum 0.1
+   * @maximum 100000
+   */
+  minor: number;
+  /** Bearing of the major axis clockwise from north, in degrees.
+   * @minimum 0
+   * @maximum 360
+   */
+  rotation: number;
+}
+
+/**
+ * TAK routes refer to their own stable point identifiers in navigation cues.
+ * @minLength 1
+ * @maxLength 128
+ * @pattern ^[^\u0000-\u001f]+$
+ */
+export type RoutePointId = string;
+
+export interface RoutePoint {
+  id: RoutePointId;
+  type: "waypoint" | "checkpoint";
+  /** @maxLength 100 */
+  name: string;
+  /** @maxLength 2000 */
+  remarks: string;
+}
+
+/** @maxLength 64 */
+export type RouteOption = string;
+
+export interface RouteOptions {
+  transportationType?: RouteOption;
+  method?: RouteOption;
+  direction?: RouteOption;
+  routeType?: RouteOption;
+  order?: RouteOption;
+  planningMethod?: RouteOption;
+  prefix?: RouteOption;
+}
+
+export interface RouteCueTrigger {
+  mode: "d" | "t";
+  /**
+   * @isInt
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  value: number;
+}
+
+export interface RouteNavigationCue {
+  pointId: RoutePointId;
+  /** @maxLength 2000 */
+  text: string;
+  /** @maxLength 2000 */
+  voice: string;
+  /** @maxItems 16 */
+  triggers: RouteCueTrigger[];
+}
+
+export interface RouteGeometry {
+  type: "Route";
+  /** Ordered route positions; each has matching metadata in `points`. */
+  coordinates: Position[];
+  /** @maxItems 10000 */
+  points: RoutePoint[];
+  options: RouteOptions;
+  /** @maxItems 1000 */
+  navigationCues: RouteNavigationCue[];
+}
+
+/** RFC 7946 semantics in WGS84, with explicit parametric shapes and ordered TAK routes. */
+export type PackageGeometry = PointGeometry | LineStringGeometry | PolygonGeometry | CircleGeometry | RectangleGeometry | EllipseGeometry | RouteGeometry;
+
+export type PackageObjectKind = "point" | "line" | "polygon" | "circle" | "rectangle" | "ellipse" | "route";
 
 /**
  * Colour as `#RRGGBB`.
  * @pattern ^#[0-9A-Fa-f]{6}$
  */
 export type HexColor = string;
+
+/** How lines, outlines and circles are drawn; ATAK writes it as `strokeStyle`. */
+export type StrokeStyle = "solid" | "dashed";
+
+/** ATAK Span display units; the stored height itself is always metres. */
+export type HeightUnit = 0 | 1 | 2 | 3 | 4 | 5;
+export type ExtrudeMode = "cylinder" | "cone_down";
 
 export interface PackageObjectStyle {
   /** Marker, line and polygon outline colour. */
@@ -62,11 +157,25 @@ export interface PackageObjectStyle {
    */
   strokeWidth: number;
   /**
-   * Polygon fill opacity; the fill uses `color`.
+   * Polygon and circle fill opacity.
    * @minimum 0
    * @maximum 1
    */
   fillOpacity: number;
+  /** Line style of lines, outlines and circles; `solid` when left out. */
+  strokeStyle?: StrokeStyle;
+  /** Fill colour of areas and circles; `null` or left out fills with `color`. */
+  fillColor?: HexColor | null;
+  /**
+   * Shape extrusion height in metres, independent of coordinate altitude. Null/absent is unknown.
+   * @minimum -100000
+   * @maximum 100000
+   */
+  height?: number | null;
+  /** Preferred TAK height display unit (0 km, 1 m, 2 mi, 3 yd, 4 ft, 5 NM). */
+  heightUnit?: HeightUnit | null;
+  /** Circle extrusion mode; absent uses the client's default. */
+  extrudeMode?: ExtrudeMode | null;
 }
 
 /**

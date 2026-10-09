@@ -552,6 +552,7 @@ model StorageBlob {
   size            Int
   mediaType       String
   packageContents PackageContent[]
+  iconSettings    IconSettings[]
   createdAt       DateTime         @default(now())
 
   @@index([sha256])
@@ -1024,7 +1025,7 @@ model FirmwareReleaseSettings {
   updatedAt    DateTime @updatedAt
 }
 
-/// The online base map of the Web editor; a single row with id "map". Defaults to OpenStreetMap.
+/// The Web editor's online base maps; a single row with id "map". Legacy fields mirror the default.
 model MapSettings {
   id              String   @id
   providerName    String
@@ -1033,8 +1034,24 @@ model MapSettings {
   /// Plain-text attribution the provider requires, shown on every map.
   attribution     String
   maxZoom         Int      @default(19)
+  /// Validated BaseMapLayerDto[]; null upgrades the existing single provider on read.
+  layers          Json?
+  defaultLayerId  String?
   version         Int      @default(1)
   updatedAt       DateTime @updatedAt
+}
+
+/// Operator-provided icons shared by all Web editors; a singleton row with id "icons".
+model IconSettings {
+  id        String       @id
+  blobId    String?
+  /// Validated TAK paths and PNG metadata; the original SQLite database is discarded.
+  icons     Json
+  version   Int          @default(1)
+  updatedAt DateTime     @updatedAt
+  blob      StorageBlob? @relation(fields: [blobId], references: [id], onDelete: Restrict)
+
+  @@index([blobId])
 }
 
 /// Single-use link onto the instance; only the hash of its token is stored. With `userId` it is a

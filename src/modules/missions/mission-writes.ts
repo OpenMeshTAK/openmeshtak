@@ -45,11 +45,13 @@ export async function writeMissionItem(found: VisibleMission, author: MissionAut
   if (write.kind === "upsert") {
     const conversion = convertCotEvent(write.xml, DEFAULT_STYLE);
     const match = /<event\b[^>]*\buid="([^"]+)"/.exec(write.xml);
-    if (conversion.outcome !== "accepted" || match?.[1] === undefined || geometryProblems(conversion.candidate.geometry).length > 0) {
+    // One mission item per CoT UID, so a freehand drawing with several strokes is left out.
+    const only = conversion.outcome === "accepted" && conversion.candidates.length === 1 ? conversion.candidates[0] : undefined;
+    if (only === undefined || match?.[1] === undefined || geometryProblems(only.geometry).length > 0) {
       return "ignored";
     }
     uid = match[1];
-    candidate = conversion.candidate;
+    candidate = only;
   } else {
     uid = write.uid;
   }

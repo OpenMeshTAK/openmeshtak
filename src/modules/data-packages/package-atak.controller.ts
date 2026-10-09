@@ -33,7 +33,7 @@ import type { ImportReport } from "./package-import.dto.js";
 export class PackageAtakController extends Controller {
   /**
    * Imports an ATAK Data Package (`application/zip`, at most 10 MB) or a single CoT event
-   * (`application/xml`) into the layer. Markers, freeform shapes, rectangles and circles are
+   * (`application/xml`) into the layer. Markers, freeform shapes, rectangles, circles, ellipses and routes are
    * supported; the report lists every adjusted, skipped and rejected item.
    */
   @Post("layers/{layerId}/import/atak")

@@ -29,7 +29,7 @@ import type {
 } from "./package-object.dto.js";
 import { createObject, deleteObject, getObject, listObjects, updateObject } from "./package-objects.service.js";
 
-/** Points, lines, polygons and circles of a data package draft. Objects in locked layers cannot change. */
+/** Editable geometry of a data package draft. Objects in locked layers cannot change. */
 @Route("events/{eventId}/data-packages/{packageId}/objects")
 @Tags("Data packages")
 @Security("sessionCookie")

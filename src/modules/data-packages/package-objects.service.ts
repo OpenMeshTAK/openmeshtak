@@ -16,6 +16,7 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import { geometryProblems, kindOf } from "./geometry.js";
+import { completeStyle } from "./object-style.js";
 import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
 import { clearDraftHash } from "./package-state.js";
 import { readTak, takColumn } from "./tak-marker.js";
@@ -31,7 +32,7 @@ import type {
 
 export const MAX_OBJECTS_PER_PACKAGE = 5_000;
 
-export const DEFAULT_STYLE: PackageObjectStyle = { color: "#1E88E5", strokeWidth: 3, fillOpacity: 0.25 };
+export const DEFAULT_STYLE: PackageObjectStyle = { color: "#1E88E5", strokeWidth: 3, fillOpacity: 0.25, strokeStyle: "solid", fillColor: null };
 
 export function toObjectDto(row: PackageObject): PackageObjectDto {
   return {
@@ -43,7 +44,7 @@ export function toObjectDto(row: PackageObject): PackageObjectDto {
     description: row.description,
     // Written only by this service after validation.
     geometry: row.geometry as unknown as PackageGeometry,
-    style: row.style as unknown as PackageObjectStyle,
+    style: completeStyle(row.style as unknown as PackageObjectStyle),
     tak: readTak(row.tak),
     version: row.version,
     createdAt: row.createdAt.toISOString(),

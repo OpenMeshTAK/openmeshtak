@@ -4,7 +4,7 @@ import type { PackageGeometry, PackageObjectKind, PackageObjectStyle, TakMarker 
 import { readTak } from "./tak-marker.js";
 
 /** Version of the snapshot document; bump it when its shape changes. */
-export const PACKAGE_SNAPSHOT_SCHEMA = 2;
+export const PACKAGE_SNAPSHOT_SCHEMA = 3;
 
 export interface PackageSnapshotLayer {
   id: string;

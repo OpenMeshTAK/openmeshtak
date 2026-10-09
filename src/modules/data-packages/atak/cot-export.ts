@@ -1,7 +1,10 @@
 import { XMLBuilder } from "fast-xml-parser";
+import { fillColorOf, strokeStyleOf } from "../object-style.js";
 import type { PackageSnapshotObject } from "../package-snapshot.js";
 import { SPOT_MARKER_TYPE } from "../tak-marker.js";
 import { COT_UNKNOWN, toArgb } from "./cot-values.js";
+import { kmlColor } from "../kml-export.js";
+import { routeCotDetails } from "./route-cot.js";
 
 /** Published objects stay on ATAK maps for a year unless a newer package replaces them. */
 const STALE_AFTER_MS = 365 * 24 * 60 * 60 * 1000;
@@ -52,8 +55,11 @@ function shapeDetails(object: PackageSnapshotObject, filled: boolean) {
   return {
     strokeColor: { "@_value": String(toArgb(object.style.color, 1)) },
     strokeWeight: { "@_value": String(object.style.strokeWidth) },
-    strokeStyle: { "@_value": "solid" },
-    ...(filled ? { fillColor: { "@_value": String(toArgb(object.style.color, object.style.fillOpacity)) } } : {}),
+    strokeStyle: { "@_value": strokeStyleOf(object.style) },
+    ...(object.style.height == null ? {} : { height: { "@_value": String(object.style.height) } }),
+    ...(object.style.heightUnit == null ? {} : { height_unit: { "@_value": String(object.style.heightUnit) } }),
+    ...(object.kind !== "circle" || object.style.extrudeMode == null ? {} : { extrudeMode: { "@_value": object.style.extrudeMode } }),
+    ...(filled ? { fillColor: { "@_value": String(toArgb(fillColorOf(object.style), object.style.fillOpacity)) } } : {}),
   };
 }
 
@@ -61,6 +67,8 @@ function shapeDetails(object: PackageSnapshotObject, filled: boolean) {
 function eventBody(object: PackageSnapshotObject) {
   const { geometry } = object;
   switch (geometry.type) {
+    case "Route":
+      return { type: "b-m-r", how: "h-e", point: pointElement([0, 0]), details: routeCotDetails(geometry, toArgb(object.style.color, 1), object.style.strokeWidth) };
     case "Point": {
       const argb = String(toArgb(object.style.color, 1));
       const type = object.tak?.cotType ?? SPOT_MARKER_TYPE;
@@ -95,6 +103,25 @@ function eventBody(object: PackageSnapshotObject) {
         details: { ...shapeDetails(object, true), link: ring.map(linkPoint) },
       };
     }
+    case "Rectangle":
+      return {
+        type: "u-d-r", how: "h-e", point: pointElement(centreOf(geometry.coordinates)),
+        details: { ...shapeDetails(object, true), link: geometry.coordinates.map(linkPoint) },
+      };
+    case "Ellipse":
+      return {
+        type: "u-d-c-e", how: "h-e", point: pointElement(geometry.coordinates),
+        details: {
+          ...shapeDetails(object, true),
+          shape: {
+            ellipse: { "@_major": String(geometry.major), "@_minor": String(geometry.minor), "@_angle": String(geometry.rotation) },
+            link: { "@_type": "b-x-KmlStyle", "@_uid": `${object.id}.Style`, "@_relation": "p-c", Style: {
+              LineStyle: { color: kmlColor(object.style.color), width: object.style.strokeWidth },
+              PolyStyle: { color: kmlColor(fillColorOf(object.style), object.style.fillOpacity) },
+            } },
+          },
+        },
+      };
     case "Circle":
       return {
         type: "u-d-c-c",

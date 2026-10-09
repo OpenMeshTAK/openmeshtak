@@ -1,21 +1,6 @@
-/** The Web map's online base map. Defaults to OpenStreetMap until an administrator changes it. */
-export interface MapSettingsDto {
-  providerName: string;
-  /** XYZ tile URL with `{z}`, `{x}` and `{y}`; `{a-c}` selects subdomains. */
-  tileUrlTemplate: string;
-  /** Plain-text attribution the provider requires; the Web app shows it on every map. */
-  attribution: string;
-  maxZoom: number;
-  /** Optimistic-concurrency version; 0 while the default is in use. */
-  version: number;
-}
+import type { Uuid } from "../../shared/http/uuid.js";
 
-export interface UpdateMapSettingsRequest {
-  /**
-   * @isInt
-   * @minimum 0
-   */
-  version: number;
+export interface BaseMapFields {
   /**
    * @minLength 1
    * @maxLength 100
@@ -37,4 +22,32 @@ export interface UpdateMapSettingsRequest {
    * @maximum 22
    */
   maxZoom: number;
+}
+
+/** One mutually exclusive XYZ base map; package overlays remain separate. */
+export interface BaseMapLayerDto extends BaseMapFields {
+  id: Uuid;
+}
+
+/** Legacy top-level fields mirror the default layer. */
+export interface MapSettingsDto extends BaseMapFields {
+  /** Optimistic-concurrency version; 0 while the default is in use. */
+  version: number;
+  layers: BaseMapLayerDto[];
+  defaultLayerId: Uuid;
+}
+
+export interface UpdateMapSettingsRequest extends BaseMapFields {
+  /**
+   * @isInt
+   * @minimum 0
+   */
+  version: number;
+  /** Omit to update only the existing default layer, preserving other layers.
+   * @minItems 1
+   * @maxItems 10
+   */
+  layers?: BaseMapLayerDto[];
+  /** Must refer to a supplied layer; otherwise the first supplied layer is the default. */
+  defaultLayerId?: Uuid;
 }
