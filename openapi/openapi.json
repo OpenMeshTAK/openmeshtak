@@ -2846,6 +2846,994 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"DataPackageKind": {
+				"type": "string",
+				"enum": [
+					"package",
+					"mission"
+				],
+				"description": "`package`: a Data Package, published as revisions and installed by members. `mission`: an ATAK\nData Sync mission edited with the same editor; each revision is synced to subscribed TAK apps."
+			},
+			"PackageSnapshotLayer": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"sortOrder": {
+						"type": "number",
+						"format": "double"
+					},
+					"visible": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"sortOrder",
+					"visible"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageObjectKind": {
+				"type": "string",
+				"enum": [
+					"point",
+					"line",
+					"polygon",
+					"circle",
+					"rectangle",
+					"ellipse",
+					"route"
+				]
+			},
+			"Position": {
+				"items": {
+					"type": "number",
+					"format": "double"
+				},
+				"type": "array",
+				"description": "GeoJSON position: `[longitude, latitude]` or `[longitude, latitude, altitudeMetresHae]`.",
+				"minItems": 2,
+				"maxItems": 3
+			},
+			"PointGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Point"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position"
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LineStringGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"LineString"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PolygonGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Polygon"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"items": {
+								"$ref": "#/components/schemas/Position"
+							},
+							"type": "array"
+						},
+						"type": "array",
+						"description": "Outer ring first, then holes; every ring repeats its first position at the end."
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CircleGeometry": {
+				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\na silently approximated polygon and maps to ATAK `u-d-c-c` circles.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Circle"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position",
+						"description": "Centre position."
+					},
+					"radius": {
+						"type": "number",
+						"format": "double",
+						"description": "Radius in metres.",
+						"minimum": 0.1,
+						"maximum": 100000
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"radius"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RectangleGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Rectangle"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array",
+						"description": "Four corners in drawing order, without a repeated closing position."
+					}
+				},
+				"required": [
+					"type",
+					"coordinates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EllipseGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Ellipse"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"$ref": "#/components/schemas/Position",
+						"description": "Centre; axes are semi-axis lengths, matching TAK's ellipse major/minor."
+					},
+					"major": {
+						"type": "number",
+						"format": "double",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"minor": {
+						"type": "number",
+						"format": "double",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"rotation": {
+						"type": "number",
+						"format": "double",
+						"description": "Bearing of the major axis clockwise from north, in degrees.",
+						"minimum": 0,
+						"maximum": 360
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"major",
+					"minor",
+					"rotation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RoutePointId": {
+				"type": "string",
+				"description": "TAK routes refer to their own stable point identifiers in navigation cues.",
+				"minLength": 1,
+				"maxLength": 128,
+				"pattern": "^[^\\u0000-\\u001f]+$"
+			},
+			"RoutePoint": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/RoutePointId"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"waypoint",
+							"checkpoint"
+						]
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"remarks": {
+						"type": "string",
+						"maxLength": 2000
+					}
+				},
+				"required": [
+					"id",
+					"type",
+					"name",
+					"remarks"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteOption": {
+				"type": "string",
+				"maxLength": 64
+			},
+			"RouteOptions": {
+				"properties": {
+					"transportationType": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"method": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"direction": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"routeType": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"order": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"planningMethod": {
+						"$ref": "#/components/schemas/RouteOption"
+					},
+					"prefix": {
+						"$ref": "#/components/schemas/RouteOption"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteCueTrigger": {
+				"properties": {
+					"mode": {
+						"type": "string",
+						"enum": [
+							"d",
+							"t"
+						]
+					},
+					"value": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 2147483647
+					}
+				},
+				"required": [
+					"mode",
+					"value"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteNavigationCue": {
+				"properties": {
+					"pointId": {
+						"$ref": "#/components/schemas/RoutePointId"
+					},
+					"text": {
+						"type": "string",
+						"maxLength": 2000
+					},
+					"voice": {
+						"type": "string",
+						"maxLength": 2000
+					},
+					"triggers": {
+						"items": {
+							"$ref": "#/components/schemas/RouteCueTrigger"
+						},
+						"type": "array",
+						"maxItems": 16
+					}
+				},
+				"required": [
+					"pointId",
+					"text",
+					"voice",
+					"triggers"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RouteGeometry": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"Route"
+						],
+						"nullable": false
+					},
+					"coordinates": {
+						"items": {
+							"$ref": "#/components/schemas/Position"
+						},
+						"type": "array",
+						"description": "Ordered route positions; each has matching metadata in `points`."
+					},
+					"points": {
+						"items": {
+							"$ref": "#/components/schemas/RoutePoint"
+						},
+						"type": "array",
+						"maxItems": 10000
+					},
+					"options": {
+						"$ref": "#/components/schemas/RouteOptions"
+					},
+					"navigationCues": {
+						"items": {
+							"$ref": "#/components/schemas/RouteNavigationCue"
+						},
+						"type": "array",
+						"maxItems": 1000
+					}
+				},
+				"required": [
+					"type",
+					"coordinates",
+					"points",
+					"options",
+					"navigationCues"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageGeometry": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/PointGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/LineStringGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/PolygonGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/CircleGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/RectangleGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/EllipseGeometry"
+					},
+					{
+						"$ref": "#/components/schemas/RouteGeometry"
+					}
+				],
+				"description": "RFC 7946 semantics in WGS84, with explicit parametric shapes and ordered TAK routes."
+			},
+			"HexColor": {
+				"type": "string",
+				"description": "Colour as `#RRGGBB`.",
+				"pattern": "^#[0-9A-Fa-f]{6}$"
+			},
+			"StrokeStyle": {
+				"type": "string",
+				"enum": [
+					"solid",
+					"dashed"
+				],
+				"description": "How lines, outlines and circles are drawn; ATAK writes it as `strokeStyle`."
+			},
+			"HeightUnit": {
+				"type": "number",
+				"enum": [
+					0,
+					1,
+					2,
+					3,
+					4,
+					5
+				],
+				"description": "ATAK Span display units; the stored height itself is always metres."
+			},
+			"ExtrudeMode": {
+				"type": "string",
+				"enum": [
+					"cylinder",
+					"cone_down"
+				]
+			},
+			"PackageObjectStyle": {
+				"properties": {
+					"color": {
+						"$ref": "#/components/schemas/HexColor",
+						"description": "Marker, line and polygon outline colour."
+					},
+					"strokeWidth": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Line and outline width in pixels.",
+						"minimum": 1,
+						"maximum": 20
+					},
+					"fillOpacity": {
+						"type": "number",
+						"format": "double",
+						"description": "Polygon and circle fill opacity.",
+						"minimum": 0,
+						"maximum": 1
+					},
+					"strokeStyle": {
+						"$ref": "#/components/schemas/StrokeStyle",
+						"description": "Line style of lines, outlines and circles; `solid` when left out."
+					},
+					"fillColor": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/HexColor"
+							}
+						],
+						"nullable": true,
+						"description": "Fill colour of areas and circles; `null` or left out fills with `color`."
+					},
+					"height": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Shape extrusion height in metres, independent of coordinate altitude. Null/absent is unknown.",
+						"minimum": -100000,
+						"maximum": 100000
+					},
+					"heightUnit": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/HeightUnit"
+							}
+						],
+						"nullable": true,
+						"description": "Preferred TAK height display unit (0 km, 1 m, 2 mi, 3 yd, 4 ft, 5 NM)."
+					},
+					"extrudeMode": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/ExtrudeMode"
+							}
+						],
+						"nullable": true,
+						"description": "Circle extrusion mode; absent uses the client's default."
+					}
+				},
+				"required": [
+					"color",
+					"strokeWidth",
+					"fillOpacity"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CotType": {
+				"type": "string",
+				"description": "CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly\ninfantry).",
+				"pattern": "^[a-z](-[A-Za-z0-9]+){1,15}$",
+				"maxLength": 64
+			},
+			"TakMarker": {
+				"description": "Optional TAK presentation of a marker, kept so ATAK packages round-trip without loss.",
+				"properties": {
+					"cotType": {
+						"$ref": "#/components/schemas/CotType",
+						"description": "Defaults to the spot marker `b-m-p-s-m`; `a-*` types are drawn as military symbols."
+					},
+					"iconsetPath": {
+						"type": "string",
+						"nullable": true,
+						"description": "ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom\nicon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.",
+						"pattern": "^[^\\u0000-\\u001f<>\"]+$",
+						"maxLength": 256
+					}
+				},
+				"required": [
+					"cotType",
+					"iconsetPath"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageSnapshotObject": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"layerId": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PackageObjectKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/PackageGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/PackageObjectStyle"
+					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakMarker"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"description",
+					"geometry",
+					"style",
+					"tak"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineTileContentDto": {
+				"description": "An ATAK tile cache of the revision, copied tile by tile through the tiles endpoint.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"type": "string",
+						"enum": [
+							"tiles"
+						],
+						"nullable": false
+					},
+					"name": {
+						"type": "string"
+					},
+					"minZoom": {
+						"type": "number",
+						"format": "double"
+					},
+					"maxZoom": {
+						"type": "number",
+						"format": "double"
+					},
+					"bounds": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array",
+						"description": "West, south, east, north in WGS84 degrees."
+					},
+					"tiles": {
+						"type": "number",
+						"format": "double"
+					},
+					"size": {
+						"type": "number",
+						"format": "double",
+						"description": "Size of the stored cache in bytes; the tiles alone usually need less."
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"minZoom",
+					"maxZoom",
+					"bounds",
+					"tiles",
+					"size"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineImageContentDto": {
+				"description": "A rubber sheet of the revision, downloaded as one image through the image endpoint.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"type": "string",
+						"enum": [
+							"image"
+						],
+						"nullable": false
+					},
+					"name": {
+						"type": "string"
+					},
+					"corners": {
+						"items": {
+							"items": {
+								"type": "number",
+								"format": "double"
+							},
+							"type": "array"
+						},
+						"type": "array",
+						"description": "Lower left, lower right, upper right and upper left corner as [longitude, latitude]."
+					},
+					"mediaType": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg"
+						]
+					},
+					"sha256": {
+						"type": "string",
+						"description": "SHA-256 of the image bytes, checked by the browser after the download."
+					},
+					"size": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"layerId",
+					"kind",
+					"name",
+					"corners",
+					"mediaType",
+					"sha256",
+					"size"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineContentDto": {
+				"anyOf": [
+					{
+						"$ref": "#/components/schemas/OfflineTileContentDto"
+					},
+					{
+						"$ref": "#/components/schemas/OfflineImageContentDto"
+					}
+				]
+			},
+			"OfflineSkippedContentDto": {
+				"description": "Content of the revision that the offline view cannot show, listed so nothing is dropped silently.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"kind": {
+						"type": "string"
+					},
+					"reason": {
+						"type": "string",
+						"enum": [
+							"not-displayable",
+							"unreadable"
+						]
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"kind",
+					"reason"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineSnapshotPackageDto": {
+				"properties": {
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/DataPackageKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"revision": {
+						"type": "number",
+						"format": "double"
+					},
+					"revisionId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"snapshotHash": {
+						"type": "string",
+						"description": "SHA-256 of the published revision snapshot, for provenance."
+					},
+					"publishedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"layers": {
+						"items": {
+							"$ref": "#/components/schemas/PackageSnapshotLayer"
+						},
+						"type": "array"
+					},
+					"objects": {
+						"items": {
+							"$ref": "#/components/schemas/PackageSnapshotObject"
+						},
+						"type": "array"
+					},
+					"contents": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineContentDto"
+						},
+						"type": "array"
+					},
+					"skippedContents": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineSkippedContentDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"packageId",
+					"kind",
+					"name",
+					"revision",
+					"revisionId",
+					"snapshotHash",
+					"publishedAt",
+					"layers",
+					"objects",
+					"contents",
+					"skippedContents"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineSnapshotDto": {
+				"description": "Everything the browser stores for the offline HQ view of one event: published revisions only,\nnever drafts, credentials, certificates, channel keys or member data.",
+				"properties": {
+					"format": {
+						"type": "number",
+						"format": "double",
+						"description": "Version of this document; the browser refuses formats it does not know."
+					},
+					"event": {
+						"properties": {
+							"timeZone": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"id": {
+								"$ref": "#/components/schemas/Uuid"
+							}
+						},
+						"required": [
+							"timeZone",
+							"name",
+							"id"
+						],
+						"type": "object"
+					},
+					"preparedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"packages": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineSnapshotPackageDto"
+						},
+						"type": "array"
+					},
+					"skippedPackages": {
+						"items": {
+							"properties": {
+								"reason": {
+									"type": "string",
+									"enum": [
+										"not-published"
+									],
+									"nullable": false
+								},
+								"name": {
+									"type": "string"
+								},
+								"packageId": {
+									"$ref": "#/components/schemas/Uuid"
+								}
+							},
+							"required": [
+								"reason",
+								"name",
+								"packageId"
+							],
+							"type": "object"
+						},
+						"type": "array",
+						"description": "Selected packages without a published revision."
+					},
+					"estimatedBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "Approximate bytes the browser has to store: tile caches plus images."
+					}
+				},
+				"required": [
+					"format",
+					"event",
+					"preparedAt",
+					"packages",
+					"skippedPackages",
+					"estimatedBytes"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineSnapshotSelection": {
+				"properties": {
+					"packageId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"revision": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Published revision to take; the newest one when omitted.",
+						"minimum": 1
+					}
+				},
+				"required": [
+					"packageId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateOfflineSnapshotRequest": {
+				"properties": {
+					"packages": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineSnapshotSelection"
+						},
+						"type": "array",
+						"description": "Published Data Packages or missions to make available offline.",
+						"minItems": 1,
+						"maxItems": 50
+					}
+				},
+				"required": [
+					"packages"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineTileDto": {
+				"properties": {
+					"z": {
+						"type": "number",
+						"format": "double"
+					},
+					"x": {
+						"type": "number",
+						"format": "double"
+					},
+					"y": {
+						"type": "number",
+						"format": "double"
+					},
+					"mediaType": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg"
+						]
+					},
+					"data": {
+						"type": "string",
+						"description": "Base64-encoded tile image."
+					},
+					"sha256": {
+						"type": "string",
+						"description": "SHA-256 of the decoded tile bytes, checked by the browser."
+					}
+				},
+				"required": [
+					"z",
+					"x",
+					"y",
+					"mediaType",
+					"data",
+					"sha256"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OfflineTilePage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/OfflineTileDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"FirmwareReleaseDto": {
 				"properties": {
 					"version": {
@@ -6243,585 +7231,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"PackageSnapshotLayer": {
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"name": {
-						"type": "string"
-					},
-					"sortOrder": {
-						"type": "number",
-						"format": "double"
-					},
-					"visible": {
-						"type": "boolean"
-					}
-				},
-				"required": [
-					"id",
-					"name",
-					"sortOrder",
-					"visible"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageObjectKind": {
-				"type": "string",
-				"enum": [
-					"point",
-					"line",
-					"polygon",
-					"circle",
-					"rectangle",
-					"ellipse",
-					"route"
-				]
-			},
-			"Position": {
-				"items": {
-					"type": "number",
-					"format": "double"
-				},
-				"type": "array",
-				"description": "GeoJSON position: `[longitude, latitude]` or `[longitude, latitude, altitudeMetresHae]`.",
-				"minItems": 2,
-				"maxItems": 3
-			},
-			"PointGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Point"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"$ref": "#/components/schemas/Position"
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"LineStringGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"LineString"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"items": {
-							"$ref": "#/components/schemas/Position"
-						},
-						"type": "array"
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PolygonGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Polygon"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"items": {
-							"items": {
-								"$ref": "#/components/schemas/Position"
-							},
-							"type": "array"
-						},
-						"type": "array",
-						"description": "Outer ring first, then holes; every ring repeats its first position at the end."
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CircleGeometry": {
-				"description": "A true circle, which GeoJSON cannot express: centre plus radius in metres. It is never stored as\na silently approximated polygon and maps to ATAK `u-d-c-c` circles.",
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Circle"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"$ref": "#/components/schemas/Position",
-						"description": "Centre position."
-					},
-					"radius": {
-						"type": "number",
-						"format": "double",
-						"description": "Radius in metres.",
-						"minimum": 0.1,
-						"maximum": 100000
-					}
-				},
-				"required": [
-					"type",
-					"coordinates",
-					"radius"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"RectangleGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Rectangle"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"items": {
-							"$ref": "#/components/schemas/Position"
-						},
-						"type": "array",
-						"description": "Four corners in drawing order, without a repeated closing position."
-					}
-				},
-				"required": [
-					"type",
-					"coordinates"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"EllipseGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Ellipse"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"$ref": "#/components/schemas/Position",
-						"description": "Centre; axes are semi-axis lengths, matching TAK's ellipse major/minor."
-					},
-					"major": {
-						"type": "number",
-						"format": "double",
-						"minimum": 0.1,
-						"maximum": 100000
-					},
-					"minor": {
-						"type": "number",
-						"format": "double",
-						"minimum": 0.1,
-						"maximum": 100000
-					},
-					"rotation": {
-						"type": "number",
-						"format": "double",
-						"description": "Bearing of the major axis clockwise from north, in degrees.",
-						"minimum": 0,
-						"maximum": 360
-					}
-				},
-				"required": [
-					"type",
-					"coordinates",
-					"major",
-					"minor",
-					"rotation"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"RoutePointId": {
-				"type": "string",
-				"description": "TAK routes refer to their own stable point identifiers in navigation cues.",
-				"minLength": 1,
-				"maxLength": 128,
-				"pattern": "^[^\\u0000-\\u001f]+$"
-			},
-			"RoutePoint": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/RoutePointId"
-					},
-					"type": {
-						"type": "string",
-						"enum": [
-							"waypoint",
-							"checkpoint"
-						]
-					},
-					"name": {
-						"type": "string",
-						"maxLength": 100
-					},
-					"remarks": {
-						"type": "string",
-						"maxLength": 2000
-					}
-				},
-				"required": [
-					"id",
-					"type",
-					"name",
-					"remarks"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"RouteOption": {
-				"type": "string",
-				"maxLength": 64
-			},
-			"RouteOptions": {
-				"properties": {
-					"transportationType": {
-						"$ref": "#/components/schemas/RouteOption"
-					},
-					"method": {
-						"$ref": "#/components/schemas/RouteOption"
-					},
-					"direction": {
-						"$ref": "#/components/schemas/RouteOption"
-					},
-					"routeType": {
-						"$ref": "#/components/schemas/RouteOption"
-					},
-					"order": {
-						"$ref": "#/components/schemas/RouteOption"
-					},
-					"planningMethod": {
-						"$ref": "#/components/schemas/RouteOption"
-					},
-					"prefix": {
-						"$ref": "#/components/schemas/RouteOption"
-					}
-				},
-				"type": "object",
-				"additionalProperties": false
-			},
-			"RouteCueTrigger": {
-				"properties": {
-					"mode": {
-						"type": "string",
-						"enum": [
-							"d",
-							"t"
-						]
-					},
-					"value": {
-						"type": "integer",
-						"format": "int32",
-						"minimum": 0,
-						"maximum": 2147483647
-					}
-				},
-				"required": [
-					"mode",
-					"value"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"RouteNavigationCue": {
-				"properties": {
-					"pointId": {
-						"$ref": "#/components/schemas/RoutePointId"
-					},
-					"text": {
-						"type": "string",
-						"maxLength": 2000
-					},
-					"voice": {
-						"type": "string",
-						"maxLength": 2000
-					},
-					"triggers": {
-						"items": {
-							"$ref": "#/components/schemas/RouteCueTrigger"
-						},
-						"type": "array",
-						"maxItems": 16
-					}
-				},
-				"required": [
-					"pointId",
-					"text",
-					"voice",
-					"triggers"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"RouteGeometry": {
-				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"Route"
-						],
-						"nullable": false
-					},
-					"coordinates": {
-						"items": {
-							"$ref": "#/components/schemas/Position"
-						},
-						"type": "array",
-						"description": "Ordered route positions; each has matching metadata in `points`."
-					},
-					"points": {
-						"items": {
-							"$ref": "#/components/schemas/RoutePoint"
-						},
-						"type": "array",
-						"maxItems": 10000
-					},
-					"options": {
-						"$ref": "#/components/schemas/RouteOptions"
-					},
-					"navigationCues": {
-						"items": {
-							"$ref": "#/components/schemas/RouteNavigationCue"
-						},
-						"type": "array",
-						"maxItems": 1000
-					}
-				},
-				"required": [
-					"type",
-					"coordinates",
-					"points",
-					"options",
-					"navigationCues"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageGeometry": {
-				"anyOf": [
-					{
-						"$ref": "#/components/schemas/PointGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/LineStringGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/PolygonGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/CircleGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/RectangleGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/EllipseGeometry"
-					},
-					{
-						"$ref": "#/components/schemas/RouteGeometry"
-					}
-				],
-				"description": "RFC 7946 semantics in WGS84, with explicit parametric shapes and ordered TAK routes."
-			},
-			"HexColor": {
-				"type": "string",
-				"description": "Colour as `#RRGGBB`.",
-				"pattern": "^#[0-9A-Fa-f]{6}$"
-			},
-			"StrokeStyle": {
-				"type": "string",
-				"enum": [
-					"solid",
-					"dashed"
-				],
-				"description": "How lines, outlines and circles are drawn; ATAK writes it as `strokeStyle`."
-			},
-			"HeightUnit": {
-				"type": "number",
-				"enum": [
-					0,
-					1,
-					2,
-					3,
-					4,
-					5
-				],
-				"description": "ATAK Span display units; the stored height itself is always metres."
-			},
-			"ExtrudeMode": {
-				"type": "string",
-				"enum": [
-					"cylinder",
-					"cone_down"
-				]
-			},
-			"PackageObjectStyle": {
-				"properties": {
-					"color": {
-						"$ref": "#/components/schemas/HexColor",
-						"description": "Marker, line and polygon outline colour."
-					},
-					"strokeWidth": {
-						"type": "integer",
-						"format": "int32",
-						"description": "Line and outline width in pixels.",
-						"minimum": 1,
-						"maximum": 20
-					},
-					"fillOpacity": {
-						"type": "number",
-						"format": "double",
-						"description": "Polygon and circle fill opacity.",
-						"minimum": 0,
-						"maximum": 1
-					},
-					"strokeStyle": {
-						"$ref": "#/components/schemas/StrokeStyle",
-						"description": "Line style of lines, outlines and circles; `solid` when left out."
-					},
-					"fillColor": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/HexColor"
-							}
-						],
-						"nullable": true,
-						"description": "Fill colour of areas and circles; `null` or left out fills with `color`."
-					},
-					"height": {
-						"type": "number",
-						"format": "double",
-						"nullable": true,
-						"description": "Shape extrusion height in metres, independent of coordinate altitude. Null/absent is unknown.",
-						"minimum": -100000,
-						"maximum": 100000
-					},
-					"heightUnit": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/HeightUnit"
-							}
-						],
-						"nullable": true,
-						"description": "Preferred TAK height display unit (0 km, 1 m, 2 mi, 3 yd, 4 ft, 5 NM)."
-					},
-					"extrudeMode": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/ExtrudeMode"
-							}
-						],
-						"nullable": true,
-						"description": "Circle extrusion mode; absent uses the client's default."
-					}
-				},
-				"required": [
-					"color",
-					"strokeWidth",
-					"fillOpacity"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"CotType": {
-				"type": "string",
-				"description": "CoT event type, e.g. `b-m-p-s-m` (spot marker) or `a-f-G-U-C-I` (MIL-STD-2525 friendly\ninfantry).",
-				"pattern": "^[a-z](-[A-Za-z0-9]+){1,15}$",
-				"maxLength": 64
-			},
-			"TakMarker": {
-				"description": "Optional TAK presentation of a marker, kept so ATAK packages round-trip without loss.",
-				"properties": {
-					"cotType": {
-						"$ref": "#/components/schemas/CotType",
-						"description": "Defaults to the spot marker `b-m-p-s-m`; `a-*` types are drawn as military symbols."
-					},
-					"iconsetPath": {
-						"type": "string",
-						"nullable": true,
-						"description": "ATAK icon set path such as `COT_MAPPING_SPOTMAP/b-m-p-s-m/-35072` or an icon in a custom\nicon set. Passed through unchanged; the editor shows a plain marker when it cannot draw it.",
-						"pattern": "^[^\\u0000-\\u001f<>\"]+$",
-						"maxLength": 256
-					}
-				},
-				"required": [
-					"cotType",
-					"iconsetPath"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"PackageSnapshotObject": {
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"layerId": {
-						"type": "string"
-					},
-					"kind": {
-						"$ref": "#/components/schemas/PackageObjectKind"
-					},
-					"name": {
-						"type": "string"
-					},
-					"description": {
-						"type": "string",
-						"nullable": true
-					},
-					"geometry": {
-						"$ref": "#/components/schemas/PackageGeometry"
-					},
-					"style": {
-						"$ref": "#/components/schemas/PackageObjectStyle"
-					},
-					"tak": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/TakMarker"
-							}
-						],
-						"nullable": true
-					}
-				},
-				"required": [
-					"id",
-					"layerId",
-					"kind",
-					"name",
-					"description",
-					"geometry",
-					"style",
-					"tak"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"PackageSnapshotContent": {
 				"properties": {
 					"id": {
@@ -6966,14 +7375,6 @@
 				],
 				"type": "object",
 				"additionalProperties": false
-			},
-			"DataPackageKind": {
-				"type": "string",
-				"enum": [
-					"package",
-					"mission"
-				],
-				"description": "`package`: a Data Package, published as revisions and installed by members. `mission`: an ATAK\nData Sync mission edited with the same editor; each revision is synced to subscribed TAK apps."
 			},
 			"DataPackageContentSummary": {
 				"properties": {
@@ -13058,6 +13459,345 @@
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/events/{eventId}/offline-snapshots": {
+			"post": {
+				"operationId": "CreateOfflineSnapshot",
+				"responses": {
+					"200": {
+						"description": "Offline snapshot document",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OfflineSnapshotDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Describes the published revisions of the selected packages: layers, objects and displayable\nmap content with sizes and checksums. Stores nothing on the server; audited.",
+				"tags": [
+					"Offline"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateOfflineSnapshotRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/offline-snapshots/packages/{packageId}/revisions/{number}/contents/{contentId}/tiles": {
+			"get": {
+				"operationId": "ListOfflineTiles",
+				"responses": {
+					"200": {
+						"description": "Tile page",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OfflineTilePage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "One page of the tiles of a published offline map, base64-encoded with their SHA-256.",
+				"tags": [
+					"Offline"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "number",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/offline-snapshots/packages/{packageId}/revisions/{number}/contents/{contentId}/image": {
+			"get": {
+				"operationId": "GetOfflineImage",
+				"responses": {
+					"200": {
+						"description": "Rubber-sheet image",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The image of a published rubber sheet.",
+				"tags": [
+					"Offline"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "number",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"in": "path",
+						"name": "contentId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/meshtastic/firmware-releases": {
