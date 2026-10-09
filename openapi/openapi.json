@@ -2153,6 +2153,936 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"PresetKind": {
+				"type": "string",
+				"enum": [
+					"meshtastic",
+					"tak"
+				]
+			},
+			"SettingsPresetSummaryDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PresetKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"targetVersion": {
+						"type": "string",
+						"nullable": true,
+						"description": "Meshtastic firmware or ATAK version the preset was made for."
+					},
+					"itemCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of settings or ATAK preference entries."
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"kind",
+					"name",
+					"description",
+					"targetVersion",
+					"itemCount",
+					"version",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SettingsPresetPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/SettingsPresetSummaryDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetSourceDto": {
+				"description": "Where a preset document came from. Free text such as `note` lets a person or an assistant say\nwhat they changed; Core never acts on it.",
+				"properties": {
+					"application": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"applicationVersion": {
+						"type": "string",
+						"maxLength": 40
+					},
+					"exportedFrom": {
+						"type": "string",
+						"enum": [
+							"event",
+							"library"
+						]
+					},
+					"note": {
+						"type": "string",
+						"maxLength": 1000
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetMeshtasticSettings": {
+				"description": "Values of Meshtastic firmware-profile fields, keyed by field key.",
+				"properties": {},
+				"type": "object",
+				"additionalProperties": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number",
+							"format": "double"
+						},
+						{
+							"type": "boolean"
+						}
+					]
+				}
+			},
+			"MeshtasticPresetContentDto": {
+				"properties": {
+					"firmwareVersion": {
+						"type": "string",
+						"description": "The firmware the settings were made for, such as `2.8`. Imports check every value against the\ntarget event's own firmware profile instead.",
+						"maxLength": 20
+					},
+					"settings": {
+						"$ref": "#/components/schemas/PresetMeshtasticSettings"
+					}
+				},
+				"required": [
+					"firmwareVersion",
+					"settings"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetAtakTargetDto": {
+				"description": "Who a portable ATAK preference is for. Groups and roles are named by their slug, because their\nIDs only exist in one event; importing maps each one explicitly onto the target event.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"event",
+							"group",
+							"role"
+						]
+					},
+					"slug": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"name": {
+						"type": "string",
+						"description": "Display name in the source event.",
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"type"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetAtakPreferenceDto": {
+				"properties": {
+					"target": {
+						"$ref": "#/components/schemas/PresetAtakTargetDto"
+					},
+					"preference": {
+						"type": "string",
+						"maxLength": 200
+					},
+					"key": {
+						"type": "string",
+						"maxLength": 200
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceTypeDto"
+					},
+					"value": {
+						"type": "string",
+						"maxLength": 10000
+					}
+				},
+				"required": [
+					"target",
+					"preference",
+					"key",
+					"type",
+					"value"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakPresetContentDto": {
+				"properties": {
+					"atakVersion": {
+						"type": "string",
+						"maxLength": 40
+					},
+					"atakPreferences": {
+						"items": {
+							"$ref": "#/components/schemas/PresetAtakPreferenceDto"
+						},
+						"type": "array",
+						"maxItems": 2000
+					}
+				},
+				"required": [
+					"atakPreferences"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetDocumentDto": {
+				"description": "A portable, self-describing OpenMeshTak settings preset (`format` `openmeshtak-preset`). It is not\nan ATAK `.pref`, a Meshtastic `.cfg` or a firmware profile. It never holds channel keys,\npasswords, fixed PINs, certificates, tokens or member-specific values.",
+				"properties": {
+					"format": {
+						"type": "string",
+						"description": "Always `openmeshtak-preset`.",
+						"maxLength": 40
+					},
+					"formatVersion": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Format version; this Core reads version 1."
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PresetKind"
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"maxLength": 1000
+					},
+					"about": {
+						"type": "string",
+						"description": "Human-readable explanation of the format. Ignored on import.",
+						"maxLength": 4000
+					},
+					"exportedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"source": {
+						"$ref": "#/components/schemas/PresetSourceDto"
+					},
+					"meshtastic": {
+						"$ref": "#/components/schemas/MeshtasticPresetContentDto",
+						"description": "Present when `kind` is `meshtastic`."
+					},
+					"tak": {
+						"$ref": "#/components/schemas/TakPresetContentDto",
+						"description": "Present when `kind` is `tak`."
+					}
+				},
+				"required": [
+					"format",
+					"formatVersion",
+					"kind",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SettingsPresetDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/PresetKind"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"targetVersion": {
+						"type": "string",
+						"nullable": true,
+						"description": "Meshtastic firmware or ATAK version the preset was made for."
+					},
+					"itemCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of settings or ATAK preference entries."
+					},
+					"version": {
+						"type": "number",
+						"format": "double"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					}
+				},
+				"required": [
+					"id",
+					"kind",
+					"name",
+					"description",
+					"targetVersion",
+					"itemCount",
+					"version",
+					"createdAt",
+					"updatedAt",
+					"document"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateSettingsPresetRequest": {
+				"properties": {
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto",
+						"description": "Name and description default to the document's."
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 1000
+					}
+				},
+				"required": [
+					"document"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateSettingsPresetRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 1
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 1000
+					},
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto",
+						"description": "Replaces the settings; omit to keep them. The kind cannot change."
+					}
+				},
+				"required": [
+					"version",
+					"name",
+					"description"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetSettingChangeDto": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"from": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							},
+							{
+								"type": "boolean"
+							}
+						],
+						"nullable": true
+					},
+					"to": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							},
+							{
+								"type": "boolean"
+							}
+						]
+					}
+				},
+				"required": [
+					"key",
+					"from",
+					"to"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetSettingProblemDto": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"key",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticPresetPreviewDto": {
+				"description": "What importing a Meshtastic preset would change in the event's draft. Only `changed` values are\nwritten; invalid and unsupported values are left out and current values stay.",
+				"properties": {
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Configuration version the preview was computed on; send it with the import."
+					},
+					"presetFirmwareVersion": {
+						"type": "string"
+					},
+					"eventFirmwareVersion": {
+						"type": "string"
+					},
+					"sameFirmwareLine": {
+						"type": "boolean",
+						"description": "`false` when the preset was made for another firmware line than the event uses."
+					},
+					"changed": {
+						"items": {
+							"$ref": "#/components/schemas/PresetSettingChangeDto"
+						},
+						"type": "array"
+					},
+					"unchanged": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"invalid": {
+						"items": {
+							"$ref": "#/components/schemas/PresetSettingProblemDto"
+						},
+						"type": "array",
+						"description": "Values the event's firmware profile rejects; the current value stays."
+					},
+					"unsupported": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Keys the event's firmware cannot set: unknown, managed by OpenMeshTak, secret or newer."
+					},
+					"notInPreset": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Settings the preset does not mention; they keep their current value."
+					},
+					"secretsKept": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Secrets set on the event. An import never changes them."
+					},
+					"confirmation": {
+						"type": "string",
+						"description": "Token to send with the import to confirm exactly this preview."
+					}
+				},
+				"required": [
+					"version",
+					"presetFirmwareVersion",
+					"eventFirmwareVersion",
+					"sameFirmwareLine",
+					"changed",
+					"unchanged",
+					"invalid",
+					"unsupported",
+					"notInPreset",
+					"secretsKept",
+					"confirmation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PreviewMeshtasticPresetRequest": {
+				"properties": {
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					}
+				},
+				"required": [
+					"document"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"FirmwareSettingsDocument": {
+				"description": "Values of a firmware profile's editable fields, keyed by field key.",
+				"properties": {},
+				"type": "object",
+				"additionalProperties": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number",
+							"format": "double"
+						},
+						{
+							"type": "boolean"
+						}
+					]
+				}
+			},
+			"ConfigurationProblemDto": {
+				"properties": {
+					"field": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"field",
+					"code",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticConfigurationDto": {
+				"properties": {
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"firmwareVersion": {
+						"type": "string",
+						"description": "Recommended firmware: a line such as `2.8` or a minimum patch such as `2.8.3`."
+					},
+					"effectiveMinimumVersion": {
+						"type": "string",
+						"nullable": true,
+						"description": "The given patch or the profile minimum; `null` when the version is no longer supported."
+					},
+					"profileId": {
+						"type": "string",
+						"nullable": true
+					},
+					"verified": {
+						"type": "boolean",
+						"description": "`false` when no tested patch reaches the effective minimum version."
+					},
+					"settings": {
+						"$ref": "#/components/schemas/FirmwareSettingsDocument"
+					},
+					"secretFields": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Secret fields available for the event's firmware version, set through `PUT secrets`."
+					},
+					"secretsSet": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Keys of secret fields that hold a value. The values themselves are never returned."
+					},
+					"problems": {
+						"items": {
+							"$ref": "#/components/schemas/ConfigurationProblemDto"
+						},
+						"type": "array",
+						"description": "Why the stored configuration is not valid for this Core release; empty when it is."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until the configuration is first saved."
+					},
+					"updatedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"eventId",
+					"firmwareVersion",
+					"effectiveMinimumVersion",
+					"profileId",
+					"verified",
+					"settings",
+					"secretFields",
+					"secretsSet",
+					"problems",
+					"version",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApplyMeshtasticPresetRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the preview returned.",
+						"minimum": 0
+					},
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					},
+					"confirmation": {
+						"type": "string",
+						"maxLength": 100
+					}
+				},
+				"required": [
+					"version",
+					"document",
+					"confirmation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetTargetDto": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"group",
+							"role"
+						]
+					},
+					"slug": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"entryCount": {
+						"type": "number",
+						"format": "double"
+					},
+					"suggestedTargetId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "A group or role of the target event with the same slug or name; never applied unless mapped."
+					},
+					"mapping": {
+						"properties": {
+							"targetId": {
+								"allOf": [
+									{
+										"$ref": "#/components/schemas/Uuid"
+									}
+								],
+								"nullable": true
+							}
+						},
+						"required": [
+							"targetId"
+						],
+						"type": "object",
+						"description": "The mapping sent with this preview; absent while unmapped."
+					}
+				},
+				"required": [
+					"type",
+					"slug",
+					"name",
+					"entryCount",
+					"suggestedTargetId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetEntryChangeDto": {
+				"properties": {
+					"target": {
+						"$ref": "#/components/schemas/AtakPreferenceTargetDto"
+					},
+					"preference": {
+						"type": "string"
+					},
+					"key": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceTypeDto"
+					},
+					"from": {
+						"type": "string",
+						"nullable": true,
+						"description": "The event's current value for the same target and key; `null` when the key is new."
+					},
+					"to": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"target",
+					"preference",
+					"key",
+					"type",
+					"from",
+					"to"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetEntryProblemDto": {
+				"properties": {
+					"target": {
+						"$ref": "#/components/schemas/PresetAtakTargetDto"
+					},
+					"key": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"target",
+					"key",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TakPresetPreviewDto": {
+				"description": "What importing a TAK preset would change in the event's ATAK preference draft. Entries are merged:\na preset entry replaces the event's entry for the same target and key, other entries stay.",
+				"properties": {
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "ATAK preference list version the preview was computed on; send it with the import."
+					},
+					"presetAtakVersion": {
+						"type": "string",
+						"nullable": true
+					},
+					"catalogAtakVersion": {
+						"type": "string"
+					},
+					"targets": {
+						"items": {
+							"$ref": "#/components/schemas/PresetTargetDto"
+						},
+						"type": "array",
+						"description": "Groups and roles the preset targets; each needs an explicit mapping."
+					},
+					"added": {
+						"items": {
+							"$ref": "#/components/schemas/PresetEntryChangeDto"
+						},
+						"type": "array"
+					},
+					"changed": {
+						"items": {
+							"$ref": "#/components/schemas/PresetEntryChangeDto"
+						},
+						"type": "array"
+					},
+					"unchanged": {
+						"type": "number",
+						"format": "double"
+					},
+					"invalid": {
+						"items": {
+							"$ref": "#/components/schemas/PresetEntryProblemDto"
+						},
+						"type": "array",
+						"description": "Entries the catalog or the target event rejects; they are left out."
+					},
+					"skipped": {
+						"type": "number",
+						"format": "double",
+						"description": "Entries of groups or roles mapped to `null`."
+					},
+					"confirmation": {
+						"type": "string",
+						"nullable": true,
+						"description": "`null` until every group and role is mapped."
+					}
+				},
+				"required": [
+					"version",
+					"presetAtakVersion",
+					"catalogAtakVersion",
+					"targets",
+					"added",
+					"changed",
+					"unchanged",
+					"invalid",
+					"skipped",
+					"confirmation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresetTargetMappingDto": {
+				"description": "Maps a group or role of a preset onto the target event; `targetId` `null` leaves its entries out.",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"group",
+							"role"
+						]
+					},
+					"slug": {
+						"type": "string",
+						"maxLength": 100
+					},
+					"targetId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"type",
+					"slug",
+					"targetId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PreviewTakPresetRequest": {
+				"properties": {
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					},
+					"mappings": {
+						"items": {
+							"$ref": "#/components/schemas/PresetTargetMappingDto"
+						},
+						"type": "array",
+						"maxItems": 500
+					}
+				},
+				"required": [
+					"document"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApplyTakPresetRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the preview returned.",
+						"minimum": 0
+					},
+					"document": {
+						"$ref": "#/components/schemas/PresetDocumentDto"
+					},
+					"mappings": {
+						"items": {
+							"$ref": "#/components/schemas/PresetTargetMappingDto"
+						},
+						"type": "array",
+						"maxItems": 500
+					},
+					"confirmation": {
+						"type": "string",
+						"maxLength": 100
+					}
+				},
+				"required": [
+					"version",
+					"document",
+					"mappings",
+					"confirmation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ServerLogLevel": {
 				"type": "string",
 				"enum": [
@@ -4201,118 +5131,6 @@
 					"sections",
 					"fields",
 					"enums"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"FirmwareSettingsDocument": {
-				"description": "Values of a firmware profile's editable fields, keyed by field key.",
-				"properties": {},
-				"type": "object",
-				"additionalProperties": {
-					"anyOf": [
-						{
-							"type": "string"
-						},
-						{
-							"type": "number",
-							"format": "double"
-						},
-						{
-							"type": "boolean"
-						}
-					]
-				}
-			},
-			"ConfigurationProblemDto": {
-				"properties": {
-					"field": {
-						"type": "string"
-					},
-					"code": {
-						"type": "string"
-					},
-					"message": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"field",
-					"code",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"MeshtasticConfigurationDto": {
-				"properties": {
-					"eventId": {
-						"$ref": "#/components/schemas/Uuid"
-					},
-					"firmwareVersion": {
-						"type": "string",
-						"description": "Recommended firmware: a line such as `2.8` or a minimum patch such as `2.8.3`."
-					},
-					"effectiveMinimumVersion": {
-						"type": "string",
-						"nullable": true,
-						"description": "The given patch or the profile minimum; `null` when the version is no longer supported."
-					},
-					"profileId": {
-						"type": "string",
-						"nullable": true
-					},
-					"verified": {
-						"type": "boolean",
-						"description": "`false` when no tested patch reaches the effective minimum version."
-					},
-					"settings": {
-						"$ref": "#/components/schemas/FirmwareSettingsDocument"
-					},
-					"secretFields": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array",
-						"description": "Secret fields available for the event's firmware version, set through `PUT secrets`."
-					},
-					"secretsSet": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array",
-						"description": "Keys of secret fields that hold a value. The values themselves are never returned."
-					},
-					"problems": {
-						"items": {
-							"$ref": "#/components/schemas/ConfigurationProblemDto"
-						},
-						"type": "array",
-						"description": "Why the stored configuration is not valid for this Core release; empty when it is."
-					},
-					"version": {
-						"type": "number",
-						"format": "double",
-						"description": "Optimistic-concurrency version; 0 until the configuration is first saved."
-					},
-					"updatedAt": {
-						"type": "string",
-						"nullable": true,
-						"format": "date-time"
-					}
-				},
-				"required": [
-					"eventId",
-					"firmwareVersion",
-					"effectiveMinimumVersion",
-					"profileId",
-					"verified",
-					"settings",
-					"secretFields",
-					"secretsSet",
-					"problems",
-					"version",
-					"updatedAt"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -12746,6 +13564,902 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/SetupRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/presets": {
+			"get": {
+				"operationId": "ListSettingsPresets",
+				"responses": {
+					"200": {
+						"description": "Presets",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SettingsPresetPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists library presets ordered by creation time, oldest first.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "kind",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/PresetKind"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateSettingsPreset",
+				"responses": {
+					"201": {
+						"description": "Preset saved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SettingsPresetDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Validates a preset document without an event and saves a copy to the library.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateSettingsPresetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/presets/{presetId}": {
+			"get": {
+				"operationId": "GetSettingsPreset",
+				"responses": {
+					"200": {
+						"description": "Preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SettingsPresetDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The preset with its portable document, ready to download or import into an event.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "presetId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateSettingsPreset",
+				"responses": {
+					"200": {
+						"description": "Preset updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SettingsPresetDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Renames the preset or replaces its settings. Requires the current `version`.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "presetId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateSettingsPresetRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteSettingsPreset",
+				"responses": {
+					"204": {
+						"description": "Preset deleted"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Deletes the preset. Events that used it keep their values.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "presetId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic/preset": {
+			"get": {
+				"operationId": "ExportMeshtasticPreset",
+				"responses": {
+					"200": {
+						"description": "Meshtastic preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PresetDocumentDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The event's Meshtastic settings without secrets, managed or member-specific values.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic/preset/preview": {
+			"post": {
+				"operationId": "PreviewMeshtasticPreset",
+				"responses": {
+					"200": {
+						"description": "Import preview",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticPresetPreviewDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Checks a preset against the event's firmware profile and reports what an import would change.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PreviewMeshtasticPresetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/meshtastic/preset/import": {
+			"post": {
+				"operationId": "ImportMeshtasticPreset",
+				"responses": {
+					"200": {
+						"description": "Preset imported into the draft",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticConfigurationDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, unconfirmed import or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Applies a previewed preset to the draft. Send the preview's `version` and `confirmation`.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ApplyMeshtasticPresetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/preset": {
+			"get": {
+				"operationId": "ExportTakPreset",
+				"responses": {
+					"200": {
+						"description": "TAK preset",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PresetDocumentDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The event's ATAK preferences for the whole event, its groups and roles.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/tak/preset/preview": {
+			"post": {
+				"operationId": "PreviewTakPreset",
+				"responses": {
+					"200": {
+						"description": "Import preview",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TakPresetPreviewDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset or mapping",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Checks a preset against the ATAK catalog and the event, and reports what an import would add or\nchange. `confirmation` stays `null` until every group and role of the preset is mapped.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PreviewTakPresetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/preset/import": {
+			"post": {
+				"operationId": "ImportTakPreset",
+				"responses": {
+					"200": {
+						"description": "Preset imported into the draft",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AtakPreferenceListDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, unconfirmed import or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid preset or mapping",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Merges a previewed preset into the draft. Send the preview's `version`, mappings and `confirmation`.",
+				"tags": [
+					"Settings presets"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ApplyTakPresetRequest"
 							}
 						}
 					}

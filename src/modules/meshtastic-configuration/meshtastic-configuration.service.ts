@@ -73,7 +73,7 @@ async function resolveOrReject(firmwareVersion: string): Promise<EventFirmware> 
  * Writes the whole configuration with optimistic concurrency. Version 0 means "never saved", so
  * the first write creates the row and a concurrent first write loses on the primary key.
  */
-async function storeConfiguration(
+export async function storeConfiguration(
   transaction: Prisma.TransactionClient,
   eventId: string,
   expectedVersion: number,

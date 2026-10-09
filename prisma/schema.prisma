@@ -1124,3 +1124,25 @@ model DownloadGrant {
 
   @@index([userId])
 }
+
+enum SettingsPresetKind {
+  meshtastic
+  tak
+}
+
+/// Reusable global template of portable Meshtastic or TAK settings. Applying one copies its values
+/// into an event's draft configuration; later template edits never reach an event or its artifacts.
+model SettingsPreset {
+  id          String             @id
+  kind        SettingsPresetKind
+  name        String
+  description String?
+  /// Validated kind-specific body of a portable preset document. Never holds secrets or member data.
+  content     Json
+  version     Int                @default(1)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([kind, createdAt, id])
+  @@index([createdAt, id])
+}
