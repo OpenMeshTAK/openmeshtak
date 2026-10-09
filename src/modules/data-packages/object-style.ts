@@ -12,5 +12,12 @@ export function fillColorOf(style: PackageObjectStyle): string {
 
 /** A style with every optional field set, as the API returns it. */
 export function completeStyle(style: PackageObjectStyle): Required<PackageObjectStyle> {
-  return { ...style, strokeStyle: strokeStyleOf(style), fillColor: style.fillColor ?? null };
+  return {
+    ...style,
+    strokeStyle: strokeStyleOf(style),
+    fillColor: style.fillColor ?? null,
+    height: style.height ?? null,
+    heightUnit: style.heightUnit ?? null,
+    extrudeMode: style.extrudeMode ?? null,
+  };
 }

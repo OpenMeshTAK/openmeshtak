@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { Prisma } from "../../generated/prisma/client.js";
+import type { Prisma } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";

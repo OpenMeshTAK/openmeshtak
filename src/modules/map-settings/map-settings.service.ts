@@ -1,4 +1,5 @@
-import { Prisma, type MapSettings } from "../../generated/prisma/client.js";
+import type { Prisma} from "../../generated/prisma/client.js";
+import type { MapSettings } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";

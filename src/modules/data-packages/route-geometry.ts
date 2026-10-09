@@ -1,18 +1,21 @@
 import { randomUUID } from "node:crypto";
 import type { PackageGeometry, RouteGeometry } from "./package-object.dto.js";
 
+// eslint-disable-next-line no-control-regex -- rejecting control characters is intentional.
+const CONTROL_CHARACTER = /[\u0000-\u001f]/;
+
 export function routeProblem(route: RouteGeometry): string | null {
   if (!Array.isArray(route.points) || route.points.length !== route.coordinates.length || route.points.length < 2) return "Every route position needs matching waypoint or checkpoint metadata; a route needs at least two points.";
   const ids = new Set<string>();
   for (const point of route.points) {
-    if (point == null || typeof point.id !== "string" || point.id.length === 0 || point.id.length > 128 || /[\u0000-\u001f]/.test(point.id)
+    if (point == null || typeof point.id !== "string" || point.id.length === 0 || point.id.length > 128 || CONTROL_CHARACTER.test(point.id)
       || ids.has(point.id) || !["waypoint", "checkpoint"].includes(point.type)
       || typeof point.name !== "string" || point.name.length > 100 || typeof point.remarks !== "string" || point.remarks.length > 2000) return "Route points need unique IDs, supported types and bounded names/remarks.";
     ids.add(point.id);
   }
   if (typeof route.options !== "object" || route.options === null || Array.isArray(route.options)
     || Object.keys(route.options).some((key) => !["transportationType", "method", "direction", "routeType", "order", "planningMethod", "prefix"].includes(key))
-    || Object.values(route.options).some((value) => typeof value !== "string" || value.length > 64 || /[\u0000-\u001f]/.test(value))) return "Route options must be short text values.";
+    || Object.values(route.options).some((value) => typeof value !== "string" || value.length > 64 || CONTROL_CHARACTER.test(value))) return "Route options must be short text values.";
   if (!Array.isArray(route.navigationCues) || route.navigationCues.length > 1000) return "A route can have at most 1000 navigation cues.";
   const cueIds = new Set<string>();
   for (const cue of route.navigationCues) {

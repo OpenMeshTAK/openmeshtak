@@ -30,6 +30,7 @@ function invalidDatabase(detail: string): ProblemError {
 /** Path components are metadata, never filesystem paths or SQL identifiers. */
 function component(value: unknown, maximum: number): string | null {
   return typeof value === "string" && value.length > 0 && value.length <= maximum
+    // eslint-disable-next-line no-control-regex -- rejecting control characters is intentional.
     && !/[\u0000-\u001f<>"/\\]/.test(value) && value !== "." && value !== ".." ? value : null;
 }
 
