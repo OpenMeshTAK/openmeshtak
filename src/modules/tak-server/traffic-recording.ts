@@ -10,6 +10,14 @@ const SETTINGS_TTL_MS = 30_000;
 const POSITION_INTERVAL_MS = 5_000;
 const DAY_MS = 86_400_000;
 
+/** What the history needs beyond the live item to tell precise GPS fixes from estimates. */
+export interface RecordedDetails {
+  how: string | null;
+  ce: number | null;
+  /** The app's own position beacon rather than a marker it placed. */
+  selfReported: boolean;
+}
+
 /**
  * Stores the TAK traffic of events that opted in. Writes happen in the background so the stream
  * never waits for the database, and failures are logged without the traffic itself.
@@ -25,8 +33,8 @@ class TrafficRecorder {
     this.loadedAt = 0;
   }
 
-  record(userId: string, scope: CotScope, item: LiveItem): void {
-    void this.recordNow(userId, scope, item).catch((error: unknown) => {
+  record(userId: string, scope: CotScope, item: LiveItem, details: RecordedDetails): void {
+    void this.recordNow(userId, scope, item, details).catch((error: unknown) => {
       logger.error({ error, event: "tak_traffic_record_failed" }, "TAK traffic could not be recorded");
     });
   }
@@ -60,7 +68,7 @@ class TrafficRecorder {
     return true;
   }
 
-  private async recordNow(userId: string, scope: CotScope, item: LiveItem): Promise<void> {
+  private async recordNow(userId: string, scope: CotScope, item: LiveItem, details: RecordedDetails): Promise<void> {
     const recording = await this.recordingEvents();
     const now = Date.now();
     const eventIds = [...scope.keys()].filter((eventId) => recording.has(eventId) && this.due(eventId, item, now));
@@ -78,6 +86,9 @@ class TrafficRecorder {
         lon: item.lon,
         time: item.time,
         stale: item.stale,
+        how: details.how,
+        ce: details.ce,
+        selfReported: details.selfReported,
         userId,
       })),
     });

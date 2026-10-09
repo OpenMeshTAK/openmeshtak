@@ -31,6 +31,10 @@ export interface CotEvent {
   /** WGS84 position of the point. */
   lat: number;
   lon: number;
+  /** CoT `how`, such as `m-g` for a GPS fix or `h-e` for a human estimate. */
+  how: string | null;
+  /** Circular error of the point in metres, or null when the sender marks it as unknown. */
+  ce: number | null;
   /** Display name from `detail/contact` for positions, or from `detail/contact` of markers when set. */
   callsign: string | null;
   /** The sending app's own description from `detail/takv`, present in its position beacon. */
@@ -122,6 +126,14 @@ function isTime(value: string | null): boolean {
   return value !== null && !Number.isNaN(Date.parse(value));
 }
 
+/** TAK apps send 9999999 when the accuracy is unknown; such a value is not an accuracy. */
+const UNKNOWN_CE_METRES = 9_999_999;
+
+function circularErrorOf(value: string | null): number | null {
+  const number = value === null ? Number.NaN : Number(value);
+  return Number.isFinite(number) && number >= 0 && number < UNKNOWN_CE_METRES ? number : null;
+}
+
 function isCoordinate(value: string | null, limit: number): boolean {
   const number = value === null ? Number.NaN : Number(value);
   return Number.isFinite(number) && Math.abs(number) <= limit;
@@ -177,6 +189,8 @@ export function parseCotEvent(xml: string): CotEvent | null {
     protocolRequest: protocolRequestOf(type, detail),
     lat: Number(attribute(point, "lat")),
     lon: Number(attribute(point, "lon")),
+    how: attribute(event, "how")?.slice(0, 20) ?? null,
+    ce: circularErrorOf(attribute(point, "ce")),
     callsign: hasContact ? (attribute(contact, "callsign")?.slice(0, 100) ?? null) : null,
     software: softwareOf(detail),
     time: new Date(attribute(event, "time") ?? ""),

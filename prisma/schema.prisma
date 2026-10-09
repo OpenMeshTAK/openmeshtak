@@ -989,21 +989,28 @@ model TakTrafficRecording {
 
 /// One recorded CoT state (position or marker) of an event, kept for the retention period.
 model TakTrafficItem {
-  id         String   @id
-  eventId    String
-  uid        String
-  type       String
-  callsign   String?
-  lat        Float
-  lon        Float
-  time       DateTime
-  stale      DateTime
+  id           String   @id
+  eventId      String
+  uid          String
+  type         String
+  callsign     String?
+  lat          Float
+  lon          Float
+  time         DateTime
+  stale        DateTime
+  /// CoT `how`, e.g. `m-g` (machine GPS) or `h-e` (human estimate); null for items recorded before it was kept.
+  how          String?
+  /// Circular error in metres from `point/ce`; null when unknown (TAK sends 9999999 for unknown).
+  ce           Float?
+  /// The sending app's own position beacon rather than a marker it placed; false for older items.
+  selfReported Boolean  @default(false)
   /// The OpenMeshTak user whose TAK app sent it.
-  userId     String
-  receivedAt DateTime @default(now())
-  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId       String
+  receivedAt   DateTime @default(now())
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId, receivedAt])
+  @@index([eventId, time])
 }
 
 /// Instance-wide display settings; a single row with id "instance". A missing row means the

@@ -176,7 +176,7 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
         stale: event.stale,
       };
       router.remember(peer, item, event.xml);
-      trafficRecorder.record(peer.userId, peer.scope, item);
+      trafficRecorder.record(peer.userId, peer.scope, item, { how: event.how, ce: event.ce, selfReported: event.isSituationalAwareness });
     }
     router.publish(peer, event.xml);
   };
