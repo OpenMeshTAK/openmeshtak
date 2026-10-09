@@ -15,6 +15,21 @@ function findTestFiles(directory: string): string[] {
   });
 }
 
+function selectTestFiles(requestedPaths: string[]): string[] {
+  const files = findTestFiles("test");
+  if (requestedPaths.length === 0) {
+    return files;
+  }
+  const available = new Map(files.map((file) => [resolve(file), file]));
+  return [...new Set(requestedPaths.map((path) => {
+    const file = available.get(resolve(path));
+    if (file === undefined) {
+      throw new Error(`Unknown test file: ${path}. Pass paths to .test.ts files below test/.`);
+    }
+    return file;
+  }))];
+}
+
 function run(command: string, args: string[], environment: NodeJS.ProcessEnv): void {
   const result = spawnSync(command, args, {
     env: environment,
@@ -25,11 +40,16 @@ function run(command: string, args: string[], environment: NodeJS.ProcessEnv): v
     throw result.error;
   }
 
+  if (result.signal !== null) {
+    throw new Error(`Test command was terminated by signal ${result.signal}.`);
+  }
   if (result.status !== 0) {
-    throw new Error(`Test prerequisite exited with status ${String(result.status)}.`);
+    throw new Error(`Test command exited with status ${String(result.status)}.`);
   }
 }
 
+// Validate selection before creating a database; a typo must never run the whole suite.
+const testFiles = selectTestFiles(process.argv.slice(2));
 const testDatabaseFile = `openmeshtak-test-${randomUUID()}.sqlite`;
 const testDatabasePath = resolve("server/data/db", testDatabaseFile);
 const testRunId = testDatabaseFile.slice(0, -".sqlite".length);
@@ -66,8 +86,10 @@ try {
       "--import",
       "./scripts/test-worker-environment.ts",
       "--test",
+      // The spec reporter can hide exitCode/signal when a worker dies before declaring tests.
+      "--test-reporter=tap",
       `--test-concurrency=${String(testConcurrency)}`,
-      ...findTestFiles("test"),
+      ...testFiles,
     ],
     testEnvironment,
   );

@@ -46,6 +46,17 @@ Run the complete verification suite with:
 pnpm check
 ```
 
+Tests run in separate processes with their own temporary databases and storage. To investigate a
+failure, run selected files through the same isolation and migration setup:
+
+```sh
+pnpm test test/user-setup-links.test.ts test/account-setup.test.ts
+```
+
+`TEST_CONCURRENCY` sets the number of parallel test files (by default, up to 10). The TAP output
+includes the failing worker's exit code or signal even when it exits before declaring any tests.
+Unknown test paths fail immediately rather than running the complete suite.
+
 The production clean-install smoke test builds Core, applies every migration to an empty temporary data directory, starts the production server, and checks health, initial setup and production-only route behavior:
 
 ```sh
