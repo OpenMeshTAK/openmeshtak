@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, beforeEach, describe, it } from "node:test";
+import { strFromU8, unzipSync } from "fflate";
 import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../src/app.js";
@@ -150,5 +151,62 @@ void describe("ATAK preference list", () => {
       topics: Array<{ keys: Array<{ key: string; use: string | null }> }>;
     };
     assert.ok(catalog.topics.some(({ keys }) => keys.some(({ key, use }) => key === "coord_display_pref" && use === "form")));
+  });
+
+  void it("accepts restrictions of known settings items and refuses unknown items", async () => {
+    const restriction = (key: string, value = "true", type = "boolean") => ({ ...entry(key, value), type });
+    await request(app)
+      .put(url())
+      .set("Cookie", admin.cookie)
+      .send({
+        version: 0,
+        entries: [
+          restriction("disablePreferenceItem_coord_display_pref"),
+          restriction("hidePreferenceItem_coord_display_pref", "false"),
+          restriction("hidePreferenceItem_locationCallsign"),
+        ],
+      })
+      .expect(200);
+
+    const unknown = await request(app)
+      .put(url())
+      .set("Cookie", admin.cookie)
+      .send({ version: 1, entries: [restriction("hidePreferenceItem_noSuchItem")] })
+      .expect(422);
+    assert.equal((unknown.body as { errors: Array<{ code: string }> }).errors[0]?.code, "UNKNOWN_SETTINGS_ITEM");
+    const wrongType = await request(app)
+      .put(url())
+      .set("Cookie", admin.cookie)
+      .send({ version: 1, entries: [restriction("hidePreferenceItem_locationCallsign", "true", "string")] })
+      .expect(422);
+    assert.equal((wrongType.body as { errors: Array<{ field: string }> }).errors[0]?.field, "entries[0].type");
+  });
+
+  void it("unlocks every item the event restricted, also after the restriction was removed", async () => {
+    const download = () =>
+      request(app)
+        .get(url("/unlock-package"))
+        .set("Cookie", admin.cookie)
+        .buffer(true)
+        .parse((response, callback) => {
+          const chunks: Buffer[] = [];
+          response.on("data", (chunk: Buffer) => chunks.push(chunk));
+          response.on("end", () => callback(null, Buffer.concat(chunks)));
+        });
+    await download().expect(409);
+
+    await database.event.update({ where: { id: eventId }, data: { status: "active" } });
+    const hidden = { ...entry("hidePreferenceItem_serverConnections", "true", { type: "group", id: bravoId }), type: "boolean" };
+    await request(app).put(url()).set("Cookie", admin.cookie).send({ version: 0, entries: [hidden] }).expect(200);
+    await request(app).post(`/api/v1/events/${eventId}/configuration-revisions`).set("Cookie", admin.cookie).expect(200);
+    await request(app).put(url()).set("Cookie", admin.cookie).send({ version: 1, entries: [] }).expect(200);
+
+    const files = unzipSync((await download().expect(200)).body as Buffer);
+    const preferences = strFromU8(files["preferences/openmeshtak-unlock.pref"] ?? new Uint8Array());
+    assert.ok(preferences.includes('<entry key="disablePreferenceItem_serverConnections" class="class java.lang.Boolean">false</entry>'));
+    assert.ok(preferences.includes('<entry key="hidePreferenceItem_serverConnections" class="class java.lang.Boolean">false</entry>'));
+    assert.ok(strFromU8(files["MANIFEST/manifest.xml"] ?? new Uint8Array()).includes('zipEntry="preferences/openmeshtak-unlock.pref"'));
+
+    await request(app).get(url("/unlock-package")).set("Cookie", outsider.cookie).expect(404);
   });
 });

@@ -8,6 +8,8 @@ import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error
 import { requireMemberArtifactAccess } from "../member-artifacts/member-artifact-access.js";
 import { downloadMemberDataPackage, listMemberDataPackages } from "../member-data-packages/member-data-packages.service.js";
 import { generateDeviceProfile } from "../meshtastic-artifacts/device-profile.service.js";
+import { requireReadableEvent } from "../events/event-access.js";
+import { createAtakUnlockPackage } from "../tak-configuration/atak-unlock-package.service.js";
 import { createConnectionPackage } from "../tak-server/connection-package.service.js";
 import { createCertificatePackage } from "../tak-server/itak-connection-package.service.js";
 import { hasAnyTakAccess, takAccessFor } from "../tak-server/tak-access.js";
@@ -56,6 +58,9 @@ async function checkAccess(principal: UserPrincipal, input: CreateDownloadGrantR
       if (!hasAnyTakAccess(await takAccessFor(principal.id))) {
         throw notFoundProblem();
       }
+      return;
+    case "atak-unlock-package":
+      await requireReadableEvent(principal, input.eventId ?? "");
   }
 }
 
@@ -151,6 +156,10 @@ async function produce(actor: ActorContext, grant: DownloadGrant): Promise<Grant
     }
     case "wintak-connection-package": {
       const file = await createCertificatePackage(actor, "wintak");
+      return { ...file, contentType: "application/zip" };
+    }
+    case "atak-unlock-package": {
+      const file = await createAtakUnlockPackage(actor.principal, grant.eventId ?? "");
       return { ...file, contentType: "application/zip" };
     }
     default:

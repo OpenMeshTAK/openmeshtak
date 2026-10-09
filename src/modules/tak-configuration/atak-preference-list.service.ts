@@ -8,6 +8,7 @@ import { isUniqueConstraintError } from "../../shared/database/unique-constraint
 import { validationProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
 import { requireMutableEvent, requireReadableEvent } from "../events/event-access.js";
 import { ATAK_PREFERENCE_TOPICS, BLOCKED_ATAK_PREFERENCES } from "./atak-preference-catalog.js";
+import { ATAK_SCREEN_ITEMS } from "./atak-preference-restrictions.js";
 import type {
   AtakPreferenceCatalogDto,
   AtakPreferenceEntryDto,
@@ -236,5 +237,5 @@ export async function getAtakPreferenceCatalog(principal: Principal): Promise<At
   if (!access.all && access.eventIds.length === 0) {
     throw forbidden();
   }
-  return { atakVersion: "5.5.1.10", topics: ATAK_PREFERENCE_TOPICS, blockedKeys: BLOCKED_ATAK_PREFERENCES };
+  return { atakVersion: "5.5.1.10", topics: ATAK_PREFERENCE_TOPICS, screenItems: ATAK_SCREEN_ITEMS, blockedKeys: BLOCKED_ATAK_PREFERENCES };
 }

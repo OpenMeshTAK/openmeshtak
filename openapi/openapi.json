@@ -1999,8 +1999,31 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"AtakScreenItemDto": {
+				"description": "A settings item that stores no value of its own, such as a link to another settings screen.",
+				"properties": {
+					"id": {
+						"type": "string",
+						"description": "The item ID that `disablePreferenceItem_<id>` and `hidePreferenceItem_<id>` name."
+					},
+					"area": {
+						"type": "string",
+						"description": "Where the item is in ATAK, such as \"Settings → Network\"."
+					},
+					"description": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"area",
+					"description"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"AtakPreferenceCatalogDto": {
-				"description": "The ATAK preference keys this Core release knows, by topic, all in\n`com.atakmap.app_preferences`. Other keys, such as plugin keys, may still be set.",
+				"description": "The ATAK preference keys this Core release knows, by topic, all in\n`com.atakmap.app_preferences`. Other keys, such as plugin keys, may still be set.\n\nEvery catalog key and every screen item can also be greyed out or hidden in ATAK's settings\nscreens with the Boolean entries `disablePreferenceItem_<key>` and `hidePreferenceItem_<key>`;\nother item IDs are refused.",
 				"properties": {
 					"atakVersion": {
 						"type": "string",
@@ -2011,6 +2034,13 @@
 							"$ref": "#/components/schemas/AtakCatalogTopicDto"
 						},
 						"type": "array"
+					},
+					"screenItems": {
+						"items": {
+							"$ref": "#/components/schemas/AtakScreenItemDto"
+						},
+						"type": "array",
+						"description": "Settings items without a value key that can be greyed out or hidden as well."
 					},
 					"blockedKeys": {
 						"items": {
@@ -2035,6 +2065,7 @@
 				"required": [
 					"atakVersion",
 					"topics",
+					"screenItems",
 					"blockedKeys"
 				],
 				"type": "object",
@@ -5926,7 +5957,8 @@
 					"member-data-package",
 					"tak-connection-package",
 					"itak-connection-package",
-					"wintak-connection-package"
+					"wintak-connection-package",
+					"atak-unlock-package"
 				]
 			},
 			"CreateDownloadGrantRequest": {
@@ -5936,7 +5968,7 @@
 					},
 					"eventId": {
 						"$ref": "#/components/schemas/Uuid",
-						"description": "Required for `device-profile` and `member-data-package`."
+						"description": "Required for `device-profile`, `member-data-package` and `atak-unlock-package`."
 					},
 					"memberId": {
 						"$ref": "#/components/schemas/Uuid",
@@ -11607,6 +11639,76 @@
 						}
 					}
 				}
+			}
+		},
+		"/events/{eventId}/tak/atak-preferences/unlock-package": {
+			"get": {
+				"operationId": "DownloadAtakUnlockPackage",
+				"responses": {
+					"200": {
+						"description": "ATAK unlock Data Package",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string",
+									"format": "byte"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "The event never restricted a settings item",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "An ATAK Data Package that sets `disablePreferenceItem_<item>` and `hidePreferenceItem_<item>`\nto `false` for every settings item the event restricts now or restricted in a published\nrevision, so devices show those items normally again after the event.",
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
 			}
 		},
 		"/tak/atak-preference-catalog": {

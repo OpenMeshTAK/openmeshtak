@@ -1,5 +1,6 @@
 import type { ProblemFieldError } from "../../shared/errors/problem-error.js";
 import { ATAK_PREFERENCE_TOPICS, BLOCKED_ATAK_PREFERENCES, type AtakCatalogKey } from "./atak-preference-catalog.js";
+import { isRestrictableItem, restrictionOf } from "./atak-preference-restrictions.js";
 import {
   APP_PREFERENCES,
   isOwnedKey,
@@ -72,6 +73,13 @@ export function entryProblem(entry: TargetedAtakPreference, targets: PreferenceT
   }
   if (entry.value.length > MAX_VALUE_LENGTH) {
     return { field: "value", code: "INVALID_VALUE", message: "The value is too long." };
+  }
+  const restriction = restrictionOf(entry.preference, entry.key);
+  if (restriction !== null && entry.type !== "boolean") {
+    return { field: "type", code: "TYPE_MISMATCH", message: "ATAK stores this restriction as boolean." };
+  }
+  if (restriction !== null && !isRestrictableItem(restriction.itemId)) {
+    return { field: "key", code: "UNKNOWN_SETTINGS_ITEM", message: `ATAK 5.5.1.10 has no settings item "${restriction.itemId}".` };
   }
   const typeProblem = valueProblem(entry);
   if (typeProblem !== null) {

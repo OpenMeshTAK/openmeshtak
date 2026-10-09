@@ -5,11 +5,12 @@ export type DownloadGrantKind =
   | "member-data-package"
   | "tak-connection-package"
   | "itak-connection-package"
-  | "wintak-connection-package";
+  | "wintak-connection-package"
+  | "atak-unlock-package";
 
 export interface CreateDownloadGrantRequest {
   kind: DownloadGrantKind;
-  /** Required for `device-profile` and `member-data-package`. */
+  /** Required for `device-profile`, `member-data-package` and `atak-unlock-package`. */
   eventId?: Uuid;
   /** Required for `device-profile` and `member-data-package`. */
   memberId?: Uuid;

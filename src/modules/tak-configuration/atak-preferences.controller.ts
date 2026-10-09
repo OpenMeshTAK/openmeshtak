@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Path, Post, Put, Request, Response, Route, Security, SuccessResponse, Tags } from "@tsoa/runtime";
+import { Readable } from "node:stream";
+import { Body, Controller, Get, Path, Post, Produces, Put, Request, Response, Route, Security, SuccessResponse, Tags } from "@tsoa/runtime";
 import type { ProblemDetails } from "../../shared/errors/problem.js";
 import { requestContext } from "../../shared/http/request-context.js";
 import type { Uuid } from "../../shared/http/uuid.js";
@@ -15,6 +16,7 @@ import {
   importAtakPreferences,
   replaceAtakPreferences,
 } from "./atak-preference-list.service.js";
+import { createAtakUnlockPackage } from "./atak-unlock-package.service.js";
 
 /**
  * The ATAK preferences an event sends to its members' apps, each for the whole event or one event
@@ -63,6 +65,22 @@ export class AtakPreferencesController extends Controller {
     @Body() body: ImportAtakPreferencesRequest,
   ): Promise<ImportAtakPreferencesResponse> {
     return importAtakPreferences(requestContext(request), eventId, body);
+  }
+
+  /**
+   * An ATAK Data Package that sets `disablePreferenceItem_<item>` and `hidePreferenceItem_<item>`
+   * to `false` for every settings item the event restricts now or restricted in a published
+   * revision, so devices show those items normally again after the event.
+   */
+  @Get("unlock-package")
+  @Produces("application/zip")
+  @SuccessResponse(200, "ATAK unlock Data Package")
+  @Response<ProblemDetails>(409, "The event never restricted a settings item")
+  public async downloadAtakUnlockPackage(@Request() request: unknown, @Path() eventId: Uuid): Promise<Readable> {
+    const { fileName, bytes } = await createAtakUnlockPackage(requestContext(request).principal, eventId);
+    this.setHeader("Content-Type", "application/zip");
+    this.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    return Readable.from([Buffer.from(bytes)]);
   }
 }
 

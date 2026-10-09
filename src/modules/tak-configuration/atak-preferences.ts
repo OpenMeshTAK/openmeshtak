@@ -218,3 +218,18 @@ export function preferenceEntriesXml(entries: AtakPreference[]): string {
     .map(({ key, type, value }) => `    <entry key="${escapeXml(key)}" class="${CLASS_OF[type]}">${escapeXml(value)}</entry>`)
     .join("\n");
 }
+
+/** A whole `.pref` file: one `<preference>` group per preference name, in first-seen order. */
+export function preferenceFileXml(entries: AtakPreference[]): string {
+  const groups = [...new Set(entries.map(({ preference }) => preference))];
+  const xml = groups.map(
+    (name) => `  <preference version="1" name="${escapeXml(name)}">
+${preferenceEntriesXml(entries.filter(({ preference }) => preference === name))}
+  </preference>`,
+  );
+  return `<?xml version="1.0" standalone="yes"?>
+<preferences>
+${xml.join("\n")}
+</preferences>
+`;
+}

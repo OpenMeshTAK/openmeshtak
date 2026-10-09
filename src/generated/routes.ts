@@ -835,11 +835,22 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AtakScreenItemDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "area": {"dataType":"string","required":true},
+            "description": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AtakPreferenceCatalogDto": {
         "dataType": "refObject",
         "properties": {
             "atakVersion": {"dataType":"string","required":true},
             "topics": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakCatalogTopicDto"},"required":true},
+            "screenItems": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakScreenItemDto"},"required":true},
             "blockedKeys": {"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"reason":{"dataType":"string","required":true},"key":{"dataType":"string","required":true}}},"required":true},
         },
         "additionalProperties": false,
@@ -2212,7 +2223,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DownloadGrantKind": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["device-profile"]},{"dataType":"enum","enums":["member-data-package"]},{"dataType":"enum","enums":["tak-connection-package"]},{"dataType":"enum","enums":["itak-connection-package"]},{"dataType":"enum","enums":["wintak-connection-package"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["device-profile"]},{"dataType":"enum","enums":["member-data-package"]},{"dataType":"enum","enums":["tak-connection-package"]},{"dataType":"enum","enums":["itak-connection-package"]},{"dataType":"enum","enums":["wintak-connection-package"]},{"dataType":"enum","enums":["atak-unlock-package"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateDownloadGrantRequest": {
@@ -4633,6 +4644,38 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'importAtakPreferences',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAtakPreferencesController_downloadAtakUnlockPackage: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/tak/atak-preferences/unlock-package',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferencesController)),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferencesController.prototype.downloadAtakUnlockPackage)),
+
+            async function AtakPreferencesController_downloadAtakUnlockPackage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAtakPreferencesController_downloadAtakUnlockPackage, request, response });
+
+                const controller = new AtakPreferencesController();
+
+              await templateService.apiHandler({
+                methodName: 'downloadAtakUnlockPackage',
                 controller,
                 response,
                 next,

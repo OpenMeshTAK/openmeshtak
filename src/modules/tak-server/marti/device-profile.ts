@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { strToU8, zipSync, type Zippable } from "fflate";
 import { buildAtakExport } from "../../data-packages/package-atak.service.js";
-import { APP_PREFERENCES, preferenceEntriesXml, type AtakPreference } from "../../tak-configuration/atak-preferences.js";
+import { APP_PREFERENCES, preferenceFileXml, type AtakPreference } from "../../tak-configuration/atak-preferences.js";
 import type { TakAccess } from "../tak-access.js";
 import { visiblePackagesFor, type VisiblePackage } from "./visible-packages.js";
 
@@ -22,25 +22,15 @@ function profilePreferences(martiPort: number, eventPreferences: AtakPreference[
     { preference: APP_PREFERENCES, key: "apiSecureServerPort", type: "string", value: String(martiPort) },
   ];
   // The event's preferences never contain these keys; listing ours last keeps them decisive anyway.
-  const all = [...eventPreferences, ...own];
-  const groups = [...new Set(all.map(({ preference }) => preference))];
-  const xml = groups.map(
-    (name) => `  <preference version="1" name="${escapeXml(name)}">
-${preferenceEntriesXml(all.filter(({ preference }) => preference === name))}
-  </preference>`,
-  );
-  return `<?xml version="1.0" standalone="yes"?>
-<preferences>
-${xml.join("\n")}
-</preferences>
-`;
+  return preferenceFileXml([...eventPreferences, ...own]);
 }
 
 function escapeXml(value: string): string {
   return value.replace(/[<>&"']/g, (character) => `&#${String(character.charCodeAt(0))};`);
 }
 
-function manifest(name: string, entries: string[]): string {
+/** A version 2 manifest that installs every listed file and deletes the package after the import. */
+export function dataPackageManifest(name: string, entries: string[]): string {
   const contents = entries.map((entry) => `    <Content ignore="false" zipEntry="${escapeXml(entry)}"/>`).join("\n");
   return `<MissionPackageManifest version="2">
   <Configuration>
@@ -86,6 +76,6 @@ export async function buildDeviceProfile(
     const artifact = await buildAtakExport(item.dataPackage.id, item.latest);
     files[`packages/${item.dataPackage.id}/${artifact.fileName}`] = artifact.bytes;
   }
-  files["MANIFEST/manifest.xml"] = strToU8(manifest(`OpenMeshTak ${kind} profile`, Object.keys(files).filter((path) => !path.startsWith("MANIFEST/"))));
+  files["MANIFEST/manifest.xml"] = strToU8(dataPackageManifest(`OpenMeshTak ${kind} profile`, Object.keys(files).filter((path) => !path.startsWith("MANIFEST/"))));
   return zipSync(files, { level: 6 });
 }

@@ -110,14 +110,29 @@ export interface AtakCatalogTopicDto {
   keys: AtakCatalogKeyDto[];
 }
 
+/** A settings item that stores no value of its own, such as a link to another settings screen. */
+export interface AtakScreenItemDto {
+  /** The item ID that `disablePreferenceItem_<id>` and `hidePreferenceItem_<id>` name. */
+  id: string;
+  /** Where the item is in ATAK, such as "Settings → Network". */
+  area: string;
+  description: string;
+}
+
 /**
  * The ATAK preference keys this Core release knows, by topic, all in
  * `com.atakmap.app_preferences`. Other keys, such as plugin keys, may still be set.
+ *
+ * Every catalog key and every screen item can also be greyed out or hidden in ATAK's settings
+ * screens with the Boolean entries `disablePreferenceItem_<key>` and `hidePreferenceItem_<key>`;
+ * other item IDs are refused.
  */
 export interface AtakPreferenceCatalogDto {
   /** The ATAK version the catalog was read from. */
   atakVersion: string;
   topics: AtakCatalogTopicDto[];
+  /** Settings items without a value key that can be greyed out or hidden as well. */
+  screenItems: AtakScreenItemDto[];
   /** Keys an event can never set, with the reason. */
   blockedKeys: Array<{ key: string; reason: string }>;
 }
