@@ -28,6 +28,9 @@ import {
   type TargetedAtakPreference,
 } from "./atak-preferences.js";
 
+/** The ATAK release the catalog was read from. */
+export const ATAK_CATALOG_VERSION = "5.5.1.10";
+
 type EntryClient = Pick<Prisma.TransactionClient, "atakPreferenceEntry">;
 
 const SPECIFICITY = { event: 0, group: 1, role: 2, member: 3 } as const;
@@ -91,7 +94,7 @@ async function toListDto(eventId: string): Promise<AtakPreferenceListDto> {
   };
 }
 
-async function eventTargets(eventId: string): Promise<PreferenceTargets> {
+export async function eventTargets(eventId: string): Promise<PreferenceTargets> {
   const [groups, roles, members] = await Promise.all([
     database.eventGroup.findMany({ where: { eventId }, select: { id: true } }),
     database.eventRole.findMany({ where: { eventId }, select: { id: true } }),
@@ -110,7 +113,7 @@ export async function getAtakPreferences(principal: Principal, eventId: string):
 }
 
 /** Replaces the whole list in one versioned step and audits how many entries it holds, not their values. */
-async function saveList(
+export async function saveList(
   actor: ActorContext,
   eventId: string,
   version: number,
@@ -237,5 +240,5 @@ export async function getAtakPreferenceCatalog(principal: Principal): Promise<At
   if (!access.all && access.eventIds.length === 0) {
     throw forbidden();
   }
-  return { atakVersion: "5.5.1.10", topics: ATAK_PREFERENCE_TOPICS, screenItems: ATAK_SCREEN_ITEMS, blockedKeys: BLOCKED_ATAK_PREFERENCES };
+  return { atakVersion: ATAK_CATALOG_VERSION, topics: ATAK_PREFERENCE_TOPICS, screenItems: ATAK_SCREEN_ITEMS, blockedKeys: BLOCKED_ATAK_PREFERENCES };
 }

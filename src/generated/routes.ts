@@ -42,6 +42,12 @@ import { AtakPreferenceCatalogController } from './../modules/tak-configuration/
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SetupController } from './../modules/setup/setup.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PresetLibraryController } from './../modules/settings-presets/preset-library.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MeshtasticPresetController } from './../modules/settings-presets/event-presets.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TakPresetController } from './../modules/settings-presets/event-presets.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ServerLogsController } from './../modules/server-logs/server-logs.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { RegistrationController } from './../modules/registration/registration.controller.js';
@@ -888,6 +894,322 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetKind": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["meshtastic"]},{"dataType":"enum","enums":["tak"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SettingsPresetSummaryDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "kind": {"ref":"PresetKind","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "targetVersion": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "itemCount": {"dataType":"double","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SettingsPresetPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"SettingsPresetSummaryDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetSourceDto": {
+        "dataType": "refObject",
+        "properties": {
+            "application": {"dataType":"string","validators":{"maxLength":{"value":100}}},
+            "applicationVersion": {"dataType":"string","validators":{"maxLength":{"value":40}}},
+            "exportedFrom": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["event"]},{"dataType":"enum","enums":["library"]}]},
+            "note": {"dataType":"string","validators":{"maxLength":{"value":1000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetMeshtasticSettings": {
+        "dataType": "refObject",
+        "properties": {
+        },
+        "additionalProperties": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"},{"dataType":"boolean"}]},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticPresetContentDto": {
+        "dataType": "refObject",
+        "properties": {
+            "firmwareVersion": {"dataType":"string","required":true,"validators":{"maxLength":{"value":20}}},
+            "settings": {"ref":"PresetMeshtasticSettings","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetAtakTargetDto": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["event"]},{"dataType":"enum","enums":["group"]},{"dataType":"enum","enums":["role"]}],"required":true},
+            "slug": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}],"validators":{"maxLength":{"value":100}}},
+            "name": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}],"validators":{"maxLength":{"value":200}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetAtakPreferenceDto": {
+        "dataType": "refObject",
+        "properties": {
+            "target": {"ref":"PresetAtakTargetDto","required":true},
+            "preference": {"dataType":"string","required":true,"validators":{"maxLength":{"value":200}}},
+            "key": {"dataType":"string","required":true,"validators":{"maxLength":{"value":200}}},
+            "type": {"ref":"AtakPreferenceTypeDto","required":true},
+            "value": {"dataType":"string","required":true,"validators":{"maxLength":{"value":10000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakPresetContentDto": {
+        "dataType": "refObject",
+        "properties": {
+            "atakVersion": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"undefined"}],"validators":{"maxLength":{"value":40}}},
+            "atakPreferences": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetAtakPreferenceDto"},"required":true,"validators":{"maxItems":{"value":2000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetDocumentDto": {
+        "dataType": "refObject",
+        "properties": {
+            "format": {"dataType":"string","required":true,"validators":{"maxLength":{"value":40}}},
+            "formatVersion": {"dataType":"integer","required":true},
+            "kind": {"ref":"PresetKind","required":true},
+            "name": {"dataType":"string","required":true,"validators":{"maxLength":{"value":100}}},
+            "description": {"dataType":"string","validators":{"maxLength":{"value":1000}}},
+            "about": {"dataType":"string","validators":{"maxLength":{"value":4000}}},
+            "exportedAt": {"dataType":"string"},
+            "source": {"ref":"PresetSourceDto"},
+            "meshtastic": {"ref":"MeshtasticPresetContentDto"},
+            "tak": {"ref":"TakPresetContentDto"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SettingsPresetDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "kind": {"ref":"PresetKind","required":true},
+            "name": {"dataType":"string","required":true},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "targetVersion": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "itemCount": {"dataType":"double","required":true},
+            "version": {"dataType":"double","required":true},
+            "createdAt": {"dataType":"string","required":true},
+            "updatedAt": {"dataType":"string","required":true},
+            "document": {"ref":"PresetDocumentDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateSettingsPresetRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "document": {"ref":"PresetDocumentDto","required":true},
+            "name": {"dataType":"string","validators":{"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":1000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateSettingsPresetRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "name": {"dataType":"string","required":true,"validators":{"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":1000}}},
+            "document": {"ref":"PresetDocumentDto"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetSettingChangeDto": {
+        "dataType": "refObject",
+        "properties": {
+            "key": {"dataType":"string","required":true},
+            "from": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"},{"dataType":"boolean"},{"dataType":"enum","enums":[null]}],"required":true},
+            "to": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"},{"dataType":"boolean"}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetSettingProblemDto": {
+        "dataType": "refObject",
+        "properties": {
+            "key": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticPresetPreviewDto": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"double","required":true},
+            "presetFirmwareVersion": {"dataType":"string","required":true},
+            "eventFirmwareVersion": {"dataType":"string","required":true},
+            "sameFirmwareLine": {"dataType":"boolean","required":true},
+            "changed": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetSettingChangeDto"},"required":true},
+            "unchanged": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "invalid": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetSettingProblemDto"},"required":true},
+            "unsupported": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "notInPreset": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "secretsKept": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "confirmation": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PreviewMeshtasticPresetRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "document": {"ref":"PresetDocumentDto","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "FirmwareSettingsDocument": {
+        "dataType": "refObject",
+        "properties": {
+        },
+        "additionalProperties": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"},{"dataType":"boolean"}]},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ConfigurationProblemDto": {
+        "dataType": "refObject",
+        "properties": {
+            "field": {"dataType":"string","required":true},
+            "code": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticConfigurationDto": {
+        "dataType": "refObject",
+        "properties": {
+            "eventId": {"ref":"Uuid","required":true},
+            "firmwareVersion": {"dataType":"string","required":true},
+            "effectiveMinimumVersion": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "profileId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "verified": {"dataType":"boolean","required":true},
+            "settings": {"ref":"FirmwareSettingsDocument","required":true},
+            "secretFields": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "secretsSet": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "problems": {"dataType":"array","array":{"dataType":"refObject","ref":"ConfigurationProblemDto"},"required":true},
+            "version": {"dataType":"double","required":true},
+            "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApplyMeshtasticPresetRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "document": {"ref":"PresetDocumentDto","required":true},
+            "confirmation": {"dataType":"string","required":true,"validators":{"maxLength":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetTargetDto": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["group"]},{"dataType":"enum","enums":["role"]}],"required":true},
+            "slug": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+            "entryCount": {"dataType":"double","required":true},
+            "suggestedTargetId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
+            "mapping": {"dataType":"nestedObjectLiteral","nestedProperties":{"targetId":{"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetEntryChangeDto": {
+        "dataType": "refObject",
+        "properties": {
+            "target": {"ref":"AtakPreferenceTargetDto","required":true},
+            "preference": {"dataType":"string","required":true},
+            "key": {"dataType":"string","required":true},
+            "type": {"ref":"AtakPreferenceTypeDto","required":true},
+            "from": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "to": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetEntryProblemDto": {
+        "dataType": "refObject",
+        "properties": {
+            "target": {"ref":"PresetAtakTargetDto","required":true},
+            "key": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakPresetPreviewDto": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"double","required":true},
+            "presetAtakVersion": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "catalogAtakVersion": {"dataType":"string","required":true},
+            "targets": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetTargetDto"},"required":true},
+            "added": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetEntryChangeDto"},"required":true},
+            "changed": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetEntryChangeDto"},"required":true},
+            "unchanged": {"dataType":"double","required":true},
+            "invalid": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetEntryProblemDto"},"required":true},
+            "skipped": {"dataType":"double","required":true},
+            "confirmation": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresetTargetMappingDto": {
+        "dataType": "refObject",
+        "properties": {
+            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["group"]},{"dataType":"enum","enums":["role"]}],"required":true},
+            "slug": {"dataType":"string","required":true,"validators":{"maxLength":{"value":100}}},
+            "targetId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PreviewTakPresetRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "document": {"ref":"PresetDocumentDto","required":true},
+            "mappings": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetTargetMappingDto"},"validators":{"maxItems":{"value":500}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ApplyTakPresetRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "document": {"ref":"PresetDocumentDto","required":true},
+            "mappings": {"dataType":"array","array":{"dataType":"refObject","ref":"PresetTargetMappingDto"},"required":true,"validators":{"maxItems":{"value":500}}},
+            "confirmation": {"dataType":"string","required":true,"validators":{"maxLength":{"value":100}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ServerLogLevel": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["trace"]},{"dataType":"enum","enums":["debug"]},{"dataType":"enum","enums":["info"]},{"dataType":"enum","enums":["warn"]},{"dataType":"enum","enums":["error"]},{"dataType":"enum","enums":["fatal"]}],"validators":{}},
@@ -1227,41 +1549,6 @@ const models: TsoaRoute.Models = {
             "sections": {"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareSectionDto"},"required":true},
             "fields": {"dataType":"array","array":{"dataType":"refObject","ref":"FirmwareFieldDto"},"required":true},
             "enums": {"ref":"Record_string.FirmwareEnumValueDto-Array_","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "FirmwareSettingsDocument": {
-        "dataType": "refObject",
-        "properties": {
-        },
-        "additionalProperties": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"double"},{"dataType":"boolean"}]},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ConfigurationProblemDto": {
-        "dataType": "refObject",
-        "properties": {
-            "field": {"dataType":"string","required":true},
-            "code": {"dataType":"string","required":true},
-            "message": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "MeshtasticConfigurationDto": {
-        "dataType": "refObject",
-        "properties": {
-            "eventId": {"ref":"Uuid","required":true},
-            "firmwareVersion": {"dataType":"string","required":true},
-            "effectiveMinimumVersion": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "profileId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "verified": {"dataType":"boolean","required":true},
-            "settings": {"ref":"FirmwareSettingsDocument","required":true},
-            "secretFields": {"dataType":"array","array":{"dataType":"string"},"required":true},
-            "secretsSet": {"dataType":"array","array":{"dataType":"string"},"required":true},
-            "problems": {"dataType":"array","array":{"dataType":"refObject","ref":"ConfigurationProblemDto"},"required":true},
-            "version": {"dataType":"double","required":true},
-            "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -4959,6 +5246,365 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPresetLibraryController_listSettingsPresets: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                kind: {"in":"query","name":"kind","ref":"PresetKind"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/presets',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController)),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController.prototype.listSettingsPresets)),
+
+            async function PresetLibraryController_listSettingsPresets(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPresetLibraryController_listSettingsPresets, request, response });
+
+                const controller = new PresetLibraryController();
+
+              await templateService.apiHandler({
+                methodName: 'listSettingsPresets',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPresetLibraryController_createSettingsPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                body: {"in":"body","name":"body","required":true,"ref":"CreateSettingsPresetRequest"},
+        };
+        app.post('/api/v1/presets',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController)),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController.prototype.createSettingsPreset)),
+
+            async function PresetLibraryController_createSettingsPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPresetLibraryController_createSettingsPreset, request, response });
+
+                const controller = new PresetLibraryController();
+
+              await templateService.apiHandler({
+                methodName: 'createSettingsPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPresetLibraryController_getSettingsPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                presetId: {"in":"path","name":"presetId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/presets/:presetId',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController)),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController.prototype.getSettingsPreset)),
+
+            async function PresetLibraryController_getSettingsPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPresetLibraryController_getSettingsPreset, request, response });
+
+                const controller = new PresetLibraryController();
+
+              await templateService.apiHandler({
+                methodName: 'getSettingsPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPresetLibraryController_updateSettingsPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                presetId: {"in":"path","name":"presetId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateSettingsPresetRequest"},
+        };
+        app.put('/api/v1/presets/:presetId',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController)),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController.prototype.updateSettingsPreset)),
+
+            async function PresetLibraryController_updateSettingsPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPresetLibraryController_updateSettingsPreset, request, response });
+
+                const controller = new PresetLibraryController();
+
+              await templateService.apiHandler({
+                methodName: 'updateSettingsPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPresetLibraryController_deleteSettingsPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                presetId: {"in":"path","name":"presetId","required":true,"ref":"Uuid"},
+        };
+        app.delete('/api/v1/presets/:presetId',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController)),
+            ...(fetchMiddlewares<RequestHandler>(PresetLibraryController.prototype.deleteSettingsPreset)),
+
+            async function PresetLibraryController_deleteSettingsPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPresetLibraryController_deleteSettingsPreset, request, response });
+
+                const controller = new PresetLibraryController();
+
+              await templateService.apiHandler({
+                methodName: 'deleteSettingsPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticPresetController_exportMeshtasticPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/meshtastic/preset',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticPresetController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticPresetController.prototype.exportMeshtasticPreset)),
+
+            async function MeshtasticPresetController_exportMeshtasticPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticPresetController_exportMeshtasticPreset, request, response });
+
+                const controller = new MeshtasticPresetController();
+
+              await templateService.apiHandler({
+                methodName: 'exportMeshtasticPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticPresetController_previewMeshtasticPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"PreviewMeshtasticPresetRequest"},
+        };
+        app.post('/api/v1/events/:eventId/meshtastic/preset/preview',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticPresetController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticPresetController.prototype.previewMeshtasticPreset)),
+
+            async function MeshtasticPresetController_previewMeshtasticPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticPresetController_previewMeshtasticPreset, request, response });
+
+                const controller = new MeshtasticPresetController();
+
+              await templateService.apiHandler({
+                methodName: 'previewMeshtasticPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticPresetController_importMeshtasticPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"ApplyMeshtasticPresetRequest"},
+        };
+        app.post('/api/v1/events/:eventId/meshtastic/preset/import',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticPresetController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticPresetController.prototype.importMeshtasticPreset)),
+
+            async function MeshtasticPresetController_importMeshtasticPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticPresetController_importMeshtasticPreset, request, response });
+
+                const controller = new MeshtasticPresetController();
+
+              await templateService.apiHandler({
+                methodName: 'importMeshtasticPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakPresetController_exportTakPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/tak/preset',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakPresetController)),
+            ...(fetchMiddlewares<RequestHandler>(TakPresetController.prototype.exportTakPreset)),
+
+            async function TakPresetController_exportTakPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakPresetController_exportTakPreset, request, response });
+
+                const controller = new TakPresetController();
+
+              await templateService.apiHandler({
+                methodName: 'exportTakPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakPresetController_previewTakPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"PreviewTakPresetRequest"},
+        };
+        app.post('/api/v1/events/:eventId/tak/preset/preview',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakPresetController)),
+            ...(fetchMiddlewares<RequestHandler>(TakPresetController.prototype.previewTakPreset)),
+
+            async function TakPresetController_previewTakPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakPresetController_previewTakPreset, request, response });
+
+                const controller = new TakPresetController();
+
+              await templateService.apiHandler({
+                methodName: 'previewTakPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTakPresetController_importTakPreset: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"ApplyTakPresetRequest"},
+        };
+        app.post('/api/v1/events/:eventId/tak/preset/import',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(TakPresetController)),
+            ...(fetchMiddlewares<RequestHandler>(TakPresetController.prototype.importTakPreset)),
+
+            async function TakPresetController_importTakPreset(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTakPresetController_importTakPreset, request, response });
+
+                const controller = new TakPresetController();
+
+              await templateService.apiHandler({
+                methodName: 'importTakPreset',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

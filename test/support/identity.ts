@@ -58,6 +58,7 @@ export async function clearDatabase(): Promise<void> {
     database.mapSettings.deleteMany(),
     database.downloadGrant.deleteMany(),
     database.idempotencyRecord.deleteMany(),
+    database.settingsPreset.deleteMany(),
   ]);
 }
 
