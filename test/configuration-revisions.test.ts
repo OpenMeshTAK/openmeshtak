@@ -98,7 +98,7 @@ void describe("event configuration revisions", () => {
     const detail = (
       await request(app).get(url(`/configuration-revisions/${id}`)).set("Cookie", admin.cookie).expect(200)
     ).body as RevisionBody;
-    assert.equal(detail.snapshot.schemaVersion, 6);
+    assert.equal(detail.snapshot.schemaVersion, 7);
     assert.deepEqual(detail.snapshot.roles.map(({ slug }) => slug), ["participant"]);
     assert.equal(detail.snapshot.groups[0]?.provisioning.tak.team, "Cyan");
   });
@@ -162,7 +162,7 @@ void describe("event configuration revisions", () => {
     assert.equal(detail.snapshot.meshtasticEnabled, false);
     assert.deepEqual(detail.snapshot.channels, []);
     assert.equal(detail.snapshot.meshtastic, null);
-    assert.deepEqual(detail.snapshot.tak, { meshChannelId: null });
+    assert.deepEqual(detail.snapshot.tak, { meshChannelId: null, atakPreferences: [] });
 
     // Switching Meshtastic on brings the stored radio setup back, and with it its open problems.
     await request(app)

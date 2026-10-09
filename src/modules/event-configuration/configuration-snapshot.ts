@@ -55,7 +55,8 @@ export interface SnapshotMeshtastic {
 }
 
 /**
- * The Meshtastic app's TAK mesh channel; `null` in revisions created before version 4. Revisions
+ * The Meshtastic app's TAK mesh channel and the ATAK preferences; `null` in revisions created
+ * before version 4, and without ATAK preferences before version 7. Revisions
  * before version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced.
  */
 export type SnapshotTak = CurrentTakConfiguration;
@@ -64,10 +65,10 @@ export type SnapshotTak = CurrentTakConfiguration;
  * Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.
  * Version 2 added `channels` in device order, the first being the primary channel; version 3
  * added `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added
- * `meshtasticEnabled`.
+ * `meshtasticEnabled`; version 7 added `tak.atakPreferences`.
  */
 export interface ConfigurationSnapshot {
-  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   /**
    * Whether the event provisions Meshtastic radios; `true` in revisions before version 6. When
    * `false`, `channels` is empty and `meshtastic` is `null`.
@@ -110,7 +111,7 @@ export async function buildConfigurationSnapshot(
   const { meshtasticEnabled } = event;
 
   return {
-    schemaVersion: 6,
+    schemaVersion: 7,
     meshtasticEnabled,
     roles: roles.map((role) => ({ ...role, takRoleOverride: role.takRoleOverride as TakRole | null })),
     groups: groups.map((group) => ({
@@ -141,7 +142,7 @@ export async function buildConfigurationSnapshot(
             profileSha256: firmware.profile.sha256,
             settings: meshtastic.settings,
           },
-    tak: { meshChannelId: meshtasticEnabled ? tak.meshChannelId : null },
+    tak: { meshChannelId: meshtasticEnabled ? tak.meshChannelId : null, atakPreferences: tak.atakPreferences },
   };
 }
 
@@ -159,7 +160,7 @@ export function parseConfigurationSnapshot(value: Prisma.JsonValue): Configurati
     meshtasticEnabled?: boolean;
     channels?: SnapshotChannel[];
     meshtastic?: SnapshotMeshtastic | null;
-    tak?: SnapshotTak | null;
+    tak?: (Omit<SnapshotTak, "atakPreferences"> & Partial<Pick<SnapshotTak, "atakPreferences">>) | null;
   };
   return {
     ...snapshot,
@@ -167,6 +168,9 @@ export function parseConfigurationSnapshot(value: Prisma.JsonValue): Configurati
     roles: snapshot.roles.map((role) => ({ ...role, takRoleOverride: role.takRoleOverride ?? null })),
     channels: snapshot.channels ?? [],
     meshtastic: snapshot.meshtastic ?? null,
-    tak: snapshot.tak === undefined || snapshot.tak === null ? null : { meshChannelId: snapshot.tak.meshChannelId },
+    tak:
+      snapshot.tak === undefined || snapshot.tak === null
+        ? null
+        : { meshChannelId: snapshot.tak.meshChannelId, atakPreferences: snapshot.tak.atakPreferences ?? [] },
   };
 }

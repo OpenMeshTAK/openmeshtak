@@ -2,6 +2,7 @@ import type { TLSSocket } from "node:tls";
 import express, { type Express, type Request, type Response } from "express";
 import { rateLimit } from "express-rate-limit";
 import { logger } from "../../shared/logging/logger.js";
+import { requestLogging } from "../../shared/logging/request-logging.js";
 import {
   authenticateProfileRequest,
   CertificateRequestError,
@@ -61,9 +62,12 @@ async function signClient(request: Request, response: Response): Promise<void> {
     );
     sendEnrollment(request, response, enrollment);
   } catch (error: unknown) {
+    // Both messages are fixed texts, never credentials or CSR content.
     if (error instanceof EnrollmentAuthenticationError) {
+      logger.warn({ event: "tak_enrollment_rejected", reason: error.message }, "TAK enrollment rejected");
       response.set("WWW-Authenticate", 'Basic realm="OpenMeshTak TAK enrollment"').status(401).end();
     } else if (error instanceof CertificateRequestError) {
+      logger.warn({ event: "tak_enrollment_rejected", reason: error.message }, "TAK enrollment rejected");
       response.status(400).type("text/plain").send(error.message);
     } else {
       logger.error({ error, event: "tak_enrollment_failed" }, "TAK enrollment failed");
@@ -101,6 +105,8 @@ async function enrollmentProfile(request: Request, response: Response): Promise<
 export function createEnrollmentApp(): Express {
   const app = express();
   app.disable("x-powered-by");
+  // TAK apps report enrollment failures vaguely, so every request is logged like an API request.
+  app.use(requestLogging);
   const failures = rateLimit({ windowMs: 15 * 60_000, limit: 20, skipSuccessfulRequests: true, standardHeaders: "draft-8", legacyHeaders: false });
 
   app.get("/Marti/api/tls/config", tlsConfig);
@@ -111,7 +117,9 @@ export function createEnrollmentApp(): Express {
     (request, response) => void signClient(request, response),
   );
   app.get("/Marti/api/tls/profile/enrollment", failures, (request, response) => void enrollmentProfile(request, response));
-  app.use((_request, response) => {
+  app.use((request, response) => {
+    // Which unknown endpoint an app called shows what it expects; the query is never logged.
+    logger.warn({ event: "tak_enrollment_unknown_path", method: request.method, path: request.path.slice(0, 120) }, "Unknown TAK enrollment path");
     response.status(404).end();
   });
   return app;

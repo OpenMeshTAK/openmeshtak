@@ -78,7 +78,14 @@ void describe("TAK configuration", () => {
 
   void it("connects members of Meshtastic events to the TAK server and the Meshtastic app", async () => {
     const configuration = await request(app).get(url("/tak/configuration")).set("Cookie", admin.cookie).expect(200);
-    assert.deepEqual(configuration.body, { eventId, meshChannelId: null, version: 0, updatedAt: null });
+    assert.deepEqual(configuration.body, {
+      eventId,
+      meshChannelId: null,
+      atakSettings: { coordinateFormat: null, altitudeReference: null, altitudeUnit: null, speedUnit: null, distanceUnit: null, northReference: null },
+      atakPreferenceFile: null,
+      version: 0,
+      updatedAt: null,
+    });
     assert.deepEqual(await tak(bravoMemberId), {
       ...(await tak(bravoMemberId)),
       server: { hostName: null, streamingPort: 8089 },

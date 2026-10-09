@@ -126,6 +126,7 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
     if (event.isSituationalAwareness) {
       peer.callsign = event.callsign ?? peer.callsign;
       peer.deviceUid = event.uid;
+      router.identify(peer);
     }
     if (event.deletedUids.length > 0) {
       router.forget(peer, event.deletedUids);

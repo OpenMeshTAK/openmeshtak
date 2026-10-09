@@ -40,6 +40,19 @@ export interface LiveConnection {
   lastSeenAt: Date;
 }
 
+/** At most this many devices are remembered for contact lists. */
+const MAX_KNOWN_DEVICES = 10_000;
+
+/** A TAK app that reported its own position, for the server contact list. */
+export interface KnownDevice {
+  uid: string;
+  callsign: string;
+  scope: CotScope;
+  lastEventTime: Date;
+  /** The connection it currently uses, or `null` once it disconnected. */
+  peerId: string | null;
+}
+
 /** The current state of an item and where it may be replayed. */
 interface RetainedItem {
   item: LiveItem;
@@ -72,6 +85,8 @@ export class CotRouter {
   private readonly retained = new Map<string, RetainedItem>();
   /** UIDs each connected app last updated, oldest first, for the per-connection limit. */
   private readonly peerItems = new Map<string, Set<string>>();
+  /** Devices by UID, least recently heard first; kept after they disconnect. */
+  private readonly devices = new Map<string, KnownDevice>();
   private readonly listeners = new Set<(eventIds: CotScope) => void>();
 
   /** Calls `listener` with the affected events whenever connections or their items change. */
@@ -102,6 +117,11 @@ export class CotRouter {
     const peer = this.peers.get(peerId);
     this.peers.delete(peerId);
     this.peerItems.delete(peerId);
+    for (const device of this.devices.values()) {
+      if (device.peerId === peerId) {
+        device.peerId = null;
+      }
+    }
     if (peer !== undefined) {
       this.changed(peer.scope);
     }
@@ -147,6 +167,26 @@ export class CotRouter {
       }
     }
     this.changed(peer.scope);
+  }
+
+  /** Records an app's own position report for the contact list of its events. */
+  identify(peer: CotPeer, now = new Date()): void {
+    if (peer.deviceUid === null || peer.callsign === null) {
+      return;
+    }
+    this.devices.delete(peer.deviceUid);
+    this.devices.set(peer.deviceUid, { uid: peer.deviceUid, callsign: peer.callsign, scope: peer.scope, lastEventTime: now, peerId: peer.id });
+    if (this.devices.size > MAX_KNOWN_DEVICES) {
+      const oldest = this.devices.keys().next().value;
+      if (oldest !== undefined) {
+        this.devices.delete(oldest);
+      }
+    }
+  }
+
+  /** Apps known in any of the given events, connected or not, most recently heard first. */
+  contacts(eventIds: CotScope): KnownDevice[] {
+    return [...this.devices.values()].filter(({ scope }) => scopesOverlap(scope, eventIds)).reverse();
   }
 
   /** Removes items a client deleted, so they are not replayed to later joiners. */

@@ -4,7 +4,9 @@ import { recordAudit } from "../../../shared/audit/audit.js";
 import { logger } from "../../../shared/logging/logger.js";
 import { buildAtakExport } from "../../data-packages/package-atak.service.js";
 import { authenticateTakClient, type AuthenticatedTakClient } from "../client-authentication.js";
+import { cotRouter } from "../streaming/cot-router.js";
 import { loadTakServerSettings } from "../tak-server-settings.js";
+import { cotHistory, latestCot } from "./cot-history.js";
 import { sendDeviceProfile } from "./profile-response.js";
 import { exportSummary, visiblePackagesFor, type VisiblePackage } from "./visible-packages.js";
 
@@ -115,6 +117,22 @@ async function connectionProfile(request: Request, response: Response<unknown, L
   await sendDeviceProfile(response, client.userId, client.access, "connection", changedSince);
 }
 
+/**
+ * The server contact list ATAK shows next to the contacts it heard itself: every app of the
+ * caller's events that reported its position since Core started, including disconnected ones.
+ * ATAK parses `lastEventTime` as UTC with milliseconds and `lastStatus` as Connected or Disconnected.
+ */
+function clientEndPoints(_request: Request, response: Response<unknown, Locals>): void {
+  const { client } = response.locals;
+  const data = cotRouter.contacts(new Set(client.access.eventIds)).map((device) => ({
+    uid: device.uid,
+    callsign: device.callsign,
+    lastEventTime: device.lastEventTime.toISOString(),
+    lastStatus: device.peerId === null ? "Disconnected" : "Connected",
+  }));
+  response.json({ version: "3", type: "com.bbn.marti.remote.ClientEndpoint", data, nodeId: NODE_ID });
+}
+
 async function versionConfig(_request: Request, response: Response): Promise<void> {
   const { hostName } = await loadTakServerSettings();
   response.json({ version: "3", type: "ServerConfig", data: { version: SERVER_VERSION, api: "3", hostname: hostName }, nodeId: NODE_ID });
@@ -132,8 +150,9 @@ function wrap(handler: (request: Request, response: Response<unknown, Locals>) =
 }
 
 /**
- * The Marti API subset RC1 offers TAK apps: server information and read-only access to published
- * Data Packages. Uploads and missions are outside RC1, so their endpoints answer 403 or 404.
+ * The Marti API subset Core offers TAK apps: server information, read-only access to published
+ * Data Packages, device profiles and the recorded CoT history of events that record their
+ * traffic. Uploads and missions are not offered, so their endpoints answer 403 or 404.
  */
 export function createMartiApp(): Express {
   const app = express();
@@ -142,10 +161,10 @@ export function createMartiApp(): Express {
     authenticate(request, response, next).catch(next);
   });
   app.get("/Marti/api/version/config", wrap(versionConfig));
-  app.get("/Marti/api/clientEndPoints", (_request, response) => {
-    response.json({ version: "3", type: "com.bbn.marti.remote.ClientEndpoint", data: [], nodeId: NODE_ID });
-  });
+  app.get("/Marti/api/clientEndPoints", clientEndPoints);
   app.get("/Marti/api/device/profile/connection", wrap(connectionProfile));
+  app.get("/Marti/api/cot/xml/:uid/all", wrap(cotHistory));
+  app.get("/Marti/api/cot/xml/:uid", wrap(latestCot));
   app.get("/Marti/sync/search", wrap(search));
   // Express also routes HEAD here; the handler answers it without a body.
   app.get("/Marti/sync/content", wrap(content));

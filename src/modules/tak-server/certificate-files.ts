@@ -93,7 +93,17 @@ async function resolveBelow(directory: string, relative: string, field: FileFiel
   return file;
 }
 
+/** Rejects paths that leave the directory by their shape alone, before the file system is touched. */
+function requireRelativeBelow(directory: string, relative: string, field: FileField): void {
+  const normalized = path.normalize(relative.trim());
+  if (normalized === ".." || normalized.startsWith(`..${path.sep}`)) {
+    throw fileProblem(field, `The file must be below ${directory}.`);
+  }
+}
+
 async function readFiles(files: CertificateFiles, directory: string): Promise<{ chainPem: string; keyPem: string }> {
+  requireRelativeBelow(directory, files.certificateFile, "certificateFile");
+  requireRelativeBelow(directory, files.keyFile, "keyFile");
   const [chainPath, keyPath] = await Promise.all([
     resolveBelow(directory, files.certificateFile, "certificateFile"),
     resolveBelow(directory, files.keyFile, "keyFile"),

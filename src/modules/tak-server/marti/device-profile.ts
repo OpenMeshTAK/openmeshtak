@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { strToU8, zipSync, type Zippable } from "fflate";
 import { buildAtakExport } from "../../data-packages/package-atak.service.js";
+import { APP_PREFERENCES, preferenceEntriesXml, type AtakPreference } from "../../tak-configuration/atak-preferences.js";
 import type { TakAccess } from "../tak-access.js";
 import { visiblePackagesFor, type VisiblePackage } from "./visible-packages.js";
 
@@ -8,20 +9,29 @@ import { visiblePackagesFor, type VisiblePackage } from "./visible-packages.js";
  * Device profiles are ordinary Data Packages that a TAK app installs by itself: once after
  * enrollment and on each connection. Ours carry the member's published packages as nested Data
  * Packages plus the preferences that make the app ask for the connection profile and use the
- * public Marti port.
+ * public Marti port, and the ATAK preferences of the member's events.
  *
  * ATAK keeps the Marti port in the application-wide `apiSecureServerPort` preference (default
  * 8443) and learns it from the enrollment profile, fetched on the enrollment port before any
  * Marti request. That is what makes a non-standard public Marti port such as 8484 work without
  * changing the enrollment or CoT ports. ATAK stores the value as a string.
  */
-function profilePreferences(martiPort: number): string {
+function profilePreferences(martiPort: number, eventPreferences: AtakPreference[]): string {
+  const own: AtakPreference[] = [
+    { preference: APP_PREFERENCES, key: "deviceProfileEnableOnConnect", type: "boolean", value: "true" },
+    { preference: APP_PREFERENCES, key: "apiSecureServerPort", type: "string", value: String(martiPort) },
+  ];
+  // The event's preferences never contain these keys; listing ours last keeps them decisive anyway.
+  const all = [...eventPreferences, ...own];
+  const groups = [...new Set(all.map(({ preference }) => preference))];
+  const xml = groups.map(
+    (name) => `  <preference version="1" name="${escapeXml(name)}">
+${preferenceEntriesXml(all.filter(({ preference }) => preference === name))}
+  </preference>`,
+  );
   return `<?xml version="1.0" standalone="yes"?>
 <preferences>
-  <preference version="1" name="com.atakmap.app_preferences">
-    <entry key="deviceProfileEnableOnConnect" class="class java.lang.Boolean">true</entry>
-    <entry key="apiSecureServerPort" class="class java.lang.String">${String(martiPort)}</entry>
-  </preference>
+${xml.join("\n")}
 </preferences>
 `;
 }
@@ -59,13 +69,19 @@ export async function profilePackages(userId: string, access: TakAccess, kind: P
 
 /**
  * The profile Data Package, or `null` when there is nothing to install. The enrollment profile is
- * always delivered, because it carries the public Marti port.
+ * always delivered, because it carries the public Marti port. `eventPreferences` is `null` when a
+ * connection profile has no changed event preferences to deliver.
  */
-export async function buildDeviceProfile(kind: ProfileKind, packages: VisiblePackage[], martiPort: number): Promise<Uint8Array | null> {
-  if (kind === "connection" && packages.length === 0) {
+export async function buildDeviceProfile(
+  kind: ProfileKind,
+  packages: VisiblePackage[],
+  martiPort: number,
+  eventPreferences: AtakPreference[] | null = null,
+): Promise<Uint8Array | null> {
+  if (kind === "connection" && packages.length === 0 && eventPreferences === null) {
     return null;
   }
-  const files: Zippable = { "preferences/preference.pref": strToU8(profilePreferences(martiPort)) };
+  const files: Zippable = { "preferences/preference.pref": strToU8(profilePreferences(martiPort, eventPreferences ?? [])) };
   for (const item of packages) {
     const artifact = await buildAtakExport(item.dataPackage.id, item.latest);
     files[`packages/${item.dataPackage.id}/${artifact.fileName}`] = artifact.bytes;

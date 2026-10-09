@@ -9,6 +9,7 @@ import { unzipSync } from "fflate";
 import { createApp } from "../src/app.js";
 import { trustedCertificateAuthorities } from "../src/modules/tak-server/certificate-authority.js";
 import { createMartiApp } from "../src/modules/tak-server/marti/marti-app.js";
+import { cotRouter, type CotPeer } from "../src/modules/tak-server/streaming/cot-router.js";
 import { currentServerCertificate, decryptServerKey } from "../src/modules/tak-server/server-certificate.js";
 import { PERMISSIONS } from "../src/shared/auth/permissions.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
@@ -184,6 +185,131 @@ void describe("TAK Marti Data Package API", () => {
     await database.packageRevision.updateMany({ data: { createdAt: new Date(Date.now() - 3_600_000) } });
     const unchanged = await get(bravo, "/Marti/api/device/profile/connection?syncSecago=60", bravo.caPems);
     assert.equal(unchanged.status, 204, "nothing new since the last sync a minute ago");
+  });
+
+  void it("delivers the event's published ATAK preferences in the device profile, again only after a change", async () => {
+    const configurationUrl = `/api/v1/events/${eventId}/tak/configuration`;
+    const revisionsUrl = `/api/v1/events/${eventId}/configuration-revisions`;
+    await request(app).post(revisionsUrl).set("Cookie", admin.cookie).send({}).expect(200);
+    const uploaded = await request(app)
+      .put(`${configurationUrl}/atak-preferences`)
+      .set("Cookie", admin.cookie)
+      .send({
+        version: 0,
+        file: {
+          fileName: "atak.pref",
+          content:
+            '<preferences><preference version="1" name="com.atakmap.app_preferences">' +
+            '<entry key="alt_display_agl" class="class java.lang.Boolean">true</entry>' +
+            '<entry key="locationCallsign" class="class java.lang.String">ADMIN</entry></preference></preferences>',
+        },
+      })
+      .expect(200);
+    const upload = uploaded.body as { removedKeys: string[]; configuration: { version: number } };
+    assert.deepEqual(upload.removedKeys, ["locationCallsign"]);
+    await request(app)
+      .put(configurationUrl)
+      .set("Cookie", admin.cookie)
+      .send({
+        version: upload.configuration.version,
+        meshChannelId: null,
+        atakSettings: { coordinateFormat: "MGRS", altitudeReference: null, altitudeUnit: "meters", speedUnit: null, distanceUnit: null, northReference: null },
+      })
+      .expect(200);
+    const pending = (await request(app).get(`${revisionsUrl}/pending-changes`).set("Cookie", admin.cookie).expect(200)).body as unknown;
+    assert.ok(JSON.stringify(pending).includes("ATAK settings"), "pending changes name the ATAK settings");
+    await request(app).post(revisionsUrl).set("Cookie", admin.cookie).send({}).expect(200);
+
+    const bravo = await enrollTakClient(app, await memberOf(bravoId, "Peter"));
+    // The enrollment profile on the enrollment port is built by the same code.
+    const connection = await get(bravo, "/Marti/api/device/profile/connection?syncSecago=-1&clientUid=TEST", bravo.caPems);
+    assert.equal(connection.status, 200, "first connection applies the preferences");
+    const preferences = new TextDecoder().decode(unzipSync(new Uint8Array(connection.body))["preferences/preference.pref"]);
+    assert.match(preferences, /<entry key="alt_display_agl" class="class java.lang.Boolean">true<\/entry>/);
+    assert.match(preferences, /<entry key="coord_display_pref" class="class java.lang.String">MGRS<\/entry>/);
+    assert.match(preferences, /<entry key="alt_unit_pref" class="class java.lang.String">1<\/entry>/);
+    assert.doesNotMatch(preferences, /locationCallsign/);
+
+    await database.eventConfigurationRevision.updateMany({ data: { createdAt: new Date(Date.now() - 3_600_000) } });
+    const unchanged = await get(bravo, "/Marti/api/device/profile/connection?syncSecago=60", bravo.caPems);
+    assert.equal(unchanged.status, 204, "unchanged preferences are not sent again");
+  });
+
+  void it("answers CoT history queries only from events that record their traffic", async () => {
+    const bravo = await enrollTakClient(app, await memberOf(bravoId, "Peter"));
+    const otherEventId = await createEvent();
+    await database.event.update({ where: { id: otherEventId }, data: { status: "active" } });
+    const position = (eventId: string, minutesAgo: number, lat: number) => ({
+      id: randomUUID(),
+      eventId,
+      uid: "ANDROID-ALPHA",
+      type: "a-f-G-U-C",
+      callsign: "ALPHA & CO",
+      lat,
+      lon: 11.6,
+      time: new Date(Date.now() - minutesAgo * 60_000),
+      stale: new Date(Date.now() - minutesAgo * 60_000 + 120_000),
+      userId: admin.id,
+    });
+    await database.takTrafficItem.createMany({
+      data: [position(eventId, 30, 52.1), position(eventId, 5, 52.2), position(otherEventId, 1, 40.0)],
+    });
+
+    assert.equal((await get(bravo, "/Marti/api/cot/xml/ANDROID-ALPHA", bravo.caPems)).status, 404, "nothing while the event does not record");
+
+    await database.takTrafficRecording.create({ data: { eventId, enabled: true, retentionDays: 7 } });
+    await database.takTrafficRecording.create({ data: { eventId: otherEventId, enabled: true, retentionDays: 7 } });
+    const latest = await get(bravo, "/Marti/api/cot/xml/ANDROID-ALPHA", bravo.caPems);
+    assert.equal(latest.status, 200);
+    assert.match(latest.body.toString("utf8"), /<point lat="52.2"/);
+    assert.match(latest.body.toString("utf8"), /callsign="ALPHA &#38; CO"/);
+
+    const recent = (await get(bravo, "/Marti/api/cot/xml/ANDROID-ALPHA/all?secago=600", bravo.caPems)).body.toString("utf8");
+    assert.equal(recent.match(/<event /g)?.length, 1, "secago limits the window");
+    const all = (await get(bravo, "/Marti/api/cot/xml/ANDROID-ALPHA/all", bravo.caPems)).body.toString("utf8");
+    assert.equal(all.match(/<event /g)?.length, 2, "never items of an event the member is not in");
+    assert.equal((await get(bravo, "/Marti/api/cot/xml/ANDROID-ALPHA/all?start=yesterday", bravo.caPems)).status, 400);
+    assert.equal(await database.auditEvent.count({ where: { action: "tak-traffic.history-queried" } }), 3);
+  });
+
+  void it("lists the apps of the caller's events as server contacts, also after they disconnected", async () => {
+    const bravo = await enrollTakClient(app, await memberOf(bravoId, "Peter"));
+    const peer = (id: string, scope: string, deviceUid: string, callsign: string): CotPeer => ({
+      id,
+      scope: new Set([scope]),
+      send: () => undefined,
+      userId: admin.id,
+      certificateId: id,
+      callsign,
+      deviceUid,
+      connectedAt: new Date(),
+      lastSeenAt: new Date(),
+    });
+    const alpha = peer(randomUUID(), eventId, "ANDROID-ALPHA", "ALPHA");
+    const charlie = peer(randomUUID(), eventId, "ANDROID-CHARLIE", "CHARLIE");
+    const stranger = peer(randomUUID(), randomUUID(), "ANDROID-STRANGER", "STRANGER");
+    for (const each of [alpha, charlie, stranger]) {
+      cotRouter.join(each);
+      cotRouter.identify(each);
+    }
+    cotRouter.leave(charlie.id);
+
+    const response = await get(bravo, "/Marti/api/clientEndPoints", bravo.caPems);
+    const body = JSON.parse(response.body.toString("utf8")) as {
+      type: string;
+      data: Array<{ uid: string; callsign: string; lastEventTime: string; lastStatus: string }>;
+    };
+    cotRouter.leave(alpha.id);
+    cotRouter.leave(stranger.id);
+    assert.equal(body.type, "com.bbn.marti.remote.ClientEndpoint");
+    assert.deepEqual(
+      body.data.map(({ uid, lastStatus }) => [uid, lastStatus]).sort(),
+      [
+        ["ANDROID-ALPHA", "Connected"],
+        ["ANDROID-CHARLIE", "Disconnected"],
+      ],
+    );
+    assert.match(body.data[0]?.lastEventTime ?? "", /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
   });
 
   void it("refuses clients without a certificate and revoked certificates", async () => {

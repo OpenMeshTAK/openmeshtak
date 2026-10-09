@@ -92,8 +92,11 @@ export function diffConfigurationSnapshots(published: ConfigurationSnapshot, cur
     return [...changes, { area: "event", kind: "changed", name, fields: [] }];
   }
   changes.push(...diffItems("channels", published.channels, current.channels), ...diffMeshtastic(published, current));
-  if (!same(published.tak, current.tak)) {
+  if (!same(published.tak?.meshChannelId ?? null, current.tak?.meshChannelId ?? null)) {
     changes.push({ area: "tak", kind: "changed", name: "TAK mesh channel", fields: [] });
+  }
+  if (!same(published.tak?.atakPreferences ?? [], current.tak?.atakPreferences ?? [])) {
+    changes.push({ area: "tak", kind: "changed", name: "ATAK settings", fields: [] });
   }
   return changes;
 }

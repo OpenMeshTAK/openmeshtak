@@ -1326,8 +1326,137 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"AtakSettingsDto": {
+				"description": "ATAK display settings an event sets for its members; `null` leaves the setting to the\nuploaded preference file or to ATAK's default.",
+				"properties": {
+					"coordinateFormat": {
+						"type": "string",
+						"enum": [
+							"MGRS",
+							"DD",
+							"DM",
+							"DMS",
+							"UTM",
+							null
+						],
+						"nullable": true
+					},
+					"altitudeReference": {
+						"type": "string",
+						"enum": [
+							"HAE",
+							"MSL",
+							null
+						],
+						"nullable": true
+					},
+					"altitudeUnit": {
+						"type": "string",
+						"enum": [
+							"feet",
+							"meters",
+							null
+						],
+						"nullable": true
+					},
+					"speedUnit": {
+						"type": "string",
+						"enum": [
+							"mph",
+							"kmh",
+							"knots",
+							"mps",
+							null
+						],
+						"nullable": true
+					},
+					"distanceUnit": {
+						"type": "string",
+						"enum": [
+							"imperial",
+							"metric",
+							"nautical",
+							null
+						],
+						"nullable": true
+					},
+					"northReference": {
+						"type": "string",
+						"enum": [
+							"true",
+							"magnetic",
+							"grid",
+							null
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"coordinateFormat",
+					"altitudeReference",
+					"altitudeUnit",
+					"speedUnit",
+					"distanceUnit",
+					"northReference"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakPreferenceDto": {
+				"description": "One preference of an uploaded ATAK `.pref` file.",
+				"properties": {
+					"preference": {
+						"type": "string",
+						"description": "The `<preference name>` group, such as `com.atakmap.app_preferences`."
+					},
+					"key": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"string",
+							"boolean",
+							"integer",
+							"long",
+							"float"
+						]
+					},
+					"value": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"preference",
+					"key",
+					"type",
+					"value"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakPreferenceFileDto": {
+				"properties": {
+					"fileName": {
+						"type": "string"
+					},
+					"entries": {
+						"items": {
+							"$ref": "#/components/schemas/AtakPreferenceDto"
+						},
+						"type": "array",
+						"description": "The file's entries after removing keys OpenMeshTak owns."
+					}
+				},
+				"required": [
+					"fileName",
+					"entries"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TakConfigurationDto": {
-				"description": "TAK settings of a Meshtastic event. Every event sends TAK clients to the built-in TAK server;\nMeshtastic events (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's\nlocal TAK server, which carries CoT over this channel.",
+				"description": "TAK settings of an event. Every event sends TAK clients to the built-in TAK server; Meshtastic\nevents (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's local TAK\nserver, which carries CoT over the mesh channel. ATAK preferences reach members through the\ndevice profiles once a configuration revision is published.",
 				"properties": {
 					"eventId": {
 						"$ref": "#/components/schemas/Uuid"
@@ -1340,6 +1469,18 @@
 						],
 						"nullable": true,
 						"description": "Channel for the app's \"TAK Mesh Channel\"; `null` uses the primary channel."
+					},
+					"atakSettings": {
+						"$ref": "#/components/schemas/AtakSettingsDto"
+					},
+					"atakPreferenceFile": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/AtakPreferenceFileDto"
+							}
+						],
+						"nullable": true,
+						"description": "`null` until a preference file is uploaded."
 					},
 					"version": {
 						"type": "number",
@@ -1355,6 +1496,8 @@
 				"required": [
 					"eventId",
 					"meshChannelId",
+					"atakSettings",
+					"atakPreferenceFile",
 					"version",
 					"updatedAt"
 				],
@@ -1376,11 +1519,79 @@
 							}
 						],
 						"nullable": true
+					},
+					"atakSettings": {
+						"$ref": "#/components/schemas/AtakSettingsDto",
+						"description": "Omit to keep the current settings."
 					}
 				},
 				"required": [
 					"version",
 					"meshChannelId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateAtakPreferenceFileResponse": {
+				"properties": {
+					"configuration": {
+						"$ref": "#/components/schemas/TakConfigurationDto"
+					},
+					"removedKeys": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Keys of the uploaded file that were removed because OpenMeshTak sets them per member."
+					}
+				},
+				"required": [
+					"configuration",
+					"removedKeys"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakPreferenceFileUpload": {
+				"properties": {
+					"fileName": {
+						"type": "string",
+						"maxLength": 200
+					},
+					"content": {
+						"type": "string",
+						"description": "The `.pref` file's text.",
+						"maxLength": 262144
+					}
+				},
+				"required": [
+					"fileName",
+					"content"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateAtakPreferenceFileRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 0
+					},
+					"file": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/AtakPreferenceFileUpload"
+							}
+						],
+						"nullable": true,
+						"description": "`null` removes the file."
+					}
+				},
+				"required": [
+					"version",
+					"file"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -4803,25 +5014,69 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"AtakPreferenceType": {
+				"type": "string",
+				"enum": [
+					"string",
+					"boolean",
+					"integer",
+					"long",
+					"float"
+				]
+			},
+			"AtakPreference": {
+				"description": "One ATAK preference as a `.pref` file stores it.",
+				"properties": {
+					"preference": {
+						"type": "string",
+						"description": "The `<preference name>` group, such as `com.atakmap.app_preferences`."
+					},
+					"key": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceType"
+					},
+					"value": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"preference",
+					"key",
+					"type",
+					"value"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"CurrentTakConfiguration": {
 				"properties": {
 					"meshChannelId": {
 						"type": "string",
 						"nullable": true
+					},
+					"atakPreferences": {
+						"items": {
+							"$ref": "#/components/schemas/AtakPreference"
+						},
+						"type": "array",
+						"description": "The preferences members' ATAK receives: the uploaded file with the form's choices on top."
 					}
 				},
 				"required": [
-					"meshChannelId"
+					"meshChannelId",
+					"atakPreferences"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
 			"SnapshotTak": {
 				"$ref": "#/components/schemas/CurrentTakConfiguration",
-				"description": "The Meshtastic app's TAK mesh channel; `null` in revisions created before version 4. Revisions\nbefore version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced."
+				"description": "The Meshtastic app's TAK mesh channel and the ATAK preferences; `null` in revisions created\nbefore version 4, and without ATAK preferences before version 7. Revisions\nbefore version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced."
 			},
 			"ConfigurationSnapshot": {
-				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added\n`meshtasticEnabled`.",
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added\n`meshtasticEnabled`; version 7 added `tak.atakPreferences`.",
 				"properties": {
 					"schemaVersion": {
 						"type": "number",
@@ -4831,7 +5086,8 @@
 							3,
 							4,
 							5,
-							6
+							6,
+							7
 						]
 					},
 					"meshtasticEnabled": {
@@ -10043,6 +10299,105 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/UpdateTakConfigurationRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/tak/configuration/atak-preferences": {
+			"put": {
+				"operationId": "UpdateAtakPreferenceFile",
+				"responses": {
+					"200": {
+						"description": "ATAK preference file updated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UpdateAtakPreferenceFileResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Uploads or removes the event's ATAK preference file (`.pref`, such as ATAK's settings\nexport). Keys OpenMeshTak sets per member are removed and listed in the response.",
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateAtakPreferenceFileRequest"
 							}
 						}
 					}

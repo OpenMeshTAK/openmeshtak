@@ -698,12 +698,17 @@ model DataPackageAudience {
 model TakConfiguration {
   eventId       String             @id
   /// Channel the app's "TAK Mesh Channel" should use; null means the primary channel.
-  meshChannelId String?
-  version       Int                @default(1)
-  event         Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  meshChannel   MeshtasticChannel? @relation(fields: [meshChannelId], references: [id], onDelete: SetNull)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  meshChannelId          String?
+  /// ATAK preferences from an uploaded .pref file, already cleaned of keys OpenMeshTak owns.
+  atakPreferenceEntries  Json?
+  atakPreferenceFileName String?
+  /// Values from the ATAK settings form; they override the same keys of the file.
+  atakSettings           Json?
+  version                Int                @default(1)
+  event                  Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  meshChannel            MeshtasticChannel? @relation(fields: [meshChannelId], references: [id], onDelete: SetNull)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 }
 
 /// Certificate authorities of the built-in TAK server. The active one signs new certificates;
