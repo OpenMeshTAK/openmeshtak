@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { ATAK_PREFERENCE_TOPICS, BLOCKED_ATAK_PREFERENCES } from "../src/modules/tak-configuration/atak-preference-catalog.js";
+import { listProblems } from "../src/modules/tak-configuration/atak-preference-validation.js";
 import {
-  EMPTY_ATAK_SETTINGS,
-  effectiveAtakPreferences,
   mergeAtakPreferences,
   parseAtakPreferenceFile,
+  resolveAtakPreferences,
+  type TargetedAtakPreference,
 } from "../src/modules/tak-configuration/atak-preferences.js";
 import { ProblemError } from "../src/shared/errors/problem-error.js";
 
@@ -53,21 +55,75 @@ void describe("ATAK preferences", () => {
     );
   });
 
-  void it("lets the form override the file, and a later event override an earlier one", () => {
-    const { entries } = parseAtakPreferenceFile(exported);
-    const event = effectiveAtakPreferences(entries, { ...EMPTY_ATAK_SETTINGS, coordinateFormat: "MGRS", distanceUnit: "metric" });
-    assert.deepEqual(
-      event.map(({ key, value }) => [key, value]),
-      [
-        ["alt_display_agl", "true"],
-        ["coord_display_pref", "MGRS"],
-        ["rab_rng_units_pref", "1"],
-      ],
-    );
+  void it("lets the most specific entry win for a member, and a later event override an earlier one", () => {
+    const app = "com.atakmap.app_preferences";
+    const entries: TargetedAtakPreference[] = [
+      { target: { type: "member", id: "peter" }, preference: app, key: "coord_display_pref", type: "string", value: "UTM" },
+      { target: { type: "event" }, preference: app, key: "coord_display_pref", type: "string", value: "MGRS" },
+      { target: { type: "group", id: "bravo" }, preference: app, key: "coord_display_pref", type: "string", value: "DD" },
+      { target: { type: "role", id: "leader" }, preference: app, key: "coord_display_pref", type: "string", value: "DMS" },
+      { target: { type: "event" }, preference: app, key: "rab_rng_units_pref", type: "string", value: "1" },
+    ];
+    const value = (recipient: { memberId: string; eventRoleId: string; eventGroupId: string }) =>
+      resolveAtakPreferences(entries, recipient).find(({ key }) => key === "coord_display_pref")?.value;
+    assert.equal(value({ memberId: "peter", eventRoleId: "leader", eventGroupId: "bravo" }), "UTM");
+    assert.equal(value({ memberId: "anna", eventRoleId: "leader", eventGroupId: "bravo" }), "DMS");
+    assert.equal(value({ memberId: "anna", eventRoleId: "participant", eventGroupId: "bravo" }), "DD");
+    assert.equal(value({ memberId: "anna", eventRoleId: "participant", eventGroupId: "charlie" }), "MGRS");
 
-    const later = effectiveAtakPreferences([], { ...EMPTY_ATAK_SETTINGS, distanceUnit: "nautical" });
-    const merged = mergeAtakPreferences(event, later);
+    const event = resolveAtakPreferences(entries, { memberId: "anna", eventRoleId: "participant", eventGroupId: "charlie" });
+    const merged = mergeAtakPreferences(event, [{ preference: app, key: "rab_rng_units_pref", type: "string", value: "2" }]);
     assert.equal(merged.find(({ key }) => key === "rab_rng_units_pref")?.value, "2");
     assert.equal(merged.find(({ key }) => key === "coord_display_pref")?.value, "MGRS");
+  });
+
+  void it("checks entries against ATAK's types and values and keeps owned keys out", () => {
+    const app = "com.atakmap.app_preferences";
+    const targets = { groupIds: new Set(["bravo"]), roleIds: new Set<string>(), memberIds: new Set(["peter"]) };
+    const entry = (key: string, type: TargetedAtakPreference["type"], value: string, target: TargetedAtakPreference["target"] = { type: "event" }) =>
+      ({ target, preference: app, key, type, value }) satisfies TargetedAtakPreference;
+    const problems = listProblems(
+      [
+        entry("coord_display_pref", "string", "MGRS"),
+        entry("coord_display_pref", "string", "XYZ", { type: "group", id: "bravo" }),
+        entry("alt_display_agl", "string", "true"),
+        entry("constantReportingRateReliable", "string", "fast"),
+        entry("locationCallsign", "string", "ADMIN"),
+        entry("saEmailAddress", "string", "a@example.org"),
+        entry("saEmailAddress", "string", "a@example.org", { type: "member", id: "peter" }),
+        entry("myPluginKey", "integer", "3"),
+        entry("myPluginKey", "integer", "3"),
+        entry("otherPluginKey", "boolean", "yes"),
+        entry("map_zoom_visible", "boolean", "true", { type: "role", id: "missing" }),
+      ],
+      targets,
+    );
+    assert.deepEqual(
+      problems.map(({ field, code }) => [field, code]),
+      [
+        ["entries[1].value", "INVALID_VALUE"],
+        ["entries[2].type", "TYPE_MISMATCH"],
+        ["entries[3].value", "INVALID_VALUE"],
+        ["entries[4].key", "OWNED_KEY"],
+        ["entries[5].target", "MEMBER_ONLY"],
+        ["entries[8].key", "DUPLICATE"],
+        ["entries[9].value", "INVALID_VALUE"],
+        ["entries[10].target", "UNKNOWN_REFERENCE"],
+      ],
+    );
+  });
+
+  void it("ships a catalog whose defaults fit its own types and values", () => {
+    const keys = ATAK_PREFERENCE_TOPICS.flatMap(({ keys }) => keys);
+    assert.equal(new Set(keys.map(({ key }) => key)).size, keys.length, "every key appears once");
+    assert.ok(keys.every(({ group }) => group.trim() !== ""), "every key belongs to a subgroup");
+    for (const known of keys) {
+      const fits =
+        known.defaultValue === null ||
+        (known.values?.some(({ value }) => value === known.defaultValue) ?? true) &&
+          (known.type !== "boolean" || ["true", "false"].includes(known.defaultValue));
+      assert.ok(fits, `${known.key} has a default ATAK would not accept`);
+    }
+    assert.ok(!keys.some(({ key }) => BLOCKED_ATAK_PREFERENCES.some((blocked) => blocked.key === key)), "blocked keys are not offered");
   });
 });

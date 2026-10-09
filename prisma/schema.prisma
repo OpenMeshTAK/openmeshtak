@@ -46,6 +46,8 @@ model Event {
   meshtasticConfiguration MeshtasticConfiguration?
   takConfiguration        TakConfiguration?
   takGroups               TakGroup[]
+  atakPreferenceList      AtakPreferenceList?
+  atakPreferences         AtakPreferenceEntry[]
   /// Event accounts; archiving the event deletes them.
   accounts                DomainUser[]                 @relation("EventAccounts")
 }
@@ -312,6 +314,7 @@ model EventRole {
   channelSelections MeshtasticChannelAudience[]
   packageSelections DataPackageAudience[]
   missionWriterSelections DataPackageWriter[]
+  atakPreferences   AtakPreferenceEntry[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -340,6 +343,7 @@ model EventGroup {
   channelSelections MeshtasticChannelAudience[]
   packageSelections DataPackageAudience[]
   missionWriterSelections DataPackageWriter[]
+  atakPreferences   AtakPreferenceEntry[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -389,6 +393,7 @@ model EventMember {
   packageSelections DataPackageAudience[]
   missionWriterSelections DataPackageWriter[]
   takGroups         TakGroupMembership[]
+  atakPreferences   AtakPreferenceEntry[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -749,11 +754,6 @@ model TakConfiguration {
   eventId       String             @id
   /// Channel the app's "TAK Mesh Channel" should use; null means the primary channel.
   meshChannelId          String?
-  /// ATAK preferences from an uploaded .pref file, already cleaned of keys OpenMeshTak owns.
-  atakPreferenceEntries  Json?
-  atakPreferenceFileName String?
-  /// Values from the ATAK settings form; they override the same keys of the file.
-  atakSettings           Json?
   /// "off" (the event is the only CoT boundary), "simple" (members only see their event group) or
   /// "advanced" (free TAK groups with in/out membership per member).
   groupMode              String             @default("off")
@@ -764,6 +764,41 @@ model TakConfiguration {
   meshChannel            MeshtasticChannel? @relation(fields: [meshChannelId], references: [id], onDelete: SetNull)
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
+}
+
+/// Version of an event's ATAK preference list, which is saved as a whole.
+model AtakPreferenceList {
+  eventId   String   @id
+  version   Int      @default(1)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// One ATAK preference an event sends to the whole event or to one event group, role or member.
+model AtakPreferenceEntry {
+  id            String       @id
+  eventId       String
+  /// `event`, `group:<id>`, `role:<id>` or `member:<id>`, so a key is unique per target.
+  targetKey     String
+  eventGroupId  String?
+  eventRoleId   String?
+  eventMemberId String?
+  /// The `<preference name>` group, such as `com.atakmap.app_preferences`.
+  preference    String
+  key           String
+  /// `string`, `boolean`, `integer`, `long` or `float`.
+  type          String
+  value         String
+  event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventGroup    EventGroup?  @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
+  eventRole     EventRole?   @relation(fields: [eventRoleId], references: [id], onDelete: Cascade)
+  eventMember   EventMember? @relation(fields: [eventMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, targetKey, preference, key])
+  @@index([eventGroupId])
+  @@index([eventRoleId])
+  @@index([eventMemberId])
 }
 
 /// A free TAK group of an event for the advanced group mode, e.g. "Medics".

@@ -8,6 +8,7 @@ import type { EventAudience } from "../event-audience/event-audience.js";
 import { loadMeshtasticConfiguration } from "../meshtastic-configuration/current-configuration.js";
 import type { FirmwareSettingsDocument } from "../meshtastic-configuration/meshtastic-configuration.dto.js";
 import { formatFirmwareVersion } from "../meshtastic-firmware/firmware-version.js";
+import type { AtakPreference, AtakPreferenceTarget } from "../tak-configuration/atak-preferences.js";
 import { loadTakConfiguration, type CurrentTakConfiguration } from "../tak-configuration/tak-configuration.service.js";
 
 export interface SnapshotRole {
@@ -56,8 +57,9 @@ export interface SnapshotMeshtastic {
 
 /**
  * The Meshtastic app's TAK mesh channel and the ATAK preferences; `null` in revisions created
- * before version 4, and without ATAK preferences before version 7. Revisions
- * before version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced.
+ * before version 4, and without ATAK preferences before version 7. Version 7 stored preferences
+ * without targets, which all reached the whole event. Revisions before version 6 also stored a
+ * connection mode, which the switch `meshtasticEnabled` replaced.
  */
 export type SnapshotTak = CurrentTakConfiguration;
 
@@ -65,10 +67,10 @@ export type SnapshotTak = CurrentTakConfiguration;
  * Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.
  * Version 2 added `channels` in device order, the first being the primary channel; version 3
  * added `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added
- * `meshtasticEnabled`; version 7 added `tak.atakPreferences`.
+ * `meshtasticEnabled`; version 7 added `tak.atakPreferences`; version 8 gave each preference a target.
  */
 export interface ConfigurationSnapshot {
-  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   /**
    * Whether the event provisions Meshtastic radios; `true` in revisions before version 6. When
    * `false`, `channels` is empty and `meshtastic` is `null`.
@@ -111,7 +113,7 @@ export async function buildConfigurationSnapshot(
   const { meshtasticEnabled } = event;
 
   return {
-    schemaVersion: 7,
+    schemaVersion: 8,
     meshtasticEnabled,
     roles: roles.map((role) => ({ ...role, takRoleOverride: role.takRoleOverride as TakRole | null })),
     groups: groups.map((group) => ({
@@ -160,7 +162,7 @@ export function parseConfigurationSnapshot(value: Prisma.JsonValue): Configurati
     meshtasticEnabled?: boolean;
     channels?: SnapshotChannel[];
     meshtastic?: SnapshotMeshtastic | null;
-    tak?: (Omit<SnapshotTak, "atakPreferences"> & Partial<Pick<SnapshotTak, "atakPreferences">>) | null;
+    tak?: (Omit<SnapshotTak, "atakPreferences"> & { atakPreferences?: Array<AtakPreference & { target?: AtakPreferenceTarget }> }) | null;
   };
   return {
     ...snapshot,
@@ -171,6 +173,9 @@ export function parseConfigurationSnapshot(value: Prisma.JsonValue): Configurati
     tak:
       snapshot.tak === undefined || snapshot.tak === null
         ? null
-        : { meshChannelId: snapshot.tak.meshChannelId, atakPreferences: snapshot.tak.atakPreferences ?? [] },
+        : {
+            meshChannelId: snapshot.tak.meshChannelId,
+            atakPreferences: (snapshot.tak.atakPreferences ?? []).map((entry) => ({ ...entry, target: entry.target ?? { type: "event" } })),
+          },
   };
 }

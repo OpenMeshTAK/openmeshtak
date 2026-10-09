@@ -1,9 +1,16 @@
 import { database } from "../../../shared/database/database.js";
 import { latestConfigurationRevision } from "../../event-configuration/configuration-revisions.service.js";
 import { parseConfigurationSnapshot, type ConfigurationSnapshot } from "../../event-configuration/configuration-snapshot.js";
-import { mergeAtakPreferences, takIdentityPreferences, type AtakPreference, type TakIdentity } from "../../tak-configuration/atak-preferences.js";
+import {
+  mergeAtakPreferences,
+  resolveAtakPreferences,
+  takIdentityPreferences,
+  type AtakPreference,
+  type TakIdentity,
+} from "../../tak-configuration/atak-preferences.js";
 
 interface ActiveMembership {
+  id: string;
   callsign: string;
   eventRoleId: string;
   eventGroupId: string;
@@ -17,6 +24,7 @@ async function activeMemberships(userId: string): Promise<ActiveMembership[]> {
   const members = await database.eventMember.findMany({
     where: { userId, event: { status: "active" } },
     select: {
+      id: true,
       callsign: true,
       eventRoleId: true,
       eventGroupId: true,
@@ -54,8 +62,9 @@ function identityOf(membership: ActiveMembership): TakIdentity | null {
 }
 
 /**
- * The ATAK preferences of the user's active events, from their published revisions, each event
- * adding the member's callsign, team and role. A member of several events gets one merged set: for
+ * The ATAK preferences of the user's active events, from their published revisions: per event the
+ * entries that reach the member (the most specific target winning), then the member's callsign,
+ * team and role. A member of several events gets one merged set: for
  * the same key, the event that started last wins, using the creation time for events without a
  * start date. Preferences follow membership, so administrators who only have TAK access get none.
  *
@@ -68,7 +77,9 @@ export async function memberAtakPreferences(userId: string, changedSince: Date |
   let changed = changedSince === null;
   for (const membership of await activeMemberships(userId)) {
     const identity = identityOf(membership);
-    lists.push([...(membership.snapshot.tak?.atakPreferences ?? []), ...(identity === null ? [] : takIdentityPreferences(identity))]);
+    const recipient = { memberId: membership.id, eventRoleId: membership.eventRoleId, eventGroupId: membership.eventGroupId };
+    const eventPreferences = resolveAtakPreferences(membership.snapshot.tak?.atakPreferences ?? [], recipient);
+    lists.push([...eventPreferences, ...(identity === null ? [] : takIdentityPreferences(identity))]);
     changed ||= changedSince !== null && (membership.revisionCreatedAt > changedSince || membership.updatedAt > changedSince);
   }
   return { entries: mergeAtakPreferences(...lists), changed };

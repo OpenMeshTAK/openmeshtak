@@ -11,6 +11,16 @@ function same(left: Json, right: Json): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
+/**
+ * The ATAK preferences as sorted strings, so revisions from before targets existed compare equal
+ * to the same event-wide entries stored today.
+ */
+function preferenceIdentities(snapshot: ConfigurationSnapshot): string[] {
+  return (snapshot.tak?.atakPreferences ?? [])
+    .map(({ target, preference, key, type, value }) => JSON.stringify([target.type, "id" in target ? target.id : null, preference, key, type, value]))
+    .sort();
+}
+
 /** Paths of the leaves that differ; arrays such as audiences compare as one value. */
 function changedPaths(left: Json, right: Json, prefix = ""): string[] {
   if (!isObject(left) || !isObject(right)) {
@@ -95,7 +105,7 @@ export function diffConfigurationSnapshots(published: ConfigurationSnapshot, cur
   if (!same(published.tak?.meshChannelId ?? null, current.tak?.meshChannelId ?? null)) {
     changes.push({ area: "tak", kind: "changed", name: "TAK mesh channel", fields: [] });
   }
-  if (!same(published.tak?.atakPreferences ?? [], current.tak?.atakPreferences ?? [])) {
+  if (!same(preferenceIdentities(published), preferenceIdentities(current))) {
     changes.push({ area: "tak", kind: "changed", name: "ATAK settings", fields: [] });
   }
   return changes;

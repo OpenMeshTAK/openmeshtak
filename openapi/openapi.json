@@ -1609,82 +1609,6 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"AtakSettingsDto": {
-				"description": "ATAK display settings an event sets for its members; `null` leaves the setting to the\nuploaded preference file or to ATAK's default.",
-				"properties": {
-					"coordinateFormat": {
-						"type": "string",
-						"enum": [
-							"MGRS",
-							"DD",
-							"DM",
-							"DMS",
-							"UTM",
-							null
-						],
-						"nullable": true
-					},
-					"altitudeReference": {
-						"type": "string",
-						"enum": [
-							"HAE",
-							"MSL",
-							null
-						],
-						"nullable": true
-					},
-					"altitudeUnit": {
-						"type": "string",
-						"enum": [
-							"feet",
-							"meters",
-							null
-						],
-						"nullable": true
-					},
-					"speedUnit": {
-						"type": "string",
-						"enum": [
-							"mph",
-							"kmh",
-							"knots",
-							"mps",
-							null
-						],
-						"nullable": true
-					},
-					"distanceUnit": {
-						"type": "string",
-						"enum": [
-							"imperial",
-							"metric",
-							"nautical",
-							null
-						],
-						"nullable": true
-					},
-					"northReference": {
-						"type": "string",
-						"enum": [
-							"true",
-							"magnetic",
-							"grid",
-							null
-						],
-						"nullable": true
-					}
-				},
-				"required": [
-					"coordinateFormat",
-					"altitudeReference",
-					"altitudeUnit",
-					"speedUnit",
-					"distanceUnit",
-					"northReference"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"TakGroupMode": {
 				"type": "string",
 				"enum": [
@@ -1693,61 +1617,8 @@
 					"advanced"
 				]
 			},
-			"AtakPreferenceDto": {
-				"description": "One preference of an uploaded ATAK `.pref` file.",
-				"properties": {
-					"preference": {
-						"type": "string",
-						"description": "The `<preference name>` group, such as `com.atakmap.app_preferences`."
-					},
-					"key": {
-						"type": "string"
-					},
-					"type": {
-						"type": "string",
-						"enum": [
-							"string",
-							"boolean",
-							"integer",
-							"long",
-							"float"
-						]
-					},
-					"value": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"preference",
-					"key",
-					"type",
-					"value"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"AtakPreferenceFileDto": {
-				"properties": {
-					"fileName": {
-						"type": "string"
-					},
-					"entries": {
-						"items": {
-							"$ref": "#/components/schemas/AtakPreferenceDto"
-						},
-						"type": "array",
-						"description": "The file's entries after removing keys OpenMeshTak owns."
-					}
-				},
-				"required": [
-					"fileName",
-					"entries"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"TakConfigurationDto": {
-				"description": "TAK settings of an event. Every event sends TAK clients to the built-in TAK server; Meshtastic\nevents (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's local TAK\nserver, which carries CoT over the mesh channel. ATAK preferences reach members through the\ndevice profiles once a configuration revision is published.",
+				"description": "TAK settings of an event. Every event sends TAK clients to the built-in TAK server; Meshtastic\nevents (`meshtasticEnabled` on the event) also connect them to the Meshtastic app's local TAK\nserver, which carries CoT over the mesh channel. ATAK preferences have their own list\n(`/events/{eventId}/tak/atak-preferences`).",
 				"properties": {
 					"eventId": {
 						"$ref": "#/components/schemas/Uuid"
@@ -1761,9 +1632,6 @@
 						"nullable": true,
 						"description": "Channel for the app's \"TAK Mesh Channel\"; `null` uses the primary channel."
 					},
-					"atakSettings": {
-						"$ref": "#/components/schemas/AtakSettingsDto"
-					},
 					"groupMode": {
 						"$ref": "#/components/schemas/TakGroupMode",
 						"description": "`off`: every member sees the whole event. `simple`: members see only their event group.\n`advanced`: members receive what is sent into the event's TAK groups they receive from\n(`/events/{eventId}/tak/groups`). In both separating modes roles with `seesAllTakGroups` see\nand reach everyone. Applies to live connections within seconds, without publishing."
@@ -1771,15 +1639,6 @@
 					"groupsInApp": {
 						"type": "boolean",
 						"description": "In the advanced mode, TAK apps list their groups and may switch them on and off."
-					},
-					"atakPreferenceFile": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/AtakPreferenceFileDto"
-							}
-						],
-						"nullable": true,
-						"description": "`null` until a preference file is uploaded."
 					},
 					"version": {
 						"type": "number",
@@ -1795,10 +1654,8 @@
 				"required": [
 					"eventId",
 					"meshChannelId",
-					"atakSettings",
 					"groupMode",
 					"groupsInApp",
-					"atakPreferenceFile",
 					"version",
 					"updatedAt"
 				],
@@ -1821,10 +1678,6 @@
 						],
 						"nullable": true
 					},
-					"atakSettings": {
-						"$ref": "#/components/schemas/AtakSettingsDto",
-						"description": "Omit to keep the current settings."
-					},
 					"groupMode": {
 						"$ref": "#/components/schemas/TakGroupMode",
 						"description": "Omit to keep the current mode."
@@ -1841,46 +1694,112 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"UpdateAtakPreferenceFileResponse": {
+			"AtakPreferenceTargetDto": {
+				"description": "Who an entry is for. Targets are event memberships, never OpenMeshTak accounts.",
 				"properties": {
-					"configuration": {
-						"$ref": "#/components/schemas/TakConfigurationDto"
+					"type": {
+						"type": "string",
+						"enum": [
+							"event",
+							"group",
+							"role",
+							"member"
+						]
 					},
-					"removedKeys": {
-						"items": {
-							"type": "string"
-						},
-						"type": "array",
-						"description": "Keys of the uploaded file that were removed because OpenMeshTak sets them per member."
+					"id": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "The event group, role or member; `null` for the whole event."
 					}
 				},
 				"required": [
-					"configuration",
-					"removedKeys"
+					"type",
+					"id"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
-			"AtakPreferenceFileUpload": {
+			"AtakPreferenceTypeDto": {
+				"type": "string",
+				"enum": [
+					"string",
+					"boolean",
+					"integer",
+					"long",
+					"float"
+				]
+			},
+			"AtakPreferenceEntryDto": {
+				"description": "One ATAK preference the event sends, as a `.pref` file stores it.",
 				"properties": {
-					"fileName": {
+					"target": {
+						"$ref": "#/components/schemas/AtakPreferenceTargetDto"
+					},
+					"preference": {
+						"type": "string",
+						"description": "The `<preference name>` group, usually `com.atakmap.app_preferences`.",
+						"maxLength": 200
+					},
+					"key": {
 						"type": "string",
 						"maxLength": 200
 					},
-					"content": {
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceTypeDto",
+						"description": "The Java class ATAK stores; known keys must use the catalog's type."
+					},
+					"value": {
 						"type": "string",
-						"description": "The `.pref` file's text.",
-						"maxLength": 262144
+						"maxLength": 10000
 					}
 				},
 				"required": [
-					"fileName",
-					"content"
+					"target",
+					"preference",
+					"key",
+					"type",
+					"value"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
-			"UpdateAtakPreferenceFileRequest": {
+			"AtakPreferenceListDto": {
+				"description": "The ATAK preferences every member's app receives through its device profile once a\nconfiguration revision is published. For one member the most specific entry wins per key:\nmember, then role, then group, then the whole event. Removing an entry does not change a device;\nset ATAK's default instead.",
+				"properties": {
+					"eventId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"entries": {
+						"items": {
+							"$ref": "#/components/schemas/AtakPreferenceEntryDto"
+						},
+						"type": "array"
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; 0 until first saved."
+					},
+					"updatedAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"eventId",
+					"entries",
+					"version",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ReplaceAtakPreferencesRequest": {
 				"properties": {
 					"version": {
 						"type": "integer",
@@ -1888,19 +1807,235 @@
 						"description": "Version the client last read.",
 						"minimum": 0
 					},
-					"file": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/AtakPreferenceFileUpload"
-							}
-						],
-						"nullable": true,
-						"description": "`null` removes the file."
+					"entries": {
+						"items": {
+							"$ref": "#/components/schemas/AtakPreferenceEntryDto"
+						},
+						"type": "array",
+						"maxItems": 2000
 					}
 				},
 				"required": [
 					"version",
-					"file"
+					"entries"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SkippedAtakPreferenceDto": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"key",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportAtakPreferencesResponse": {
+				"properties": {
+					"list": {
+						"$ref": "#/components/schemas/AtakPreferenceListDto"
+					},
+					"importedCount": {
+						"type": "number",
+						"format": "double",
+						"description": "Entries added to the whole event or replacing an event-wide entry of the same key."
+					},
+					"removedKeys": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Keys left out because OpenMeshTak sets them, they hold a secret or they belong to one person or device."
+					},
+					"invalidKeys": {
+						"items": {
+							"$ref": "#/components/schemas/SkippedAtakPreferenceDto"
+						},
+						"type": "array",
+						"description": "Keys left out because their type or value does not match what ATAK expects."
+					}
+				},
+				"required": [
+					"list",
+					"importedCount",
+					"removedKeys",
+					"invalidKeys"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ImportAtakPreferencesRequest": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read.",
+						"minimum": 0
+					},
+					"fileName": {
+						"type": "string",
+						"maxLength": 200
+					},
+					"content": {
+						"type": "string",
+						"description": "The `.pref` file's text, such as ATAK's settings export.",
+						"maxLength": 262144
+					}
+				},
+				"required": [
+					"version",
+					"fileName",
+					"content"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakCatalogValueDto": {
+				"properties": {
+					"value": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"value",
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakCatalogKeyDto": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"group": {
+						"type": "string",
+						"description": "Subgroup within the topic, such as \"Altitude\"; keys of a group are listed together."
+					},
+					"type": {
+						"$ref": "#/components/schemas/AtakPreferenceTypeDto"
+					},
+					"defaultValue": {
+						"type": "string",
+						"nullable": true,
+						"description": "ATAK's own default; `null` when ATAK sets none."
+					},
+					"values": {
+						"items": {
+							"$ref": "#/components/schemas/AtakCatalogValueDto"
+						},
+						"type": "array",
+						"nullable": true,
+						"description": "Allowed values of a list; `null` for free values."
+					},
+					"numeric": {
+						"type": "boolean",
+						"description": "Text fields ATAK reads as numbers; they are still stored as strings."
+					},
+					"description": {
+						"type": "string"
+					},
+					"use": {
+						"type": "string",
+						"enum": [
+							"form",
+							"member",
+							"warning",
+							"advanced",
+							null
+						],
+						"nullable": true,
+						"description": "`form`: a ready field; `member`: only for one member; `warning`: allowed with a warning; `advanced`: hidden by default."
+					}
+				},
+				"required": [
+					"key",
+					"group",
+					"type",
+					"defaultValue",
+					"values",
+					"numeric",
+					"description",
+					"use"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakCatalogTopicDto": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"keys": {
+						"items": {
+							"$ref": "#/components/schemas/AtakCatalogKeyDto"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"id",
+					"title",
+					"description",
+					"keys"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AtakPreferenceCatalogDto": {
+				"description": "The ATAK preference keys this Core release knows, by topic, all in\n`com.atakmap.app_preferences`. Other keys, such as plugin keys, may still be set.",
+				"properties": {
+					"atakVersion": {
+						"type": "string",
+						"description": "The ATAK version the catalog was read from."
+					},
+					"topics": {
+						"items": {
+							"$ref": "#/components/schemas/AtakCatalogTopicDto"
+						},
+						"type": "array"
+					},
+					"blockedKeys": {
+						"items": {
+							"properties": {
+								"reason": {
+									"type": "string"
+								},
+								"key": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"reason",
+								"key"
+							],
+							"type": "object"
+						},
+						"type": "array",
+						"description": "Keys an event can never set, with the reason."
+					}
+				},
+				"required": [
+					"atakVersion",
+					"topics",
+					"blockedKeys"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5335,6 +5470,46 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"AtakPreferenceTarget": {
+				"anyOf": [
+					{
+						"properties": {
+							"type": {
+								"type": "string",
+								"enum": [
+									"event"
+								],
+								"nullable": false
+							}
+						},
+						"required": [
+							"type"
+						],
+						"type": "object"
+					},
+					{
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"type": {
+								"type": "string",
+								"enum": [
+									"group",
+									"role",
+									"member"
+								]
+							}
+						},
+						"required": [
+							"id",
+							"type"
+						],
+						"type": "object"
+					}
+				],
+				"description": "Who an entry is for: the whole event, or one event group, role or member."
+			},
 			"AtakPreferenceType": {
 				"type": "string",
 				"enum": [
@@ -5345,8 +5520,8 @@
 					"float"
 				]
 			},
-			"AtakPreference": {
-				"description": "One ATAK preference as a `.pref` file stores it.",
+			"TargetedAtakPreference": {
+				"description": "An event's preference with its target, as stored and published.",
 				"properties": {
 					"preference": {
 						"type": "string",
@@ -5360,13 +5535,17 @@
 					},
 					"value": {
 						"type": "string"
+					},
+					"target": {
+						"$ref": "#/components/schemas/AtakPreferenceTarget"
 					}
 				},
 				"required": [
 					"preference",
 					"key",
 					"type",
-					"value"
+					"value",
+					"target"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -5379,10 +5558,10 @@
 					},
 					"atakPreferences": {
 						"items": {
-							"$ref": "#/components/schemas/AtakPreference"
+							"$ref": "#/components/schemas/TargetedAtakPreference"
 						},
 						"type": "array",
-						"description": "The preferences members' ATAK receives: the uploaded file with the form's choices on top."
+						"description": "The event's ATAK preferences with their targets; each member's app gets its resolved share."
 					}
 				},
 				"required": [
@@ -5394,10 +5573,10 @@
 			},
 			"SnapshotTak": {
 				"$ref": "#/components/schemas/CurrentTakConfiguration",
-				"description": "The Meshtastic app's TAK mesh channel and the ATAK preferences; `null` in revisions created\nbefore version 4, and without ATAK preferences before version 7. Revisions\nbefore version 6 also stored a connection mode, which the switch `meshtasticEnabled` replaced."
+				"description": "The Meshtastic app's TAK mesh channel and the ATAK preferences; `null` in revisions created\nbefore version 4, and without ATAK preferences before version 7. Version 7 stored preferences\nwithout targets, which all reached the whole event. Revisions before version 6 also stored a\nconnection mode, which the switch `meshtasticEnabled` replaced."
 			},
 			"ConfigurationSnapshot": {
-				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added\n`meshtasticEnabled`; version 7 added `tak.atakPreferences`.",
+				"description": "Bump `schemaVersion` whenever the snapshot shape changes; old revisions are never rewritten.\nVersion 2 added `channels` in device order, the first being the primary channel; version 3\nadded `meshtastic`; version 4 added `tak`; version 5 added role TAK overrides; version 6 added\n`meshtasticEnabled`; version 7 added `tak.atakPreferences`; version 8 gave each preference a target.",
 				"properties": {
 					"schemaVersion": {
 						"type": "number",
@@ -5408,7 +5587,8 @@
 							4,
 							5,
 							6,
-							7
+							7,
+							8
 						]
 					},
 					"meshtasticEnabled": {
@@ -11175,16 +11355,72 @@
 				}
 			}
 		},
-		"/events/{eventId}/tak/configuration/atak-preferences": {
-			"put": {
-				"operationId": "UpdateAtakPreferenceFile",
+		"/events/{eventId}/tak/atak-preferences": {
+			"get": {
+				"operationId": "GetAtakPreferences",
 				"responses": {
 					"200": {
-						"description": "ATAK preference file updated",
+						"description": "ATAK preferences",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UpdateAtakPreferenceFileResponse"
+									"$ref": "#/components/schemas/AtakPreferenceListDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "ReplaceAtakPreferences",
+				"responses": {
+					"200": {
+						"description": "ATAK preferences replaced",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AtakPreferenceListDto"
 								}
 							}
 						}
@@ -11240,7 +11476,7 @@
 						}
 					}
 				},
-				"description": "Uploads or removes the event's ATAK preference file (`.pref`, such as ATAK's settings\nexport). Keys OpenMeshTak sets per member are removed and listed in the response.",
+				"description": "Replaces the whole list. Requires the current `version` (0 before the first save).",
 				"tags": [
 					"TAK configuration"
 				],
@@ -11267,11 +11503,159 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/UpdateAtakPreferenceFileRequest"
+								"$ref": "#/components/schemas/ReplaceAtakPreferencesRequest"
 							}
 						}
 					}
 				}
+			}
+		},
+		"/events/{eventId}/tak/atak-preferences/import": {
+			"post": {
+				"operationId": "ImportAtakPreferences",
+				"responses": {
+					"200": {
+						"description": "ATAK preferences imported",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ImportAtakPreferencesResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Imports a `.pref` file, such as ATAK's settings export, as event-wide entries. Keys\nOpenMeshTak owns and entries that do not fit ATAK's types are left out and listed.",
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ImportAtakPreferencesRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/tak/atak-preference-catalog": {
+			"get": {
+				"operationId": "GetAtakPreferenceCatalog",
+				"responses": {
+					"200": {
+						"description": "ATAK preference catalog",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AtakPreferenceCatalogDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"TAK configuration"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": []
 			}
 		},
 		"/setup": {

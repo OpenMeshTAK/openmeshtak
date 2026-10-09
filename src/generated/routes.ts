@@ -36,6 +36,10 @@ import { TakGroupsController } from './../modules/tak-groups/tak-groups.controll
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { TakConfigurationController } from './../modules/tak-configuration/tak-configuration.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { AtakPreferencesController } from './../modules/tak-configuration/atak-preferences.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { AtakPreferenceCatalogController } from './../modules/tak-configuration/atak-preferences.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SetupController } from './../modules/setup/setup.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ServerLogsController } from './../modules/server-logs/server-logs.controller.js';
@@ -691,42 +695,9 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "AtakSettingsDto": {
-        "dataType": "refObject",
-        "properties": {
-            "coordinateFormat": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["MGRS"]},{"dataType":"enum","enums":["DD"]},{"dataType":"enum","enums":["DM"]},{"dataType":"enum","enums":["DMS"]},{"dataType":"enum","enums":["UTM"]},{"dataType":"enum","enums":[null]}],"required":true},
-            "altitudeReference": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["HAE"]},{"dataType":"enum","enums":["MSL"]},{"dataType":"enum","enums":[null]}],"required":true},
-            "altitudeUnit": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["feet"]},{"dataType":"enum","enums":["meters"]},{"dataType":"enum","enums":[null]}],"required":true},
-            "speedUnit": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["mph"]},{"dataType":"enum","enums":["kmh"]},{"dataType":"enum","enums":["knots"]},{"dataType":"enum","enums":["mps"]},{"dataType":"enum","enums":[null]}],"required":true},
-            "distanceUnit": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["imperial"]},{"dataType":"enum","enums":["metric"]},{"dataType":"enum","enums":["nautical"]},{"dataType":"enum","enums":[null]}],"required":true},
-            "northReference": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["true"]},{"dataType":"enum","enums":["magnetic"]},{"dataType":"enum","enums":["grid"]},{"dataType":"enum","enums":[null]}],"required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TakGroupMode": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["off"]},{"dataType":"enum","enums":["simple"]},{"dataType":"enum","enums":["advanced"]}],"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "AtakPreferenceDto": {
-        "dataType": "refObject",
-        "properties": {
-            "preference": {"dataType":"string","required":true},
-            "key": {"dataType":"string","required":true},
-            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["string"]},{"dataType":"enum","enums":["boolean"]},{"dataType":"enum","enums":["integer"]},{"dataType":"enum","enums":["long"]},{"dataType":"enum","enums":["float"]}],"required":true},
-            "value": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "AtakPreferenceFileDto": {
-        "dataType": "refObject",
-        "properties": {
-            "fileName": {"dataType":"string","required":true},
-            "entries": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakPreferenceDto"},"required":true},
-        },
-        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TakConfigurationDto": {
@@ -734,10 +705,8 @@ const models: TsoaRoute.Models = {
         "properties": {
             "eventId": {"ref":"Uuid","required":true},
             "meshChannelId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
-            "atakSettings": {"ref":"AtakSettingsDto","required":true},
             "groupMode": {"ref":"TakGroupMode","required":true},
             "groupsInApp": {"dataType":"boolean","required":true},
-            "atakPreferenceFile": {"dataType":"union","subSchemas":[{"ref":"AtakPreferenceFileDto"},{"dataType":"enum","enums":[null]}],"required":true},
             "version": {"dataType":"double","required":true},
             "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
         },
@@ -749,36 +718,129 @@ const models: TsoaRoute.Models = {
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
             "meshChannelId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
-            "atakSettings": {"ref":"AtakSettingsDto"},
             "groupMode": {"ref":"TakGroupMode"},
             "groupsInApp": {"dataType":"boolean"},
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateAtakPreferenceFileResponse": {
+    "AtakPreferenceTargetDto": {
         "dataType": "refObject",
         "properties": {
-            "configuration": {"ref":"TakConfigurationDto","required":true},
-            "removedKeys": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["event"]},{"dataType":"enum","enums":["group"]},{"dataType":"enum","enums":["role"]},{"dataType":"enum","enums":["member"]}],"required":true},
+            "id": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "AtakPreferenceFileUpload": {
+    "AtakPreferenceTypeDto": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["string"]},{"dataType":"enum","enums":["boolean"]},{"dataType":"enum","enums":["integer"]},{"dataType":"enum","enums":["long"]},{"dataType":"enum","enums":["float"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AtakPreferenceEntryDto": {
         "dataType": "refObject",
         "properties": {
+            "target": {"ref":"AtakPreferenceTargetDto","required":true},
+            "preference": {"dataType":"string","required":true,"validators":{"maxLength":{"value":200}}},
+            "key": {"dataType":"string","required":true,"validators":{"maxLength":{"value":200}}},
+            "type": {"ref":"AtakPreferenceTypeDto","required":true},
+            "value": {"dataType":"string","required":true,"validators":{"maxLength":{"value":10000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AtakPreferenceListDto": {
+        "dataType": "refObject",
+        "properties": {
+            "eventId": {"ref":"Uuid","required":true},
+            "entries": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakPreferenceEntryDto"},"required":true},
+            "version": {"dataType":"double","required":true},
+            "updatedAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ReplaceAtakPreferencesRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+            "entries": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakPreferenceEntryDto"},"required":true,"validators":{"maxItems":{"value":2000}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SkippedAtakPreferenceDto": {
+        "dataType": "refObject",
+        "properties": {
+            "key": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ImportAtakPreferencesResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "list": {"ref":"AtakPreferenceListDto","required":true},
+            "importedCount": {"dataType":"double","required":true},
+            "removedKeys": {"dataType":"array","array":{"dataType":"string"},"required":true},
+            "invalidKeys": {"dataType":"array","array":{"dataType":"refObject","ref":"SkippedAtakPreferenceDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ImportAtakPreferencesRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
             "fileName": {"dataType":"string","required":true,"validators":{"maxLength":{"value":200}}},
             "content": {"dataType":"string","required":true,"validators":{"maxLength":{"value":262144}}},
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateAtakPreferenceFileRequest": {
+    "AtakCatalogValueDto": {
         "dataType": "refObject",
         "properties": {
-            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
-            "file": {"dataType":"union","subSchemas":[{"ref":"AtakPreferenceFileUpload"},{"dataType":"enum","enums":[null]}],"required":true},
+            "value": {"dataType":"string","required":true},
+            "label": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AtakCatalogKeyDto": {
+        "dataType": "refObject",
+        "properties": {
+            "key": {"dataType":"string","required":true},
+            "group": {"dataType":"string","required":true},
+            "type": {"ref":"AtakPreferenceTypeDto","required":true},
+            "defaultValue": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "values": {"dataType":"union","subSchemas":[{"dataType":"array","array":{"dataType":"refObject","ref":"AtakCatalogValueDto"}},{"dataType":"enum","enums":[null]}],"required":true},
+            "numeric": {"dataType":"boolean","required":true},
+            "description": {"dataType":"string","required":true},
+            "use": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["form"]},{"dataType":"enum","enums":["member"]},{"dataType":"enum","enums":["warning"]},{"dataType":"enum","enums":["advanced"]},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AtakCatalogTopicDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"string","required":true},
+            "title": {"dataType":"string","required":true},
+            "description": {"dataType":"string","required":true},
+            "keys": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakCatalogKeyDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AtakPreferenceCatalogDto": {
+        "dataType": "refObject",
+        "properties": {
+            "atakVersion": {"dataType":"string","required":true},
+            "topics": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakCatalogTopicDto"},"required":true},
+            "blockedKeys": {"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"reason":{"dataType":"string","required":true},"key":{"dataType":"string","required":true}}},"required":true},
         },
         "additionalProperties": false,
     },
@@ -1992,18 +2054,24 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AtakPreferenceTarget": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"type":{"dataType":"enum","enums":["event"],"required":true}}},{"dataType":"nestedObjectLiteral","nestedProperties":{"id":{"dataType":"string","required":true},"type":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["group"]},{"dataType":"enum","enums":["role"]},{"dataType":"enum","enums":["member"]}],"required":true}}}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AtakPreferenceType": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["string"]},{"dataType":"enum","enums":["boolean"]},{"dataType":"enum","enums":["integer"]},{"dataType":"enum","enums":["long"]},{"dataType":"enum","enums":["float"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "AtakPreference": {
+    "TargetedAtakPreference": {
         "dataType": "refObject",
         "properties": {
             "preference": {"dataType":"string","required":true},
             "key": {"dataType":"string","required":true},
             "type": {"ref":"AtakPreferenceType","required":true},
             "value": {"dataType":"string","required":true},
+            "target": {"ref":"AtakPreferenceTarget","required":true},
         },
         "additionalProperties": false,
     },
@@ -2012,7 +2080,7 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "meshChannelId": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
-            "atakPreferences": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakPreference"},"required":true},
+            "atakPreferences": {"dataType":"array","array":{"dataType":"refObject","ref":"TargetedAtakPreference"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -2025,7 +2093,7 @@ const models: TsoaRoute.Models = {
     "ConfigurationSnapshot": {
         "dataType": "refObject",
         "properties": {
-            "schemaVersion": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]},{"dataType":"enum","enums":[3]},{"dataType":"enum","enums":[4]},{"dataType":"enum","enums":[5]},{"dataType":"enum","enums":[6]},{"dataType":"enum","enums":[7]}],"required":true},
+            "schemaVersion": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":[1]},{"dataType":"enum","enums":[2]},{"dataType":"enum","enums":[3]},{"dataType":"enum","enums":[4]},{"dataType":"enum","enums":[5]},{"dataType":"enum","enums":[6]},{"dataType":"enum","enums":[7]},{"dataType":"enum","enums":[8]}],"required":true},
             "meshtasticEnabled": {"dataType":"boolean","required":true},
             "roles": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotRole"},"required":true},
             "groups": {"dataType":"array","array":{"dataType":"refObject","ref":"SnapshotGroup"},"required":true},
@@ -4478,28 +4546,124 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsTakConfigurationController_updateAtakPreferenceFile: Record<string, TsoaRoute.ParameterSchema> = {
+        const argsAtakPreferencesController_getAtakPreferences: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
-                body: {"in":"body","name":"body","required":true,"ref":"UpdateAtakPreferenceFileRequest"},
         };
-        app.put('/api/v1/events/:eventId/tak/configuration/atak-preferences',
+        app.get('/api/v1/events/:eventId/tak/atak-preferences',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
-            ...(fetchMiddlewares<RequestHandler>(TakConfigurationController)),
-            ...(fetchMiddlewares<RequestHandler>(TakConfigurationController.prototype.updateAtakPreferenceFile)),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferencesController)),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferencesController.prototype.getAtakPreferences)),
 
-            async function TakConfigurationController_updateAtakPreferenceFile(request: ExRequest, response: ExResponse, next: any) {
+            async function AtakPreferencesController_getAtakPreferences(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsTakConfigurationController_updateAtakPreferenceFile, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsAtakPreferencesController_getAtakPreferences, request, response });
 
-                const controller = new TakConfigurationController();
+                const controller = new AtakPreferencesController();
 
               await templateService.apiHandler({
-                methodName: 'updateAtakPreferenceFile',
+                methodName: 'getAtakPreferences',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAtakPreferencesController_replaceAtakPreferences: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"ReplaceAtakPreferencesRequest"},
+        };
+        app.put('/api/v1/events/:eventId/tak/atak-preferences',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferencesController)),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferencesController.prototype.replaceAtakPreferences)),
+
+            async function AtakPreferencesController_replaceAtakPreferences(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAtakPreferencesController_replaceAtakPreferences, request, response });
+
+                const controller = new AtakPreferencesController();
+
+              await templateService.apiHandler({
+                methodName: 'replaceAtakPreferences',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAtakPreferencesController_importAtakPreferences: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"ImportAtakPreferencesRequest"},
+        };
+        app.post('/api/v1/events/:eventId/tak/atak-preferences/import',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferencesController)),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferencesController.prototype.importAtakPreferences)),
+
+            async function AtakPreferencesController_importAtakPreferences(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAtakPreferencesController_importAtakPreferences, request, response });
+
+                const controller = new AtakPreferencesController();
+
+              await templateService.apiHandler({
+                methodName: 'importAtakPreferences',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAtakPreferenceCatalogController_getAtakPreferenceCatalog: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/tak/atak-preference-catalog',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferenceCatalogController)),
+            ...(fetchMiddlewares<RequestHandler>(AtakPreferenceCatalogController.prototype.getAtakPreferenceCatalog)),
+
+            async function AtakPreferenceCatalogController_getAtakPreferenceCatalog(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAtakPreferenceCatalogController_getAtakPreferenceCatalog, request, response });
+
+                const controller = new AtakPreferenceCatalogController();
+
+              await templateService.apiHandler({
+                methodName: 'getAtakPreferenceCatalog',
                 controller,
                 response,
                 next,

@@ -1,6 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { validationProblem } from "../../shared/errors/problem-error.js";
 import type { TakRole, TakTeam } from "../event-groups/provisioning-values.js";
+import { BLOCKED_ATAK_PREFERENCES } from "./atak-preference-catalog.js";
 
 /** One ATAK preference as a `.pref` file stores it. */
 export interface AtakPreference {
@@ -30,9 +31,9 @@ const CLASS_OF: Record<AtakPreferenceType, string> = {
 
 export const APP_PREFERENCES = "com.atakmap.app_preferences";
 export const MAX_PREFERENCE_FILE_BYTES = 256 * 1024;
-const MAX_ENTRIES = 2000;
-const MAX_KEY_LENGTH = 200;
-const MAX_VALUE_LENGTH = 10_000;
+export const MAX_ENTRIES = 2000;
+export const MAX_KEY_LENGTH = 200;
+export const MAX_VALUE_LENGTH = 10_000;
 
 /**
  * Keys OpenMeshTak sets itself or that belong to one person or device. A `.pref` exported from an
@@ -42,6 +43,7 @@ const MAX_VALUE_LENGTH = 10_000;
  * event membership instead (`takIdentityPreferences`).
  */
 const OWNED_PREFERENCE_GROUPS = new Set(["cot_streams"]);
+const BLOCKED_KEYS = new Set(BLOCKED_ATAK_PREFERENCES.map(({ key }) => key));
 const OWNED_KEYS = new Set([
   "apiSecureServerPort",
   "deviceProfileEnableOnConnect",
@@ -53,8 +55,14 @@ const OWNED_KEYS = new Set([
   "bestDeviceUID",
 ]);
 
-function isOwnedKey(key: string): boolean {
-  return OWNED_KEYS.has(key) || /password/i.test(key);
+/** Keys an event may never send, from the preference file or the entry list. */
+export function isOwnedKey(key: string): boolean {
+  return OWNED_KEYS.has(key) || BLOCKED_KEYS.has(key) || /password/i.test(key);
+}
+
+/** The `cot_streams` group is the server connection, which OpenMeshTak sets itself. */
+export function isOwnedPreferenceGroup(preference: string): boolean {
+  return OWNED_PREFERENCE_GROUPS.has(preference);
 }
 
 const parser = new XMLParser({
@@ -125,56 +133,6 @@ export function parseAtakPreferenceFile(content: string): { entries: AtakPrefere
   return { entries, removedKeys: [...new Set(removedKeys)] };
 }
 
-/**
- * The settings form. Keys and value codes come from ATAK-CIV's unit display preferences
- * (`unit_display_preferences.xml` and its arrays); ATAK stores all of them as strings.
- */
-export const ATAK_SETTINGS = {
-  coordinateFormat: { key: "coord_display_pref", values: { MGRS: "MGRS", DD: "DD", DM: "DM", DMS: "DMS", UTM: "UTM" } },
-  altitudeReference: { key: "alt_display_pref", values: { HAE: "HAE", MSL: "MSL" } },
-  altitudeUnit: { key: "alt_unit_pref", values: { feet: "0", meters: "1" } },
-  speedUnit: { key: "speed_unit_pref", values: { mph: "0", kmh: "1", knots: "2", mps: "3" } },
-  distanceUnit: { key: "rab_rng_units_pref", values: { imperial: "0", metric: "1", nautical: "2" } },
-  northReference: { key: "rab_north_ref_pref", values: { true: "0", magnetic: "1", grid: "2" } },
-} as const;
-
-type SettingsDefinition = typeof ATAK_SETTINGS;
-
-/** Chosen form values; `null` leaves the setting to the file or to ATAK's default. */
-export type AtakSettings = { [Name in keyof SettingsDefinition]: keyof SettingsDefinition[Name]["values"] | null };
-
-export const EMPTY_ATAK_SETTINGS: AtakSettings = {
-  coordinateFormat: null,
-  altitudeReference: null,
-  altitudeUnit: null,
-  speedUnit: null,
-  distanceUnit: null,
-  northReference: null,
-};
-
-/** Stored settings, tolerating rows written before a field existed. */
-export function readAtakSettings(value: unknown): AtakSettings {
-  const stored = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
-  const settings = { ...EMPTY_ATAK_SETTINGS };
-  for (const name of Object.keys(ATAK_SETTINGS) as Array<keyof AtakSettings>) {
-    const chosen = stored[name];
-    if (typeof chosen === "string" && chosen in ATAK_SETTINGS[name].values) {
-      (settings as Record<string, string | null>)[name] = chosen;
-    }
-  }
-  return settings;
-}
-
-/** Rejects form values that are not one of the known choices. */
-export function validateAtakSettings(settings: AtakSettings): void {
-  const problems = (Object.keys(ATAK_SETTINGS) as Array<keyof AtakSettings>)
-    .filter((name) => settings[name] !== null && !(String(settings[name]) in ATAK_SETTINGS[name].values))
-    .map((name) => ({ field: `atakSettings.${name}`, code: "INVALID_VALUE", message: "Choose one of the listed values." }));
-  if (problems.length > 0) {
-    throw validationProblem(problems);
-  }
-}
-
 function identity(entry: Pick<AtakPreference, "preference" | "key">): string {
   return `${entry.preference}\u0000${entry.key}`;
 }
@@ -189,18 +147,46 @@ export function mergeAtakPreferences(...lists: AtakPreference[][]): AtakPreferen
   return [...merged.values()];
 }
 
-/** The event's effective preferences: the file, with the form's choices on top. */
-export function effectiveAtakPreferences(fileEntries: AtakPreference[], settings: AtakSettings): AtakPreference[] {
-  const fromForm = (Object.keys(ATAK_SETTINGS) as Array<keyof AtakSettings>).flatMap((name) => {
-    const chosen = settings[name];
-    if (chosen === null) {
-      return [];
-    }
-    const definition = ATAK_SETTINGS[name];
-    const value = (definition.values as Record<string, string>)[chosen] ?? "";
-    return [{ preference: APP_PREFERENCES, key: definition.key, type: "string" as const, value }];
-  });
-  return mergeAtakPreferences(fileEntries, fromForm);
+/** Who an entry is for: the whole event, or one event group, role or member. */
+export type AtakPreferenceTarget = { type: "event" } | { type: "group" | "role" | "member"; id: string };
+
+/** An event's preference with its target, as stored and published. */
+export interface TargetedAtakPreference extends AtakPreference {
+  target: AtakPreferenceTarget;
+}
+
+/** The member a targeted list is resolved for. */
+export interface PreferenceRecipient {
+  memberId: string;
+  eventRoleId: string;
+  eventGroupId: string;
+}
+
+const SPECIFICITY: Record<AtakPreferenceTarget["type"], number> = { event: 0, group: 1, role: 2, member: 3 };
+
+function reaches(target: AtakPreferenceTarget, recipient: PreferenceRecipient): boolean {
+  switch (target.type) {
+    case "event":
+      return true;
+    case "group":
+      return target.id === recipient.eventGroupId;
+    case "role":
+      return target.id === recipient.eventRoleId;
+    case "member":
+      return target.id === recipient.memberId;
+  }
+}
+
+/**
+ * One event's preferences for one member. For the same key the most specific entry wins: member,
+ * then role, then group, then the whole event. Every member has exactly one role and one group,
+ * so there is never a tie.
+ */
+export function resolveAtakPreferences(entries: TargetedAtakPreference[], recipient: PreferenceRecipient): AtakPreference[] {
+  const matching = entries
+    .filter(({ target }) => reaches(target, recipient))
+    .sort((a, b) => SPECIFICITY[a.target.type] - SPECIFICITY[b.target.type]);
+  return mergeAtakPreferences(matching.map(({ preference, key, type, value }) => ({ preference, key, type, value })));
 }
 
 function escapeXml(value: string): string {

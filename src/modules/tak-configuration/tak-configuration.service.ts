@@ -5,38 +5,23 @@ import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import { validationProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
 import { requireMutableEvent, requireReadableEvent } from "../events/event-access.js";
-import {
-  effectiveAtakPreferences,
-  parseAtakPreferenceFile,
-  readAtakSettings,
-  validateAtakSettings,
-  type AtakPreference,
-} from "./atak-preferences.js";
-import type {
-  TakConfigurationDto,
-  UpdateAtakPreferenceFileRequest,
-  UpdateAtakPreferenceFileResponse,
-  UpdateTakConfigurationRequest,
-} from "./tak-configuration.dto.js";
+import { loadAtakPreferenceEntries } from "./atak-preference-list.service.js";
+import type { TargetedAtakPreference } from "./atak-preferences.js";
+import type { TakConfigurationDto, UpdateTakConfigurationRequest } from "./tak-configuration.dto.js";
 
-type TakClient = Pick<Prisma.TransactionClient, "takConfiguration">;
+type TakClient = Pick<Prisma.TransactionClient, "takConfiguration" | "atakPreferenceEntry">;
 
 export interface CurrentTakConfiguration {
   meshChannelId: string | null;
-  /** The preferences members' ATAK receives: the uploaded file with the form's choices on top. */
-  atakPreferences: AtakPreference[];
-}
-
-function fileEntriesOf(row: TakConfiguration | null): AtakPreference[] {
-  // Written only by `updateAtakPreferenceFile` from parsed, cleaned entries.
-  return (row?.atakPreferenceEntries ?? []) as unknown as AtakPreference[];
+  /** The event's ATAK preferences with their targets; each member's app gets its resolved share. */
+  atakPreferences: TargetedAtakPreference[];
 }
 
 export async function loadTakConfiguration(client: TakClient, eventId: string): Promise<CurrentTakConfiguration> {
   const row = await client.takConfiguration.findUnique({ where: { eventId } });
   return {
     meshChannelId: row?.meshChannelId ?? null,
-    atakPreferences: effectiveAtakPreferences(fileEntriesOf(row), readAtakSettings(row?.atakSettings)),
+    atakPreferences: await loadAtakPreferenceEntries(client, eventId),
   };
 }
 
@@ -44,13 +29,8 @@ function toDto(eventId: string, row: TakConfiguration | null): TakConfigurationD
   return {
     eventId,
     meshChannelId: row?.meshChannelId ?? null,
-    atakSettings: readAtakSettings(row?.atakSettings),
     groupMode: row?.groupMode === "simple" || row?.groupMode === "advanced" ? row.groupMode : "off",
     groupsInApp: row?.groupsInApp ?? false,
-    atakPreferenceFile:
-      row?.atakPreferenceFileName === null || row?.atakPreferenceFileName === undefined
-        ? null
-        : { fileName: row.atakPreferenceFileName, entries: fileEntriesOf(row) },
     version: row?.version ?? 0,
     updatedAt: row?.updatedAt.toISOString() ?? null,
   };
@@ -132,10 +112,6 @@ export async function updateTakConfiguration(
   await requireMutableEvent(actor.principal, eventId);
   const meshChannelId = await validatedChannel(eventId, input);
   const data: Prisma.TakConfigurationUncheckedUpdateInput = { meshChannelId };
-  if (input.atakSettings !== undefined) {
-    validateAtakSettings(input.atakSettings);
-    data.atakSettings = { ...input.atakSettings };
-  }
   if (input.groupMode !== undefined) {
     data.groupMode = input.groupMode;
   }
@@ -144,38 +120,6 @@ export async function updateTakConfiguration(
   }
   return saveVersioned(actor, eventId, input.version, data, {
     action: "tak-configuration.updated",
-    metadata: { meshChannelId, atakSettingsChanged: input.atakSettings !== undefined, groupMode: input.groupMode ?? null },
+    metadata: { meshChannelId, groupMode: input.groupMode ?? null },
   });
-}
-
-/**
- * Stores or removes the event's ATAK preference file. Keys OpenMeshTak owns, such as the server
- * connection, certificates, passwords, callsign, team and role, are removed and reported. Values
- * are not audited, because a file may contain anything the administrator's ATAK had set.
- */
-export async function updateAtakPreferenceFile(
-  actor: ActorContext,
-  eventId: string,
-  input: UpdateAtakPreferenceFileRequest,
-): Promise<UpdateAtakPreferenceFileResponse> {
-  await requireMutableEvent(actor.principal, eventId);
-  if (input.file === null) {
-    const configuration = await saveVersioned(
-      actor,
-      eventId,
-      input.version,
-      { atakPreferenceFileName: null, atakPreferenceEntries: [] },
-      { action: "tak-configuration.atak-preferences-removed", metadata: {} },
-    );
-    return { configuration, removedKeys: [] };
-  }
-  const { entries, removedKeys } = parseAtakPreferenceFile(input.file.content);
-  const configuration = await saveVersioned(
-    actor,
-    eventId,
-    input.version,
-    { atakPreferenceFileName: input.file.fileName, atakPreferenceEntries: entries as unknown as Prisma.InputJsonArray },
-    { action: "tak-configuration.atak-preferences-uploaded", metadata: { entryCount: entries.length, removedCount: removedKeys.length } },
-  );
-  return { configuration, removedKeys };
 }

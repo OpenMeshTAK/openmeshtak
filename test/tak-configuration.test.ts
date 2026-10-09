@@ -81,10 +81,8 @@ void describe("TAK configuration", () => {
     assert.deepEqual(configuration.body, {
       eventId,
       meshChannelId: null,
-      atakSettings: { coordinateFormat: null, altitudeReference: null, altitudeUnit: null, speedUnit: null, distanceUnit: null, northReference: null },
       groupMode: "off",
       groupsInApp: false,
-      atakPreferenceFile: null,
       version: 0,
       updatedAt: null,
     });

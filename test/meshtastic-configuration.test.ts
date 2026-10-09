@@ -218,7 +218,7 @@ void describe("event Meshtastic configuration", () => {
     await request(app).post(`/api/v1/events/${eventId}/activate`).set("Cookie", admin.cookie).send({ version: 1 }).expect(200);
     const revision = await database.eventConfigurationRevision.findFirstOrThrow({ where: { eventId } });
     const snapshot = revision.snapshot as { schemaVersion: number; meshtastic: Record<string, unknown> & { settings: Record<string, unknown> } };
-    assert.equal(snapshot.schemaVersion, 7);
+    assert.equal(snapshot.schemaVersion, 8);
     assert.equal(snapshot.meshtastic.profileId, "meshtastic-2.8");
     assert.match(String(snapshot.meshtastic.profileSha256), /^[0-9a-f]{64}$/);
     assert.equal(snapshot.meshtastic.settings["config.lora.hopLimit"], 4);

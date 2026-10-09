@@ -190,32 +190,37 @@ void describe("TAK Marti Data Package API", () => {
   });
 
   void it("delivers the event's published ATAK preferences in the device profile, again only after a change", async () => {
-    const configurationUrl = `/api/v1/events/${eventId}/tak/configuration`;
+    const preferencesUrl = `/api/v1/events/${eventId}/tak/atak-preferences`;
     const revisionsUrl = `/api/v1/events/${eventId}/configuration-revisions`;
     await request(app).post(revisionsUrl).set("Cookie", admin.cookie).send({}).expect(200);
-    const uploaded = await request(app)
-      .put(`${configurationUrl}/atak-preferences`)
+    const imported = await request(app)
+      .post(`${preferencesUrl}/import`)
       .set("Cookie", admin.cookie)
       .send({
         version: 0,
-        file: {
-          fileName: "atak.pref",
-          content:
-            '<preferences><preference version="1" name="com.atakmap.app_preferences">' +
-            '<entry key="alt_display_agl" class="class java.lang.Boolean">true</entry>' +
-            '<entry key="locationCallsign" class="class java.lang.String">ADMIN</entry></preference></preferences>',
-        },
+        fileName: "atak.pref",
+        content:
+          '<preferences><preference version="1" name="com.atakmap.app_preferences">' +
+          '<entry key="alt_display_agl" class="class java.lang.Boolean">true</entry>' +
+          '<entry key="coord_display_pref" class="class java.lang.String">DD</entry>' +
+          '<entry key="locationCallsign" class="class java.lang.String">ADMIN</entry></preference></preferences>',
       })
       .expect(200);
-    const upload = uploaded.body as { removedKeys: string[]; configuration: { version: number } };
-    assert.deepEqual(upload.removedKeys, ["locationCallsign"]);
+    const result = imported.body as { removedKeys: string[]; importedCount: number; list: { version: number; entries: unknown[] } };
+    assert.deepEqual(result.removedKeys, ["locationCallsign"]);
+    assert.equal(result.importedCount, 2);
+    const appPreferences = "com.atakmap.app_preferences";
     await request(app)
-      .put(configurationUrl)
+      .put(preferencesUrl)
       .set("Cookie", admin.cookie)
       .send({
-        version: upload.configuration.version,
-        meshChannelId: null,
-        atakSettings: { coordinateFormat: "MGRS", altitudeReference: null, altitudeUnit: "meters", speedUnit: null, distanceUnit: null, northReference: null },
+        version: result.list.version,
+        entries: [
+          ...result.list.entries,
+          { target: { type: "event", id: null }, preference: appPreferences, key: "alt_unit_pref", type: "string", value: "1" },
+          { target: { type: "group", id: bravoId }, preference: appPreferences, key: "coord_display_pref", type: "string", value: "MGRS" },
+          { target: { type: "group", id: charlieId }, preference: appPreferences, key: "coord_display_pref", type: "string", value: "UTM" },
+        ],
       })
       .expect(200);
     const pending = (await request(app).get(`${revisionsUrl}/pending-changes`).set("Cookie", admin.cookie).expect(200)).body as unknown;
@@ -228,8 +233,9 @@ void describe("TAK Marti Data Package API", () => {
     assert.equal(connection.status, 200, "first connection applies the preferences");
     const preferences = new TextDecoder().decode(unzipSync(new Uint8Array(connection.body))["preferences/preference.pref"]);
     assert.match(preferences, /<entry key="alt_display_agl" class="class java.lang.Boolean">true<\/entry>/);
-    assert.match(preferences, /<entry key="coord_display_pref" class="class java.lang.String">MGRS<\/entry>/);
+    assert.match(preferences, /<entry key="coord_display_pref" class="class java.lang.String">MGRS<\/entry>/, "the group's entry beats the event's");
     assert.match(preferences, /<entry key="alt_unit_pref" class="class java.lang.String">1<\/entry>/);
+    assert.doesNotMatch(preferences, /UTM/, "another group's entry stays out");
     // The uploaded ADMIN callsign is stripped; the member's own identity takes its place.
     assert.match(preferences, /<entry key="locationCallsign" class="class java.lang.String">Peter<\/entry>/);
     assert.match(preferences, /<entry key="locationTeam" class="class java.lang.String">[A-Za-z ]+<\/entry>/);
