@@ -168,6 +168,46 @@ export function readTile(blobId: string, storedPath: string, nested: boolean, z:
   return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff ? { bytes, mediaType: "image/jpeg" } : null;
 }
 
+export interface ListedTile extends Tile {
+  /** Packed ATAK key; tiles are listed in ascending key order. */
+  key: number;
+  z: number;
+  x: number;
+  y: number;
+}
+
+/**
+ * A page of tiles with keys above `afterKey`, for copying a whole cache in bounded steps. Rows
+ * that are not PNG/JPEG images or whose key cannot be decoded are skipped but still advance the
+ * returned `lastKey`, so a damaged row never stalls the listing.
+ */
+export function listTiles(
+  blobId: string,
+  storedPath: string,
+  nested: boolean,
+  afterKey: number,
+  limit: number,
+): { tiles: ListedTile[]; lastKey: number | null; hasMore: boolean } | null {
+  const database = openCache(blobId, storedPath, nested);
+  if (database === null) {
+    return null;
+  }
+  const rows = database
+    .prepare("SELECT key, tile FROM tiles WHERE key > ? ORDER BY key LIMIT ?")
+    .all(afterKey, limit + 1) as Array<{ key: number | bigint; tile: unknown }>;
+  const page = rows.slice(0, limit);
+  const tiles = page.flatMap(({ key, tile }): ListedTile[] => {
+    const position = decodeKey(Number(key));
+    if (position === null || !(tile instanceof Uint8Array)) {
+      return [];
+    }
+    const found = readTile(blobId, storedPath, nested, position.z, position.x, position.y);
+    return found === null ? [] : [{ ...found, key: Number(key), ...position }];
+  });
+  const last = page.at(-1);
+  return { tiles, lastKey: last === undefined ? null : Number(last.key), hasMore: rows.length > limit };
+}
+
 /** Closes and forgets a cache, for example before its stored file is deleted. */
 export function forgetTileCache(blobId: string): void {
   open.get(blobId)?.close();
