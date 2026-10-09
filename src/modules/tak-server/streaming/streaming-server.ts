@@ -12,6 +12,7 @@ import { takMessageToXml, xmlToTakMessage } from "./cot-protobuf.js";
 import { cotRouter, type CotPeer, type CotRouter } from "./cot-router.js";
 import { cotScopeFor } from "./cot-scope.js";
 import { takGroupActivity } from "../tak-group-activity.js";
+import { writeFromStream } from "../../missions/mission-writes.js";
 
 /** Sustained events per second a client may send; bursts up to the bucket size are fine. */
 const EVENTS_PER_SECOND = 20;
@@ -131,7 +132,13 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
     }
     if (event.destinations !== null) {
       // Addressed events, such as direct chat messages, are private between sender and
-      // recipients: they are neither replayed, shown in the live view nor recorded.
+      // recipients: they are neither replayed, shown in the live view nor recorded. Events for a
+      // mission go into the mission, which announces them to its subscribers.
+      if (event.destinations.missions.length > 0) {
+        writeFromStream(peer.userId, access, peer.deviceUid, event.destinations.missions, event.xml).catch((error: unknown) => {
+          logger.error({ error, event: "mission_stream_write_failed" }, "A mission change from a TAK app failed");
+        });
+      }
       router.publish(peer, event.xml, event.destinations);
       return;
     }

@@ -12,7 +12,7 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import { referencedBlobIds, removeUnreferencedBlobs } from "./package-content-cleanup.js";
-import { nextPackageSortOrder } from "./package-order.js";
+import { nextPackageSortOrder, requireUniqueMissionName } from "./package-order.js";
 import { contentSummaries, draftHashOf, exportSizeOf } from "./package-state.js";
 import { audienceFromSelectors } from "../event-audience/event-audience.js";
 import { requireEventPermission } from "../events/event-access.js";
@@ -20,6 +20,7 @@ import type {
   CreateDataPackageRequest,
   DataPackageContentSummary,
   DataPackageDto,
+  DataPackageKind,
   DataPackagePage,
   UpdateDataPackageRequest,
 } from "./data-package.dto.js";
@@ -28,10 +29,12 @@ import { requireEditableEvent, requireDataPackage } from "./data-package-access.
 const packageSelection = {
   id: true,
   eventId: true,
+  kind: true,
   name: true,
   description: true,
   version: true,
   sortOrder: true,
+  writers: true,
   audienceAll: true,
   audience: true,
   installOnEnrollment: true,
@@ -54,6 +57,7 @@ async function toDto(row: PackageRow, draftContents: DataPackageContentSummary):
   return {
     id: row.id,
     eventId: row.eventId,
+    kind: row.kind === "mission" ? "mission" : "package",
     name: row.name,
     description: row.description,
     latestRevision: latest?.number ?? null,
@@ -72,6 +76,7 @@ async function toDto(row: PackageRow, draftContents: DataPackageContentSummary):
       createdAt: source.createdAt.toISOString(),
     })),
     audience: { allMembers: row.audienceAll, ...audienceFromSelectors(row.audience) },
+    writers: audienceFromSelectors(row.writers),
     takDelivery: { onEnrollment: row.installOnEnrollment, onConnection: row.installOnConnection },
     sortOrder: row.sortOrder,
     version: row.version,
@@ -108,13 +113,14 @@ export async function listDataPackages(
   eventId: string,
   limit = DEFAULT_PAGE_LIMIT,
   cursor?: string,
+  kind?: DataPackageKind,
 ): Promise<DataPackagePage> {
   await requireEventPermission(principal, eventId, "data-packages.read");
-  const context = `events/${eventId}/data-packages`;
+  const context = `events/${eventId}/data-packages/${kind ?? "all"}`;
   const position = cursor === undefined ? null : decodeCursor(context, cursor);
 
   const rows = await database.dataPackage.findMany({
-    where: { eventId, ...afterCursor(position) },
+    where: { eventId, ...(kind === undefined ? {} : { kind }), ...afterCursor(position) },
     orderBy: [...CURSOR_ORDER],
     take: limit + 1,
     select: packageSelection,
@@ -128,7 +134,7 @@ export async function getDataPackage(principal: Principal, eventId: string, pack
   return loadDto(packageId);
 }
 
-/** New data packages start with one empty layer so the editor can draw immediately. */
+/** New data packages and missions start with one empty layer so the editor can draw immediately. */
 export async function createDataPackage(
   actor: ActorContext,
   eventId: string,
@@ -138,11 +144,15 @@ export async function createDataPackage(
 
   const packageId = randomUUID();
   await database.$transaction(async (transaction) => {
+    if (input.kind === "mission") {
+      await requireUniqueMissionName(transaction, eventId, input.name);
+    }
     await transaction.dataPackage.create({
       data: {
         id: packageId,
         eventId,
-        sortOrder: await nextPackageSortOrder(transaction, eventId),
+        sortOrder: await nextPackageSortOrder(transaction, eventId, input.kind ?? "package"),
+        kind: input.kind ?? "package",
         name: input.name,
         description: input.description ?? null,
         layers: { create: { id: randomUUID(), name: "Layer 1", sortOrder: 0 } },
@@ -159,8 +169,11 @@ export async function updateDataPackage(
   packageId: string,
   input: UpdateDataPackageRequest,
 ): Promise<DataPackageDto> {
-  const { event } = await requireDataPackage(actor.principal, eventId, packageId, "data-packages.edit");
+  const { event, dataPackage } = await requireDataPackage(actor.principal, eventId, packageId, "data-packages.edit");
   requireEditableEvent(event);
+  if (dataPackage.kind === "mission") {
+    await requireUniqueMissionName(database, eventId, input.name, packageId);
+  }
 
   const updated = await database.dataPackage.updateMany({
     where: { id: packageId, eventId, version: input.version },

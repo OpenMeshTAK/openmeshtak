@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Prisma } from "../../generated/prisma/client.js";
+import type { PackageObject, Prisma } from "../../generated/prisma/client.js";
 import type { PackageGeometry, PackageObjectKind, PackageObjectStyle, TakMarker } from "./package-object.dto.js";
 import { readTak } from "./tak-marker.js";
 
@@ -49,6 +49,21 @@ export interface PackageSnapshot {
   contents?: PackageSnapshotContent[];
 }
 
+/** How one stored object appears in a snapshot. */
+export function snapshotObjectOf(object: PackageObject): PackageSnapshotObject {
+  return {
+    id: object.id,
+    layerId: object.layerId,
+    kind: object.kind as PackageObjectKind,
+    name: object.name,
+    description: object.description,
+    // Written only by the objects service after validation.
+    geometry: object.geometry as unknown as PackageGeometry,
+    style: object.style as unknown as PackageObjectStyle,
+    tak: readTak(object.tak),
+  };
+}
+
 /**
  * Reads the draft in a fixed order (layers by `sortOrder`, objects by layer order and creation) so
  * an unchanged data package always serializes to the same JSON and therefore the same hash.
@@ -77,17 +92,7 @@ export async function buildPackageSnapshot(
     name: dataPackage.name,
     description: dataPackage.description,
     layers: dataPackage.layers.map(({ id, name, sortOrder, visible }) => ({ id, name, sortOrder, visible })),
-    objects: objects.map((object) => ({
-      id: object.id,
-      layerId: object.layerId,
-      kind: object.kind as PackageObjectKind,
-      name: object.name,
-      description: object.description,
-      // Written only by the objects service after validation.
-      geometry: object.geometry as unknown as PackageGeometry,
-      style: object.style as unknown as PackageObjectStyle,
-      tak: readTak(object.tak),
-    })),
+    objects: objects.map(snapshotObjectOf),
     contents: dataPackage.contents.map((content) => ({
       id: content.id,
       layerId: content.layerId,

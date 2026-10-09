@@ -110,6 +110,12 @@ function eventBody(object: PackageSnapshotObject) {
   }
 }
 
+/** The CoT type and position an object is exported with, e.g. for mission change details. */
+export function objectCotSummary(object: PackageSnapshotObject): { type: string; lat: number; lon: number } {
+  const body = eventBody(object);
+  return { type: body.type, lat: Number(body.point["@_lat"]), lon: Number(body.point["@_lon"]) };
+}
+
 /** Builds the CoT event XML for one published object. */
 export function objectToCot(object: PackageSnapshotObject, publishedAt: Date): string {
   const body = eventBody(object);

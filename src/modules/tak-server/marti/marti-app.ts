@@ -7,6 +7,8 @@ import { authenticateTakClient, type AuthenticatedTakClient } from "../client-au
 import { cotRouter } from "../streaming/cot-router.js";
 import { cotScopeFor } from "../streaming/cot-scope.js";
 import { loadTakServerSettings } from "../tak-server-settings.js";
+import { registerMissionRoutes } from "../../missions/marti-missions.js";
+import { missionFileByHash } from "../../missions/mission-files.js";
 import { cotHistory, latestCot } from "./cot-history.js";
 import { allGroups, setActiveGroups } from "./server-groups.js";
 import { sendDeviceProfile } from "./profile-response.js";
@@ -80,11 +82,35 @@ async function findByHash(client: AuthenticatedTakClient, hash: unknown): Promis
   return null;
 }
 
+/** A file of a mission the caller sees, which Data Sync downloads by hash like a Data Package. */
+async function missionFile(request: Request, response: Response<unknown, Locals>): Promise<void> {
+  const { client } = response.locals;
+  const hash = request.query.hash;
+  const found = typeof hash === "string" ? await missionFileByHash(client.userId, client.access, hash) : null;
+  if (found === null) {
+    response.status(404).end();
+    return;
+  }
+  if (request.method === "HEAD") {
+    response.status(200).end();
+    return;
+  }
+  await recordAudit({
+    actor: { type: "user", id: client.userId },
+    action: "mission.file-downloaded",
+    targetType: "data-package",
+    targetId: found.missionId,
+    result: "success",
+    metadata: { eventId: found.eventId, contentId: found.file.id, via: "tak-server", certificateId: client.certificate.id },
+  });
+  response.attachment(found.file.archivePath.split("/").pop() ?? found.file.name).type(found.file.mediaType).send(Buffer.from(found.bytes));
+}
+
 async function content(request: Request, response: Response<unknown, Locals>): Promise<void> {
   const { client } = response.locals;
   const item = await findByHash(client, request.query.hash);
   if (item === null) {
-    response.status(404).end();
+    await missionFile(request, response);
     return;
   }
   if (request.method === "HEAD") {
@@ -154,7 +180,7 @@ function wrap(handler: (request: Request, response: Response<unknown, Locals>) =
 /**
  * The Marti API subset Core offers TAK apps: server information, read-only access to published
  * Data Packages, device profiles, the recorded CoT history of events that record their traffic
- * and the TAK groups of the advanced group mode. Uploads and missions are not offered, so their endpoints answer 403 or 404.
+ * the TAK groups of the advanced group mode and the read side of the Mission API (Data Sync). Uploads and missions are not offered, so their endpoints answer 403 or 404.
  */
 export function createMartiApp(): Express {
   const app = express();
@@ -165,6 +191,7 @@ export function createMartiApp(): Express {
   app.get("/Marti/api/version/config", wrap(versionConfig));
   app.get("/Marti/api/clientEndPoints", clientEndPoints);
   app.get("/Marti/api/groups/all", wrap(allGroups));
+  registerMissionRoutes(app, wrap);
   app.put("/Marti/api/groups/active", express.json({ limit: "64kb" }), wrap(setActiveGroups));
   app.get("/Marti/api/device/profile/connection", wrap(connectionProfile));
   app.get("/Marti/api/cot/xml/:uid/all", wrap(cotHistory));

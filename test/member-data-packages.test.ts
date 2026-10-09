@@ -95,6 +95,47 @@ void describe("member data packages", () => {
     assert.deepEqual(await names(admin, annaMemberId), ["Everyone"], "members.read previews the list");
   });
 
+  void it("keeps missions apart: never delivered as packages, listed by kind and with their own writers", async () => {
+    await createPackage("Everyone", null);
+    const mission = (
+      await request(app).post(packagesUrl()).set("Cookie", admin.cookie).send({ name: "Lageplan Nord", kind: "mission" }).expect(201)
+    ).body as { id: string; kind: string; version: number; writers: unknown };
+    assert.equal(mission.kind, "mission");
+    assert.deepEqual(mission.writers, none);
+    await request(app).post(`${packagesUrl()}/${mission.id}/revisions`).set("Cookie", admin.cookie).expect(200);
+
+    assert.deepEqual(await names(peter, peterMemberId), ["Everyone"], "a synced mission is no Data Package download");
+    const missions = (await request(app).get(`${packagesUrl()}?kind=mission`).set("Cookie", admin.cookie).expect(200)).body as {
+      items: Array<{ name: string }>;
+    };
+    assert.deepEqual(missions.items.map(({ name }) => name), ["Lageplan Nord"]);
+    const packages = (await request(app).get(`${packagesUrl()}?kind=package`).set("Cookie", admin.cookie).expect(200)).body as {
+      items: Array<{ name: string }>;
+    };
+    assert.deepEqual(packages.items.map(({ name }) => name), ["Everyone"]);
+
+    const current = (await request(app).get(`${packagesUrl()}/${mission.id}`).set("Cookie", admin.cookie).expect(200)).body as { version: number };
+    const updated = (
+      await request(app)
+        .put(`${packagesUrl()}/${mission.id}/writers`)
+        .set("Cookie", admin.cookie)
+        .send({ version: current.version, writers: { ...none, groupIds: [bravoId] } })
+        .expect(200)
+    ).body as { writers: { groupIds: string[] } };
+    assert.deepEqual(updated.writers.groupIds, [bravoId]);
+
+    const plain = (await request(app).get(`${packagesUrl()}?kind=package`).set("Cookie", admin.cookie).expect(200)).body as {
+      items: Array<{ id: string; version: number }>;
+    };
+    const plainPackage = plain.items[0];
+    assert.ok(plainPackage);
+    await request(app)
+      .put(`${packagesUrl()}/${plainPackage.id}/writers`)
+      .set("Cookie", admin.cookie)
+      .send({ version: plainPackage.version, writers: none })
+      .expect(409);
+  });
+
   void it("tells the member how the TAK server delivers each package", async () => {
     const id = await createPackage("Everyone", null);
     await database.dataPackage.update({ where: { id }, data: { installOnConnection: true } });

@@ -7,6 +7,7 @@ import { notFoundProblem, ProblemError } from "../../shared/errors/problem-error
 import { issueClientCertificate } from "./client-certificates.js";
 import { trustedCertificateAuthorities } from "./certificate-authority.js";
 import { buildItakConnectionPackage } from "./itak-connection-package.js";
+import { memberTakIdentity } from "./marti/member-atak-preferences.js";
 import { serverTrustAnchors } from "./server-certificate.js";
 import { hasAnyTakAccess, takAccessFor } from "./tak-access.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
@@ -82,6 +83,7 @@ export async function createCertificatePackage(
     clientPrivateKeyPem: await exportPrivateKeyPem(keys.privateKey),
     clientCaPems: authorities.map(({ certificatePem }) => certificatePem),
     password,
+    identity: await memberTakIdentity(actor.principal.id),
   });
 
   await recordAudit({

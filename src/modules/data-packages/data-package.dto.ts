@@ -48,9 +48,16 @@ export interface DataPackageContentSummary {
   rubberSheets: number;
 }
 
+/**
+ * `package`: a Data Package, published as revisions and installed by members. `mission`: an ATAK
+ * Data Sync mission edited with the same editor; each revision is synced to subscribed TAK apps.
+ */
+export type DataPackageKind = "package" | "mission";
+
 export interface DataPackageDto {
   id: Uuid;
   eventId: Uuid;
+  kind: DataPackageKind;
   name: string;
   description: string | null;
   /** Number of the newest published revision, or `null` while nothing is published. */
@@ -67,6 +74,8 @@ export interface DataPackageDto {
   /** Published package revisions whose content was copied into this package's initial draft. */
   sources: DataPackageSourceDto[];
   audience: PackageAudience;
+  /** Missions only: who may change the mission from a TAK app; empty for packages. */
+  writers: EventAudience;
   takDelivery: PackageTakDelivery;
   /** Drawing order within the event; lower values are drawn first, below higher ones. */
   sortOrder: number;
@@ -102,6 +111,18 @@ export interface CreateDataPackageRequest {
   name: string;
   /** @maxLength 1000 */
   description?: string | null;
+  /** Fixed at creation; `package` when omitted. */
+  kind?: DataPackageKind;
+}
+
+export interface UpdatePackageWritersRequest {
+  /**
+   * Version the client last read.
+   * @isInt
+   * @minimum 1
+   */
+  version: number;
+  writers: EventAudience;
 }
 
 export interface UpdateDataPackageRequest {

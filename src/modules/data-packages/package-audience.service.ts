@@ -2,10 +2,15 @@ import { randomUUID } from "node:crypto";
 import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
-import { notFoundProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
+import { notFoundProblem, ProblemError, versionConflictProblem } from "../../shared/errors/problem-error.js";
 import { audienceSelectors, EMPTY_AUDIENCE, validateAudience } from "../event-audience/event-audience.js";
 import { requireDataPackage, requireEditableEvent } from "./data-package-access.js";
-import type { DataPackageDto, UpdatePackageAudienceRequest, UpdatePackageTakDeliveryRequest } from "./data-package.dto.js";
+import type {
+  DataPackageDto,
+  UpdatePackageAudienceRequest,
+  UpdatePackageTakDeliveryRequest,
+  UpdatePackageWritersRequest,
+} from "./data-package.dto.js";
 import { loadDto } from "./data-packages.service.js";
 
 /**
@@ -100,6 +105,61 @@ export async function updatePackageTakDelivery(
         result: "success",
         traceId: actor.traceId,
         metadata: { eventId, ...input.takDelivery },
+      },
+      transaction,
+    );
+  });
+  return loadDto(packageId);
+}
+
+/**
+ * Missions only: who may change the mission from a TAK app. Like the audience, this is a
+ * publishing decision and takes effect immediately; the editor itself keeps its permissions.
+ */
+export async function updateMissionWriters(
+  actor: ActorContext,
+  eventId: string,
+  packageId: string,
+  input: UpdatePackageWritersRequest,
+): Promise<DataPackageDto> {
+  const { event, dataPackage } = await requireDataPackage(actor.principal, eventId, packageId, "data-packages.publish");
+  requireEditableEvent(event);
+  if (dataPackage.kind !== "mission") {
+    throw new ProblemError({
+      type: "urn:openmeshtak:problem:not-a-mission",
+      title: "Not a mission",
+      status: 409,
+      detail: "Only missions have writers.",
+      code: "NOT_A_MISSION",
+    });
+  }
+  if (dataPackage.version !== input.version) {
+    throw versionConflictProblem(dataPackage.version);
+  }
+  await validateAudience(eventId, input.writers, "writers");
+
+  await database.$transaction(async (transaction) => {
+    const updated = await transaction.dataPackage.updateMany({
+      where: { id: packageId, eventId, version: input.version },
+      data: { version: { increment: 1 } },
+    });
+    if (updated.count !== 1) {
+      const latest = await transaction.dataPackage.findUnique({ where: { id: packageId }, select: { version: true } });
+      throw latest === null ? notFoundProblem() : versionConflictProblem(latest.version);
+    }
+    await transaction.dataPackageWriter.deleteMany({ where: { packageId } });
+    await transaction.dataPackageWriter.createMany({
+      data: audienceSelectors(input.writers).map((target) => ({ id: randomUUID(), packageId, ...target })),
+    });
+    await recordAudit(
+      {
+        actor: actor.principal,
+        action: "mission.writers-updated",
+        targetType: "data-package",
+        targetId: packageId,
+        result: "success",
+        traceId: actor.traceId,
+        metadata: { eventId, groups: input.writers.groupIds.length, roles: input.writers.roleIds.length, members: input.writers.memberIds.length },
       },
       transaction,
     );

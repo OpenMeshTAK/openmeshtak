@@ -11,7 +11,7 @@ import { requireEditableEvent } from "./data-package-access.js";
 import { loadDto } from "./data-packages.service.js";
 import { MAX_LAYERS_PER_PACKAGE } from "./package-layers.service.js";
 import { MAX_OBJECTS_PER_PACKAGE } from "./package-objects.service.js";
-import { nextPackageSortOrder } from "./package-order.js";
+import { nextPackageSortOrder, requireUniqueMissionName } from "./package-order.js";
 import type { CreateDataPackageCopyRequest } from "./package-copy.dto.js";
 
 function limitProblem(kind: "layers" | "objects", maximum: number): ProblemError {
@@ -56,13 +56,17 @@ export async function createDataPackageCopy(
 
   const packageId = randomUUID();
   await database.$transaction(async (transaction) => {
+    if (input.kind === "mission") {
+      await requireUniqueMissionName(transaction, eventId, input.name);
+    }
     await transaction.dataPackage.create({
       data: {
         id: packageId,
         eventId,
+        kind: input.kind ?? "package",
         name: input.name,
         description: input.description ?? null,
-        sortOrder: await nextPackageSortOrder(transaction, eventId),
+        sortOrder: await nextPackageSortOrder(transaction, eventId, input.kind ?? "package"),
       },
     });
 

@@ -1,35 +1,81 @@
 import { database } from "../../../shared/database/database.js";
 import { latestConfigurationRevision } from "../../event-configuration/configuration-revisions.service.js";
-import { parseConfigurationSnapshot } from "../../event-configuration/configuration-snapshot.js";
-import { mergeAtakPreferences, type AtakPreference } from "../../tak-configuration/atak-preferences.js";
+import { parseConfigurationSnapshot, type ConfigurationSnapshot } from "../../event-configuration/configuration-snapshot.js";
+import { mergeAtakPreferences, takIdentityPreferences, type AtakPreference, type TakIdentity } from "../../tak-configuration/atak-preferences.js";
 
-/**
- * The ATAK preferences of the user's active events, from their published revisions. A member of
- * several events gets one merged set: for the same key, the event that started last wins, using
- * the creation time for events without a start date. Preferences follow membership, so
- * administrators who only have TAK access get none.
- *
- * `changed` tells whether any of these revisions is newer than `changedSince`, so a connection
- * profile only carries preferences when they may differ from what the app already applied.
- */
-export async function memberAtakPreferences(userId: string, changedSince: Date | null): Promise<{ entries: AtakPreference[]; changed: boolean }> {
-  const events = await database.event.findMany({
-    where: { status: "active", members: { some: { userId } } },
-    select: { id: true, startsAt: true, createdAt: true },
+interface ActiveMembership {
+  callsign: string;
+  eventRoleId: string;
+  eventGroupId: string;
+  updatedAt: Date;
+  snapshot: ConfigurationSnapshot;
+  revisionCreatedAt: Date;
+}
+
+/** The user's memberships in active events with a published revision, the latest-starting event last. */
+async function activeMemberships(userId: string): Promise<ActiveMembership[]> {
+  const members = await database.eventMember.findMany({
+    where: { userId, event: { status: "active" } },
+    select: {
+      callsign: true,
+      eventRoleId: true,
+      eventGroupId: true,
+      updatedAt: true,
+      event: { select: { id: true, startsAt: true, createdAt: true } },
+    },
   });
-  const ordered = events.sort((a, b) => (a.startsAt ?? a.createdAt).getTime() - (b.startsAt ?? b.createdAt).getTime());
-  const lists: AtakPreference[][] = [];
-  let changed = changedSince === null;
-  for (const event of ordered) {
-    const revision = await latestConfigurationRevision(database, event.id);
-    if (revision === null) {
-      continue;
-    }
-    const entries = parseConfigurationSnapshot(revision.snapshot).tak?.atakPreferences ?? [];
-    if (entries.length > 0) {
-      lists.push(entries);
-      changed ||= changedSince !== null && revision.createdAt > changedSince;
+  const startOf = ({ event }: (typeof members)[number]) => (event.startsAt ?? event.createdAt).getTime();
+  const memberships: ActiveMembership[] = [];
+  for (const member of members.sort((a, b) => startOf(a) - startOf(b))) {
+    const revision = await latestConfigurationRevision(database, member.event.id);
+    if (revision !== null) {
+      memberships.push({ ...member, snapshot: parseConfigurationSnapshot(revision.snapshot), revisionCreatedAt: revision.createdAt });
     }
   }
+  return memberships;
+}
+
+/**
+ * Callsign, team color and TAK role as the published revision resolves them: the callsign from the
+ * member record, the team from the group, the role from the role override or else the group.
+ * `null` when the revision predates the member's current role or group.
+ */
+function identityOf(membership: ActiveMembership): TakIdentity | null {
+  const role = membership.snapshot.roles.find(({ id }) => id === membership.eventRoleId);
+  const group = membership.snapshot.groups.find(({ id }) => id === membership.eventGroupId);
+  if (role === undefined || group === undefined) {
+    return null;
+  }
+  return {
+    callsign: membership.callsign,
+    team: group.provisioning.tak.team,
+    role: role.takRoleOverride ?? group.provisioning.tak.role,
+  };
+}
+
+/**
+ * The ATAK preferences of the user's active events, from their published revisions, each event
+ * adding the member's callsign, team and role. A member of several events gets one merged set: for
+ * the same key, the event that started last wins, using the creation time for events without a
+ * start date. Preferences follow membership, so administrators who only have TAK access get none.
+ *
+ * `changed` tells whether any of these revisions or memberships is newer than `changedSince`, so a
+ * connection profile only carries preferences when they may differ from what the app already
+ * applied. The membership counts because a callsign override or a new group is no revision.
+ */
+export async function memberAtakPreferences(userId: string, changedSince: Date | null): Promise<{ entries: AtakPreference[]; changed: boolean }> {
+  const lists: AtakPreference[][] = [];
+  let changed = changedSince === null;
+  for (const membership of await activeMemberships(userId)) {
+    const identity = identityOf(membership);
+    lists.push([...(membership.snapshot.tak?.atakPreferences ?? []), ...(identity === null ? [] : takIdentityPreferences(identity))]);
+    changed ||= changedSince !== null && (membership.revisionCreatedAt > changedSince || membership.updatedAt > changedSince);
+  }
   return { entries: mergeAtakPreferences(...lists), changed };
+}
+
+/** The identity of the latest-starting active event, for packages that carry no event preferences. */
+export async function memberTakIdentity(userId: string): Promise<TakIdentity | null> {
+  const identities = (await activeMemberships(userId)).map(identityOf).filter((identity) => identity !== null);
+  return identities.at(-1) ?? null;
 }

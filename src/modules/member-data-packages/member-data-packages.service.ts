@@ -5,6 +5,7 @@ import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem } from "../../shared/errors/problem-error.js";
 import { buildAtakExport, type AtakExport } from "../data-packages/package-atak.service.js";
+import type { DataPackageKind } from "../data-packages/data-package.dto.js";
 import { audienceFromSelectors, audienceIncludes, type AudienceRecipient } from "../event-audience/event-audience.js";
 import { requireMemberArtifactAccess } from "../member-artifacts/member-artifact-access.js";
 import type { MemberDataPackageDto } from "./member-data-package.dto.js";
@@ -43,11 +44,12 @@ async function canListFor(principal: Principal, eventId: string, member: MemberC
 
 /**
  * Published packages whose audience includes the member, each at its newest revision. Packages
- * outside the audience are absent, and drafts never reach participants.
+ * outside the audience are absent, and drafts never reach participants. Missions use the same
+ * rule for who sees them, but reach TAK apps through Data Sync, never as Data Packages.
  */
-export async function receivedPackages(eventId: string, recipient: AudienceRecipient) {
+export async function receivedPackages(eventId: string, recipient: AudienceRecipient, kind: DataPackageKind = "package") {
   const packages = await database.dataPackage.findMany({
-    where: { eventId, revisions: { some: {} } },
+    where: { eventId, kind, revisions: { some: {} } },
     orderBy: { name: "asc" },
     include: { audience: true, revisions: { orderBy: { number: "desc" }, take: 1 } },
   });

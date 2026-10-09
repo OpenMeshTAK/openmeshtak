@@ -18,7 +18,7 @@ export interface VisiblePackage {
 export async function visiblePackagesFor(userId: string, access: TakAccess): Promise<VisiblePackage[]> {
   if (access.admin) {
     const packages = await database.dataPackage.findMany({
-      where: { revisions: { some: {} } },
+      where: { kind: "package", revisions: { some: {} } },
       orderBy: { name: "asc" },
       include: { revisions: { orderBy: { number: "desc" }, take: 1 } },
     });

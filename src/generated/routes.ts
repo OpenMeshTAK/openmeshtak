@@ -2338,6 +2338,11 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DataPackageKind": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["package"]},{"dataType":"enum","enums":["mission"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DataPackageContentSummary": {
         "dataType": "refObject",
         "properties": {
@@ -2390,6 +2395,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "id": {"ref":"Uuid","required":true},
             "eventId": {"ref":"Uuid","required":true},
+            "kind": {"ref":"DataPackageKind","required":true},
             "name": {"dataType":"string","required":true},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "latestRevision": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
@@ -2398,6 +2404,7 @@ const models: TsoaRoute.Models = {
             "draftContents": {"ref":"DataPackageContentSummary","required":true},
             "sources": {"dataType":"array","array":{"dataType":"refObject","ref":"DataPackageSourceDto"},"required":true},
             "audience": {"ref":"PackageAudience","required":true},
+            "writers": {"ref":"EventAudience","required":true},
             "takDelivery": {"ref":"PackageTakDelivery","required":true},
             "sortOrder": {"dataType":"double","required":true},
             "version": {"dataType":"double","required":true},
@@ -2411,6 +2418,7 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "packageIds": {"dataType":"array","array":{"dataType":"string"},"required":true,"validators":{"maxItems":{"value":500}}},
+            "kind": {"ref":"DataPackageKind"},
         },
         "additionalProperties": false,
     },
@@ -2577,6 +2585,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":1000}}},
+            "kind": {"ref":"DataPackageKind"},
             "packages": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportSelection"},"required":true,"validators":{"minItems":{"value":1},"maxItems":{"value":100}}},
         },
         "additionalProperties": false,
@@ -2645,6 +2654,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":1000}}},
+            "kind": {"ref":"DataPackageKind"},
         },
         "additionalProperties": false,
     },
@@ -2664,6 +2674,15 @@ const models: TsoaRoute.Models = {
         "properties": {
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
             "audience": {"ref":"PackageAudience","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdatePackageWritersRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "writers": {"ref":"EventAudience","required":true},
         },
         "additionalProperties": false,
     },
@@ -8067,6 +8086,7 @@ export function RegisterRoutes(app: Router) {
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
                 limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
                 cursor: {"in":"query","name":"cursor","dataType":"string"},
+                kind: {"in":"query","name":"kind","ref":"DataPackageKind"},
         };
         app.get('/api/v1/events/:eventId/data-packages',
             authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
@@ -8253,6 +8273,40 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'updateDataPackageAudience',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsDataPackagesController_updateMissionWriters: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"UpdatePackageWritersRequest"},
+        };
+        app.put('/api/v1/events/:eventId/data-packages/:packageId/writers',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController)),
+            ...(fetchMiddlewares<RequestHandler>(DataPackagesController.prototype.updateMissionWriters)),
+
+            async function DataPackagesController_updateMissionWriters(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsDataPackagesController_updateMissionWriters, request, response });
+
+                const controller = new DataPackagesController();
+
+              await templateService.apiHandler({
+                methodName: 'updateMissionWriters',
                 controller,
                 response,
                 next,

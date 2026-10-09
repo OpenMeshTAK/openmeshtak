@@ -19,6 +19,7 @@ import type {
   PublishDataPackageResponse,
 } from "./package-revision.dto.js";
 import { estimateAtakExportSize } from "./package-export-size.js";
+import { announceRevisionCreated } from "./package-revision-events.js";
 import { buildPackageSnapshot, hashPackageSnapshot, type PackageSnapshot } from "./package-snapshot.js";
 
 function toSummary(row: PackageRevision): PackageRevisionSummaryDto {
@@ -48,7 +49,7 @@ export async function publishDataPackage(
   const { event } = await requireDataPackage(actor.principal, eventId, packageId, "data-packages.publish");
   requireEditableEvent(event);
 
-  return database.$transaction(async (transaction) => {
+  const result = await database.$transaction(async (transaction) => {
     const snapshot = await buildPackageSnapshot(transaction, packageId);
     const snapshotHash = hashPackageSnapshot(snapshot);
     const latest = await transaction.packageRevision.findFirst({
@@ -90,6 +91,10 @@ export async function publishDataPackage(
     );
     return { created: true, revision: toDto(revision) };
   });
+  if (result.created) {
+    announceRevisionCreated(packageId);
+  }
+  return result;
 }
 
 export async function listRevisions(

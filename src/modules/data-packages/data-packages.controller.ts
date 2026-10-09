@@ -24,13 +24,15 @@ import type { Uuid } from "../../shared/http/uuid.js";
 import type {
   CreateDataPackageRequest,
   DataPackageDto,
+  DataPackageKind,
   DataPackagePage,
   UpdateDataPackageRequest,
+  UpdatePackageWritersRequest,
   UpdatePackageAudienceRequest,
   UpdatePackageTakDeliveryRequest,
 } from "./data-package.dto.js";
 import { createDataPackage, deleteDataPackage, getDataPackage, listDataPackages, updateDataPackage } from "./data-packages.service.js";
-import { updatePackageAudience, updatePackageTakDelivery } from "./package-audience.service.js";
+import { updateMissionWriters, updatePackageAudience, updatePackageTakDelivery } from "./package-audience.service.js";
 
 /**
  * Data packages hold an event's editable map content. Reads need `data-packages.read`, changes
@@ -45,22 +47,24 @@ import { updatePackageAudience, updatePackageTakDelivery } from "./package-audie
 @Response<ProblemDetails>(404, "Not found")
 export class DataPackagesController extends Controller {
   /**
-   * Lists the event's data packages ordered by creation time, oldest first.
+   * Lists the event's data packages and missions ordered by creation time, oldest first; `kind`
+   * limits the list to one kind.
    * @isInt limit
    * @minimum limit 1
    * @maximum limit 100
    */
   @Get()
   @SuccessResponse(200, "Data packages")
-  @Middlewares(allowQueryParameters("limit", "cursor"))
+  @Middlewares(allowQueryParameters("limit", "cursor", "kind"))
   @Response<ProblemDetails>(400, "Invalid cursor")
   public async listDataPackages(
     @Request() request: unknown,
     @Path() eventId: Uuid,
     @Query() limit?: number,
     @Query() cursor?: string,
+    @Query() kind?: DataPackageKind,
   ): Promise<DataPackagePage> {
-    return listDataPackages(requestContext(request).principal, eventId, limit, cursor);
+    return listDataPackages(requestContext(request).principal, eventId, limit, cursor, kind);
   }
 
   /**
@@ -136,6 +140,23 @@ export class DataPackagesController extends Controller {
     @Body() body: UpdatePackageAudienceRequest,
   ): Promise<DataPackageDto> {
     return updatePackageAudience(requestContext(request), eventId, packageId, body);
+  }
+
+  /**
+   * Missions only: sets the groups, roles and members that may change the mission from a TAK app.
+   * Requires `data-packages.publish` and the current `version`.
+   */
+  @Put("{packageId}/writers")
+  @SuccessResponse(200, "Writers updated")
+  @Response<ProblemDetails>(409, "Version conflict, not a mission or event archived")
+  @Response<ProblemDetails>(422, "Validation failed")
+  public async updateMissionWriters(
+    @Request() request: unknown,
+    @Path() eventId: Uuid,
+    @Path() packageId: Uuid,
+    @Body() body: UpdatePackageWritersRequest,
+  ): Promise<DataPackageDto> {
+    return updateMissionWriters(requestContext(request), eventId, packageId, body);
   }
 
   /**

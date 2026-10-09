@@ -1,5 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
 import { validationProblem } from "../../shared/errors/problem-error.js";
+import type { TakRole, TakTeam } from "../event-groups/provisioning-values.js";
 
 /** One ATAK preference as a `.pref` file stores it. */
 export interface AtakPreference {
@@ -37,7 +38,8 @@ const MAX_VALUE_LENGTH = 10_000;
  * Keys OpenMeshTak sets itself or that belong to one person or device. A `.pref` exported from an
  * administrator's own ATAK carries that person's server connection, certificates, callsign, team
  * and role; handing those to every member would break their connection or impersonate the
- * administrator, so they are always removed.
+ * administrator, so they are always removed. Callsign, team and role come from each member's
+ * event membership instead (`takIdentityPreferences`).
  */
 const OWNED_PREFERENCE_GROUPS = new Set(["cot_streams"]);
 const OWNED_KEYS = new Set([
@@ -203,6 +205,25 @@ export function effectiveAtakPreferences(fileEntries: AtakPreference[], settings
 
 function escapeXml(value: string): string {
   return value.replace(/[<>&"']/g, (character) => `&#${String(character.charCodeAt(0))};`);
+}
+
+/** What OpenMeshTak decides about a member's TAK identity. */
+export interface TakIdentity {
+  callsign: string;
+  team: TakTeam;
+  role: TakRole;
+}
+
+/**
+ * The member's callsign, team color and role as ATAK stores them. Our team and role names are the
+ * values of ATAK's own `locationTeam` and `atakRoleType` lists, so they need no mapping.
+ */
+export function takIdentityPreferences(identity: TakIdentity): AtakPreference[] {
+  return [
+    { preference: APP_PREFERENCES, key: "locationCallsign", type: "string", value: identity.callsign },
+    { preference: APP_PREFERENCES, key: "locationTeam", type: "string", value: identity.team },
+    { preference: APP_PREFERENCES, key: "atakRoleType", type: "string", value: identity.role },
+  ];
 }
 
 /** `<entry>` lines of one preference group. */

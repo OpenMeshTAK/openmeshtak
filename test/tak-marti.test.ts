@@ -230,11 +230,24 @@ void describe("TAK Marti Data Package API", () => {
     assert.match(preferences, /<entry key="alt_display_agl" class="class java.lang.Boolean">true<\/entry>/);
     assert.match(preferences, /<entry key="coord_display_pref" class="class java.lang.String">MGRS<\/entry>/);
     assert.match(preferences, /<entry key="alt_unit_pref" class="class java.lang.String">1<\/entry>/);
-    assert.doesNotMatch(preferences, /locationCallsign/);
+    // The uploaded ADMIN callsign is stripped; the member's own identity takes its place.
+    assert.match(preferences, /<entry key="locationCallsign" class="class java.lang.String">Peter<\/entry>/);
+    assert.match(preferences, /<entry key="locationTeam" class="class java.lang.String">[A-Za-z ]+<\/entry>/);
+    assert.match(preferences, /<entry key="atakRoleType" class="class java.lang.String">[A-Za-z ]+<\/entry>/);
+    assert.doesNotMatch(preferences, /ADMIN/);
 
-    await database.eventConfigurationRevision.updateMany({ data: { createdAt: new Date(Date.now() - 3_600_000) } });
+    const anHourAgo = new Date(Date.now() - 3_600_000);
+    await database.eventConfigurationRevision.updateMany({ data: { createdAt: anHourAgo } });
+    await database.eventMember.updateMany({ data: { updatedAt: anHourAgo } });
     const unchanged = await get(bravo, "/Marti/api/device/profile/connection?syncSecago=60", bravo.caPems);
     assert.equal(unchanged.status, 204, "unchanged preferences are not sent again");
+
+    // A callsign override is no revision, yet the next connection carries the new callsign.
+    await database.eventMember.updateMany({ data: { callsign: "Peter-2", callsignOverride: "Peter-2" } });
+    const renamed = await get(bravo, "/Marti/api/device/profile/connection?syncSecago=60", bravo.caPems);
+    assert.equal(renamed.status, 200);
+    const renamedPreferences = new TextDecoder().decode(unzipSync(new Uint8Array(renamed.body))["preferences/preference.pref"]);
+    assert.match(renamedPreferences, /<entry key="locationCallsign" class="class java.lang.String">Peter-2<\/entry>/);
   });
 
   void it("answers CoT history queries only from events that record their traffic", async () => {
@@ -345,6 +358,84 @@ void describe("TAK Marti Data Package API", () => {
     const switched = shown.map((entry) => ({ ...entry, active: entry.direction === "OUT" }));
     assert.equal((await get(bravo, "/Marti/api/groups/active?clientUid=ANDROID-PETER", bravo.caPems, "PUT", switched)).status, 200);
     assert.deepEqual((await list()).map(({ direction, active }) => [direction, active]), [["IN", false], ["OUT", true]]);
+  });
+
+  void it("lets Data Sync list, subscribe to and load missions, and announces each sync to subscribers", async () => {
+    const packagesUrl = `/api/v1/events/${eventId}/data-packages`;
+    const created = (await request(app).post(packagesUrl).set("Cookie", admin.cookie).send({ name: "Lageplan Nord", kind: "mission" }).expect(201))
+      .body as { id: string };
+    await request(app).post(packagesUrl).set("Cookie", admin.cookie).send({ name: "Lageplan Nord", kind: "mission" }).expect(409);
+    const layers = (await request(app).get(`${packagesUrl}/${created.id}/layers`).set("Cookie", admin.cookie).expect(200)).body as {
+      items: Array<{ id: string }>;
+    };
+    const layerId = layers.items[0]?.id ?? "";
+    const addPoint = async (name: string, lon: number): Promise<string> =>
+      ((
+        await request(app)
+          .post(`${packagesUrl}/${created.id}/objects`)
+          .set("Cookie", admin.cookie)
+          .send({ layerId, name, geometry: { type: "Point", coordinates: [lon, 52.5] } })
+          .expect(201)
+      ).body as { id: string }).id;
+    const sp1 = await addPoint("SP 1", 13.4);
+    const user = await memberOf(bravoId, "Peter");
+    const bravo = await enrollTakClient(app, user);
+    const empty = JSON.parse((await get(bravo, "/Marti/api/missions", bravo.caPems)).body.toString("utf8")) as { data: unknown[] };
+    assert.deepEqual(empty.data, [], "unsynced missions are invisible");
+
+    await request(app).post(`${packagesUrl}/${created.id}/revisions`).set("Cookie", admin.cookie).expect(200);
+    const list = JSON.parse((await get(bravo, "/Marti/api/missions", bravo.caPems)).body.toString("utf8")) as {
+      type: string;
+      data: Array<{ name: string; guid: string; uids: Array<{ data: string; details: { callsign: string } }>; defaultRole: { type: string } }>;
+    };
+    assert.equal(list.type, "Mission");
+    assert.deepEqual(list.data.map(({ name, guid }) => [name, guid]), [["Lageplan Nord", created.id]]);
+    assert.deepEqual(list.data[0]?.uids.map(({ data, details }) => [data, details.callsign]), [[sp1, "SP 1"]]);
+    assert.equal(list.data[0]?.defaultRole.type, "MISSION_READONLY_SUBSCRIBER", "members are not writers by default");
+
+    const missionPath = `/Marti/api/missions/${encodeURIComponent("Lageplan Nord")}`;
+    const subscription = JSON.parse(
+      (await get(bravo, `${missionPath}/subscription?uid=ANDROID-PETER`, bravo.caPems, "PUT")).body.toString("utf8"),
+    ) as { type: string; data: { clientUid: string; token: string; role: { type: string } } };
+    assert.equal(subscription.type, "com.bbn.marti.sync.model.MissionSubscription");
+    assert.equal(subscription.data.clientUid, "ANDROID-PETER");
+    assert.ok(subscription.data.token.length > 10);
+    assert.match((await get(bravo, `/Marti/api/missions/guid/${created.id}/cot`, bravo.caPems)).body.toString("utf8"), new RegExp(`<events>.*uid="${sp1}"`, "s"));
+
+    const received: string[] = [];
+    const peter: CotPeer = {
+      id: randomUUID(),
+      scope: new Map([[eventId, { groupId: null, seesAll: true, receives: null, sends: null }]]),
+      send: (xml) => received.push(xml),
+      userId: user.id,
+      certificateId: randomUUID(),
+      callsign: "PETER",
+      deviceUid: "ANDROID-PETER",
+      connectedAt: new Date(),
+      lastSeenAt: new Date(),
+    };
+    cotRouter.join(peter);
+    const sp2 = await addPoint("SP 2", 13.5);
+    await request(app).post(`${packagesUrl}/${created.id}/revisions`).set("Cookie", admin.cookie).expect(200);
+    const deadline = Date.now() + 2000;
+    while (!received.some((xml) => xml.includes('type="t-x-m-c"')) && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    cotRouter.leave(peter.id);
+    assert.ok(received.some((xml) => xml.includes(`uid="${sp2}"`)), "the new item arrives as CoT");
+    const notification = received.find((xml) => xml.includes('type="t-x-m-c"')) ?? "";
+    assert.match(notification, /<mission type="CHANGE" tool="public" name="Lageplan Nord"/);
+    assert.match(notification, new RegExp(`<contentUid>${sp2}</contentUid>.*<type>ADD_CONTENT</type>`, "s"));
+    assert.doesNotMatch(notification, new RegExp(`<contentUid>${sp1}</contentUid>`), "unchanged items are not announced");
+
+    const changes = JSON.parse((await get(bravo, `${missionPath}/changes?secago=3600`, bravo.caPems)).body.toString("utf8")) as {
+      data: Array<{ contentUid: string; type: string }>;
+    };
+    assert.deepEqual(changes.data.map(({ contentUid, type }) => [contentUid, type]), [[sp1, "ADD_CONTENT"], [sp2, "ADD_CONTENT"]]);
+
+    await get(bravo, `${missionPath}/subscription?uid=ANDROID-PETER`, bravo.caPems, "DELETE");
+    assert.equal(await database.missionSubscription.count(), 0);
+    assert.equal((await get(bravo, "/Marti/api/missions/Unknown", bravo.caPems)).status, 404);
   });
 
   void it("refuses clients without a certificate and revoked certificates", async () => {

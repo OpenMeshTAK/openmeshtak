@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { strToU8, zipSync } from "fflate";
 import forge from "node-forge";
+import { preferenceEntriesXml, takIdentityPreferences, type TakIdentity } from "../tak-configuration/atak-preferences.js";
 
 const PREF_FILE = "openmeshtak.pref";
 const TRUSTSTORE_FILE = "truststore.p12";
@@ -17,6 +18,8 @@ export interface ItakConnectionPackageInput {
   clientPrivateKeyPem: string;
   clientCaPems: string[];
   password: string;
+  /** Callsign, team and role of the user's latest-starting active event; `null` without one. */
+  identity: TakIdentity | null;
 }
 
 function escapeXml(value: string): string {
@@ -54,6 +57,11 @@ function preferences(input: ItakConnectionPackageInput): string {
   const description = escapeXml(`OpenMeshTak ${input.hostName}`);
   const connectString = escapeXml(`${input.hostName}:${String(input.streamingPort)}:ssl`);
   const password = escapeXml(input.password);
+  // The file declares ASCII, so a callsign such as "Jürgen" travels as character references.
+  const identity =
+    input.identity === null
+      ? ""
+      : `\n${preferenceEntriesXml(takIdentityPreferences(input.identity)).replace(/[^ -~\n]/gu,(character) => `&#${String(character.codePointAt(0))};`)}`;
   return `<?xml version="1.0" encoding="ASCII" standalone="yes"?>
 <preferences>
   <preference version="1" name="cot_streams">
@@ -68,7 +76,7 @@ function preferences(input: ItakConnectionPackageInput): string {
     <entry key="caPassword" class="class java.lang.String">${password}</entry>
     <entry key="certificateLocation" class="class java.lang.String">cert/${CLIENT_FILE}</entry>
     <entry key="clientPassword" class="class java.lang.String">${password}</entry>
-    <entry key="apiSecureServerPort" class="class java.lang.String">${String(input.martiPort)}</entry>
+    <entry key="apiSecureServerPort" class="class java.lang.String">${String(input.martiPort)}</entry>${identity}
   </preference>
 </preferences>
 `;

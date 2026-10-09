@@ -30,6 +30,7 @@ void describe("iTAK connection package", () => {
       clientPrivateKeyPem: client.privateKeyPem,
       clientCaPems: [],
       password: "test-package-password",
+      identity: { callsign: "Jürgen [Bravo]", team: "Dark Blue", role: "Team Lead" },
     });
     const files = unzipSync(bytes);
     assert.deepEqual(Object.keys(files).sort(), ["client.p12", "manifest.xml", "openmeshtak.pref", "truststore.p12"]);
@@ -45,6 +46,10 @@ void describe("iTAK connection package", () => {
     assert.match(preferences, /key="certificateLocation"[^>]*>cert\/client\.p12</);
     assert.match(preferences, /key="apiSecureServerPort"[^>]*>8484</);
     assert.doesNotMatch(preferences, /enrollForCertificateWithTrust/);
+    assert.match(preferences, /<entry key="locationCallsign" class="class java.lang.String">J&#252;rgen \[Bravo\]<\/entry>/);
+    assert.match(preferences, /<entry key="locationTeam" class="class java.lang.String">Dark Blue<\/entry>/);
+    assert.match(preferences, /<entry key="atakRoleType" class="class java.lang.String">Team Lead<\/entry>/);
+    assert.ok([...preferences].every((character) => character.charCodeAt(0) < 128), "the ASCII file stays ASCII");
 
     const p12 = forge.pkcs12.pkcs12FromAsn1(
       forge.asn1.fromDer(Buffer.from(files["client.p12"] ?? new Uint8Array()).toString("binary")),

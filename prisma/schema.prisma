@@ -156,6 +156,7 @@ model DomainUser {
   takClientCertificates TakClientCertificate[]
   downloadGrants        DownloadGrant[]
   accountInvites        AccountInvite[]
+  missionSubscriptions  MissionSubscription[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 
@@ -310,6 +311,7 @@ model EventRole {
   members           EventMember[]
   channelSelections MeshtasticChannelAudience[]
   packageSelections DataPackageAudience[]
+  missionWriterSelections DataPackageWriter[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -337,6 +339,7 @@ model EventGroup {
   members           EventMember[]
   channelSelections MeshtasticChannelAudience[]
   packageSelections DataPackageAudience[]
+  missionWriterSelections DataPackageWriter[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -384,6 +387,7 @@ model EventMember {
   claims            MemberClaim[]
   channelSelections MeshtasticChannelAudience[]
   packageSelections DataPackageAudience[]
+  missionWriterSelections DataPackageWriter[]
   takGroups         TakGroupMembership[]
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
@@ -473,6 +477,13 @@ model DataPackage {
   version             Int                   @default(1)
   /// Drawing order within the event; lower values are drawn first, below higher ones.
   sortOrder           Int                   @default(0)
+  /// "package" (a Data Package published as revisions) or "mission" (an ATAK Data Sync mission whose
+  /// revisions are synced to subscribed TAK apps). Fixed at creation.
+  kind                String                @default("package")
+  /// Missions only: who may change the mission from a TAK app; empty means nobody.
+  writers             DataPackageWriter[]
+  /// Missions only: TAK apps that subscribed through Data Sync.
+  subscriptions       MissionSubscription[]
   /// Distribution: every member of the event, or only the members the audience selects.
   audienceAll         Boolean               @default(true)
   audience            DataPackageAudience[]
@@ -679,6 +690,41 @@ model MeshtasticConfiguration {
 }
 
 /// One audience selector of a Data Package: exactly one of group, role or member is set.
+/// A TAK app subscribed to a mission through Data Sync; it receives every synced revision.
+model MissionSubscription {
+  id          String      @id
+  packageId   String
+  userId      String
+  /// The subscribing app's device UID, which the streaming connection reports as its own position UID.
+  clientUid   String
+  /// Opaque value returned to the app like TAK Server's subscription token; access still comes from the client certificate.
+  token       String
+  dataPackage DataPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  user        DomainUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+
+  @@unique([packageId, clientUid])
+  @@index([clientUid])
+}
+
+/// Missions only: the groups, roles and members that may change the mission from a TAK app.
+model DataPackageWriter {
+  id            String       @id
+  packageId     String
+  eventGroupId  String?
+  eventRoleId   String?
+  eventMemberId String?
+  dataPackage   DataPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  eventGroup    EventGroup?  @relation(fields: [eventGroupId], references: [id], onDelete: Cascade)
+  eventRole     EventRole?   @relation(fields: [eventRoleId], references: [id], onDelete: Cascade)
+  eventMember   EventMember? @relation(fields: [eventMemberId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+  @@index([eventGroupId])
+  @@index([eventRoleId])
+  @@index([eventMemberId])
+}
+
 model DataPackageAudience {
   id            String       @id
   packageId     String

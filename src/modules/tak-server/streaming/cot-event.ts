@@ -50,6 +50,8 @@ export interface CotEvent {
 export interface CotDestinations {
   callsigns: string[];
   uids: string[];
+  /** Mission names (`dest mission`): the event goes into the mission and to its subscribers. */
+  missions: string[];
 }
 
 /** `detail/takv`: device model, TAK app, its version and the operating system, as the app reports them. */
@@ -112,6 +114,7 @@ function destinationsOf(detail: XmlNode | null): CotDestinations | null {
   return {
     callsigns: limited.map((dest) => attribute(dest, "callsign")).filter((value) => value !== null),
     uids: limited.map((dest) => attribute(dest, "uid")).filter((value) => value !== null),
+    missions: limited.map((dest) => attribute(dest, "mission")).filter((value) => value !== null),
   };
 }
 

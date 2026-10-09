@@ -1,3 +1,4 @@
+import type { DataPackageKind } from "./data-package.dto.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
@@ -9,10 +10,12 @@ import { listDataPackages } from "./data-packages.service.js";
 
 export interface ReorderDataPackagesRequest {
   /**
-   * Every data package of the event, bottom first; the last one is drawn on top.
+   * Every data package of the event of `kind`, bottom first; the last one is drawn on top.
    * @maxItems 500
    */
   packageIds: string[];
+  /** Packages and missions are ordered separately; `package` when omitted. */
+  kind?: DataPackageKind;
 }
 
 function staleOrderProblem(): ProblemError {
@@ -26,8 +29,8 @@ function staleOrderProblem(): ProblemError {
 }
 
 /**
- * Sets the drawing order of all data packages of an event at once. The list must name exactly
- * the current packages, so a package created meanwhile is never silently pushed somewhere.
+ * Sets the drawing order of all data packages of one kind of an event at once. The list must name
+ * exactly the current packages of that kind, so a package created meanwhile is never silently pushed somewhere.
  * Package versions stay unchanged: reordering never conflicts with someone editing content.
  */
 export async function reorderDataPackages(
@@ -38,7 +41,7 @@ export async function reorderDataPackages(
   requireEditableEvent(await requireEventPermission(actor.principal, eventId, "data-packages.edit"));
 
   await database.$transaction(async (transaction) => {
-    const current = await transaction.dataPackage.findMany({ where: { eventId }, select: { id: true } });
+    const current = await transaction.dataPackage.findMany({ where: { eventId, kind: input.kind ?? "package" }, select: { id: true } });
     const known = new Set(current.map(({ id }) => id));
     if (input.packageIds.length !== known.size || new Set(input.packageIds).size !== known.size || input.packageIds.some((id) => !known.has(id))) {
       throw staleOrderProblem();
@@ -59,5 +62,5 @@ export async function reorderDataPackages(
       transaction,
     );
   });
-  return (await listDataPackages(actor.principal, eventId, 100)).items;
+  return (await listDataPackages(actor.principal, eventId, 100, undefined, input.kind ?? "package")).items;
 }

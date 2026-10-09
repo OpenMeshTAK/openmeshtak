@@ -141,6 +141,27 @@ export class CotRouter {
     }
   }
 
+  /**
+   * Sends server-made events, such as mission changes, to the connected apps of one user that
+   * report `deviceUid` as their own position UID. Returns how many apps received it.
+   */
+  sendToDevice(userId: string, deviceUid: string, xml: string): number {
+    let sent = 0;
+    for (const peer of this.peers.values()) {
+      if (peer.userId === userId && peer.deviceUid === deviceUid) {
+        peer.send(xml);
+        sent += 1;
+      }
+    }
+    return sent;
+  }
+
+  /** The newest CoT of an item a connected or disconnected app sent, if it is current. */
+  currentXml(uid: string, now = new Date()): string | null {
+    const retained = this.retained.get(uid);
+    return retained === undefined || retained.item.stale <= now ? null : retained.xml;
+  }
+
   /** Keeps the newest version of an item for replay and the live view. */
   remember(peer: CotPeer, item: LiveItem, xml: string, now = new Date()): void {
     this.retained.delete(item.uid);
