@@ -13,6 +13,7 @@ import { attachServerLogStream } from "./modules/server-logs/server-logs.realtim
 import { attachTakTrafficStream } from "./modules/tak-server/live-traffic.realtime.js";
 import { attachMyTakCertificateStream } from "./modules/tak-server/my-tak-certificates.realtime.js";
 import { attachTakServerStream } from "./modules/tak-server/tak-server.realtime.js";
+import { metricHistory } from "./modules/system-status/system-metrics.js";
 import { takListeners } from "./modules/tak-server/tak-listeners.js";
 import { scheduleTrafficCleanup } from "./modules/tak-server/traffic-recording.js";
 import { scheduleUnusedPackageCleanup } from "./modules/tak-server/unused-packages.js";
@@ -64,11 +65,13 @@ async function startServer(): Promise<void> {
   scheduleTrafficCleanup();
   scheduleUnusedPackageCleanup();
   takAcmeManager.start();
+  metricHistory.start();
 
   const shutdown = (signal: NodeJS.Signals): void => {
     logger.info({ event: "server_shutdown_started", signal }, "Server shutdown started");
     void takListeners.stop();
     takAcmeManager.stop();
+    metricHistory.stop();
 
     // Closing Socket.IO disconnects open viewers and then closes the HTTP server itself.
     void realtime.close(() => {

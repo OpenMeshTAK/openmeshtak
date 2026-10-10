@@ -8,6 +8,24 @@ export interface SystemCheckDto {
   detail: string;
 }
 
+/** Whether system CPU and memory are the container's (cgroup) or the whole machine's. */
+export type MetricScope = "container" | "host";
+
+export interface MetricSampleDto {
+  time: string;
+  /** CPU used by the Core process, as a share of the CPUs it may use (0–100). */
+  coreCpuPercent: number;
+  /** CPU used by the container (against its CPU limit) or the machine, 0–100; see `scope`. */
+  systemCpuPercent: number;
+  /** Resident memory of the Core process. */
+  coreMemoryBytes: number;
+  /** Memory in use by the container or the machine; see `scope`. */
+  systemMemoryUsedBytes: number;
+  /** The container's memory limit (at most the machine's memory) or the machine's memory. */
+  systemMemoryTotalBytes: number;
+  takConnections: number;
+}
+
 export interface SystemStatusDto {
   /** Core release version. */
   version: string;
@@ -31,4 +49,9 @@ export interface SystemStatusDto {
   recentErrors: number;
   /** Time and message of the newest of those errors. */
   lastError: { time: string | null; message: string } | null;
+  /** Seconds between two samples of `history`. */
+  sampleIntervalSeconds: number;
+  metricScope: MetricScope;
+  /** CPU, memory and TAK connections of the last six hours since Core started, oldest first. */
+  history: MetricSampleDto[];
 }

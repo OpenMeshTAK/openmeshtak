@@ -9,6 +9,7 @@ import { toServerLogEntry } from "../server-logs/server-logs.service.js";
 import { cotRouter } from "../tak-server/streaming/cot-router.js";
 import { takListeners } from "../tak-server/tak-listeners.js";
 import { loadTakServerSettings } from "../tak-server/tak-server-settings.js";
+import { metricHistory, SAMPLE_INTERVAL_MS, type MetricHistory } from "./system-metrics.js";
 import type { SystemCheckDto, SystemStatusDto } from "./system-status.dto.js";
 
 const startedAt = new Date();
@@ -100,7 +101,12 @@ function recentErrorLines(buffer: RecentLogBuffer, now: Date) {
  * certificate are fine, plus a few numbers. Requires instance-wide `server-logs.read`, since it
  * summarizes the same server state the log shows.
  */
-export async function systemStatus(principal: Principal, buffer: RecentLogBuffer = recentLogs, now = new Date()): Promise<SystemStatusDto> {
+export async function systemStatus(
+  principal: Principal,
+  buffer: RecentLogBuffer = recentLogs,
+  now = new Date(),
+  metrics: MetricHistory = metricHistory,
+): Promise<SystemStatusDto> {
   await requirePermission(principal, "server-logs.read");
   const [latency, databaseBytes, space, stored, activeEvents] = await Promise.all([
     measureDatabase(),
@@ -135,5 +141,8 @@ export async function systemStatus(principal: Principal, buffer: RecentLogBuffer
     activeEvents,
     recentErrors: errors.length,
     lastError: last === undefined ? null : { time: last.time, message: last.message },
+    sampleIntervalSeconds: SAMPLE_INTERVAL_MS / 1000,
+    metricScope: metrics.scope(),
+    history: metrics.history(),
   };
 }

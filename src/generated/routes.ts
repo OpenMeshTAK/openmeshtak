@@ -966,6 +966,25 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MetricScope": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["container"]},{"dataType":"enum","enums":["host"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MetricSampleDto": {
+        "dataType": "refObject",
+        "properties": {
+            "time": {"dataType":"string","required":true},
+            "coreCpuPercent": {"dataType":"double","required":true},
+            "systemCpuPercent": {"dataType":"double","required":true},
+            "coreMemoryBytes": {"dataType":"double","required":true},
+            "systemMemoryUsedBytes": {"dataType":"double","required":true},
+            "systemMemoryTotalBytes": {"dataType":"double","required":true},
+            "takConnections": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SystemStatusDto": {
         "dataType": "refObject",
         "properties": {
@@ -982,6 +1001,9 @@ const models: TsoaRoute.Models = {
             "activeEvents": {"dataType":"double","required":true},
             "recentErrors": {"dataType":"double","required":true},
             "lastError": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true},"time":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
+            "sampleIntervalSeconds": {"dataType":"double","required":true},
+            "metricScope": {"ref":"MetricScope","required":true},
+            "history": {"dataType":"array","array":{"dataType":"refObject","ref":"MetricSampleDto"},"required":true},
         },
         "additionalProperties": false,
     },
