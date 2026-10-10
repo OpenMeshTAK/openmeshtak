@@ -57,6 +57,12 @@ function readTime(reader: BinaryReader): string | null {
 function readTypedElement(bytes: Uint8Array, definition: ElementDefinition): string {
   const reader = new BinaryReader(bytes);
   const values: Record<string, string> = {};
+  // Numeric zero is omitted inside typed detail messages too; an absent message stays absent.
+  for (const field of Object.values(definition.fields)) {
+    if (field !== undefined && field.type !== "string") {
+      values[field.name] = "0";
+    }
+  }
   while (reader.pos < reader.len) {
     const [number, wireType] = reader.tag();
     const field = definition.fields[number];

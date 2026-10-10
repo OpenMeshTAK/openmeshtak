@@ -13,7 +13,7 @@ const marker =
   '<detail><contact callsign="Enemy &amp; Co"/><link uid="ANDROID-1" relation="p-p" type="a-f-G-U-C"/><remarks>left &lt;bridge&gt;</remarks></detail></event>';
 
 /** A Protobuf client's position with typed contact and takv messages, as ATAK sends it. */
-function positionPayload(xmlDetail: string): Uint8Array {
+function positionPayload(xmlDetail: string, numericDetails = false): Uint8Array {
   const writer = new BinaryWriter();
   writer.tag(2, WireType.LengthDelimited).fork();
   writer.tag(1, WireType.LengthDelimited).string("a-f-G-U-C");
@@ -30,12 +30,41 @@ function positionPayload(xmlDetail: string): Uint8Array {
   }
   writer.tag(2, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string("*:-1:stcp").tag(2, WireType.LengthDelimited).string("BRAVO").join();
   writer.tag(6, WireType.LengthDelimited).fork().tag(2, WireType.LengthDelimited).string("ATAK-CIV").tag(4, WireType.LengthDelimited).string("5.6.0").join();
+  if (numericDetails) {
+    // Present messages whose numeric fields are all zero have an empty proto3 body.
+    writer.tag(5, WireType.LengthDelimited).fork().join();
+    writer.tag(7, WireType.LengthDelimited).fork().join();
+  }
   writer.join();
   writer.join();
   return writer.finish();
 }
 
 void describe("TAK Protocol version 1", () => {
+  void it("restores zero track and battery values only when their typed messages are present", () => {
+    const xml = takMessageToXml(positionPayload("", true));
+    assert.ok(xml);
+    const event = parseCotEvent(xml);
+    assert.ok(event);
+    assert.deepEqual([event.speed, event.course], [0, 0]);
+    assert.match(xml, /<status battery="0"\/>/);
+
+    const absentXml = takMessageToXml(positionPayload(""));
+    assert.ok(absentXml);
+    const absent = parseCotEvent(absentXml);
+    assert.ok(absent);
+    assert.deepEqual([absent.speed, absent.course], [null, null]);
+    assert.doesNotMatch(absentXml, /<status|<track/);
+
+    const override = takMessageToXml(positionPayload('<track speed="2" course="90"/><status battery="50"/>', true));
+    assert.ok(override);
+    const overridden = parseCotEvent(override);
+    assert.ok(overridden);
+    assert.deepEqual([overridden.speed, overridden.course], [2, 90]);
+    assert.match(override, /<status battery="50"\/>/);
+    assert.doesNotMatch(override, /battery="0"|speed="0"|course="0"/);
+  });
+
   void it("restores proto3 zero coordinates omitted by real TAK client pings", () => {
     const xml = takMessageToXml(protobufPing("WINTAK-ping"));
     assert.ok(xml);
