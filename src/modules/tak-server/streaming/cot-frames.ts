@@ -19,6 +19,10 @@ export class CotFrameReader {
     let end = this.buffer.indexOf(EVENT_END);
     while (end !== -1) {
       const raw = this.buffer.slice(0, end + EVENT_END.length);
+      // A complete oversized event must be rejected too, before it leaves the pending buffer.
+      if (Buffer.byteLength(raw, "utf8") > MAX_EVENT_BYTES) {
+        throw new CotFrameError("event too large");
+      }
       this.buffer = this.buffer.slice(end + EVENT_END.length);
       const start = raw.indexOf("<event");
       if (start !== -1) {

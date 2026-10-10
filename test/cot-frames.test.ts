@@ -14,4 +14,20 @@ void describe("CoT stream framing", () => {
     const reader = new CotFrameReader();
     assert.throws(() => reader.push(`<event uid="a">${"x".repeat(MAX_EVENT_BYTES)}`), CotFrameError);
   });
+
+  void it("refuses completed oversized events regardless of TCP chunking and UTF-8 character count", () => {
+    const xml = `<event uid="a">${"é".repeat(MAX_EVENT_BYTES / 2)}</event>`;
+    assert.ok(xml.length < MAX_EVENT_BYTES);
+    for (const chunks of [[xml], [xml.slice(0, 100), xml.slice(100)]]) {
+      const reader = new CotFrameReader();
+      assert.throws(() => chunks.flatMap((chunk) => reader.push(chunk)), CotFrameError);
+    }
+  });
+
+  void it("accepts several individually bounded events even when their combined chunk exceeds the limit", () => {
+    const prefix = '<event uid="a">';
+    const suffix = "</event>";
+    const xml = prefix + "x".repeat(MAX_EVENT_BYTES - prefix.length - suffix.length) + suffix;
+    assert.deepEqual(new CotFrameReader().push(xml + xml), [xml, xml]);
+  });
 });
