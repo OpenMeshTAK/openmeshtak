@@ -30,7 +30,7 @@
         "sessionCookie": []
       }
     ],
-    "version": "0.3.0"
+    "version": "0.3.1"
   },
   "routes": {
     "authenticationModule": "src/shared/auth/authorization.ts",
