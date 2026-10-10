@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DataPackage, PackageRevision } from "../../generated/prisma/client.js";
 import { database } from "../../shared/database/database.js";
-import { objectCotSummary } from "../data-packages/atak/cot-export.js";
+import { objectCotPresentations, objectCotSummary } from "../data-packages/atak/cot-export.js";
 import type { PackageSnapshot, PackageSnapshotContent, PackageSnapshotObject } from "../data-packages/package-snapshot.js";
 
 /**
@@ -47,10 +47,10 @@ function snapshotOf(revision: PackageRevision): PackageSnapshot {
 
 /** Items added or changed (both reported as ADD_CONTENT, like TAK Server) and removed between two revisions. */
 export function changesBetween(previous: PackageSnapshot | null, next: PackageSnapshot, at: Date, creatorUid = ""): MissionItemChange[] {
-  const before = new Map((previous?.objects ?? []).map((object) => [object.id, object]));
-  const after = new Map(next.objects.map((object) => [object.id, object]));
+  const before = new Map((previous?.objects ?? []).flatMap(objectCotPresentations).map((object) => [object.id, object]));
+  const after = new Map(next.objects.flatMap(objectCotPresentations).map((object) => [object.id, object]));
   const changes: MissionItemChange[] = [];
-  for (const object of next.objects) {
+  for (const object of next.objects.flatMap(objectCotPresentations)) {
     const old = before.get(object.id);
     if (old === undefined || JSON.stringify(old) !== JSON.stringify(object)) {
       changes.push({ type: "ADD_CONTENT", object, timestamp: at, creatorUid });
@@ -203,7 +203,7 @@ export async function missionJson(mission: DataPackage, latest: PackageRevision,
     expiration: -1,
     guid: mission.id,
     passwordProtected: false,
-    uids: snapshot.objects.map((object) => {
+    uids: snapshot.objects.flatMap(objectCotPresentations).map((object) => {
       const added = lastAdded.get(object.id);
       return {
         data: object.id,

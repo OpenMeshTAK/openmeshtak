@@ -14,6 +14,9 @@ const allowedLicenses = new Set([
 ]);
 
 const reviewedExceptions = new Map<string, Set<string>>([
+  // Reviewed 2026-10-10: choose EDL (BSD-3-Clause terms), never EPL. Pinned buffer dependency;
+  // the upstream text omitted by npm is retained in licenses/ and release notices.
+  ["(EDL-1.0 OR EPL-1.0)", new Set(["@turf/jsts@2.7.2", "jsts@2.7.1"])],
   [
     "BlueOak-1.0.0",
     new Set([

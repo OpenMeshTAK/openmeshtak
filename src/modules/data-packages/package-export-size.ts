@@ -1,4 +1,4 @@
-import { objectToCot } from "./atak/cot-export.js";
+import { objectToCotEvents } from "./atak/cot-export.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
 
 /**
@@ -8,7 +8,7 @@ import type { PackageSnapshot } from "./package-snapshot.js";
 export function estimateAtakExportSize(snapshot: PackageSnapshot, publishedAt: Date): number {
   const files = (snapshot.contents ?? []).filter((content) => content.kind !== "icon-library").reduce((total, content) => total + content.size, 0);
   const cot = snapshot.objects.reduce(
-    (total, object) => total + Buffer.byteLength(objectToCot(object, publishedAt), "utf8"),
+    (total, object) => total + objectToCotEvents(object, publishedAt).reduce((size, { xml }) => size + Buffer.byteLength(xml, "utf8"), 0),
     0,
   );
   return files + cot;

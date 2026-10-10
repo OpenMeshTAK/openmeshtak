@@ -148,4 +148,27 @@ void describe("Data Package copies", () => {
       .send({ name: "Wrong event", packages: [{ packageId: source.id }] })
       .expect(404);
   });
+
+  void it("copies a newly added draft layer without publishing or replacing the existing revision", async () => {
+    const source = await createPublishedSource();
+    const baseUrl = `/api/v1/events/${eventId}/data-packages/${source.id}`;
+    const layer = (await request(app).post(`${baseUrl}/layers`).set("Cookie", admin.cookie).send({ name: "New draft layer" }).expect(201)).body as { id: string };
+    await request(app).post(`${baseUrl}/objects`).set("Cookie", admin.cookie).send({ layerId: layer.id, name: "Keep exactly", geometry: { type: "LineString", coordinates: [[8, 50], [8.1, 50.1]] }, style: { color: "#123456", strokeWidth: 3, fillOpacity: 0, strokeStyle: "dotted" } }).expect(201);
+    const endpoint = `/api/v1/events/${eventId}/data-package-copies`;
+    const selection = [{ packageId: source.id, layerIds: [layer.id] }];
+    await request(app).post(endpoint).set("Cookie", admin.cookie).send({ name: "Published copy", packages: selection }).expect(422);
+    const target = (await request(app).post(endpoint).set("Cookie", admin.cookie).send({ name: "Draft copy", source: "draft", packages: selection }).expect(201)).body as { id: string; sources: unknown[] };
+    assert.deepEqual(target.sources, [], "draft copies cannot claim an immutable source revision");
+    const objects = (await request(app).get(`/api/v1/events/${eventId}/data-packages/${target.id}/objects`).set("Cookie", admin.cookie).expect(200)).body as { items: Array<{ name: string; style: { strokeStyle: string } }> };
+    assert.equal(objects.items.length, 1);
+    assert.equal(objects.items[0]?.name, "Keep exactly");
+    assert.equal(objects.items[0]?.style.strokeStyle, "dotted");
+    const published = await database.packageRevision.findFirstOrThrow({ where: { packageId: source.id } });
+    assert.equal(published.number, 1);
+    assert.ok(!JSON.stringify(published.snapshot).includes(layer.id));
+    await request(app).post(endpoint).set("Cookie", admin.cookie).send({ name: "Bad", source: "draft", packages: [{ ...selection[0], revision: 1 }] }).expect(422);
+    await request(app).post(`/api/v1/events/${await createEvent()}/data-package-copies`).set("Cookie", admin.cookie).send({ name: "Wrong event", source: "draft", packages: selection }).expect(404);
+    const reader = await createUser("Draft reader", [{ permission: "data-packages.read", eventId }]);
+    await request(app).post(endpoint).set("Cookie", reader.cookie).send({ name: "Denied", source: "draft", packages: selection }).expect(403);
+  });
 });

@@ -54,6 +54,7 @@ function licenseTexts(packagePath: string): string[] {
 function notices(components: Component[]): string {
   const sections = components.map((component) => {
     const texts = licenseTexts(component.path);
+    if (component.name === "jsts" || component.name === "@turf/jsts") texts.push(readFileSync("licenses/JSTS-EDL-1.0.txt", "utf8").trim());
     const body = texts.length > 0 ? texts.join("\n\n") : `The package ships no license file; it declares ${component.license}.`;
     return `${component.name}@${component.version}\nLicense: ${component.license}\n${component.homepage ?? ""}\n\n${body}`;
   });

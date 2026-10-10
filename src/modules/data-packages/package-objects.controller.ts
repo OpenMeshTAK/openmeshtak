@@ -26,8 +26,10 @@ import type {
   PackageObjectDto,
   PackageObjectPage,
   UpdatePackageObjectRequest,
+  BatchPackageObjectsRequest,
+  BatchPackageObjectsResponse,
 } from "./package-object.dto.js";
-import { createObject, deleteObject, getObject, listObjects, updateObject } from "./package-objects.service.js";
+import { batchObjects, createObject, deleteObject, getObject, listObjects, updateObject } from "./package-objects.service.js";
 
 /** Editable geometry of a data package draft. Objects in locked layers cannot change. */
 @Route("events/{eventId}/data-packages/{packageId}/objects")
@@ -38,6 +40,17 @@ import { createObject, deleteObject, getObject, listObjects, updateObject } from
 @Response<ProblemDetails>(403, "Access denied")
 @Response<ProblemDetails>(404, "Not found")
 export class PackageObjectsController extends Controller {
+  /** Atomically edits/deletes/restores up to 500 objects; failures leave the draft unchanged. */
+  @Post("batch")
+  @Middlewares(idempotent)
+  @SuccessResponse(200, "Batch saved")
+  @Response<ProblemDetails>(409, "Version conflict, locked layer or archived event")
+  @Response<ProblemDetails>(422, "Invalid batch or geometry")
+  public async batchPackageObjects(@Request() request: unknown, @Path() eventId: Uuid, @Path() packageId: Uuid,
+    @Body() body: BatchPackageObjectsRequest, @Header("Idempotency-Key") _idempotencyKey?: string): Promise<BatchPackageObjectsResponse> {
+    return batchObjects(requestContext(request), eventId, packageId, body);
+  }
+
   /**
    * Lists the data package's objects in creation order, optionally only those of one layer.
    * @isInt limit

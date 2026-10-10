@@ -116,6 +116,8 @@ import { GrantedDownloadsController } from './../modules/download-grants/downloa
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageRevisionsController } from './../modules/data-packages/package-revisions.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { PackagePresentationController } from './../modules/data-packages/package-presentation.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageOrderController } from './../modules/data-packages/package-order.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PackageObjectsController } from './../modules/data-packages/package-objects.controller.js';
@@ -1677,7 +1679,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "StrokeStyle": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["solid"]},{"dataType":"enum","enums":["dashed"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["solid"]},{"dataType":"enum","enums":["dashed"]},{"dataType":"enum","enums":["dotted"]},{"dataType":"enum","enums":["outlined"]},{"dataType":"enum","enums":["custom"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "HeightUnit": {
@@ -1688,6 +1690,54 @@ const models: TsoaRoute.Models = {
     "ExtrudeMode": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["cylinder"]},{"dataType":"enum","enums":["cone_down"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ArrowHeads": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["none"]},{"dataType":"enum","enums":["start"]},{"dataType":"enum","enums":["end"]},{"dataType":"enum","enums":["both"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "DistanceUnit": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["m"]},{"dataType":"enum","enums":["km"]},{"dataType":"enum","enums":["ft"]},{"dataType":"enum","enums":["mi"]},{"dataType":"enum","enums":["nm"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SectorStyle": {
+        "dataType": "refObject",
+        "properties": {
+            "heading": {"dataType":"double","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":360}}},
+            "sweep": {"dataType":"double","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":360}}},
+            "radius": {"dataType":"double","required":true,"validators":{"minimum":{"value":0.1},"maximum":{"value":100000}}},
+            "rangeLines": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"validators":{"minimum":{"value":1},"maximum":{"value":60000}}},
+            "displayLabels": {"dataType":"boolean"},
+            "visible": {"dataType":"boolean"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BullseyeStyle": {
+        "dataType": "refObject",
+        "properties": {
+            "ringDistance": {"dataType":"double","required":true,"validators":{"minimum":{"value":0.1},"maximum":{"value":100000}}},
+            "ringCount": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":10}}},
+            "ringsVisible": {"dataType":"boolean","required":true},
+            "edgeToCenter": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Record_string.string_": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"string"},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TacticalGraphicStyle": {
+        "dataType": "refObject",
+        "properties": {
+            "sidc": {"dataType":"string","required":true,"validators":{"pattern":{"value":"^11[0-9]{18}$"}}},
+            "modifiers": {"ref":"Record_string.string_","required":true},
+        },
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PackageObjectStyle": {
@@ -1701,6 +1751,23 @@ const models: TsoaRoute.Models = {
             "height": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"validators":{"minimum":{"value":-100000},"maximum":{"value":100000}}},
             "heightUnit": {"dataType":"union","subSchemas":[{"ref":"HeightUnit"},{"dataType":"enum","enums":[null]}]},
             "extrudeMode": {"dataType":"union","subSchemas":[{"ref":"ExtrudeMode"},{"dataType":"enum","enums":[null]}]},
+            "arrowHeads": {"ref":"ArrowHeads"},
+            "arrowHeadSize": {"dataType":"integer","validators":{"minimum":{"value":6},"maximum":{"value":64}}},
+            "routeDirectionArrows": {"dataType":"boolean"},
+            "routeArrowSpacing": {"dataType":"integer","validators":{"minimum":{"value":24},"maximum":{"value":256}}},
+            "rangeBearing": {"dataType":"boolean"},
+            "distanceUnit": {"ref":"DistanceUnit"},
+            "sector": {"dataType":"union","subSchemas":[{"ref":"SectorStyle"},{"dataType":"enum","enums":[null]}]},
+            "corridorWidth": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"validators":{"minimum":{"value":1},"maximum":{"value":10000}}},
+            "dashPattern": {"dataType":"union","subSchemas":[{"dataType":"array","array":{"dataType":"double"}},{"dataType":"enum","enums":[null]}],"validators":{"minItems":{"value":2},"maxItems":{"value":8}}},
+            "labelVisible": {"dataType":"boolean"},
+            "rangeCircle": {"dataType":"boolean"},
+            "rangeRings": {"dataType":"integer","validators":{"minimum":{"value":1},"maximum":{"value":10}}},
+            "bullseye": {"dataType":"union","subSchemas":[{"ref":"BullseyeStyle"},{"dataType":"enum","enums":[null]}]},
+            "bearingUnit": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["degrees"]},{"dataType":"enum","enums":["mils"]},{"dataType":"enum","enums":["radians"]},{"dataType":"enum","enums":["warsaw-mils"]},{"dataType":"enum","enums":["streck"]},{"dataType":"enum","enums":["clock"]}]},
+            "minimumSafeDistance": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"validators":{"minimum":{"value":0.1},"maximum":{"value":5000}}},
+            "msdColor": {"dataType":"union","subSchemas":[{"ref":"HexColor"},{"dataType":"enum","enums":[null]}]},
+            "tacticalGraphic": {"dataType":"union","subSchemas":[{"ref":"TacticalGraphicStyle"},{"dataType":"enum","enums":[null]}]},
         },
         "additionalProperties": false,
     },
@@ -1722,6 +1789,7 @@ const models: TsoaRoute.Models = {
     "PackageSnapshotObject": {
         "dataType": "refObject",
         "properties": {
+            "supplementParent": {"dataType":"string"},
             "id": {"dataType":"string","required":true},
             "layerId": {"dataType":"string","required":true},
             "kind": {"ref":"PackageObjectKind","required":true},
@@ -3088,6 +3156,26 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresentationLoss": {
+        "dataType": "refObject",
+        "properties": {
+            "objectId": {"dataType":"string","required":true},
+            "objectName": {"dataType":"string","required":true},
+            "code": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PresentationReport": {
+        "dataType": "refObject",
+        "properties": {
+            "format": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["cot"]},{"dataType":"enum","enums":["kml"]}],"required":true},
+            "losses": {"dataType":"array","array":{"dataType":"refObject","ref":"PresentationLoss"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "DataPackageContentSummary": {
         "dataType": "refObject",
         "properties": {
@@ -3190,11 +3278,36 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "PackageObjectPage": {
+    "BatchPackageObjectsResponse": {
         "dataType": "refObject",
         "properties": {
-            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageObjectDto"},"required":true},
-            "page": {"ref":"PageInfo","required":true},
+            "updated": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageObjectDto"},"required":true},
+            "created": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageObjectDto"},"required":true},
+            "deletedIds": {"dataType":"array","array":{"dataType":"refAlias","ref":"Uuid"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BatchPackageObjectUpdate": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
+            "layerId": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
+            "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true,"validators":{"maxLength":{"value":2000}}},
+            "geometry": {"ref":"PackageGeometry","required":true},
+            "style": {"ref":"PackageObjectStyle","required":true},
+            "tak": {"dataType":"union","subSchemas":[{"ref":"TakMarker"},{"dataType":"enum","enums":[null]}],"required":true},
+            "id": {"ref":"Uuid","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BatchPackageObjectDelete": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1}}},
         },
         "additionalProperties": false,
     },
@@ -3208,6 +3321,25 @@ const models: TsoaRoute.Models = {
             "geometry": {"ref":"PackageGeometry","required":true},
             "style": {"ref":"PackageObjectStyle"},
             "tak": {"dataType":"union","subSchemas":[{"ref":"TakMarker"},{"dataType":"enum","enums":[null]}]},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BatchPackageObjectsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "updates": {"dataType":"array","array":{"dataType":"refObject","ref":"BatchPackageObjectUpdate"},"required":true,"validators":{"maxItems":{"value":500}}},
+            "deletes": {"dataType":"array","array":{"dataType":"refObject","ref":"BatchPackageObjectDelete"},"required":true,"validators":{"maxItems":{"value":500}}},
+            "creates": {"dataType":"array","array":{"dataType":"refObject","ref":"CreatePackageObjectRequest"},"required":true,"validators":{"maxItems":{"value":500}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PackageObjectPage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"PackageObjectDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
         },
         "additionalProperties": false,
     },
@@ -3325,6 +3457,7 @@ const models: TsoaRoute.Models = {
             "name": {"dataType":"string","required":true,"validators":{"minLength":{"value":1},"maxLength":{"value":100}}},
             "description": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"validators":{"maxLength":{"value":1000}}},
             "kind": {"ref":"DataPackageKind"},
+            "source": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["published"]},{"dataType":"enum","enums":["draft"]}]},
             "packages": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportSelection"},"required":true,"validators":{"minItems":{"value":1},"maxItems":{"value":100}}},
         },
         "additionalProperties": false,
@@ -3481,6 +3614,7 @@ const models: TsoaRoute.Models = {
             "included": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportIncluded"},"required":true},
             "skipped": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportSkipped"},"required":true},
             "nameClashes": {"dataType":"array","array":{"dataType":"refObject","ref":"CombinedExportNameClash"},"required":true},
+            "presentationLosses": {"dataType":"array","array":{"dataType":"refObject","ref":"PresentationLoss"},"required":true},
         },
         "additionalProperties": false,
     },
@@ -8861,6 +8995,42 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackagePresentationController_report: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                format: {"in":"query","name":"format","required":true,"dataType":"union","subSchemas":[{"dataType":"enum","enums":["cot"]},{"dataType":"enum","enums":["kml"]}]},
+                revision: {"in":"query","name":"revision","dataType":"integer","validators":{"isInt":{"errorMsg":"revision"},"minimum":{"value":1}}},
+                layerId: {"in":"query","name":"layerId","ref":"Uuid"},
+        };
+        app.get('/api/v1/events/:eventId/data-packages/:packageId/presentation-report',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackagePresentationController)),
+            ...(fetchMiddlewares<RequestHandler>(PackagePresentationController.prototype.report)),
+
+            async function PackagePresentationController_report(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackagePresentationController_report, request, response });
+
+                const controller = new PackagePresentationController();
+
+              await templateService.apiHandler({
+                methodName: 'report',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsPackageOrderController_reorderDataPackages: Record<string, TsoaRoute.ParameterSchema> = {
                 request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
@@ -8883,6 +9053,41 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'reorderDataPackages',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPackageObjectsController_batchPackageObjects: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                packageId: {"in":"path","name":"packageId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"BatchPackageObjectsRequest"},
+                _idempotencyKey: {"in":"header","name":"Idempotency-Key","dataType":"string"},
+        };
+        app.post('/api/v1/events/:eventId/data-packages/:packageId/objects/batch',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController)),
+            ...(fetchMiddlewares<RequestHandler>(PackageObjectsController.prototype.batchPackageObjects)),
+
+            async function PackageObjectsController_batchPackageObjects(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPackageObjectsController_batchPackageObjects, request, response });
+
+                const controller = new PackageObjectsController();
+
+              await templateService.apiHandler({
+                methodName: 'batchPackageObjects',
                 controller,
                 response,
                 next,

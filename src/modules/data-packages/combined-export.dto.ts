@@ -1,4 +1,5 @@
 import type { Uuid } from "../../shared/http/uuid.js";
+import type { PresentationLoss } from "./export-presentation.js";
 
 export interface CombinedExportSelection {
   packageId: Uuid;
@@ -54,4 +55,5 @@ export interface CombinedExportReport {
   included: CombinedExportIncluded[];
   skipped: CombinedExportSkipped[];
   nameClashes: CombinedExportNameClash[];
+  presentationLosses: PresentationLoss[];
 }

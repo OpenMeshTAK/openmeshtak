@@ -4,7 +4,7 @@ import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { removeBlob, writeBlob } from "../../shared/storage/blob-storage.js";
 import { convertCotEvent } from "./atak/cot-import.js";
-import { objectToCot } from "./atak/cot-export.js";
+import { objectToCotEvents } from "./atak/cot-export.js";
 import { readDataPackage, writeDataPackage } from "./atak/data-package-archive.js";
 import { requireDataPackage } from "./data-package-access.js";
 import { emptyConversion, type ImportConversion } from "./import-candidate.js";
@@ -168,7 +168,7 @@ export async function buildAtakExport(packageId: string, revision: PackageRevisi
     {
       uid: layerId ?? packageId,
       name: snapshot.name,
-      events: snapshot.objects.map((object) => ({ uid: object.id, xml: objectToCot(object, revision.createdAt) })),
+      events: snapshot.objects.flatMap((object) => objectToCotEvents(object, revision.createdAt)),
       files,
     },
     revision.createdAt,

@@ -75,6 +75,7 @@ void describe("combined Data Package export", () => {
       ],
       skipped: [{ packageId: draft.id, name: "Draft", reason: "not-published" }],
       nameClashes: [{ name: "Rally", packageIds: [alpha.id, bravo.id].sort() }],
+      presentationLosses: [],
     });
   });
 

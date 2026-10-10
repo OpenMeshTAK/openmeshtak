@@ -5,6 +5,7 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { geometryProblems } from "../src/modules/data-packages/geometry.js";
 import type { PackageGeometry } from "../src/modules/data-packages/package-object.dto.js";
+import type { PackageObjectDto } from "../src/modules/data-packages/package-object.dto.js";
 import { disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser, type TestUser } from "./support/identity.js";
 
@@ -123,6 +124,45 @@ void describe("data package objects", () => {
     assert.deepEqual(body.errors.map(({ field, code }) => ({ field, code })), [{ field: "geometry", code: "INVALID_POSITION" }]);
   });
 
+  void it("accepts dashPattern including null on full-style saves and validates custom dash lengths", async () => {
+    const geometry = { type: "LineString", coordinates: [[8, 50], [8.1, 50.1]] };
+    const created = await request(app).post(`${packageUrl}/objects`).set("Cookie", editor.cookie)
+      .send({ layerId, name: "Pattern", geometry, style: { color: "#123456", strokeWidth: 3, fillOpacity: 0, dashPattern: null } }).expect(201);
+    const object = created.body as PackageObjectDto;
+    const body = { layerId, name: object.name, description: object.description, geometry, tak: null };
+    const changed = await request(app).put(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie)
+      .send({ ...body, version: object.version, style: { ...object.style, strokeStyle: "custom", dashPattern: [8, 4, 2, 4] } }).expect(200);
+    const updated = changed.body as PackageObjectDto;
+    assert.deepEqual(updated.style.dashPattern, [8, 4, 2, 4]);
+    await request(app).put(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie)
+      .send({ ...body, version: updated.version, style: { ...updated.style, dashPattern: [8, 4, 2] } }).expect(422);
+    const saved = await request(app).put(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie)
+      .send({ ...body, version: updated.version, name: "Renamed", style: updated.style }).expect(200);
+    assert.deepEqual((saved.body as PackageObjectDto).style.dashPattern, [8, 4, 2, 4]);
+    await request(app).put(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie)
+      .send({ ...body, version: (saved.body as PackageObjectDto).version, style: { ...updated.style, bogus: null } }).expect(422);
+  });
+
+  void it("persists arrow presentation, protects concurrent edits and rejects invalid presentation", async () => {
+    const geometry = { type: "LineString", coordinates: [[8, 50], [8.1, 50.1]] };
+    const style = { color: "#123456", strokeWidth: 3, fillOpacity: 0, arrowHeads: "end", arrowHeadSize: 20 };
+    const created = await request(app).post(`${packageUrl}/objects`).set("Cookie", editor.cookie)
+      .send({ layerId, name: "Arrow", geometry, style }).expect(201);
+    const object = created.body as PackageObjectDto;
+    const read = await request(app).get(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie).expect(200);
+    assert.deepEqual((read.body as PackageObjectDto).geometry, geometry);
+    assert.equal((read.body as PackageObjectDto).style.arrowHeads, "end");
+    const body = { version: object.version, layerId: object.layerId, name: object.name, description: object.description,
+      geometry: object.geometry, tak: object.tak, style: { ...object.style, arrowHeads: "both" } };
+    await request(app).put(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie).send(body).expect(200);
+    await request(app).put(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie).send(body).expect(409);
+    for (const invalid of [{ ...style, arrowHeadSize: 100 }, { ...style, routeDirectionArrows: true }, { ...style, arrowHeads: "unknown" }]) {
+      await request(app).post(`${packageUrl}/objects`).set("Cookie", editor.cookie).send({ layerId, name: "Broken", geometry, style: invalid }).expect(422);
+    }
+    await request(app).post(`${packageUrl}/objects`).set("Cookie", editor.cookie)
+      .send({ layerId, name: "Point", geometry: { type: "Point", coordinates: [8, 50] }, style }).expect(422);
+  });
+
   void it("updates with optimistic concurrency and protects locked layers", async () => {
     const created = await request(app)
       .post(`${packageUrl}/objects`)
@@ -169,6 +209,36 @@ void describe("data package objects", () => {
       .set("Cookie", editor.cookie)
       .send({ layerId: foreignLayer, name: "Sneaky", geometry: { type: "Point", coordinates: [8, 50] } })
       .expect(422);
+  });
+
+  void it("applies batch edits atomically and rejects stale, locked, foreign and unauthorized writes", async () => {
+    const create = async (name: string) => (await request(app).post(`${packageUrl}/objects`).set("Cookie", editor.cookie)
+      .send({ layerId, name, geometry: { type: "Point", coordinates: [8, 50] } }).expect(201)).body as PackageObjectDto;
+    const first = await create("First"), second = await create("Second");
+    const update = (item: PackageObjectDto, name: string, version = item.version) => ({ id: item.id, version, layerId, name,
+      description: item.description, geometry: item.geometry, style: item.style, tak: item.tak });
+    const payload = { updates: [update(first, "Changed"), update(second, "Stale", 999)], deletes: [], creates: [] };
+    await request(app).post(`${packageUrl}/objects/batch`).set("Cookie", editor.cookie).send(payload).expect(409);
+    const unchanged = await request(app).get(`${packageUrl}/objects/${first.id}`).set("Cookie", editor.cookie).expect(200);
+    assert.equal((unchanged.body as PackageObjectDto).name, "First");
+    assert.equal((unchanged.body as PackageObjectDto).version, first.version);
+    const saved = await request(app).post(`${packageUrl}/objects/batch`).set("Cookie", editor.cookie)
+      .send({ ...payload, updates: [update(first, "Changed"), update(second, "Also changed")] }).expect(200);
+    const rows = (saved.body as { updated: PackageObjectDto[] }).updated;
+    assert.deepEqual(rows.map(({ name }) => name), ["Changed", "Also changed"]);
+    assert.deepEqual(rows.map(({ version }) => version), [2, 2]);
+    const readOnly = await createUser("Viewer", [{ permission: "data-packages.read", eventId }]);
+    await request(app).post(`${packageUrl}/objects/batch`).set("Cookie", readOnly.cookie)
+      .send({ updates: [update(rows[0]!, "Denied")], creates: [], deletes: [] }).expect(403);
+    await request(app).post(`${packageUrl}/objects/batch`).set("Cookie", editor.cookie)
+      .send({ updates: [update(rows[0]!, "No partial write"), { ...update(rows[1]!, "Foreign"), id: "11111111-1111-4111-8111-111111111111" }], creates: [], deletes: [] }).expect(404);
+    await request(app).put(`${packageUrl}/layers/${layerId}`).set("Cookie", editor.cookie)
+      .send({ version: 1, name: "Locked", sortOrder: 0, visible: true, locked: true }).expect(200);
+    await request(app).post(`${packageUrl}/objects/batch`).set("Cookie", editor.cookie)
+      .send({ updates: [], creates: [], deletes: rows.map(({ id, version }) => ({ id, version })) }).expect(409);
+    const report = await request(app).get(`${packageUrl}/presentation-report`).query({ format: "cot" }).set("Cookie", readOnly.cookie).expect(200);
+    assert.deepEqual(report.body, { format: "cot", losses: [] });
+    await request(app).get(`${packageUrl}/presentation-report`).query({ format: "invalid" }).set("Cookie", editor.cookie).expect(422);
   });
 
   void it("stores TAK symbols on markers only", async () => {

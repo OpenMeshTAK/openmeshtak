@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { Prisma } from "../../generated/prisma/client.js";
+import { Prisma, type DataPackage, type PackageRevision } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
-import { ProblemError } from "../../shared/errors/problem-error.js";
+import { notFoundProblem, ProblemError, validationProblem } from "../../shared/errors/problem-error.js";
 import { requireEventPermission } from "../events/event-access.js";
-import { planCombinedExport } from "./combined-export.service.js";
+import { planCombinedExport, selectedSnapshot } from "./combined-export.service.js";
+import { buildPackageSnapshot, hashPackageSnapshot, type PackageSnapshot } from "./package-snapshot.js";
 import type { DataPackageDto } from "./data-package.dto.js";
 import { requireEditableEvent } from "./data-package-access.js";
 import { loadDto } from "./data-packages.service.js";
@@ -25,9 +26,29 @@ function limitProblem(kind: "layers" | "objects", maximum: number): ProblemError
   });
 }
 
+interface CopyPart { dataPackage: DataPackage; revision: PackageRevision | null; snapshot: PackageSnapshot }
+
+/** A draft has no published revision identity. Read it consistently and audit its snapshot hash. */
+async function draftParts(actor: ActorContext, eventId: string, input: CreateDataPackageCopyRequest): Promise<CopyPart[]> {
+  await requireEventPermission(actor.principal, eventId, "data-packages.read");
+  if (new Set(input.packages.map(({ packageId }) => packageId)).size !== input.packages.length || input.packages.some(({ revision }) => revision !== undefined)) {
+    throw validationProblem([{ field: "packages", code: "INVALID_SELECTION", message: "Select each draft once, without a published revision number." }]);
+  }
+  return database.$transaction(async (transaction) => {
+    const parts: CopyPart[] = [];
+    for (const [index, selection] of input.packages.entries()) {
+      const dataPackage = await transaction.dataPackage.findFirst({ where: { id: selection.packageId, eventId } });
+      if (dataPackage === null) throw notFoundProblem();
+      const snapshot = selectedSnapshot(await buildPackageSnapshot(transaction, dataPackage.id), selection, index, "draft");
+      parts.push({ dataPackage, revision: null, snapshot });
+    }
+    return parts;
+  });
+}
+
 /**
- * Copies published content into an independent editable package. Every layer and object receives a
- * new UUID, while immutable source rows retain the exact revisions and original layer IDs.
+ * Copies explicitly selected drafts or published content into an independent editable package.
+ * Immutable published provenance is retained; draft provenance is audited without inventing a revision.
  */
 export async function createDataPackageCopy(
   actor: ActorContext,
@@ -35,7 +56,7 @@ export async function createDataPackageCopy(
   input: CreateDataPackageCopyRequest,
 ): Promise<DataPackageDto> {
   requireEditableEvent(await requireEventPermission(actor.principal, eventId, "data-packages.edit"));
-  const { parts } = await planCombinedExport(actor.principal, eventId, input);
+  const parts: CopyPart[] = input.source === "draft" ? await draftParts(actor, eventId, input) : (await planCombinedExport(actor.principal, eventId, input)).parts;
   if (parts.length === 0) {
     throw new ProblemError({
       type: "urn:openmeshtak:problem:nothing-to-copy",
@@ -117,7 +138,7 @@ export async function createDataPackageCopy(
         });
       }
 
-      await transaction.dataPackageSource.create({
+      if (part.revision !== null) await transaction.dataPackageSource.create({
         data: {
           id: randomUUID(),
           packageId,
@@ -142,7 +163,9 @@ export async function createDataPackageCopy(
           eventId,
           sources: parts.map(({ dataPackage, revision, snapshot }) => ({
             packageId: dataPackage.id,
-            revision: revision.number,
+            revision: revision?.number ?? null,
+            source: revision === null ? "draft" : "published",
+            snapshotHash: revision?.snapshotHash ?? hashPackageSnapshot(snapshot),
             layerIds: snapshot.layers.map(({ id }) => id),
           })),
         },

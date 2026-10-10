@@ -32,6 +32,21 @@ void describe("KML export", () => {
     assert.equal(kmlColor("#FF8000", 0.5), "800080ff");
   });
 
+  void it("retains exact remarks and source alongside static arrowheads", () => {
+    const source = structuredClone(snapshot);
+    const line = source.objects.find(({ id }) => id === "l1")!;
+    line.style = { ...line.style, arrowHeads: "both", strokeStyle: "dotted" };
+    line.description = "  Keep & remarks\n  exactly  ";
+    const xml = snapshotToKml(source);
+    const parsed = new XMLParser({ ignoreAttributes: false, trimValues: false, parseTagValue: false, isArray: (name) => ["Folder", "Placemark", "Data"].includes(name) }).parse(xml) as { kml: { Document: { Folder: Array<{ Placemark: Array<{ description: string; MultiGeometry?: { LineString: unknown; Polygon: unknown[] }; ExtendedData: { Data: Array<{ value: string }> } }> }> } } };
+    const exported = parsed.kml.Document.Folder.flatMap(({ Placemark }) => Placemark).find(({ description }) => description === line.description)!;
+    assert.ok(exported);
+    assert.ok(exported.MultiGeometry?.LineString);
+    assert.equal(exported.MultiGeometry?.Polygon.length, 2);
+    assert.ok(exported.ExtendedData.Data.some(({ value }) => value.includes('"arrowHeads":"both"')));
+    assert.match(xml, /KML shows the line solid/);
+  });
+
   void it("writes one folder per layer, top layer first, with styled placemarks", () => {
     const document = (parse(snapshotToKml(snapshot)).kml as Node).Document as Node;
     assert.equal(document.name, "Game <Area> & more", "escaped and parsed back unchanged");

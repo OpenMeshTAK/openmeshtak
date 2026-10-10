@@ -16,7 +16,8 @@ import {
   toPage,
 } from "../../shared/pagination/cursor.js";
 import { geometryProblems, kindOf } from "./geometry.js";
-import { completeStyle } from "./object-style.js";
+import { completeStyle, directionStyleProblems } from "./object-style.js";
+import { planningValidationGeometry } from "./planning-footprint.js";
 import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
 import { clearDraftHash } from "./package-state.js";
 import { readTak, takColumn } from "./tak-marker.js";
@@ -28,6 +29,8 @@ import type {
   PackageObjectPage,
   PackageObjectStyle,
   UpdatePackageObjectRequest,
+  BatchPackageObjectsRequest,
+  BatchPackageObjectsResponse,
 } from "./package-object.dto.js";
 
 export const MAX_OBJECTS_PER_PACKAGE = 5_000;
@@ -63,8 +66,8 @@ function layerLocked(): ProblemError {
 }
 
 /** The layer must belong to the same data package and be unlocked. */
-async function requireWritableLayer(packageId: string, layerId: string): Promise<void> {
-  const layer = await database.packageLayer.findFirst({ where: { id: layerId, packageId }, select: { locked: true } });
+async function requireWritableLayer(packageId: string, layerId: string, client: Prisma.TransactionClient = database): Promise<void> {
+  const layer = await client.packageLayer.findFirst({ where: { id: layerId, packageId }, select: { locked: true } });
   if (layer === null) {
     throw validationProblem([{ field: "layerId", code: "NOT_FOUND", message: "No layer with this ID exists in this data package." }]);
   }
@@ -73,10 +76,73 @@ async function requireWritableLayer(packageId: string, layerId: string): Promise
   }
 }
 
+/** Version checks and writes share a transaction: bulk editing never partly succeeds. */
+export async function batchObjects(actor: ActorContext, eventId: string, packageId: string, input: BatchPackageObjectsRequest): Promise<BatchPackageObjectsResponse> {
+  const { event } = await requireDataPackage(actor.principal, eventId, packageId, "data-packages.edit");
+  requireEditableEvent(event);
+  const ids = [...input.updates, ...input.deletes].map(({ id }) => id);
+  const count = ids.length + input.creates.length;
+  if (count < 1 || count > 500 || new Set(ids).size !== ids.length) {
+    throw validationProblem([{ field: "updates", code: "INVALID_BATCH", message: "Choose 1–500 changes with no repeated object IDs." }]);
+  }
+  for (const item of [...input.updates, ...input.creates]) {
+    validateGeometry(item.geometry);
+    validateObjectPresentation(item.geometry, item.style ?? DEFAULT_STYLE);
+  }
+  return database.$transaction(async (tx) => {
+    const existing = await tx.packageObject.findMany({ where: { packageId, id: { in: ids } } });
+    const byId = new Map(existing.map((row) => [row.id, row]));
+    for (const item of [...input.updates, ...input.deletes]) {
+      const row = byId.get(item.id);
+      if (row === undefined) throw notFoundProblem();
+      if (row.version !== item.version) throw versionConflictProblem(row.version);
+    }
+    const layerIds = new Set([...existing.map(({ layerId }) => layerId), ...input.updates.map(({ layerId }) => layerId), ...input.creates.map(({ layerId }) => layerId)]);
+    for (const layerId of layerIds) await requireWritableLayer(packageId, layerId, tx);
+    const currentCount = await tx.packageObject.count({ where: { packageId } });
+    if (currentCount - input.deletes.length + input.creates.length > MAX_OBJECTS_PER_PACKAGE) {
+      throw validationProblem([{ field: "creates", code: "TOO_MANY_OBJECTS", message: `A data package can have at most ${String(MAX_OBJECTS_PER_PACKAGE)} objects.` }]);
+    }
+    const updated: PackageObjectDto[] = [];
+    for (const item of input.updates) {
+      const changed = await tx.packageObject.updateMany({ where: { id: item.id, packageId, version: item.version }, data: {
+        layerId: item.layerId, name: item.name, description: item.description, kind: kindOf(item.geometry), geometry: jsonValue(item.geometry),
+        style: jsonValue(item.style), tak: takColumn(item.geometry, item.tak), version: { increment: 1 },
+      } });
+      if (changed.count !== 1) throw versionConflictProblem(byId.get(item.id)?.version ?? item.version);
+      updated.push(toObjectDto(await tx.packageObject.findUniqueOrThrow({ where: { id: item.id } })));
+    }
+    for (const item of input.deletes) {
+      const deleted = await tx.packageObject.deleteMany({ where: { id: item.id, packageId, version: item.version } });
+      if (deleted.count !== 1) throw versionConflictProblem(item.version);
+    }
+    const created: PackageObjectDto[] = [];
+    for (const item of input.creates) {
+      created.push(toObjectDto(await tx.packageObject.create({ data: { id: randomUUID(), packageId, layerId: item.layerId,
+        name: item.name, description: item.description ?? null, kind: kindOf(item.geometry), geometry: jsonValue(item.geometry),
+        style: jsonValue(item.style ?? DEFAULT_STYLE), tak: takColumn(item.geometry, item.tak),
+      } })));
+    }
+    await clearDraftHash(tx, packageId);
+    return { updated, created, deletedIds: input.deletes.map(({ id }) => id) };
+  }, { timeout: 20_000 });
+}
+
 function validateGeometry(geometry: PackageGeometry): void {
   const problems = geometryProblems(geometry);
   if (problems.length > 0) {
     throw validationProblem(problems);
+  }
+}
+
+export function validateObjectPresentation(geometry: PackageGeometry, style: PackageObjectStyle): void {
+  const problems = directionStyleProblems(style, geometry);
+  if (problems.length > 0) throw validationProblem(problems);
+  try {
+    for (const derived of planningValidationGeometry(geometry, style)) validateGeometry(derived);
+  } catch (error) {
+    if (error instanceof ProblemError) throw error;
+    throw validationProblem([{ field: "style", code: "INVALID_FOOTPRINT", message: "The planning footprint cannot be generated. Use a shorter source, smaller radius/width or different centre." }]);
   }
 }
 
@@ -133,6 +199,7 @@ export async function createObject(
   requireEditableEvent(event);
   await requireWritableLayer(packageId, input.layerId);
   validateGeometry(input.geometry);
+  validateObjectPresentation(input.geometry, input.style ?? DEFAULT_STYLE);
 
   if ((await database.packageObject.count({ where: { packageId } })) >= MAX_OBJECTS_PER_PACKAGE) {
     throw new ProblemError({
@@ -176,6 +243,7 @@ export async function updateObject(
     await requireWritableLayer(packageId, input.layerId);
   }
   validateGeometry(input.geometry);
+  validateObjectPresentation(input.geometry, input.style);
 
   const updated = await database.packageObject.updateMany({
     where: { id: objectId, packageId, version: input.version },

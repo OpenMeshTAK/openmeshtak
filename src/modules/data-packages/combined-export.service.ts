@@ -5,7 +5,7 @@ import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError, validationProblem } from "../../shared/errors/problem-error.js";
 import { requireEventPermission } from "../events/event-access.js";
-import { objectToCot } from "./atak/cot-export.js";
+import { objectToCotEvents } from "./atak/cot-export.js";
 import { writeDataPackage } from "./atak/data-package-archive.js";
 import type {
   CombinedExportNameClash,
@@ -16,6 +16,7 @@ import type {
 import type { AtakExport } from "./package-atak.service.js";
 import { loadContentFiles, mergeContentFiles } from "./package-content-files.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
+import { presentationLosses } from "./export-presentation.js";
 
 export interface IncludedPart {
   dataPackage: DataPackage;
@@ -35,7 +36,7 @@ async function findRevision(packageId: string, number: number | undefined): Prom
 }
 
 /** Narrows a snapshot to the chosen layers; an unknown or repeated layer is never silently ignored. */
-function selectedSnapshot(snapshot: PackageSnapshot, selection: CombinedExportSelection, index: number): PackageSnapshot {
+export function selectedSnapshot(snapshot: PackageSnapshot, selection: CombinedExportSelection, index: number, source = "revision"): PackageSnapshot {
   if (selection.layerIds === undefined) {
     return snapshot;
   }
@@ -47,7 +48,7 @@ function selectedSnapshot(snapshot: PackageSnapshot, selection: CombinedExportSe
   const known = new Set(snapshot.layers.map(({ id }) => id));
   if (selection.layerIds.some((id) => !known.has(id))) {
     throw validationProblem([
-      { field: `packages.${String(index)}.layerIds`, code: "UNKNOWN_LAYER", message: "Choose layers of this package revision." },
+      { field: `packages.${String(index)}.layerIds`, code: "UNKNOWN_LAYER", message: `Choose layers of this package ${source}.` },
     ]);
   }
   const wanted = new Set(selection.layerIds);
@@ -90,7 +91,7 @@ export async function planCombinedExport(
     throw validationProblem([{ field: "packages", code: "DUPLICATE", message: "Select each data package only once." }]);
   }
 
-  const report: CombinedExportReport = { included: [], skipped: [], nameClashes: [] };
+  const report: CombinedExportReport = { included: [], skipped: [], nameClashes: [], presentationLosses: [] };
   const parts: IncludedPart[] = [];
   for (const [index, selection] of input.packages.entries()) {
     const dataPackage = await database.dataPackage.findFirst({ where: { id: selection.packageId, eventId } });
@@ -115,6 +116,7 @@ export async function planCombinedExport(
     });
   }
   report.nameClashes = nameClashes(parts);
+  report.presentationLosses = parts.flatMap(({ snapshot }) => snapshot.objects.flatMap((object) => presentationLosses(object, "cot")));
   return { report, parts };
 }
 
@@ -173,7 +175,7 @@ export async function exportCombined(
       uid: combinedUid(eventId, parts),
       name,
       events: parts.flatMap(({ revision, snapshot }) =>
-        snapshot.objects.map((object) => ({ uid: object.id, xml: objectToCot(object, revision.createdAt) })),
+        snapshot.objects.flatMap((object) => objectToCotEvents(object, revision.createdAt)),
       ),
       files,
     },

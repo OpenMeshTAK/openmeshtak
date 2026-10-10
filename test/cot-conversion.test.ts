@@ -43,7 +43,7 @@ void describe("CoT event conversion", () => {
       const { geometry, style } = result.candidates[0] ?? assert.fail("no object");
       assert.equal(geometry.type, "Polygon");
       assert.deepEqual(geometry.type === "Polygon" ? geometry.coordinates[0]?.[0] : null, [8.68, 50.1, 82.73679294]);
-      assert.deepEqual(style, { color: "#00FF00", strokeWidth: 1, fillOpacity: 0.09, strokeStyle: "solid", fillColor: null, height: 0 });
+      assert.deepEqual(style, { color: "#00FF00", strokeWidth: 1, fillOpacity: 0.09, strokeStyle: "solid", fillColor: null, height: 0, labelVisible: true });
     }
   });
 
@@ -75,7 +75,7 @@ void describe("CoT event conversion", () => {
     const dashed = convertCotEvent(shape("dashed"), DEFAULT_STYLE);
     assert.equal(dashed.outcome, "accepted");
     if (dashed.outcome === "accepted") {
-      assert.deepEqual(dashed.candidates[0]?.style, { color: "#0000FF", strokeWidth: 3, fillOpacity: 0.5, strokeStyle: "dashed", fillColor: "#00FF00" });
+      assert.deepEqual(dashed.candidates[0]?.style, { color: "#0000FF", strokeWidth: 3, fillOpacity: 0.5, strokeStyle: "dashed", fillColor: "#00FF00", labelVisible: true });
       const exported = objectToCot(
         { id: "66666666-6666-4666-8666-666666666666", layerId: "layer", kind: "polygon", ...(dashed.candidates[0] ?? assert.fail("no object")) },
         new Date("2026-10-05T00:00:00Z"),
@@ -83,8 +83,8 @@ void describe("CoT event conversion", () => {
       assert.match(exported, /<strokeStyle value="dashed"\/>/);
       assert.match(exported, new RegExp(`<fillColor value="${String(toArgb("#00FF00", 0.5))}"/>`));
     }
-    const dotted = convertCotEvent(shape("dotted"), DEFAULT_STYLE);
-    assert.deepEqual(dotted.outcome === "accepted" ? [dotted.candidates[0]?.style.strokeStyle, dotted.changes] : null, ["solid", ["line style dotted became solid"]]);
+    const dotted = convertCotEvent(shape("invented"), DEFAULT_STYLE);
+    assert.deepEqual(dotted.outcome === "accepted" ? [dotted.candidates[0]?.style.strokeStyle, dotted.changes] : null, ["solid", ["line style invented became solid"]]);
   });
 
   void it("imports each stroke of a freehand drawing as its own line", () => {

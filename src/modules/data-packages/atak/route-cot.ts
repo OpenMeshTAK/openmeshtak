@@ -46,9 +46,13 @@ export function routeCotDetails(geometry: RouteGeometry, color: number, width: n
       "@_type": geometry.points[index]?.type === "waypoint" ? "b-m-p-w" : "b-m-p-c",
       "@_callsign": geometry.points[index]?.name ?? "",
       "@_remarks": geometry.points[index]?.remarks ?? "",
+      "@_relation": "c",
     })),
     link_attr: { "@_color": String(color), "@_stroke": String(width),
-      ...Object.fromEntries(Object.entries(geometry.options).map(([key, value]) => [`@_${OPTION_ATTRIBUTES[key as keyof RouteOptions]}`, value])),
+      // Empty values and the early editor default `b-m-r` (a CoT type, not ATAK's transport label) are not written.
+      ...Object.fromEntries(Object.entries(geometry.options)
+        .filter(([key, value]) => value !== "" && !(key === "transportationType" && value === "b-m-r"))
+        .map(([key, value]) => [`@_${OPTION_ATTRIBUTES[key as keyof RouteOptions]}`, value])),
     },
     __routeinfo: { __navcues: { __navcue: geometry.navigationCues.map((cue) => ({
       "@_id": cue.pointId, "@_text": cue.text, "@_voice": cue.voice,

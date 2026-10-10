@@ -2,8 +2,11 @@ import circle from "@turf/circle";
 import { XMLBuilder } from "fast-xml-parser";
 import type { PackageGeometry, PackageObjectStyle, Position } from "./package-object.dto.js";
 import { fillColorOf } from "./object-style.js";
+import { presentationLosses } from "./export-presentation.js";
 import { shapeFootprint } from "./shape-footprint.js";
 import type { PackageSnapshot, PackageSnapshotObject } from "./package-snapshot.js";
+import { planningFootprint } from "./planning-footprint.js";
+import { arrowFootprints } from "./arrow-footprints.js";
 
 /**
  * A small, tested KML subset for GIS tools such as Google Earth: one folder per layer, points,
@@ -16,7 +19,8 @@ const CIRCLE_STEPS = 64;
 const builder = new XMLBuilder({
   ignoreAttributes: false,
   attributeNamePrefix: "@_",
-  format: true,
+  format: false,
+  suppressBooleanAttributes: false,
   suppressEmptyNode: true,
 });
 
@@ -70,12 +74,43 @@ function styleOf(kind: PackageSnapshotObject["kind"], style: PackageObjectStyle)
   return {
     ...(kind === "point" ? { IconStyle: { color: kmlColor(style.color) } } : {}),
     LineStyle: { color: kmlColor(style.color), width: style.strokeWidth },
+    ...(style.labelVisible === false ? { LabelStyle: { scale: 0 } } : {}),
     ...(filled ? { PolyStyle: { color: kmlColor(fillColorOf(style), style.fillOpacity) } } : {}),
   };
 }
 
+/** Keep source paths together with supplementary planning footprints. */
+function presentationGeometry(object: PackageSnapshotObject): Record<string, unknown> {
+  const footprint = planningFootprint(object.geometry, object.style);
+  const heads = arrowFootprints(object, false);
+  if (heads.length > 0) return { MultiGeometry: { ...geometryOf(object.geometry), Polygon: [...(footprint === null ? [] : [geometryOf(footprint).Polygon]), ...heads.map(({ geometry }) => geometryOf(geometry).Polygon)] } };
+  if (object.style.corridorWidth != null && footprint !== null) return { MultiGeometry: { ...geometryOf(object.geometry), ...geometryOf(footprint) } };
+  if (object.geometry.type === "Circle" && (object.style.rangeCircle === true || object.style.bullseye?.ringsVisible === true)) {
+    const geometry = object.geometry;
+    const count = object.style.rangeCircle === true ? object.style.rangeRings ?? 1 : object.style.bullseye!.ringCount;
+    const spacing = object.style.rangeCircle === true ? geometry.radius : object.style.bullseye!.ringDistance;
+    const circles = Array.from({ length: count }, (_, index) => geometryOf({ ...geometry, radius: spacing * (index + 1) }).Polygon);
+    if (object.style.bullseye != null) circles.unshift(geometryOf(geometry).Polygon);
+    return { MultiGeometry: { Polygon: circles } };
+  }
+  return geometryOf(footprint ?? object.geometry);
+}
+
 function placemark(object: PackageSnapshotObject): Record<string, unknown> {
   const extra: Array<{ "@_name": string; value: string }> = [];
+  extra.push({ "@_name": "openmeshtak:source", value: JSON.stringify({ name: object.name, geometry: object.geometry, style: object.style, tak: object.tak }) });
+  if (object.style.strokeStyle === "dotted" || object.style.strokeStyle === "custom") extra.push({ "@_name": "openmeshtak:line-pattern", value: JSON.stringify({ strokeStyle: object.style.strokeStyle, dashPattern: object.style.dashPattern }) });
+  if (object.style.sector != null || object.style.corridorWidth != null || object.style.rangeBearing === true) {
+    extra.push({ "@_name": "openmeshtak:planning-style", value: JSON.stringify(object.style) });
+    extra.push({ "@_name": "openmeshtak:source-geometry", value: JSON.stringify(object.geometry) });
+  }
+  const losses = presentationLosses(object, "kml");
+  const fallback = losses.length === 0 ? null : losses.map(({ message }) => message).join("\n");
+  if (fallback !== null) {
+    extra.push({ "@_name": "openmeshtak:conversion-losses", value: JSON.stringify(losses) });
+    extra.push({ "@_name": "openmeshtak:presentation-fallback", value: fallback });
+    extra.push({ "@_name": "openmeshtak:direction-style", value: JSON.stringify({ arrowHeads: object.style.arrowHeads, arrowHeadSize: object.style.arrowHeadSize, routeDirectionArrows: object.style.routeDirectionArrows, routeArrowSpacing: object.style.routeArrowSpacing }) });
+  }
   if (["Circle", "Ellipse"].includes(object.geometry.type)) extra.push({ "@_name": "openmeshtak:approximation", value: "64-sided footprint; use CoT or GeoJSON to retain parametric geometry" });
   if (["Rectangle", "Ellipse", "Route"].includes(object.geometry.type)) extra.push({ "@_name": "openmeshtak:geometry", value: JSON.stringify(object.geometry) });
   if (object.style.height != null) extra.push({ "@_name": "openmeshtak:height-metres", value: String(object.style.height) });
@@ -84,10 +119,11 @@ function placemark(object: PackageSnapshotObject): Record<string, unknown> {
   return {
     "@_id": object.id,
     name: object.name,
+    ...(object.style.sector?.visible === false ? { visibility: 0 } : {}),
     ...(object.description === null ? {} : { description: object.description }),
-    Style: styleOf(object.kind, object.style),
+    Style: styleOf(object.style.sector != null || object.style.corridorWidth != null ? "polygon" : object.kind, object.style),
     ...(extra.length === 0 ? {} : { ExtendedData: { Data: extra } }),
-    ...geometryOf(object.geometry),
+    ...presentationGeometry(object),
   };
 }
 

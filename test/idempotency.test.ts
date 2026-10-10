@@ -154,6 +154,7 @@ void describe("Idempotency-Key", () => {
       .sort();
 
     assert.deepEqual(documented, [
+      "BatchPackageObjects",
       "CreateDataPackage",
       "CreateDataPackageCopy",
       "CreateEvent",
