@@ -70,6 +70,28 @@ void describe("ATAK Data Package import and export", () => {
     await disconnectDatabase();
   });
 
+  void it("writes associated arrowheads into the manifest and reimports only their editable source", async () => {
+    const created = await request(app).post(`${packageUrl}/objects`).set("Cookie", editor.cookie).send({ layerId, name: "Arrow", description: "  Keep & remarks  ",
+      geometry: { type: "LineString", coordinates: [[8, 50], [8.01, 50.01], [8.02, 50]] }, style: { color: "#123456", strokeWidth: 3, fillOpacity: 0, arrowHeads: "both", arrowHeadSize: 24 } }).expect(201);
+    const id = (created.body as { id: string }).id;
+    await request(app).post(`${packageUrl}/revisions`).set("Cookie", editor.cookie).expect(200);
+    const archive = binary(await download(`${packageUrl}/revisions/1/atak`));
+    const files = unzipSync(new Uint8Array(archive));
+    const paths = Object.keys(files).filter((path) => path.endsWith(".cot"));
+    assert.equal(paths.length, 3);
+    const manifest = strFromU8(files["MANIFEST/manifest.xml"]!);
+    for (const path of paths) assert.ok(manifest.includes(path));
+    const supplement = paths.map((path) => strFromU8(files[path]!)).filter((xml) => xml.includes('role="supplement"'));
+    assert.equal(supplement.length, 2);
+    assert.ok(supplement.every((xml) => xml.includes(`parent="${id}"`)));
+    const report = (await importZip(archive).expect(200)).body as ReportBody;
+    assert.equal(report.accepted, 1);
+    assert.equal(report.rejected.length, 0);
+    const objects = (await request(app).get(`${packageUrl}/objects`).set("Cookie", editor.cookie).expect(200)).body as { items: Array<{ style: { arrowHeads: string }; description: string }> };
+    assert.equal(objects.items.length, 2);
+    assert.ok(objects.items.every(({ style, description }) => style.arrowHeads === "both" && description === "  Keep & remarks  "));
+  });
+
   void it("imports markers, shapes and circles and reports everything else", async () => {
     const zip = dataPackageZip(
       { a: spotMarker, b: freeformArea, c: circle, d: route },

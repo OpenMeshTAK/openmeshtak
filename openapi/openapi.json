@@ -4411,7 +4411,10 @@
 				"type": "string",
 				"enum": [
 					"solid",
-					"dashed"
+					"dashed",
+					"dotted",
+					"outlined",
+					"custom"
 				],
 				"description": "How lines, outlines and circles are drawn; ATAK writes it as `strokeStyle`."
 			},
@@ -4433,6 +4436,126 @@
 					"cylinder",
 					"cone_down"
 				]
+			},
+			"ArrowHeads": {
+				"type": "string",
+				"enum": [
+					"none",
+					"start",
+					"end",
+					"both"
+				]
+			},
+			"DistanceUnit": {
+				"type": "string",
+				"enum": [
+					"m",
+					"km",
+					"ft",
+					"mi",
+					"nm"
+				]
+			},
+			"SectorStyle": {
+				"properties": {
+					"heading": {
+						"type": "number",
+						"format": "double",
+						"description": "True heading clockwise from north.",
+						"minimum": 0,
+						"maximum": 360
+					},
+					"sweep": {
+						"type": "number",
+						"format": "double",
+						"minimum": 1,
+						"maximum": 360
+					},
+					"radius": {
+						"type": "number",
+						"format": "double",
+						"description": "Metres.",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"rangeLines": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"minimum": 1,
+						"maximum": 60000
+					},
+					"displayLabels": {
+						"type": "boolean"
+					},
+					"visible": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"heading",
+					"sweep",
+					"radius"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BullseyeStyle": {
+				"properties": {
+					"ringDistance": {
+						"type": "number",
+						"format": "double",
+						"minimum": 0.1,
+						"maximum": 100000
+					},
+					"ringCount": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 10
+					},
+					"ringsVisible": {
+						"type": "boolean"
+					},
+					"edgeToCenter": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"ringDistance",
+					"ringCount",
+					"ringsVisible",
+					"edgeToCenter"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.string_": {
+				"properties": {},
+				"additionalProperties": {
+					"type": "string"
+				},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"TacticalGraphicStyle": {
+				"description": "Source-confirmed 2525D control measures; this deliberately excludes single-point symbols.",
+				"properties": {
+					"sidc": {
+						"type": "string",
+						"pattern": "^11[0-9]{18}$"
+					},
+					"modifiers": {
+						"$ref": "#/components/schemas/Record_string.string_",
+						"description": "Native __milsym unitmodifier codes, bounded and validated against the selected graphic."
+					}
+				},
+				"required": [
+					"sidc",
+					"modifiers"
+				],
+				"type": "object",
+				"additionalProperties": false
 			},
 			"PackageObjectStyle": {
 				"properties": {
@@ -4492,6 +4615,120 @@
 						],
 						"nullable": true,
 						"description": "Circle extrusion mode; absent uses the client's default."
+					},
+					"arrowHeads": {
+						"$ref": "#/components/schemas/ArrowHeads",
+						"description": "Endpoint arrowheads for lines; absent means none. CoT/KML export the underlying line."
+					},
+					"arrowHeadSize": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Arrowhead length in screen pixels, independent of map zoom.",
+						"minimum": 6,
+						"maximum": 64
+					},
+					"routeDirectionArrows": {
+						"type": "boolean",
+						"description": "Direction indicators following route point order; absent means false. Web presentation only."
+					},
+					"routeArrowSpacing": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Distance between route indicators in screen pixels.",
+						"minimum": 24,
+						"maximum": 256
+					},
+					"rangeBearing": {
+						"type": "boolean",
+						"description": "Saved, exactly two-point true Range & Bearing line."
+					},
+					"distanceUnit": {
+						"$ref": "#/components/schemas/DistanceUnit"
+					},
+					"sector": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/SectorStyle"
+							}
+						],
+						"nullable": true,
+						"description": "Coverage sector centred at a Point; polygon export is an approximation."
+					},
+					"corridorWidth": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Full corridor width in metres around a line/route; null disables it.",
+						"minimum": 1,
+						"maximum": 10000
+					},
+					"dashPattern": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array",
+						"nullable": true,
+						"description": "Alternating dash/gap lengths in screen pixels; custom line style only.",
+						"minItems": 2,
+						"maxItems": 8
+					},
+					"labelVisible": {
+						"type": "boolean",
+						"description": "Marker hideLabel / shape labels_on; defaults to visible."
+					},
+					"rangeCircle": {
+						"type": "boolean",
+						"description": "Native u-r-b-c-c presentation of Circle geometry."
+					},
+					"rangeRings": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1,
+						"maximum": 10
+					},
+					"bullseye": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/BullseyeStyle"
+							}
+						],
+						"nullable": true
+					},
+					"bearingUnit": {
+						"type": "string",
+						"enum": [
+							"degrees",
+							"mils",
+							"radians",
+							"warsaw-mils",
+							"streck",
+							"clock"
+						]
+					},
+					"minimumSafeDistance": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Distance outside a shape in metres; native MSD. Incompatible with route/R&B/bullseye.",
+						"minimum": 0.1,
+						"maximum": 5000
+					},
+					"msdColor": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/HexColor"
+							}
+						],
+						"nullable": true
+					},
+					"tacticalGraphic": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TacticalGraphicStyle"
+							}
+						],
+						"nullable": true
 					}
 				},
 				"required": [
@@ -4532,6 +4769,10 @@
 			},
 			"PackageSnapshotObject": {
 				"properties": {
+					"supplementParent": {
+						"type": "string",
+						"description": "Derived export-only visual association; never written into canonical draft objects."
+					},
 					"id": {
 						"type": "string"
 					},
@@ -8407,6 +8648,53 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"PresentationLoss": {
+				"properties": {
+					"objectId": {
+						"type": "string"
+					},
+					"objectName": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"objectId",
+					"objectName",
+					"code",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PresentationReport": {
+				"properties": {
+					"format": {
+						"type": "string",
+						"enum": [
+							"cot",
+							"kml"
+						]
+					},
+					"losses": {
+						"items": {
+							"$ref": "#/components/schemas/PresentationLoss"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"format",
+					"losses"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"DataPackageContentSummary": {
 				"properties": {
 					"points": {
@@ -8738,21 +9026,102 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"PackageObjectPage": {
+			"BatchPackageObjectsResponse": {
 				"properties": {
-					"items": {
+					"updated": {
 						"items": {
 							"$ref": "#/components/schemas/PackageObjectDto"
 						},
 						"type": "array"
 					},
-					"page": {
-						"$ref": "#/components/schemas/PageInfo"
+					"created": {
+						"items": {
+							"$ref": "#/components/schemas/PackageObjectDto"
+						},
+						"type": "array"
+					},
+					"deletedIds": {
+						"items": {
+							"$ref": "#/components/schemas/Uuid"
+						},
+						"type": "array"
 					}
 				},
 				"required": [
-					"items",
-					"page"
+					"updated",
+					"created",
+					"deletedIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BatchPackageObjectUpdate": {
+				"properties": {
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1
+					},
+					"layerId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "Moving an object to another layer of the same data package is allowed."
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100
+					},
+					"description": {
+						"type": "string",
+						"nullable": true,
+						"maxLength": 2000
+					},
+					"geometry": {
+						"$ref": "#/components/schemas/PackageGeometry"
+					},
+					"style": {
+						"$ref": "#/components/schemas/PackageObjectStyle"
+					},
+					"tak": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakMarker"
+							}
+						],
+						"nullable": true,
+						"description": "Markers only; send `null` for a plain spot marker."
+					},
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					}
+				},
+				"required": [
+					"version",
+					"layerId",
+					"name",
+					"description",
+					"geometry",
+					"style",
+					"tak",
+					"id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BatchPackageObjectDelete": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 1
+					}
+				},
+				"required": [
+					"id",
+					"version"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -8793,6 +9162,59 @@
 					"layerId",
 					"name",
 					"geometry"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BatchPackageObjectsRequest": {
+				"description": "Atomic changes in one draft. Any conflict or locked layer rejects the entire batch.",
+				"properties": {
+					"updates": {
+						"items": {
+							"$ref": "#/components/schemas/BatchPackageObjectUpdate"
+						},
+						"type": "array",
+						"maxItems": 500
+					},
+					"deletes": {
+						"items": {
+							"$ref": "#/components/schemas/BatchPackageObjectDelete"
+						},
+						"type": "array",
+						"maxItems": 500
+					},
+					"creates": {
+						"items": {
+							"$ref": "#/components/schemas/CreatePackageObjectRequest"
+						},
+						"type": "array",
+						"description": "Restores deleted objects with new server IDs, in request order.",
+						"maxItems": 500
+					}
+				},
+				"required": [
+					"updates",
+					"deletes",
+					"creates"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PackageObjectPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/PackageObjectDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -9106,12 +9528,20 @@
 						"$ref": "#/components/schemas/DataPackageKind",
 						"description": "The kind of the new package, e.g. `mission` to start a mission from published packages; `package` when omitted."
 					},
+					"source": {
+						"type": "string",
+						"enum": [
+							"published",
+							"draft"
+						],
+						"description": "Copy current drafts explicitly; defaults to immutable published revisions. Draft selections cannot specify revision numbers."
+					},
 					"packages": {
 						"items": {
 							"$ref": "#/components/schemas/CombinedExportSelection"
 						},
 						"type": "array",
-						"description": "Published package revisions and optional layer selections to copy.",
+						"description": "Source packages and optional layer selections to copy.",
 						"minItems": 1,
 						"maxItems": 100
 					}
@@ -9533,12 +9963,19 @@
 							"$ref": "#/components/schemas/CombinedExportNameClash"
 						},
 						"type": "array"
+					},
+					"presentationLosses": {
+						"items": {
+							"$ref": "#/components/schemas/PresentationLoss"
+						},
+						"type": "array"
 					}
 				},
 				"required": [
 					"included",
 					"skipped",
-					"nameClashes"
+					"nameClashes",
+					"presentationLosses"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -21999,6 +22436,113 @@
 				]
 			}
 		},
+		"/events/{eventId}/data-packages/{packageId}/presentation-report": {
+			"get": {
+				"operationId": "Report",
+				"responses": {
+					"200": {
+						"description": "Presentation differences",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PresentationReport"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Reports source-confirmed presentation differences before downloading an export.\nOmit revision for the current draft. This is not a real-client acceptance result.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "format",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"cot",
+								"kml"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "revision",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"in": "query",
+						"name": "layerId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
 		"/events/{eventId}/data-package-order": {
 			"put": {
 				"operationId": "ReorderDataPackages",
@@ -22095,6 +22639,121 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/ReorderDataPackagesRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/events/{eventId}/data-packages/{packageId}/objects/batch": {
+			"post": {
+				"operationId": "BatchPackageObjects",
+				"responses": {
+					"200": {
+						"description": "Batch saved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BatchPackageObjectsResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, locked layer or archived event",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Invalid batch or geometry",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Atomically edits/deletes/restores up to 500 objects; failures leave the draft unchanged.",
+				"tags": [
+					"Data packages"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "path",
+						"name": "packageId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "header",
+						"name": "Idempotency-Key",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BatchPackageObjectsRequest"
 							}
 						}
 					}
@@ -23679,7 +24338,7 @@
 						}
 					}
 				},
-				"description": "Copies selected published layers with new UUIDs and records their source revisions.",
+				"description": "Copies selected layers with new UUIDs. Published provenance is retained; explicit draft copies are audited by snapshot hash.",
 				"tags": [
 					"Data packages"
 				],

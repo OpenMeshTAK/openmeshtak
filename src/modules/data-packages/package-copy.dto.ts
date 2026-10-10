@@ -11,8 +11,10 @@ export interface CreateDataPackageCopyRequest {
   description?: string | null;
   /** The kind of the new package, e.g. `mission` to start a mission from published packages; `package` when omitted. */
   kind?: DataPackageKind;
+  /** Copy current drafts explicitly; defaults to immutable published revisions. Draft selections cannot specify revision numbers. */
+  source?: "published" | "draft";
   /**
-   * Published package revisions and optional layer selections to copy.
+   * Source packages and optional layer selections to copy.
    * @minItems 1
    * @maxItems 100
    */

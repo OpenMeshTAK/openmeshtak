@@ -1,10 +1,11 @@
 import { geometryProblems } from "./geometry.js";
-import { fillColorOf, strokeStyleOf } from "./object-style.js";
+import { directionStyleProblems, fillColorOf, strokeStyleOf } from "./object-style.js";
 import { parseTakMarker } from "./tak-marker.js";
 import { shapeFootprint } from "./shape-footprint.js";
 import type { ImportCandidate, ImportConversion } from "./import-candidate.js";
 import type { HeightUnit, PackageGeometry, PackageObjectStyle } from "./package-object.dto.js";
 import type { PackageSnapshot } from "./package-snapshot.js";
+import { planningValidationGeometry } from "./planning-footprint.js";
 
 type JsonObject = Record<string, unknown>;
 
@@ -40,7 +41,7 @@ function styleFrom(properties: JsonObject, fallback: PackageObjectStyle, changes
   const color =
     typeof colorValue === "string" && HEX_COLOR.test(colorValue) ? colorValue.toUpperCase() : fallback.color;
   const fill = typeof properties.fill === "string" && HEX_COLOR.test(properties.fill) ? properties.fill.toUpperCase() : null;
-  const strokeStyle = properties["stroke-style"] === "dashed" ? "dashed" : "solid";
+  const strokeStyle = properties["stroke-style"] === "dashed" ? "dashed" : properties["stroke-style"] === "dotted" ? "dotted" : properties["stroke-style"] === "outlined" ? "outlined" : properties["stroke-style"] === "custom" ? "custom" : "solid";
 
   let strokeWidth = fallback.strokeWidth;
   if (typeof properties["stroke-width"] === "number") {
@@ -60,6 +61,16 @@ function styleFrom(properties: JsonObject, fallback: PackageObjectStyle, changes
   const unit = properties["height-unit"];
   const mode = properties["extrude-mode"];
   const extrusion: Partial<PackageObjectStyle> = {};
+  for (const [property, field] of [["label-visible", "labelVisible"], ["range-circle", "rangeCircle"], ["range-rings", "rangeRings"], ["bullseye", "bullseye"], ["bearing-unit", "bearingUnit"], ["minimum-safe-distance", "minimumSafeDistance"], ["msd-color", "msdColor"], ["tactical-graphic", "tacticalGraphic"]] as const) {
+    if (properties[property] !== undefined) Object.assign(extrusion, { [field]: properties[property] });
+  }
+  if (properties["dash-pattern"] !== undefined) Object.assign(extrusion, { dashPattern: properties["dash-pattern"] });
+  for (const [property, field] of [["sector", "sector"], ["range-bearing", "rangeBearing"], ["distance-unit", "distanceUnit"], ["corridor-width", "corridorWidth"]] as const) {
+    if (properties[property] !== undefined) Object.assign(extrusion, { [field]: properties[property] });
+  }
+  for (const [property, field] of [["arrow-heads", "arrowHeads"], ["arrow-head-size", "arrowHeadSize"], ["route-direction-arrows", "routeDirectionArrows"], ["route-arrow-spacing", "routeArrowSpacing"]] as const) {
+    if (properties[property] !== undefined) Object.assign(extrusion, { [field]: properties[property] });
+  }
   if (height != null) {
     if (typeof height === "number" && Number.isFinite(height) && Math.abs(height) <= 100_000) extrusion.height = height;
     else changes.push("unreadable or out-of-range shape height omitted");
@@ -178,6 +189,15 @@ export function convertGeoJson(document: unknown, fallbackStyle: PackageObjectSt
         report.rejected.push({ feature: where, message: problem?.message ?? "The geometry has no coordinates." });
         return;
       }
+      const styleProblem = directionStyleProblems(style, geometry)[0];
+      if (styleProblem !== undefined) {
+        report.rejected.push({ feature: where, message: styleProblem.message });
+        return;
+      }
+      try {
+        const footprintProblem = planningValidationGeometry(geometry, style).flatMap(geometryProblems)[0];
+        if (footprintProblem !== undefined) { report.rejected.push({ feature: where, message: footprintProblem.message }); return; }
+      } catch { report.rejected.push({ feature: where, message: "The planning footprint cannot be generated." }); return; }
       const baseName = name ?? `Imported ${IMPORTED_NAMES[geometry.type]} ${String(index + 1)}`;
       candidates.push({
         name: parts.length > 1 ? `${baseName} ${String(partIndex + 1)}`.slice(0, 100) : baseName,
@@ -217,11 +237,28 @@ export function snapshotToGeoJson(snapshot: PackageSnapshot): JsonObject {
         layer: layerNames.get(object.layerId) ?? null,
         ...(object.kind === "point" ? { "marker-color": object.style.color } : { stroke: object.style.color }),
         "stroke-width": object.style.strokeWidth,
+        ...(object.style.labelVisible === undefined ? {} : { "label-visible": object.style.labelVisible }),
+        ...(object.style.rangeCircle === undefined ? {} : { "range-circle": object.style.rangeCircle }),
+        ...(object.style.rangeRings === undefined ? {} : { "range-rings": object.style.rangeRings }),
+        ...(object.style.bullseye == null ? {} : { bullseye: object.style.bullseye }),
+        ...(object.style.bearingUnit === undefined ? {} : { "bearing-unit": object.style.bearingUnit }),
+        ...(object.style.minimumSafeDistance == null ? {} : { "minimum-safe-distance": object.style.minimumSafeDistance }),
+        ...(object.style.tacticalGraphic == null ? {} : { "tactical-graphic": object.style.tacticalGraphic }),
+        ...(object.style.msdColor == null ? {} : { "msd-color": object.style.msdColor }),
+        ...(object.style.dashPattern == null ? {} : { "dash-pattern": object.style.dashPattern }),
+        ...(object.style.sector == null ? {} : { sector: object.style.sector }),
+        ...(object.style.rangeBearing === undefined ? {} : { "range-bearing": object.style.rangeBearing }),
+        ...(object.style.distanceUnit === undefined ? {} : { "distance-unit": object.style.distanceUnit }),
+        ...(object.style.corridorWidth == null ? {} : { "corridor-width": object.style.corridorWidth }),
+        ...(object.style.arrowHeads === undefined ? {} : { "arrow-heads": object.style.arrowHeads }),
+        ...(object.style.arrowHeadSize === undefined ? {} : { "arrow-head-size": object.style.arrowHeadSize }),
+        ...(object.style.routeDirectionArrows === undefined ? {} : { "route-direction-arrows": object.style.routeDirectionArrows }),
+        ...(object.style.routeArrowSpacing === undefined ? {} : { "route-arrow-spacing": object.style.routeArrowSpacing }),
         ...(object.style.height == null ? {} : { "height-metres": object.style.height }),
         ...(object.style.heightUnit == null ? {} : { "height-unit": object.style.heightUnit }),
         ...(object.style.extrudeMode == null ? {} : { "extrude-mode": object.style.extrudeMode }),
-        ...(object.kind === "point" ? {} : { "stroke-style": strokeStyleOf(object.style) }),
-        ...(["polygon", "circle", "rectangle", "ellipse"].includes(object.kind) ? { fill: fillColorOf(object.style), "fill-opacity": object.style.fillOpacity } : {}),
+        "stroke-style": strokeStyleOf(object.style),
+        fill: fillColorOf(object.style), "fill-opacity": object.style.fillOpacity,
       },
     })),
   };

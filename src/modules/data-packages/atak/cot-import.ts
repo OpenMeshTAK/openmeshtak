@@ -1,11 +1,14 @@
 import { XMLParser } from "fast-xml-parser";
 import { geometryProblems } from "../geometry.js";
 import type { ImportCandidate } from "../import-candidate.js";
-import type { HeightUnit, PackageGeometry, PackageObjectStyle, TakMarker } from "../package-object.dto.js";
+import type { HeightUnit, PackageGeometry, PackageObjectStyle, StrokeStyle, TakMarker } from "../package-object.dto.js";
 import { parseTakMarker } from "../tak-marker.js";
 import { rectangularCorners } from "../shape-footprint.js";
 import { routeFromCot } from "./route-cot.js";
 import { parseArgb, parseCotNumber, parseLinkPoint, withAltitude, type CotColor } from "./cot-values.js";
+import { bullseyeFromCot, rangeBearingFromCot, rangeCircleStyle, sensorStyle } from "./native-planning-import.js";
+import { directionStyleProblems } from "../object-style.js";
+import { planningValidationGeometry } from "../planning-footprint.js";
 
 type XmlNode = Record<string, unknown>;
 
@@ -21,6 +24,7 @@ const parser = new XMLParser({
   parseAttributeValue: false,
   // Only the five predefined XML entities; documents with a DOCTYPE are rejected before parsing.
   processEntities: true,
+  trimValues: false,
   isArray: (name) => name === "link" || name === "__navcue" || name === "trigger",
 });
 
@@ -52,8 +56,8 @@ function samePlace(a: number[] | undefined, b: number[] | undefined): boolean {
   return a !== undefined && b !== undefined && a[0] === b[0] && a[1] === b[1];
 }
 
-/** `strokeStyle` values seen in real exports; ATAK's others (e.g. `dotted`) need a real export first. */
-const STROKE_STYLES = new Set(["solid", "dashed"]);
+/** Native values confirmed in ATAK-CIV StrokeFillDetailHandler, independently of device tests. */
+const STROKE_STYLES = new Set(["solid", "dashed", "dotted", "outlined"]);
 
 /** Attribute and legacy element-text forms are both present in WinTAK exports. */
 function detailValue(value: unknown): unknown {
@@ -101,7 +105,7 @@ function shapeStyle(detail: XmlNode, fallback: PackageObjectStyle, changes: stri
     color,
     strokeWidth,
     fillOpacity: fill?.alpha ?? fallback.fillOpacity,
-    strokeStyle: lineStyle === "dashed" ? "dashed" : "solid",
+    strokeStyle: lineStyle !== null && STROKE_STYLES.has(lineStyle) ? lineStyle as StrokeStyle : "solid",
     fillColor: fill === null || fill.color === color ? null : fill.color,
     ...heightStyle(detail, changes),
   };
@@ -137,7 +141,8 @@ function rectangleGeometry(detail: XmlNode, changes: string[]): PackageGeometry 
 
 function circleGeometry(point: XmlNode, detail: XmlNode, changes: string[]): PackageGeometry | string {
   const center = eventPosition(point);
-  const ellipse = node(node(detail.shape).ellipse);
+  const ellipses = node(detail.shape).ellipse;
+  const ellipse = node(Array.isArray(ellipses) ? ellipses[0] : ellipses);
   const major = parseCotNumber(ellipse.major);
   const minor = parseCotNumber(ellipse.minor);
   if (center === null || major === null) {
@@ -161,22 +166,31 @@ function ellipseGeometry(point: XmlNode, detail: XmlNode): PackageGeometry | str
   return { type: "Ellipse", coordinates: center, major, minor, rotation: ((rotation % 360) + 360) % 360 };
 }
 
-/** Ellipses carry their colours in a KML style rather than the usual ARGB details. */
+/**
+ * Ellipses may carry their colours only in a `b-x-KmlStyle` (WinTAK). Its colours are ARGB hex,
+ * not KML's aabbggrr: ATAK range circles and WinTAK circles write the same value there as in
+ * `strokeColor`. Explicit stroke/fill details win when both are present.
+ */
 function ellipseStyle(detail: XmlNode, fallback: PackageObjectStyle, changes: string[]): PackageObjectStyle {
   const links = node(detail.shape).link;
   const style = node(node((Array.isArray(links) ? links : []).map(node).find((link) => link.type === "b-x-KmlStyle")).Style);
   const line = node(style.LineStyle);
   const fill = node(style.PolyStyle);
   const argb = (value: unknown): number | null => {
-    if (typeof value !== "string" || !/^[0-9a-f]{8}$/i.test(value)) return null;
-    return Number.parseInt(`${value.slice(0, 2)}${value.slice(6, 8)}${value.slice(4, 6)}${value.slice(2, 4)}`, 16) | 0;
+    if (typeof value !== "string" || !/^[0-9a-f]{8}$/i.test(value.trim())) return null;
+    return Number.parseInt(value.trim(), 16) | 0;
   };
-  return shapeStyle({ ...detail, strokeColor: { value: argb(line.color) }, fillColor: { value: argb(fill.color) }, strokeWeight: { value: line.width } }, fallback, changes);
+  return shapeStyle({
+    ...detail,
+    strokeColor: detail.strokeColor ?? { value: argb(line.color) },
+    fillColor: detail.fillColor ?? { value: argb(fill.color) },
+    strokeWeight: detail.strokeWeight ?? { value: line.width },
+  }, fallback, changes);
 }
 
 /** Spot markers, waypoints and MIL-STD-2525 units (`a-*`) are markers. */
 function isMarkerType(type: string): boolean {
-  return type === MARKER_TYPE || type.startsWith("b-m-p-") || type.startsWith("a-");
+  return type === "u-d-p" || type === MARKER_TYPE || type.startsWith("b-m-p-") || type.startsWith("a-");
 }
 
 /**
@@ -185,7 +199,8 @@ function isMarkerType(type: string): boolean {
  */
 function takMarker(type: string, detail: XmlNode): TakMarker | null {
   const iconsetPath = text(node(detail.usericon).iconsetpath, 256);
-  const derivedSpotIcon = iconsetPath === null || iconsetPath.startsWith("COT_MAPPING_SPOTMAP/");
+  // Spot colour icons and ATAK's 2525 symbol paths are derived from type/colour and regenerated on export.
+  const derivedSpotIcon = iconsetPath === null || iconsetPath.startsWith("COT_MAPPING_SPOTMAP/") || iconsetPath.startsWith("COT_MAPPING_2525");
   if (type === MARKER_TYPE && derivedSpotIcon) {
     return null;
   }
@@ -203,6 +218,7 @@ function geometryFor(type: string, point: XmlNode, detail: XmlNode, changes: str
     case "u-d-r":
       return rectangleGeometry(detail, changes);
     case "u-d-c-c":
+    case "u-r-b-c-c":
       return circleGeometry(point, detail, changes);
     case "u-d-c-e":
       return ellipseGeometry(point, detail);
@@ -288,11 +304,15 @@ export function convertCotEvent(xml: string, fallback: PackageObjectStyle): CotC
   const { event, type } = parsed;
   const detail = node(event.detail);
   const changes: string[] = [];
+  const extension = node(detail.openmeshtak);
+  if (extension.schema === "1" && extension.role === "supplement") return { outcome: "skipped", message: "Associated corridor visual omitted from editing; its source object retains the editable corridor parameters." };
   if (type === "u-d-f-m") {
     const candidates = freehandCandidates(detail, fallback, changes);
     return typeof candidates === "string" ? { outcome: "rejected", message: candidates } : { outcome: "accepted", candidates, changes };
   }
-  const geometry = geometryFor(type, node(event.point), detail, changes);
+  const native = type === "u-rb-a" ? rangeBearingFromCot(node(event.point), detail, changes) : type === "u-r-b-bullseye" ? bullseyeFromCot(node(event.point), detail) : null;
+  if (typeof native === "string") return { outcome: "rejected", message: native };
+  let geometry = native?.geometry ?? geometryFor(type, node(event.point), detail, changes);
   if (geometry === null) {
     return { outcome: "skipped", message: `CoT type ${type} is not supported yet.` };
   }
@@ -305,17 +325,88 @@ export function convertCotEvent(xml: string, fallback: PackageObjectStyle): CotC
   }
 
   const routeAttributes = node(detail.link_attr);
-  const style = geometry.type === "Point" ? markerStyle(detail, fallback) : geometry.type === "Ellipse" ? ellipseStyle(detail, fallback, changes)
+  // A 2525 symbol's colour is its affiliation; ATAK's `<color argb>` there is only an icon tint (white).
+  const iconsetPath = text(node(detail.usericon).iconsetpath, 256);
+  const milsym = geometry.type === "Point" && type.startsWith("a-") && (iconsetPath === null || iconsetPath.startsWith("COT_MAPPING_2525"));
+  let style = milsym ? { ...fallback } : geometry.type === "Point" || type === "u-r-b-bullseye" ? markerStyle(detail, fallback) : geometry.type === "Ellipse" || type === "u-r-b-c-c" ? ellipseStyle(detail, fallback, changes)
     : shapeStyle(geometry.type === "Route" ? { ...detail, strokeColor: { value: routeAttributes.color }, strokeWeight: { value: routeAttributes.stroke } } : detail, fallback, changes);
+  Object.assign(style, native?.style ?? {});
+  if (detail.__milsym !== undefined) {
+    const graphic = node(detail.__milsym);
+    const children = Array.isArray(graphic.unitmodifier) ? graphic.unitmodifier : graphic.unitmodifier === undefined ? [] : [graphic.unitmodifier];
+    const modifiers: Record<string, string> = {};
+    for (const entry of children) {
+      const modifier = node(entry);
+      if (typeof modifier.code !== "string" || modifier.code in modifiers || (modifier["#text"] !== undefined && typeof modifier["#text"] !== "string")) return { outcome: "rejected", message: "Unreadable or repeated tactical modifier." };
+      modifiers[modifier.code] = modifier["#text"] ?? "";
+    }
+    if (typeof graphic.id !== "string") return { outcome: "rejected", message: "A tactical graphic requires a SIDC." };
+    style.tacticalGraphic = { sidc: graphic.id, modifiers };
+  }
+  const callsign = typeof node(detail.contact).callsign === "string" ? node(detail.contact).callsign as string : `Imported ${type}`;
+  let name = callsign.trim().slice(0, 100) || `Imported ${type}`;
+  let tak = geometry.type === "Point" ? takMarker(type, detail) : null;
+  // A plain `u-d-p` named point has no text-only rendering in ATAK; keep it as an ordinary spot marker.
+  if (type === "u-d-p" && detail.sensor === undefined) {
+    tak = null;
+    changes.push("u-d-p point imported as a spot marker");
+  }
+  if (detail.sensor !== undefined && geometry.type === "Point") {
+    const sensor = sensorStyle(detail);
+    if (typeof sensor === "string") return { outcome: "rejected", message: sensor };
+    Object.assign(style, sensor);
+  }
+  if (type === "u-r-b-c-c") {
+    const rings = rangeCircleStyle(detail);
+    if (typeof rings === "string") return { outcome: "rejected", message: rings };
+    Object.assign(style, rings);
+  }
+  if (detail.msd !== undefined && geometry.type !== "Point" && geometry.type !== "Route") {
+    const range = parseCotNumber(node(detail.msd).range);
+    if (range === null || range < 0.1 || range > 5000) return { outcome: "rejected", message: "An MSD boundary needs 0.1–5000 metres from the source shape." };
+    style.minimumSafeDistance = range;
+    style.msdColor = parseArgb(node(detail.msd).color)?.color ?? "#FF0000";
+    if (geometry.type === "LineString" && range >= 0.5) {
+      style.minimumSafeDistance = null;
+      style.corridorWidth = range * 2;
+      style.fillOpacity = 0;
+      changes.push("Native MSD distance imported as full corridor width (twice the centreline distance)");
+    }
+  }
+  style.labelVisible = geometry.type === "Point" || type === "u-r-b-bullseye" ? detail.hideLabel === undefined
+    : detail.labels_on === undefined || node(detail.labels_on).value === undefined || node(detail.labels_on).value === "true";
+  // Our extension preserves editable source geometry and nonportable styling. It is untrusted
+  // input and passes the same geometry/style limits before becoming a draft object.
+  if (extension.schema === "1" && extension.source !== undefined) {
+    if (typeof extension.source !== "string" || Buffer.byteLength(extension.source, "utf8") > 1024 * 1024) return { outcome: "rejected", message: "OpenMeshTak source metadata is too large or unreadable." };
+    try {
+      const source = node(JSON.parse(extension.source));
+      if (typeof source.name !== "string" || source.name.trim() === "" || source.name.length > 100 || source.geometry === null || source.style === null
+        || typeof source.geometry !== "object" || typeof source.style !== "object" || Array.isArray(source.geometry) || Array.isArray(source.style)) throw new Error();
+      geometry = source.geometry as PackageGeometry;
+      style = source.style as PackageObjectStyle;
+      name = source.name;
+      tak = source.tak == null ? null : parseTakMarker(node(source.tak).cotType, node(source.tak).iconsetPath);
+      if (source.tak != null && tak === null) throw new Error();
+    } catch { return { outcome: "rejected", message: "Invalid OpenMeshTak source metadata." }; }
+  }
+  const sourceGeometryProblem = geometryProblems(geometry)[0];
+  if (sourceGeometryProblem !== undefined) return { outcome: "rejected", message: sourceGeometryProblem.message };
+  const presentationProblem = directionStyleProblems(style, geometry)[0];
+  if (presentationProblem !== undefined) return { outcome: "rejected", message: presentationProblem.message };
+  try {
+    const footprintProblem = planningValidationGeometry(geometry, style).flatMap(geometryProblems)[0];
+    if (footprintProblem !== undefined) return { outcome: "rejected", message: footprintProblem.message };
+  } catch { return { outcome: "rejected", message: "The planning footprint cannot be generated." }; }
   return {
     outcome: "accepted",
     candidates: [
       {
-        name: text(node(detail.contact).callsign, 100) ?? `Imported ${type}`,
-        description: text(detail.remarks, 2000),
+        name,
+        description: typeof detail.remarks === "string" ? detail.remarks.slice(0, 2000) : typeof node(detail.remarks)["#text"] === "string" ? (node(detail.remarks)["#text"] as string).slice(0, 2000) : null,
         geometry,
         style,
-        tak: geometry.type === "Point" ? takMarker(type, detail) : null,
+        tak: geometry.type === "Point" ? tak : null,
       },
     ],
     changes,

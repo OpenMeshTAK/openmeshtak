@@ -20,7 +20,7 @@ import type { DataPackageDto } from "./data-package.dto.js";
 import type { CreateDataPackageCopyRequest } from "./package-copy.dto.js";
 import { createDataPackageCopy } from "./package-copy.service.js";
 
-/** Creates an editable Data Package from published revisions of packages in the same event. */
+/** Creates an editable Data Package from published revisions or explicit drafts in the same event. */
 @Route("events/{eventId}/data-package-copies")
 @Tags("Data packages")
 @Security("sessionCookie")
@@ -32,7 +32,7 @@ import { createDataPackageCopy } from "./package-copy.service.js";
 @Response<ProblemDetails>(422, "Validation failed")
 export class PackageCopyController extends Controller {
   /**
-   * Copies selected published layers with new UUIDs and records their source revisions.
+   * Copies selected layers with new UUIDs. Published provenance is retained; explicit draft copies are audited by snapshot hash.
    * @param _idempotencyKey Makes retries safe: a repeated request returns the original response.
    */
   @Post()

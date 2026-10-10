@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { PackageObject, Prisma } from "../../generated/prisma/client.js";
 import type { PackageGeometry, PackageObjectKind, PackageObjectStyle, TakMarker } from "./package-object.dto.js";
+import { storedStyle } from "./object-style.js";
 import { readTak } from "./tak-marker.js";
 
 /** Version of the snapshot document; bump it when its shape changes. */
@@ -14,6 +15,8 @@ export interface PackageSnapshotLayer {
 }
 
 export interface PackageSnapshotObject {
+  /** Derived export-only visual association; never written into canonical draft objects. */
+  supplementParent?: string;
   id: string;
   layerId: string;
   kind: PackageObjectKind;
@@ -59,7 +62,7 @@ export function snapshotObjectOf(object: PackageObject): PackageSnapshotObject {
     description: object.description,
     // Written only by the objects service after validation.
     geometry: object.geometry as unknown as PackageGeometry,
-    style: object.style as unknown as PackageObjectStyle,
+    style: storedStyle(object.style),
     tak: readTak(object.tak),
   };
 }

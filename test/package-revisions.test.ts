@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { after, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
+import type { PackageObjectDto } from "../src/modules/data-packages/package-object.dto.js";
+import type { PublishDataPackageResponse } from "../src/modules/data-packages/package-revision.dto.js";
 import { createApp } from "../src/app.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser, type TestUser } from "./support/identity.js";
@@ -128,6 +130,26 @@ void describe("data package revisions", () => {
       .send({ name: "Phoenix 2", description: null, version: (await state()).version })
       .expect(200);
     assert.equal((renamed.body as PackageState).hasUnpublishedChanges, true);
+  });
+
+  void it("freezes arrow style in revisions independently of later draft edits", async () => {
+    const geometry = { type: "LineString", coordinates: [[8, 50], [8.1, 50.1]] };
+    const created = await request(app).post(`${packageUrl}/objects`).set("Cookie", editor.cookie).send({
+      layerId, name: "Arrow", geometry, style: { color: "#123456", strokeWidth: 3, fillOpacity: 0, arrowHeads: "end", arrowHeadSize: 24 },
+    }).expect(201);
+    const object = created.body as PackageObjectDto;
+    const first = (await request(app).post(`${packageUrl}/revisions`).set("Cookie", editor.cookie).expect(200)).body as PublishDataPackageResponse;
+    assert.equal(first.revision.snapshot.objects[0]?.style.arrowHeads, "end");
+    await request(app).put(`${packageUrl}/objects/${object.id}`).set("Cookie", editor.cookie).send({
+      version: object.version, layerId, name: object.name, description: object.description, geometry: object.geometry, tak: null,
+      style: { ...object.style, arrowHeads: "both" },
+    }).expect(200);
+    const second = (await request(app).post(`${packageUrl}/revisions`).set("Cookie", editor.cookie).expect(200)).body as PublishDataPackageResponse;
+    assert.equal(second.revision.snapshot.objects[0]?.style.arrowHeads, "both");
+    assert.equal(second.revision.snapshot.objects[0]?.id, object.id);
+    assert.notEqual(first.revision.snapshotHash, second.revision.snapshotHash);
+    const old = (await request(app).get(`${packageUrl}/revisions/1`).set("Cookie", editor.cookie).expect(200)).body as PublishDataPackageResponse["revision"];
+    assert.equal(old.snapshot.objects[0]?.style.arrowHeads, "end");
   });
 
   void it("keeps published revisions unchanged when the draft changes later", async () => {

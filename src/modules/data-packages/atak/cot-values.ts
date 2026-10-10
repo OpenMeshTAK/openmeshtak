@@ -12,6 +12,7 @@ export function parseCotNumber(value: unknown): number | null {
   if (typeof value !== "string" && typeof value !== "number") {
     return null;
   }
+  if (typeof value === "string" && value.trim() === "") return null;
   const number = Number(String(value).trim().replace(",", "."));
   return Number.isFinite(number) ? number : null;
 }

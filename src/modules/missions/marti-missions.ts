@@ -3,7 +3,7 @@ import express, { type Express, type Request, type Response } from "express";
 import type { PackageRevision } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { database } from "../../shared/database/database.js";
-import { objectToCot } from "../data-packages/atak/cot-export.js";
+import { objectToCotEvents } from "../data-packages/atak/cot-export.js";
 import type { PackageSnapshot } from "../data-packages/package-snapshot.js";
 import type { AuthenticatedTakClient } from "../tak-server/client-authentication.js";
 import { cotRouter } from "../tak-server/streaming/cot-router.js";
@@ -187,7 +187,7 @@ const getRole: Handler = async (request, response) => {
 /** The mission's current items as CoT, the way ATAK loads a mission's map content. */
 function cotEvents(latest: PackageRevision): string {
   const snapshot = latest.snapshot as unknown as PackageSnapshot;
-  const events = snapshot.objects.map((object) => objectToCot(object, latest.createdAt).replace(/^<\?xml[^>]*>\s*/, ""));
+  const events = snapshot.objects.flatMap((object) => objectToCotEvents(object, latest.createdAt).map(({ xml }) => xml.replace(/^<\?xml[^>]*>\s*/, "")));
   return `<?xml version="1.0" encoding="UTF-8"?><events>${events.join("")}</events>`;
 }
 
