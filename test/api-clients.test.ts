@@ -126,7 +126,7 @@ void describe("API clients and API keys", () => {
       .send({
         name: "Invalid",
         permissions: [
-          { permission: "audit.read", eventId: await createEvent() },
+          { permission: "server-logs.read", eventId: await createEvent() },
           { permission: "members.sync", eventId: "00000000-0000-4000-8000-000000000000" },
         ],
       })

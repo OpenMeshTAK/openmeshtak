@@ -24,6 +24,18 @@ export interface AuditEntry {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * The event an entry belongs to: the target itself, or the `eventId` every event-owned service
+ * already writes into the metadata. Event-scoped audit readers see exactly these entries.
+ */
+export function auditEventIdOf(entry: Pick<AuditEntry, "targetType" | "targetId" | "metadata">): string | null {
+  if (entry.targetType === "event") {
+    return entry.targetId ?? null;
+  }
+  const eventId = entry.metadata?.eventId;
+  return typeof eventId === "string" ? eventId : null;
+}
+
 function actorFields(actor: AuditActor): {
   actorType: "user" | "api_client" | "anonymous" | "system";
   actorId: string | null;
@@ -52,6 +64,7 @@ export async function recordAudit(entry: AuditEntry, client: AuditClient = datab
       targetId: entry.targetId ?? null,
       result: entry.result,
       traceId: entry.traceId ?? null,
+      eventId: auditEventIdOf(entry),
       // Defense in depth: the same redaction as logs, in case a caller passes an unsafe value.
       ...(entry.metadata === undefined
         ? {}

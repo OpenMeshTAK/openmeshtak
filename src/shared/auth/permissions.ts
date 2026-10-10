@@ -80,7 +80,6 @@ const INSTANCE_ONLY_PERMISSIONS: ReadonlySet<Permission> = new Set<Permission>([
   "tak-server.admin-access",
   "email.manage",
   "settings.manage",
-  "audit.read",
   "server-logs.read",
 ]);
 

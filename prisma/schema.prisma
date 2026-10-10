@@ -292,9 +292,13 @@ model AuditEvent {
   result     AuditResult
   traceId    String?
   metadata   Json?
+  /// The event the action belongs to, if any; event-scoped `audit.read` sees only these entries.
+  /// No relation: audit records outlive what they describe.
+  eventId    String?
 
   @@index([occurredAt, id])
   @@index([targetType, targetId])
+  @@index([eventId, occurredAt, id])
 }
 
 /// Event-owned participant role such as `participant`. Never an authorization group.

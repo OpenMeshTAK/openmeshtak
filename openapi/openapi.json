@@ -10309,6 +10309,141 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"AuditActorType": {
+				"type": "string",
+				"enum": [
+					"user",
+					"api_client",
+					"anonymous",
+					"system"
+				]
+			},
+			"AuditActorDto": {
+				"properties": {
+					"type": {
+						"$ref": "#/components/schemas/AuditActorType"
+					},
+					"id": {
+						"type": "string",
+						"nullable": true
+					},
+					"name": {
+						"type": "string",
+						"nullable": true,
+						"description": "Display name of the user or API client; null when it no longer exists or there is none."
+					}
+				},
+				"required": [
+					"type",
+					"id",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuditResult": {
+				"type": "string",
+				"enum": [
+					"success",
+					"failure"
+				]
+			},
+			"AuditEventDto": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"occurredAt": {
+						"type": "string",
+						"description": "ISO 8601 time the action happened."
+					},
+					"actor": {
+						"$ref": "#/components/schemas/AuditActorDto"
+					},
+					"action": {
+						"type": "string",
+						"description": "Dotted action name such as `event.updated` or `tak-server.client-certificate-issued`."
+					},
+					"targetType": {
+						"type": "string"
+					},
+					"targetId": {
+						"type": "string",
+						"nullable": true
+					},
+					"result": {
+						"$ref": "#/components/schemas/AuditResult"
+					},
+					"eventId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "Event the action belongs to; null for installation-wide actions."
+					},
+					"eventName": {
+						"type": "string",
+						"nullable": true,
+						"description": "Current name of that event."
+					},
+					"traceId": {
+						"type": "string",
+						"nullable": true,
+						"description": "Correlates the entry with the server log lines of the same request."
+					},
+					"metadata": {
+						"properties": {},
+						"additionalProperties": {},
+						"type": "object",
+						"nullable": true,
+						"description": "Safe identifiers and state names recorded with the action. Never contains secrets."
+					}
+				},
+				"required": [
+					"id",
+					"occurredAt",
+					"actor",
+					"action",
+					"targetType",
+					"targetId",
+					"result",
+					"eventId",
+					"eventName",
+					"traceId",
+					"metadata"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuditEventPage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/AuditEventDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuditScope": {
+				"type": "string",
+				"enum": [
+					"all",
+					"instance"
+				],
+				"description": "`instance`: only entries that belong to no event, such as user or TAK server administration."
+			},
 			"ApiClientStatus": {
 				"type": "string",
 				"enum": [
@@ -26715,6 +26850,256 @@
 						}
 					}
 				}
+			}
+		},
+		"/audit-events": {
+			"get": {
+				"operationId": "ListAuditEvents",
+				"responses": {
+					"200": {
+						"description": "Audit entries",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuditEventPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The audit log, newest first. `eventId` keeps one event's entries; scope `instance` keeps the\nentries that belong to no event. Requires instance-wide `audit.read`.",
+				"tags": [
+					"Audit"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "Part of the action, target type or target ID.",
+						"in": "query",
+						"name": "search",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"maxLength": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "result",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/AuditResult"
+						}
+					},
+					{
+						"in": "query",
+						"name": "eventId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "scope",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/AuditScope"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/audit-events": {
+			"get": {
+				"operationId": "ListEventAuditEvents",
+				"responses": {
+					"200": {
+						"description": "Audit entries",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuditEventPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "The event's audit entries, newest first. Requires `audit.read` for the event.",
+				"tags": [
+					"Audit"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"description": "Part of the action, target type or target ID.",
+						"in": "query",
+						"name": "search",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"maxLength": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "result",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/AuditResult"
+						}
+					}
+				]
 			}
 		},
 		"/api-clients": {
