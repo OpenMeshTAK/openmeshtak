@@ -3,6 +3,7 @@ import { authenticateSession } from "../../shared/auth/authorization.js";
 import type { UserPrincipal } from "../../shared/auth/principal.js";
 import { authorizeNamespace } from "../../shared/realtime/realtime-server.js";
 import { requireEventPermission } from "../events/event-access.js";
+import { fingerprint, trafficChanges, type SentTraffic } from "./live-traffic-changes.js";
 import { getLiveTakTraffic } from "./live-traffic.service.js";
 import { cotRouter, type CotRouter } from "./streaming/cot-router.js";
 
@@ -19,9 +20,10 @@ interface ViewerData {
 }
 
 /**
- * Pushes an event's live TAK traffic, the same snapshot as `GET /events/{eventId}/tak-traffic`,
- * to viewers with `tak-traffic.view` on that event. The client names the event in the handshake
- * `auth` payload; one socket watches one event.
+ * Pushes an event's live TAK traffic to viewers with `tak-traffic.view` on that event: first the
+ * same snapshot as `GET /events/{eventId}/tak-traffic` as `traffic`, then only what changed as
+ * `traffic-changes`, so hundreds of apps do not mean hundreds of kilobytes twice a second. The
+ * client names the event in the handshake `auth` payload; one socket watches one event.
  */
 export function attachTakTrafficStream(io: Server, router: CotRouter = cotRouter): void {
   const namespace = io.of(TAK_TRAFFIC_NAMESPACE);
@@ -38,11 +40,17 @@ export function attachTakTrafficStream(io: Server, router: CotRouter = cotRouter
   namespace.on("connection", (socket) => {
     const { principal, eventId } = socket.data as ViewerData;
     let pending: ReturnType<typeof setTimeout> | undefined;
+    let sent: SentTraffic | null = null;
 
     const send = (): void => {
       pending = undefined;
       getLiveTakTraffic(principal, eventId, router).then(
-        (traffic) => socket.emit("traffic", traffic),
+        (traffic) => {
+          const changes = sent === null ? null : trafficChanges(sent, traffic);
+          if (sent === null) socket.emit("traffic", traffic);
+          else if (changes !== null) socket.emit("traffic-changes", changes);
+          sent = fingerprint(traffic);
+        },
         () => socket.disconnect(true),
       );
     };

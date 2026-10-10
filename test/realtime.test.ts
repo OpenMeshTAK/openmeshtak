@@ -101,15 +101,32 @@ void describe("realtime streams", () => {
 
     const socket = connect(TAK_TRAFFIC_NAMESPACE, viewer.cookie, { eventId });
     const snapshots: Array<{ connections: unknown[]; items: Array<{ uid: string }> }> = [];
+    type Changes = { connections: { upserted: unknown[]; removed: string[] }; items: { upserted: Array<{ uid: string; lat: number }>; removed: string[] } };
+    const changes: Changes[] = [];
     socket.on("traffic", (traffic: (typeof snapshots)[number]) => snapshots.push(traffic));
+    socket.on("traffic-changes", (update: Changes) => changes.push(update));
     assert.equal(await outcome(socket), "connected");
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    assert.deepEqual(snapshots.map(({ items }) => items.length), [0], "a full snapshot first");
 
     const peer = peerIn(eventId);
     router.join(peer);
     const now = Date.now();
-    router.remember(peer, { uid: "ALPHA-1", type: "a-f-G", callsign: "ALPHA", lat: 52.4, lon: 13.1, course: null, speed: null, time: new Date(now), stale: new Date(now + 60_000) }, "<event/>");
+    const alpha = { uid: "ALPHA-1", type: "a-f-G", callsign: "ALPHA", lat: 52.4, lon: 13.1, course: null, speed: null, time: new Date(now), stale: new Date(now + 60_000) };
+    const bravo = { ...alpha, uid: "BRAVO-1", callsign: "BRAVO" };
+    router.remember(peer, alpha, "<event/>");
+    router.remember(peer, bravo, "<event/>");
     await new Promise((resolve) => setTimeout(resolve, 800));
-    assert.deepEqual(snapshots.at(-1)?.items.map(({ uid }) => uid), ["ALPHA-1"]);
+    assert.deepEqual(changes.at(-1)?.items.upserted.map(({ uid }) => uid).sort(), ["ALPHA-1", "BRAVO-1"], "then only what changed");
+
+    router.remember(peer, { ...alpha, lat: 52.5, time: new Date(now + 1000) }, "<event/>");
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    assert.deepEqual(changes.at(-1)?.items.upserted.map(({ uid, lat }) => [uid, lat]), [["ALPHA-1", 52.5]], "an unchanged item is not sent again");
+
+    router.forget(peer, ["BRAVO-1"]);
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    assert.deepEqual(changes.at(-1)?.items.removed, ["BRAVO-1"]);
+    assert.equal(snapshots.length, 1, "no second full snapshot");
 
     assert.equal(await outcome(connect(TAK_TRAFFIC_NAMESPACE, viewer.cookie, { eventId: otherEventId })), "Access denied");
     const reader = await createUser("Reader", [{ permission: "events.read", eventId }]);

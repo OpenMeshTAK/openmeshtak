@@ -40,6 +40,15 @@ export interface LiveTakItemDto {
   stale: string;
 }
 
+/**
+ * Realtime update after the first snapshot: connections and items that are new or changed, in
+ * full, and the ids of those that are gone. Sent as `traffic-changes` on `/tak-traffic`.
+ */
+export interface LiveTakTrafficChangesDto {
+  connections: { upserted: LiveTakConnectionDto[]; removed: string[] };
+  items: { upserted: LiveTakItemDto[]; removed: string[] };
+}
+
 /** Current TAK traffic of one event, held in memory only; nothing of it is stored. */
 export interface LiveTakTrafficDto {
   connections: LiveTakConnectionDto[];
