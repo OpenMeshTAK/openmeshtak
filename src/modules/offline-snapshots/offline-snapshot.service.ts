@@ -7,6 +7,7 @@ import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError, validationProblem } from "../../shared/errors/problem-error.js";
 import { readBlob, storagePath } from "../../shared/storage/blob-storage.js";
 import { requireEventPermission } from "../events/event-access.js";
+import { requireDataPackage } from "../data-packages/data-package-access.js";
 import { rubberSheetImage, type RubberSheet } from "../data-packages/atak/rubber-sheet.js";
 import { listTiles, tileCacheSummary } from "../data-packages/atak/tile-cache.js";
 import type { PackageSnapshot, PackageSnapshotContent } from "../data-packages/package-snapshot.js";
@@ -35,11 +36,11 @@ function eventNotActiveProblem(): ProblemError {
 
 /**
  * The offline HQ view only works with content the event already shares: published revisions of
- * its Data Packages. The same `data-packages.read` permission as the online map applies, and only
- * while the event is active.
+ * its Data Packages and missions. It needs `offline-snapshots.prepare` plus read access to each
+ * selected kind (`data-packages.read` or `missions.read`), and only works while the event is active.
  */
 async function requireOfflineEvent(principal: Principal, eventId: string): Promise<Event> {
-  const event = await requireEventPermission(principal, eventId, "data-packages.read");
+  const event = await requireEventPermission(principal, eventId, "offline-snapshots.prepare");
   if (event.status !== "active") {
     throw eventNotActiveProblem();
   }
@@ -154,10 +155,7 @@ export async function createOfflineSnapshot(
   const packages: OfflineSnapshotPackageDto[] = [];
   const skippedPackages: OfflineSnapshotDto["skippedPackages"] = [];
   for (const selection of input.packages) {
-    const dataPackage = await database.dataPackage.findFirst({ where: { id: selection.packageId, eventId } });
-    if (dataPackage === null) {
-      throw notFoundProblem();
-    }
+    const { dataPackage } = await requireDataPackage(actor.principal, eventId, selection.packageId, "data-packages.read");
     const revision = await findRevision(dataPackage.id, selection.revision);
     if (revision === null) {
       if (selection.revision !== undefined) {
@@ -198,8 +196,8 @@ async function requireRevisionContent(
   contentId: string,
 ): Promise<PackageSnapshotContent> {
   await requireOfflineEvent(principal, eventId);
-  const dataPackage = await database.dataPackage.findFirst({ where: { id: packageId, eventId }, select: { id: true } });
-  const revision = dataPackage === null ? null : await findRevision(packageId, revisionNumber);
+  await requireDataPackage(principal, eventId, packageId, "data-packages.read");
+  const revision = await findRevision(packageId, revisionNumber);
   const content = (revision?.snapshot as unknown as PackageSnapshot | undefined)?.contents?.find(({ id }) => id === contentId);
   if (content === undefined) {
     throw notFoundProblem();

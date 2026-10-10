@@ -105,7 +105,7 @@ export async function publishConfiguration(
   eventId: string,
 ): Promise<PublishConfigurationResponse> {
   const event = await requireReadableEvent(actor.principal, eventId);
-  await requirePermission(actor.principal, "events.manage", eventId);
+  await requirePermission(actor.principal, "configuration.publish", eventId);
   if (event.status !== "active") {
     throw new ProblemError({
       type: "urn:openmeshtak:problem:event-not-active",

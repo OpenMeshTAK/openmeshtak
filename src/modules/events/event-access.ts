@@ -60,10 +60,31 @@ export async function requireEventPermission(
   return event;
 }
 
-/** Event configuration may change only with `events.manage` and never once archived. */
-export async function requireMutableEvent(principal: Principal, eventId: string): Promise<Event> {
+/** Like `requireEventPermission`, for reads that any one of several permissions allows. */
+export async function requireAnyEventPermission(
+  principal: Principal,
+  eventId: string,
+  permissions: readonly Permission[],
+): Promise<Event> {
+  for (const permission of permissions) {
+    if (await hasPermission(principal, permission, eventId)) {
+      return requireEventPermission(principal, eventId, permission);
+    }
+  }
+  return requireEventPermission(principal, eventId, permissions[0] as Permission);
+}
+
+/**
+ * Event configuration may change only with the permission for that part of the event, such as
+ * `tak-settings.manage`, and never once archived.
+ */
+export async function requireMutableEvent(
+  principal: Principal,
+  eventId: string,
+  permission: Permission = "events.manage",
+): Promise<Event> {
   const event = await requireReadableEvent(principal, eventId);
-  await requirePermission(principal, "events.manage", eventId);
+  await requirePermission(principal, permission, eventId);
 
   if (event.status === "archived") {
     throw eventArchivedProblem();

@@ -114,7 +114,7 @@ export async function updateMeshtasticSettings(
   eventId: string,
   input: UpdateMeshtasticSettingsRequest,
 ): Promise<MeshtasticConfigurationDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-settings.manage");
   const current = await loadMeshtasticConfiguration(database, eventId);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -155,7 +155,7 @@ export async function updateMeshtasticSecrets(
   eventId: string,
   input: UpdateMeshtasticSecretsRequest,
 ): Promise<MeshtasticConfigurationDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-settings.manage");
   const current = await loadMeshtasticConfiguration(database, eventId);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -237,7 +237,7 @@ export async function previewFirmwareChange(
   eventId: string,
   input: PreviewFirmwareChangeRequest,
 ): Promise<FirmwareChangePreviewDto> {
-  await requireMutableEvent(principal, eventId);
+  await requireMutableEvent(principal, eventId, "meshtastic-settings.manage");
   const { next, report, confirmation } = await planChange(eventId, input.firmwareVersion);
   return {
     firmwareVersion: next.recommended,
@@ -267,7 +267,7 @@ export async function changeFirmware(
   eventId: string,
   input: ChangeFirmwareRequest,
 ): Promise<MeshtasticConfigurationDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-settings.manage");
   const { current, next, report, settings, secretsEnvelope, confirmation } = await planChange(
     eventId,
     input.firmwareVersion,

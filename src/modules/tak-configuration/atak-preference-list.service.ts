@@ -177,7 +177,7 @@ export async function replaceAtakPreferences(
   eventId: string,
   input: ReplaceAtakPreferencesRequest,
 ): Promise<AtakPreferenceListDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "tak-settings.manage");
   const malformedTargets = input.entries.flatMap((entry, index) =>
     entry.target.type === "event" && entry.target.id !== null
       ? [{ field: `entries[${String(index)}].target.id`, code: "INVALID_VALUE", message: "The whole-event target has no ID." }]
@@ -205,7 +205,7 @@ export async function importAtakPreferences(
   eventId: string,
   input: ImportAtakPreferencesRequest,
 ): Promise<ImportAtakPreferencesResponse> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "tak-settings.manage");
   const { entries: parsed, removedKeys } = parseAtakPreferenceFile(input.content);
   const targets = await eventTargets(eventId);
   const imported: TargetedAtakPreference[] = [];

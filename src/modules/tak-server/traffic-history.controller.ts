@@ -39,7 +39,7 @@ export class TakTrafficHistoryController extends Controller {
    * and split wherever positions are more than `gapSeconds` apart, jump implausibly or are only
    * approximate. `groupId` keeps positions sent by members of one event group; `uid` keeps one
    * track. At most 20,000 positions, oldest first; `truncated` says the newest are missing.
-   * Requires `tak-traffic.view`; every request is audited.
+   * Requires `tak-traffic.history`; every request is audited.
    * @param from RFC 3339 instant with offset.
    * @param to RFC 3339 instant with offset.
    * @param uid CoT UID of one track.
@@ -69,7 +69,7 @@ export class TakTrafficHistoryController extends Controller {
   /**
    * The same tracks as GeoJSON (one feature per continuous segment) or GPX (one track per UID,
    * one segment per continuous part, approximate positions as waypoints), at most 50,000
-   * positions. Requires `tak-traffic.view`; every export is audited.
+   * positions. Requires `tak-traffic.export`; every export is audited.
    * @maxLength uid 200
    * @isInt gapSeconds
    * @minimum gapSeconds 30
@@ -100,7 +100,7 @@ export class TakTrafficHistoryController extends Controller {
 
   /**
    * Deletes the event's recorded traffic now instead of after the retention, or only the items of
-   * one CoT UID. Requires `events.manage`; audited.
+   * one CoT UID. Requires `tak-traffic.delete`; audited.
    * @maxLength uid 200
    */
   @Delete("recording/items")

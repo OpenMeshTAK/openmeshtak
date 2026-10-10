@@ -1,7 +1,7 @@
 import type { Server } from "socket.io";
 import { authenticateSession } from "../../shared/auth/authorization.js";
 import { authorizeNamespace } from "../../shared/realtime/realtime-server.js";
-import { requireEventPermission } from "../events/event-access.js";
+import { requireAnyPackageRead } from "./data-package-access.js";
 import { onEventChange, type EventChange } from "../events/event-changes.js";
 import { attachEditorPresence, type EditorSocketData } from "./editor-presence.js";
 
@@ -55,7 +55,7 @@ export function packageChangeOf(change: EventChange): PackageChange | null {
 /**
  * The map editors' live channel for one event: which object, layer or package another tab or
  * person changed, so editors apply just that, and who else is editing (see `editor-presence`).
- * The client names the event in the handshake `auth` payload and needs `data-packages.read`.
+ * The client names the event in the handshake `auth` payload and needs `data-packages.read` or `missions.read`.
  */
 export function attachPackageChangeStream(io: Server): void {
   const namespace = io.of(DATA_PACKAGES_NAMESPACE);
@@ -65,7 +65,7 @@ export function attachPackageChangeStream(io: Server): void {
       throw new Error("Missing event");
     }
     const principal = await authenticateSession(socket.request.headers);
-    await requireEventPermission(principal, eventId, "data-packages.read");
+    await requireAnyPackageRead(principal, eventId);
     socket.data = { eventId: eventId.toLowerCase(), userId: principal.id } satisfies EditorSocketData;
     await socket.join(eventId.toLowerCase());
   });

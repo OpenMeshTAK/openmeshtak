@@ -197,7 +197,7 @@ export async function createMeshtasticChannel(
   eventId: string,
   input: CreateMeshtasticChannelRequest,
 ): Promise<MeshtasticChannelDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-channels.manage");
   const psk = parseOrGeneratePsk(input.psk);
   const selection = {
     secret: input.secret ?? false,
@@ -254,7 +254,7 @@ export async function updateMeshtasticChannel(
   channelId: string,
   input: UpdateMeshtasticChannelRequest,
 ): Promise<MeshtasticChannelDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-channels.manage");
   const current = await findChannel(eventId, channelId);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -301,7 +301,7 @@ export async function deleteMeshtasticChannel(
   eventId: string,
   channelId: string,
 ): Promise<void> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-channels.manage");
   const current = await findChannel(eventId, channelId);
 
   await database.$transaction(async (transaction) => {
@@ -317,7 +317,7 @@ export async function rotateMeshtasticChannelPsk(
   channelId: string,
   input: RotateChannelPskRequest,
 ): Promise<MeshtasticChannelDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-channels.manage");
   const current = await findChannel(eventId, channelId);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -375,7 +375,7 @@ export async function releaseMeshtasticChannel(
   channelId: string,
   input: ReleaseMeshtasticChannelRequest,
 ): Promise<MeshtasticChannelDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-channels.manage");
   const current = await findChannel(eventId, channelId);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);

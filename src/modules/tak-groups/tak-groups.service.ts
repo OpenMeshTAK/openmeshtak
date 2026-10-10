@@ -111,7 +111,7 @@ export async function getTakGroup(principal: Principal, eventId: string, groupId
 }
 
 export async function createTakGroup(actor: ActorContext, eventId: string, input: CreateTakGroupRequest): Promise<TakGroupDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "tak-groups.manage");
   const members = await validatedMembers(eventId, input.members ?? []);
   try {
     const id = await database.$transaction(async (transaction) => {
@@ -130,7 +130,7 @@ export async function createTakGroup(actor: ActorContext, eventId: string, input
 
 /** Changes apply to connected TAK apps within the access recheck, without publishing. */
 export async function updateTakGroup(actor: ActorContext, eventId: string, groupId: string, input: UpdateTakGroupRequest): Promise<TakGroupDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "tak-groups.manage");
   const current = await findGroup(eventId, groupId);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -158,7 +158,7 @@ export async function updateTakGroup(actor: ActorContext, eventId: string, group
 }
 
 export async function deleteTakGroup(actor: ActorContext, eventId: string, groupId: string): Promise<void> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "tak-groups.manage");
   const current = await findGroup(eventId, groupId);
   await database.$transaction(async (transaction) => {
     await transaction.takGroup.delete({ where: { id: current.id } });

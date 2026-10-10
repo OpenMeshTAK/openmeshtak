@@ -113,11 +113,11 @@ function gapOf(query: TakTrafficHistoryQuery): number {
 
 /**
  * The event's recorded positions in a range as tracks for the timeline and replay. Requires
- * `tak-traffic.view`; like the TAK history query, every request is audited because it reveals
+ * `tak-traffic.history`; like the TAK history query, every request is audited because it reveals
  * where people were. Recording itself stays an opt-in per event.
  */
 export async function getTakTrafficHistory(actor: ActorContext, eventId: string, query: TakTrafficHistoryQuery): Promise<TakTrafficHistoryDto> {
-  await requireEventPermission(actor.principal, eventId, "tak-traffic.view");
+  await requireEventPermission(actor.principal, eventId, "tak-traffic.history");
   const range = parseRange(query);
   const loaded = await loadPositions(eventId, range, query, HISTORY_MAX_POINTS + 1);
   const truncated = loaded.length > HISTORY_MAX_POINTS;
@@ -172,7 +172,7 @@ export async function exportTakTracks(
   format: TakTrafficExportFormat,
   query: TakTrafficHistoryQuery,
 ): Promise<TrackExport> {
-  const event = await requireEventPermission(actor.principal, eventId, "tak-traffic.view");
+  const event = await requireEventPermission(actor.principal, eventId, "tak-traffic.export");
   const range = parseRange(query);
   const positions = await loadPositions(eventId, range, query, EXPORT_MAX_POINTS);
   const tracks = buildTracks(positions, gapOf(query));
@@ -198,10 +198,10 @@ export async function exportTakTracks(
 
 /**
  * Deletes recorded traffic before its retention ends, for the whole event or one CoT UID, e.g.
- * when a participant asks. Requires `events.manage`; works for archived events too.
+ * when a participant asks. Requires `tak-traffic.delete`; works for archived events too.
  */
 export async function deleteRecordedTakTraffic(actor: ActorContext, eventId: string, uid?: string): Promise<DeletedTakTrafficDto> {
-  await requireEventPermission(actor.principal, eventId, "events.manage");
+  await requireEventPermission(actor.principal, eventId, "tak-traffic.delete");
   return database.$transaction(async (transaction) => {
     const result = await transaction.takTrafficItem.deleteMany({ where: { eventId, ...(uid === undefined ? {} : { uid }) } });
     await recordAudit(

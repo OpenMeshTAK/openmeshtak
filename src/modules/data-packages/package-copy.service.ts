@@ -4,11 +4,11 @@ import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError, validationProblem } from "../../shared/errors/problem-error.js";
-import { requireEventPermission } from "../events/event-access.js";
+
 import { planCombinedExport, selectedSnapshot } from "./combined-export.service.js";
 import { buildPackageSnapshot, hashPackageSnapshot, type PackageSnapshot } from "./package-snapshot.js";
 import type { DataPackageDto } from "./data-package.dto.js";
-import { requireEditableEvent } from "./data-package-access.js";
+import { requireAnyPackageRead, requireDataPackage, requireEditableEvent, requireKindPermission } from "./data-package-access.js";
 import { loadDto } from "./data-packages.service.js";
 import { MAX_LAYERS_PER_PACKAGE } from "./package-layers.service.js";
 import { MAX_OBJECTS_PER_PACKAGE } from "./package-objects.service.js";
@@ -30,9 +30,12 @@ interface CopyPart { dataPackage: DataPackage; revision: PackageRevision | null;
 
 /** A draft has no published revision identity. Read it consistently and audit its snapshot hash. */
 async function draftParts(actor: ActorContext, eventId: string, input: CreateDataPackageCopyRequest): Promise<CopyPart[]> {
-  await requireEventPermission(actor.principal, eventId, "data-packages.read");
+  await requireAnyPackageRead(actor.principal, eventId);
   if (new Set(input.packages.map(({ packageId }) => packageId)).size !== input.packages.length || input.packages.some(({ revision }) => revision !== undefined)) {
     throw validationProblem([{ field: "packages", code: "INVALID_SELECTION", message: "Select each draft once, without a published revision number." }]);
+  }
+  for (const { packageId } of input.packages) {
+    await requireDataPackage(actor.principal, eventId, packageId, "data-packages.read");
   }
   return database.$transaction(async (transaction) => {
     const parts: CopyPart[] = [];
@@ -55,7 +58,7 @@ export async function createDataPackageCopy(
   eventId: string,
   input: CreateDataPackageCopyRequest,
 ): Promise<DataPackageDto> {
-  requireEditableEvent(await requireEventPermission(actor.principal, eventId, "data-packages.edit"));
+  requireEditableEvent(await requireKindPermission(actor.principal, eventId, "data-packages.edit", input.kind ?? "package"));
   const parts: CopyPart[] = input.source === "draft" ? await draftParts(actor, eventId, input) : (await planCombinedExport(actor.principal, eventId, input)).parts;
   if (parts.length === 0) {
     throw new ProblemError({

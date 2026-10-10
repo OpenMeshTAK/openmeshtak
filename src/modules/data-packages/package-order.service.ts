@@ -3,8 +3,8 @@ import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { ProblemError } from "../../shared/errors/problem-error.js";
-import { requireEventPermission } from "../events/event-access.js";
-import { requireEditableEvent } from "./data-package-access.js";
+
+import { requireEditableEvent, requireKindPermission } from "./data-package-access.js";
 import type { DataPackageDto } from "./data-package.dto.js";
 import { listDataPackages } from "./data-packages.service.js";
 
@@ -38,7 +38,7 @@ export async function reorderDataPackages(
   eventId: string,
   input: ReorderDataPackagesRequest,
 ): Promise<DataPackageDto[]> {
-  requireEditableEvent(await requireEventPermission(actor.principal, eventId, "data-packages.edit"));
+  requireEditableEvent(await requireKindPermission(actor.principal, eventId, "data-packages.edit", input.kind ?? "package"));
 
   await database.$transaction(async (transaction) => {
     const current = await transaction.dataPackage.findMany({ where: { eventId, kind: input.kind ?? "package" }, select: { id: true } });

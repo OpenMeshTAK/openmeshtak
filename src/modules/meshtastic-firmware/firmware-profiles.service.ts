@@ -10,12 +10,18 @@ import type {
 import { findFirmwareProfile, firmwareProfiles } from "./firmware-profiles.js";
 import { formatFirmwareVersion } from "./firmware-version.js";
 
-/** Profiles hold no secrets, but they are configuration detail for people who edit events. */
+/**
+ * Profiles hold no secrets, but they are configuration detail for people who create events or edit
+ * an event's Meshtastic settings.
+ */
 export async function requireEventEditor(principal: Principal): Promise<void> {
-  const access = await eventAccessFor(principal, "events.manage");
-  if (!access.all && access.eventIds.length === 0) {
-    throw forbidden();
+  for (const permission of ["events.manage", "meshtastic-settings.manage"] as const) {
+    const access = await eventAccessFor(principal, permission);
+    if (access.all || access.eventIds.length > 0) {
+      return;
+    }
   }
+  throw forbidden();
 }
 
 export function toProfileSummary({ file, min }: LoadedFirmwareProfile): FirmwareProfileSummaryDto {

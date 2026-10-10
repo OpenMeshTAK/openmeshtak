@@ -4,7 +4,7 @@ import { recordAudit } from "../../shared/audit/audit.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, ProblemError, validationProblem } from "../../shared/errors/problem-error.js";
-import { requireEventPermission } from "../events/event-access.js";
+import { requireAnyPackageRead, requireDataPackage } from "./data-package-access.js";
 import { objectToCotEvents } from "./atak/cot-export.js";
 import { writeDataPackage } from "./atak/data-package-archive.js";
 import type {
@@ -85,7 +85,7 @@ export async function planCombinedExport(
   eventId: string,
   input: CombinedExportRequest,
 ): Promise<CombinedPlan> {
-  await requireEventPermission(principal, eventId, "data-packages.read");
+  await requireAnyPackageRead(principal, eventId);
   const ids = input.packages.map(({ packageId }) => packageId);
   if (new Set(ids).size !== ids.length) {
     throw validationProblem([{ field: "packages", code: "DUPLICATE", message: "Select each data package only once." }]);
@@ -94,10 +94,7 @@ export async function planCombinedExport(
   const report: CombinedExportReport = { included: [], skipped: [], nameClashes: [], presentationLosses: [] };
   const parts: IncludedPart[] = [];
   for (const [index, selection] of input.packages.entries()) {
-    const dataPackage = await database.dataPackage.findFirst({ where: { id: selection.packageId, eventId } });
-    if (dataPackage === null) {
-      throw notFoundProblem();
-    }
+    const { dataPackage } = await requireDataPackage(principal, eventId, selection.packageId, "data-packages.read");
     const revision = await findRevision(dataPackage.id, selection.revision);
     if (revision === null) {
       if (selection.revision !== undefined) {

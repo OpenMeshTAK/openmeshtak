@@ -13,14 +13,14 @@ import { exportTakTraffic, getTakTrafficRecording, updateTakTrafficRecording } f
 @Response<ProblemDetails>(403, "Access denied")
 @Response<ProblemDetails>(404, "Not found")
 export class TakTrafficRecordingController extends Controller {
-  /** Requires `tak-traffic.view` for the event. */
+  /** Requires `tak-traffic.view`, `tak-traffic.history` or `tak-traffic.recording` for the event. */
   @Get()
   @SuccessResponse(200, "Recording settings")
   public async getTakTrafficRecording(@Request() request: unknown, @Path() eventId: Uuid): Promise<TakTrafficRecordingDto> {
     return getTakTrafficRecording(requestContext(request).principal, eventId);
   }
 
-  /** Turns recording on or off and sets the retention in days. Requires `events.manage`. */
+  /** Turns recording on or off and sets the retention in days. Requires `tak-traffic.recording`. */
   @Put()
   @SuccessResponse(200, "Recording settings updated")
   @Response<ProblemDetails>(409, "Version conflict")
@@ -35,7 +35,7 @@ export class TakTrafficRecordingController extends Controller {
 
   /**
    * The recorded positions and markers as a GeoJSON FeatureCollection, oldest first, at most
-   * 50,000 items. Requires `tak-traffic.view`; every export is audited.
+   * 50,000 items. Requires `tak-traffic.export`; every export is audited.
    */
   @Get("export")
   @SuccessResponse(200, "Recorded traffic as GeoJSON")

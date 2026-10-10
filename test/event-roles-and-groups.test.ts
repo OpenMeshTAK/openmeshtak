@@ -145,9 +145,19 @@ for (const kind of ["roles", "groups"] as const) {
         .set("Cookie", reader.cookie)
         .expect(404);
 
-      const key = await createApiClientKey([
+      const eventManager = await createApiClientKey([
         { permission: "events.read", eventId },
         { permission: "events.manage", eventId },
+      ]);
+      await request(app)
+        .post(base)
+        .set("Authorization", `Bearer ${eventManager}`)
+        .send({ name: "Alpha", slug: "alpha" })
+        .expect(403);
+
+      const key = await createApiClientKey([
+        { permission: "events.read", eventId },
+        { permission: kind === "roles" ? "event-roles.manage" : "event-groups.manage", eventId },
       ]);
       await request(app)
         .post(base)

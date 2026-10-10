@@ -109,7 +109,7 @@ export async function updateTakConfiguration(
   eventId: string,
   input: UpdateTakConfigurationRequest,
 ): Promise<TakConfigurationDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "tak-settings.manage");
   const meshChannelId = await validatedChannel(eventId, input);
   const data: Prisma.TakConfigurationUncheckedUpdateInput = { meshChannelId };
   if (input.groupMode !== undefined) {

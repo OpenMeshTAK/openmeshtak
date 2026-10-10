@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Prisma, SettingsPreset } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
-import { eventAccessFor, forbidden, requirePermission } from "../../shared/auth/permission-check.js";
+import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem, validationProblem, versionConflictProblem } from "../../shared/errors/problem-error.js";
@@ -51,17 +51,13 @@ function toDto(row: SettingsPreset): SettingsPresetDto {
   return { ...toSummary(row), document };
 }
 
-/** Anyone who may change some event's settings may browse and apply library presets. */
+/** The library is shared by every event, so reading and changing it are instance-wide permissions. */
 async function requireLibraryReader(principal: Principal): Promise<void> {
-  const access = await eventAccessFor(principal, "events.manage");
-  if (!access.all && access.eventIds.length === 0) {
-    throw forbidden();
-  }
+  await requirePermission(principal, "presets.read");
 }
 
-/** The library is shared by every event, so only instance-wide event managers may change it. */
 async function requireLibraryWriter(principal: Principal): Promise<void> {
-  await requirePermission(principal, "events.manage");
+  await requirePermission(principal, "presets.manage");
 }
 
 /** Validates a document for the library, independent of any event, and returns what is stored. */

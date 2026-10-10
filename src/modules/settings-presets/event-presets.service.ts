@@ -86,7 +86,7 @@ export async function previewMeshtasticPreset(
   eventId: string,
   input: PreviewMeshtasticPresetRequest,
 ): Promise<MeshtasticPresetPreviewDto> {
-  await requireMutableEvent(principal, eventId);
+  await requireMutableEvent(principal, eventId, "meshtastic-settings.manage");
   const { content, current, firmware, plan, confirmation } = await planMeshtasticImport(eventId, input.document);
   const secrets = decryptSecretSettings(eventId, current.secretsEnvelope);
   return {
@@ -115,7 +115,7 @@ export async function applyMeshtasticPreset(
   eventId: string,
   input: ApplyMeshtasticPresetRequest,
 ): Promise<MeshtasticConfigurationDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "meshtastic-settings.manage");
   const { document, current, firmware, plan, confirmation } = await planMeshtasticImport(eventId, input.document);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -207,7 +207,7 @@ async function planTakImport(eventId: string, input: unknown, mappingList: Prese
 }
 
 export async function previewTakPreset(principal: Principal, eventId: string, input: PreviewTakPresetRequest): Promise<TakPresetPreviewDto> {
-  await requireMutableEvent(principal, eventId);
+  await requireMutableEvent(principal, eventId, "tak-settings.manage");
   const { content, plan, version, confirmation } = await planTakImport(eventId, input.document, input.mappings ?? []);
   return {
     version,
@@ -228,7 +228,7 @@ export async function previewTakPreset(principal: Principal, eventId: string, in
  * once an administrator publishes a configuration revision.
  */
 export async function applyTakPreset(actor: ActorContext, eventId: string, input: ApplyTakPresetRequest): Promise<AtakPreferenceListDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "tak-settings.manage");
   const { document, plan, version, confirmation } = await planTakImport(eventId, input.document, input.mappings);
   if (version !== input.version) {
     throw versionConflictProblem(version);

@@ -124,7 +124,7 @@ void describe("TAK traffic history API", () => {
 
   void it("returns tracks of a range, filters by group and audits every request", async () => {
     const { eventId, groupId } = await eventWithTraffic();
-    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.view", eventId }]);
+    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.history", eventId }]);
     const history = (await request(app).get(`/api/v1/events/${eventId}/tak-traffic/history?${range}`).set("Cookie", viewer.cookie).expect(200))
       .body as { tracks: Array<{ uid: string; sender: { eventGroupName: string | null } }>; groups: Array<{ name: string }>; truncated: boolean };
     assert.deepEqual(history.tracks.map(({ uid }) => uid), ["ALPHA", "ZULU"], "drawings have no track");
@@ -142,12 +142,14 @@ void describe("TAK traffic history API", () => {
     await request(app).get(`/api/v1/events/${eventId}/tak-traffic/history?${range}&sort=time`).set("Cookie", viewer.cookie).expect(422);
   });
 
-  void it("requires tak-traffic.view and never shows another event's traffic", async () => {
+  void it("requires tak-traffic.history and never shows another event's traffic", async () => {
     const { eventId } = await eventWithTraffic();
     const otherEvent = await createEvent();
     const reader = await createUser("Reader", [{ permission: "events.read", eventId }]);
     await request(app).get(`/api/v1/events/${eventId}/tak-traffic/history?${range}`).set("Cookie", reader.cookie).expect(403);
-    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.view", eventId: otherEvent }]);
+    const liveOnly = await createUser("Live", [{ permission: "tak-traffic.view", eventId }]);
+    await request(app).get(`/api/v1/events/${eventId}/tak-traffic/history?${range}`).set("Cookie", liveOnly.cookie).expect(403);
+    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.history", eventId: otherEvent }]);
     await request(app).get(`/api/v1/events/${eventId}/tak-traffic/history?${range}`).set("Cookie", viewer.cookie).expect(404);
     const empty = (await request(app).get(`/api/v1/events/${otherEvent}/tak-traffic/history?${range}`).set("Cookie", viewer.cookie).expect(200))
       .body as { tracks: unknown[] };
@@ -156,7 +158,9 @@ void describe("TAK traffic history API", () => {
 
   void it("exports tracks as GPX and GeoJSON", async () => {
     const { eventId } = await eventWithTraffic();
-    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.view", eventId }]);
+    const historyOnly = await createUser("History", [{ permission: "tak-traffic.history", eventId }]);
+    await request(app).get(`/api/v1/events/${eventId}/tak-traffic/history/export?format=gpx&${range}`).set("Cookie", historyOnly.cookie).expect(403);
+    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.export", eventId }]);
     const gpx = await request(app).get(`/api/v1/events/${eventId}/tak-traffic/history/export?format=gpx&${range}`).set("Cookie", viewer.cookie).expect(200);
     assert.match(gpx.headers["content-type"] ?? "", /application\/gpx\+xml/);
     assert.match(gpx.text, /<trk><name>ALPHA<\/name>.*<trkseg><trkpt lat="52\.4000000" lon="11\.6000000"><time>2026-10-01T10:00:00\.000Z<\/time><\/trkpt>/);
@@ -175,11 +179,11 @@ void describe("TAK traffic history API", () => {
     assert.equal(await database.auditEvent.count({ where: { action: "tak-traffic.exported" } }), 2);
   });
 
-  void it("deletes recorded traffic of one UID or the whole event with events.manage", async () => {
+  void it("deletes recorded traffic of one UID or the whole event with tak-traffic.delete", async () => {
     const { eventId } = await eventWithTraffic();
-    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.view", eventId }]);
+    const viewer = await createUser("Viewer", [{ permission: "tak-traffic.history", eventId }, { permission: "events.manage", eventId }]);
     await request(app).delete(`/api/v1/events/${eventId}/tak-traffic/recording/items`).set("Cookie", viewer.cookie).expect(403);
-    const manager = await createUser("Manager", [{ permission: "events.manage", eventId }]);
+    const manager = await createUser("Manager", [{ permission: "tak-traffic.delete", eventId }]);
     const one = (await request(app).delete(`/api/v1/events/${eventId}/tak-traffic/recording/items?uid=ALPHA`).set("Cookie", manager.cookie).expect(200))
       .body as { deleted: number };
     assert.equal(one.deleted, 2);

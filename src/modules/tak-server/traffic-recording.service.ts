@@ -3,7 +3,7 @@ import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { isUniqueConstraintError } from "../../shared/database/unique-constraint.js";
 import { versionConflictProblem } from "../../shared/errors/problem-error.js";
-import { requireEventPermission } from "../events/event-access.js";
+import { requireAnyEventPermission, requireEventPermission } from "../events/event-access.js";
 import { trafficRecorder } from "./traffic-recording.js";
 import type { TakTrafficRecordingDto, UpdateTakTrafficRecordingRequest } from "./traffic-recording.dto.js";
 
@@ -23,17 +23,17 @@ async function toDto(eventId: string): Promise<TakTrafficRecordingDto> {
 }
 
 export async function getTakTrafficRecording(principal: Principal, eventId: string): Promise<TakTrafficRecordingDto> {
-  await requireEventPermission(principal, eventId, "tak-traffic.view");
+  await requireAnyEventPermission(principal, eventId, ["tak-traffic.view", "tak-traffic.history", "tak-traffic.recording"]);
   return toDto(eventId);
 }
 
-/** Turns recording on or off and sets the retention. Requires `events.manage` for the event. */
+/** Turns recording on or off and sets the retention. Requires `tak-traffic.recording` for the event. */
 export async function updateTakTrafficRecording(
   actor: ActorContext,
   eventId: string,
   input: UpdateTakTrafficRecordingRequest,
 ): Promise<TakTrafficRecordingDto> {
-  await requireEventPermission(actor.principal, eventId, "events.manage");
+  await requireEventPermission(actor.principal, eventId, "tak-traffic.recording");
   const data = { enabled: input.enabled, retentionDays: input.retentionDays };
   await database.$transaction(async (transaction) => {
     if (input.version === 0) {
@@ -82,7 +82,7 @@ interface GeoJsonFeatureCollection {
  * position data, so every export is audited.
  */
 export async function exportTakTraffic(actor: ActorContext, eventId: string): Promise<GeoJsonFeatureCollection> {
-  await requireEventPermission(actor.principal, eventId, "tak-traffic.view");
+  await requireEventPermission(actor.principal, eventId, "tak-traffic.export");
   const items = await database.takTrafficItem.findMany({
     where: { eventId },
     orderBy: { receivedAt: "asc" },

@@ -99,7 +99,7 @@ export async function createEventRole(
   eventId: string,
   input: CreateEventRoleRequest,
 ): Promise<EventRoleDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "event-roles.manage");
 
   try {
     return toDto(
@@ -130,7 +130,7 @@ export async function updateEventRole(
   roleId: string,
   input: UpdateEventRoleRequest,
 ): Promise<EventRoleDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "event-roles.manage");
   const current = await findRole(eventId, roleId);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -168,7 +168,7 @@ export async function deleteEventRole(
   eventId: string,
   roleId: string,
 ): Promise<void> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "event-roles.manage");
   const current = await findRole(eventId, roleId);
 
   await database.$transaction(async (transaction) => {

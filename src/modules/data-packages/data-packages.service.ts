@@ -15,7 +15,6 @@ import { referencedBlobIds, removeUnreferencedBlobs } from "./package-content-cl
 import { nextPackageSortOrder, requireUniqueMissionName } from "./package-order.js";
 import { contentSummaries, draftHashOf, exportSizeOf } from "./package-state.js";
 import { audienceFromSelectors } from "../event-audience/event-audience.js";
-import { requireEventPermission } from "../events/event-access.js";
 import type {
   CreateDataPackageRequest,
   DataPackageContentSummary,
@@ -24,7 +23,7 @@ import type {
   DataPackagePage,
   UpdateDataPackageRequest,
 } from "./data-package.dto.js";
-import { requireEditableEvent, requireDataPackage } from "./data-package-access.js";
+import { readableKinds, requireDataPackage, requireEditableEvent, requireKindPermission } from "./data-package-access.js";
 
 const packageSelection = {
   id: true,
@@ -115,12 +114,15 @@ export async function listDataPackages(
   cursor?: string,
   kind?: DataPackageKind,
 ): Promise<DataPackagePage> {
-  await requireEventPermission(principal, eventId, "data-packages.read");
+  const kinds = kind === undefined ? await readableKinds(principal, eventId) : [kind];
+  if (kind !== undefined) {
+    await requireKindPermission(principal, eventId, "data-packages.read", kind);
+  }
   const context = `events/${eventId}/data-packages/${kind ?? "all"}`;
   const position = cursor === undefined ? null : decodeCursor(context, cursor);
 
   const rows = await database.dataPackage.findMany({
-    where: { eventId, ...(kind === undefined ? {} : { kind }), ...afterCursor(position) },
+    where: { eventId, kind: { in: kinds }, ...afterCursor(position) },
     orderBy: [...CURSOR_ORDER],
     take: limit + 1,
     select: packageSelection,
@@ -140,7 +142,7 @@ export async function createDataPackage(
   eventId: string,
   input: CreateDataPackageRequest,
 ): Promise<DataPackageDto> {
-  requireEditableEvent(await requireEventPermission(actor.principal, eventId, "data-packages.edit"));
+  requireEditableEvent(await requireKindPermission(actor.principal, eventId, "data-packages.edit", input.kind ?? "package"));
 
   const packageId = randomUUID();
   await database.$transaction(async (transaction) => {

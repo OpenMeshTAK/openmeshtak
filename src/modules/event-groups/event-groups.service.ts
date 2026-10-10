@@ -156,7 +156,7 @@ export async function createEventGroup(
   eventId: string,
   input: CreateEventGroupRequest,
 ): Promise<EventGroupDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "event-groups.manage");
   const provisioning = await provisioningForCreate(eventId, input);
 
   try {
@@ -187,7 +187,7 @@ export async function updateEventGroup(
   groupId: string,
   input: UpdateEventGroupRequest,
 ): Promise<EventGroupDto> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "event-groups.manage");
   const current = await findGroup(eventId, groupId);
   if (current.version !== input.version) {
     throw versionConflictProblem(current.version);
@@ -236,7 +236,7 @@ export async function deleteEventGroup(
   eventId: string,
   groupId: string,
 ): Promise<void> {
-  await requireMutableEvent(actor.principal, eventId);
+  await requireMutableEvent(actor.principal, eventId, "event-groups.manage");
   const current = await findGroup(eventId, groupId);
 
   await database.$transaction(async (transaction) => {

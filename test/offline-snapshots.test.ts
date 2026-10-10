@@ -166,10 +166,22 @@ void describe("offline snapshots", () => {
     await request(app).get(`${base}/2/contents/${contentId}/image`).set("Cookie", admin.cookie).expect(404);
   });
 
-  void it("requires data package access and an active event", async () => {
+  void it("requires offline-snapshots.prepare, read access to the package kind and an active event", async () => {
     const packageId = await publishedPackage("Maps", { "maps/topo.sqlite": tileCache() });
     const viewer = await createUser("Viewer", [{ permission: "events.read", eventId }]);
     await snapshot(viewer, [{ packageId }]).expect(403);
+    const reader = await createUser("Reader", [{ permission: "data-packages.read", eventId }]);
+    await snapshot(reader, [{ packageId }]).expect(403);
+    const missionsOnly = await createUser("Planner", [
+      { permission: "offline-snapshots.prepare", eventId },
+      { permission: "missions.read", eventId },
+    ]);
+    await snapshot(missionsOnly, [{ packageId }]).expect(403);
+    const operator = await createUser("Operator", [
+      { permission: "offline-snapshots.prepare", eventId },
+      { permission: "data-packages.read", eventId },
+    ]);
+    await snapshot(operator, [{ packageId }]).expect(200);
     await snapshot(admin, [{ packageId }, { packageId }]).expect(422);
 
     await database.event.update({ where: { id: eventId }, data: { status: "archived" } });

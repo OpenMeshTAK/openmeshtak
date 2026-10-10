@@ -345,8 +345,8 @@ void describe("TAK CoT streaming", () => {
     assert.equal(await database.takTrafficItem.count(), 0, "nothing is stored by default");
 
     const manager = await createUser("Manager", [
-      { permission: "events.manage", eventId: bravo.eventId },
-      { permission: "tak-traffic.view", eventId: bravo.eventId },
+      { permission: "tak-traffic.recording", eventId: bravo.eventId },
+      { permission: "tak-traffic.export", eventId: bravo.eventId },
     ]);
     const url = `/api/v1/events/${bravo.eventId}/tak-traffic/recording`;
     await request(app).put(url).set("Cookie", manager.cookie).send({ version: 0, enabled: true, retentionDays: 7 }).expect(200);
