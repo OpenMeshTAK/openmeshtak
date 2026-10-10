@@ -13,8 +13,10 @@ export interface TakTrackPointDto {
   ce: number | null;
   /** Reached Core more than a minute after its own time, for example relayed over a mesh. */
   delayed: boolean;
-  /** A large circular error or a human estimate; never connected to other positions. */
+  /** A circular error of 100 m or more; never connected to other positions. */
   approximate: boolean;
+  /** The sender marked the position as estimated (CoT `how` `h-e`); drawn as a dashed line. */
+  estimated: boolean;
 }
 
 /** The OpenMeshTak user whose TAK app sent a track, with their event group when still a member. */

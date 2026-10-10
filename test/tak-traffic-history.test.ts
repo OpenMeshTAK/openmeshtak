@@ -63,6 +63,15 @@ void describe("track building", () => {
     );
     assert.equal(track.segments[3]?.[0]?.approximate, true);
   });
+
+  void it("connects estimated positions with a small error and only marks them", () => {
+    const [track] = buildTracks([position("A", 0, { how: "h-e", ce: 6 }), position("A", 10, { how: "h-e", ce: 6 }), position("A", 20, { how: "h-e", ce: 250 })]);
+    assert.ok(track);
+    assert.deepEqual(
+      track.segments.map((segment) => segment.map(({ estimated, approximate }) => [estimated, approximate])),
+      [[[true, false], [true, false]], [[true, true]]],
+    );
+  });
 });
 
 void describe("TAK traffic history API", () => {

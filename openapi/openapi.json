@@ -679,7 +679,11 @@
 					},
 					"approximate": {
 						"type": "boolean",
-						"description": "A large circular error or a human estimate; never connected to other positions."
+						"description": "A circular error of 100 m or more; never connected to other positions."
+					},
+					"estimated": {
+						"type": "boolean",
+						"description": "The sender marked the position as estimated (CoT `how` `h-e`); drawn as a dashed line."
 					}
 				},
 				"required": [
@@ -688,7 +692,8 @@
 					"lon",
 					"ce",
 					"delayed",
-					"approximate"
+					"approximate",
+					"estimated"
 				],
 				"type": "object",
 				"additionalProperties": false

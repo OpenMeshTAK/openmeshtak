@@ -29,6 +29,8 @@ export interface TrackPoint {
   ce: number | null;
   delayed: boolean;
   approximate: boolean;
+  /** The sender marked the position as estimated (`how` `h-e`), e.g. a PC without GPS. */
+  estimated: boolean;
 }
 
 export interface Track {
@@ -71,9 +73,17 @@ export function distanceMetres(a: { lat: number; lon: number }, b: { lat: number
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-/** Large circular errors (e.g. Meshtastic's reduced position precision) and human estimates (`h-e`). */
-export function isApproximate(position: Pick<RecordedPosition, "ce" | "how">): boolean {
-  return (position.ce !== null && position.ce >= APPROXIMATE_CE_METRES) || (position.how?.startsWith("h-e") ?? false);
+/**
+ * Large circular errors, e.g. Meshtastic's reduced position precision. Only the stated accuracy
+ * decides: an estimate (`h-e`) with a small error, such as WinTAK's position on a PC without GPS,
+ * still continues the track and is only marked `estimated`.
+ */
+export function isApproximate(position: Pick<RecordedPosition, "ce">): boolean {
+  return position.ce !== null && position.ce >= APPROXIMATE_CE_METRES;
+}
+
+export function isEstimated(position: Pick<RecordedPosition, "how">): boolean {
+  return position.how?.startsWith("h-e") ?? false;
 }
 
 function toPoint(position: RecordedPosition): TrackPoint {
@@ -84,6 +94,7 @@ function toPoint(position: RecordedPosition): TrackPoint {
     ce: position.ce,
     delayed: position.receivedAt.getTime() - position.time.getTime() > DELAYED_AFTER_MS,
     approximate: isApproximate(position),
+    estimated: isEstimated(position),
   };
 }
 

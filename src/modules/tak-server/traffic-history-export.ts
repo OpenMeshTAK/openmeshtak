@@ -39,6 +39,7 @@ export function tracksToGeoJson(tracks: readonly ExportTrack[]): { type: "Featur
           // Line coordinates cannot carry times; GPX keeps one time per point.
           times: segment.map(({ time }) => time.toISOString()).join(","),
           approximate: segment.length === 1 && first.approximate,
+          estimated: segment.some(({ estimated }) => estimated),
           ce: segment.length === 1 ? first.ce : null,
         },
       };

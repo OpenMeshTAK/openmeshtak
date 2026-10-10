@@ -406,6 +406,7 @@ const models: TsoaRoute.Models = {
             "ce": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
             "delayed": {"dataType":"boolean","required":true},
             "approximate": {"dataType":"boolean","required":true},
+            "estimated": {"dataType":"boolean","required":true},
         },
         "additionalProperties": false,
     },
