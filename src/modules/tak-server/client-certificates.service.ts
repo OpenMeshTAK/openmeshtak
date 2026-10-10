@@ -5,6 +5,7 @@ import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { notFoundProblem } from "../../shared/errors/problem-error.js";
+import { logger } from "../../shared/logging/logger.js";
 import type { RevokeTakCertificateRequest, TakClientCertificateDto } from "./client-certificates.dto.js";
 import { takConnections } from "./tak-connections.js";
 import { loadTakServerSettings } from "./tak-server-settings.js";
@@ -103,6 +104,10 @@ export async function revokeCertificate(actor: RevokingActor, certificate: TakCl
     });
   }
   takConnections.disconnectCertificate(certificate.id);
+  logger.info(
+    { event: "tak_certificate_revoked", certificateId: certificate.id, traceId: actor.traceId },
+    "TAK certificate revoked; its connections ended",
+  );
   certificateEvents.emit("revoked", certificate);
 }
 

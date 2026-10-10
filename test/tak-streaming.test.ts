@@ -5,8 +5,11 @@ import { connect, type Server, type TLSSocket } from "node:tls";
 import { after, afterEach, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
+import { strFromU8, unzipSync } from "fflate";
+import forge from "node-forge";
 import { createApp } from "../src/app.js";
 import { trustedCertificateAuthorities } from "../src/modules/tak-server/certificate-authority.js";
+import { authenticateTakClient } from "../src/modules/tak-server/client-authentication.js";
 import { decryptServerKey, currentServerCertificate } from "../src/modules/tak-server/server-certificate.js";
 import { CotFrameReader, ProtobufFrameReader, frameTakMessage } from "../src/modules/tak-server/streaming/cot-frames.js";
 import { takMessageToXml, xmlToTakMessage } from "../src/modules/tak-server/streaming/cot-protobuf.js";
@@ -15,6 +18,43 @@ import { createStreamingServer } from "../src/modules/tak-server/streaming/strea
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser, type TestUser } from "./support/identity.js";
 import { enableTakServer, enrollTakClient, type EnrolledClient } from "./support/tak.js";
+
+/** Reads the actual downloadable identity, just as WinTAK imports its connection package. */
+async function downloadWintakClient(user: TestUser): Promise<EnrolledClient> {
+  const response = await request(app)
+    .get("/api/v1/me/wintak-connection-package")
+    .set("Cookie", user.cookie)
+    .buffer(true)
+    .parse((res, callback) => {
+      const chunks: Buffer[] = [];
+      res.on("data", (chunk: Buffer) => chunks.push(chunk));
+      res.on("end", () => callback(null, Buffer.concat(chunks)));
+    })
+    .expect(200);
+  const files = unzipSync(new Uint8Array(response.body as Buffer));
+  const preferences = strFromU8(files["openmeshtak.pref"] ?? new Uint8Array());
+  const password = /key="clientPassword"[^>]*>([^<]+)</.exec(preferences)?.[1];
+  assert.ok(password);
+  const identity = forge.pkcs12.pkcs12FromAsn1(
+    forge.asn1.fromDer(Buffer.from(files["client.p12"] ?? new Uint8Array()).toString("binary")),
+    password,
+  );
+  const certificateBag = forge.pki.oids.certBag ?? "";
+  const keyBag = forge.pki.oids.pkcs8ShroudedKeyBag ?? "";
+  const certificates = identity.getBags({ bagType: certificateBag })[certificateBag] ?? [];
+  const certificate = certificates[0]?.cert;
+  const key = identity.getBags({ bagType: keyBag })[keyBag]?.[0]?.key;
+  assert.ok(certificate && key);
+  return {
+    certificateDer: Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes(), "binary"),
+    certificatePem: forge.pki.certificateToPem(certificate),
+    privateKeyPem: forge.pki.privateKeyToPem(key),
+    caPems: certificates.slice(1).map((bag) => {
+      assert.ok(bag.cert);
+      return forge.pki.certificateToPem(bag.cert);
+    }),
+  };
+}
 
 let app: Express;
 let server: Server;
@@ -42,7 +82,7 @@ interface StreamClient {
   next(predicate: (xml: string) => boolean, timeoutMs?: number): Promise<string | null>;
 }
 
-async function open(client: EnrolledClient): Promise<StreamClient> {
+async function open(client: EnrolledClient, session?: Buffer): Promise<StreamClient> {
   const socket = connect({
     host: "127.0.0.1",
     port,
@@ -50,6 +90,7 @@ async function open(client: EnrolledClient): Promise<StreamClient> {
     cert: client.certificatePem,
     key: client.privateKeyPem,
     ca: client.caPems,
+    session,
   });
   sockets.push(socket);
   const received: string[] = [];
@@ -178,6 +219,43 @@ void describe("TAK CoT streaming", () => {
   after(async () => {
     await clearDatabase();
     await disconnectDatabase();
+  });
+
+  void it("disconnects a revoked WinTAK package and rejects reconnects while other packages stay valid", async () => {
+    const event = await activeEvent();
+    const user = await member(event.eventId, event.groupId, event.roleId, "WinTAK user");
+    const client = await downloadWintakClient(user);
+    const connected = await open(client);
+    assert.ok(await connected.next((xml) => xml.includes("t-x-takp-v")), "downloaded identity is admitted");
+
+    // A later download is independent; revoking it must not revoke the already imported file.
+    const unused = await downloadWintakClient(user);
+    const unusedCertificate = await authenticateTakClient(unused.certificateDer);
+    assert.ok(unusedCertificate);
+    await request(app).post(`/api/v1/me/tak-certificates/${unusedCertificate.certificate.id}/revoke`).set("Cookie", user.cookie).send({}).expect(200);
+    const reconnected = await open(client);
+    assert.ok(await reconnected.next((xml) => xml.includes("t-x-takp-v")), "original package still connects");
+    const session = reconnected.socket.getSession();
+    assert.ok(session);
+
+    const activeCertificate = await authenticateTakClient(client.certificateDer);
+    assert.ok(activeCertificate);
+    await request(app).post(`/api/v1/me/tak-certificates/${activeCertificate.certificate.id}/revoke`).set("Cookie", user.cookie).send({}).expect(200);
+    await Promise.all([connected, reconnected].map(async ({ socket }) => {
+      if (!socket.destroyed) {
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error("Revoked WinTAK connection stayed open")), 1000);
+          socket.once("close", () => { clearTimeout(timeout); resolve(); });
+        });
+      }
+      assert.equal(socket.destroyed, true, "every connection using the revoked identity ends");
+    }));
+    const rejected = await open(client);
+    assert.equal(rejected.socket.destroyed, true, "revoked package cannot reconnect");
+    assert.deepEqual(rejected.received, [], "revoked package receives no CoT or protocol offer");
+    const resumed = await open(client, session);
+    assert.equal(resumed.socket.destroyed, true, "TLS session resumption cannot bypass revocation");
+    assert.deepEqual(resumed.received, []);
   });
 
   void it("routes CoT within an event and never into another event", async () => {
