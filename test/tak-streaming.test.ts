@@ -18,6 +18,7 @@ import { createStreamingServer } from "../src/modules/tak-server/streaming/strea
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser, type TestUser } from "./support/identity.js";
 import { enableTakServer, enrollTakClient, type EnrolledClient } from "./support/tak.js";
+import { protobufPing } from "./support/tak-protocol.js";
 
 /** Reads the actual downloadable identity, just as WinTAK imports its connection package. */
 async function downloadWintakClient(user: TestUser): Promise<EnrolledClient> {
@@ -256,6 +257,19 @@ void describe("TAK CoT streaming", () => {
     const resumed = await open(client, session);
     assert.equal(resumed.socket.destroyed, true, "TLS session resumption cannot bypass revocation");
     assert.deepEqual(resumed.received, []);
+  });
+
+  void it("answers repeated commoncommo pings with omitted zero coordinates after Protobuf negotiation", async () => {
+    const event = await activeEvent();
+    const user = await member(event.eventId, event.groupId, event.roleId, "WinTAK heartbeat");
+    const client = await openProtobuf(await downloadWintakClient(user));
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const uid = `WINTAK-${String(attempt)}-ping`;
+      client.socket.write(frameTakMessage(protobufPing(uid)));
+      assert.ok(await client.next((xml) => xml.includes(`uid="${uid}-pong"`) && xml.includes('type="t-x-c-t-r"')), "every keepalive receives a pong");
+      assert.equal(client.socket.destroyed, false);
+    }
+    assert.equal(client.received.includes("invalid"), false);
   });
 
   void it("routes CoT within an event and never into another event", async () => {

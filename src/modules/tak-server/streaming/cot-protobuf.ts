@@ -119,8 +119,11 @@ export function takMessageToXml(payload: Uint8Array): string | null {
     }
 
     const reader = new BinaryReader(cotEvent);
-    const event: Record<string, string> = { version: "2.0" };
-    const point: Record<string, string> = {};
+    // Proto3 omits zero-valued scalars. Commoncommo pings therefore carry no lat/lon/hae
+    // fields; leaving them absent in XML drops the ping and makes the client time out.
+    const epoch = new Date(0).toISOString();
+    const event: Record<string, string> = { version: "2.0", time: epoch, start: epoch, stale: epoch };
+    const point: Record<string, string> = { lat: "0", lon: "0", hae: "0", ce: "0", le: "0" };
     let detail = "";
     while (reader.pos < reader.len) {
       const [number, wireType] = reader.tag();

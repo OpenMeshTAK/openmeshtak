@@ -4,6 +4,7 @@ import { BinaryWriter, WireType } from "@bufbuild/protobuf/wire";
 import { parseCotEvent } from "../src/modules/tak-server/streaming/cot-event.js";
 import { CotFrameError, ProtobufFrameReader, frameTakMessage } from "../src/modules/tak-server/streaming/cot-frames.js";
 import { takMessageToXml, xmlToTakMessage } from "../src/modules/tak-server/streaming/cot-protobuf.js";
+import { protobufPing } from "./support/tak-protocol.js";
 
 const marker =
   '<?xml version="1.0" encoding="UTF-8"?><event version="2.0" uid="MARKER-1" type="a-h-G" how="h-g-i-g-o" ' +
@@ -35,6 +36,31 @@ function positionPayload(xmlDetail: string): Uint8Array {
 }
 
 void describe("TAK Protocol version 1", () => {
+  void it("restores proto3 zero coordinates omitted by real TAK client pings", () => {
+    const xml = takMessageToXml(protobufPing("WINTAK-ping"));
+    assert.ok(xml);
+    const event = parseCotEvent(xml);
+    assert.ok(event, "zero coordinates are valid even when absent from the wire");
+    assert.equal(event.isPing, true);
+    assert.deepEqual([event.lat, event.lon], [0, 0]);
+    assert.match(xml, /hae="0"/);
+    assert.equal(event.ce, null, "unknown accuracy keeps its original sentinel");
+  });
+
+  void it("restores zero-valued timestamps and points without accepting events missing their identity", () => {
+    const writer = new BinaryWriter();
+    writer.tag(2, WireType.LengthDelimited).fork();
+    writer.tag(1, WireType.LengthDelimited).string("t-x-c-t");
+    writer.tag(5, WireType.LengthDelimited).string("EPOCH-ping");
+    writer.tag(9, WireType.LengthDelimited).string("m-g");
+    writer.join();
+    const event = parseCotEvent(takMessageToXml(writer.finish()) ?? "");
+    assert.ok(event);
+    assert.deepEqual([event.time.getTime(), event.stale.getTime(), event.lat, event.lon, event.ce], [0, 0, 0, 0, 0]);
+    const empty = new BinaryWriter().tag(2, WireType.LengthDelimited).fork().join().finish();
+    assert.equal(parseCotEvent(takMessageToXml(empty) ?? ""), null);
+  });
+
   void it("converts XML to a payload and back without losing event, point or detail data", () => {
     const payload = xmlToTakMessage(marker);
     assert.ok(payload);
