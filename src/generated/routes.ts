@@ -966,6 +966,22 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ServerLogLevel": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["trace"]},{"dataType":"enum","enums":["debug"]},{"dataType":"enum","enums":["info"]},{"dataType":"enum","enums":["warn"]},{"dataType":"enum","enums":["error"]},{"dataType":"enum","enums":["fatal"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LoggedProblemDto": {
+        "dataType": "refObject",
+        "properties": {
+            "time": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "level": {"ref":"ServerLogLevel","required":true},
+            "message": {"dataType":"string","required":true},
+            "details": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MetricScope": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["container"]},{"dataType":"enum","enums":["host"]}],"validators":{}},
@@ -1000,7 +1016,8 @@ const models: TsoaRoute.Models = {
             "takConnections": {"dataType":"double","required":true},
             "activeEvents": {"dataType":"double","required":true},
             "recentErrors": {"dataType":"double","required":true},
-            "lastError": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true},"time":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
+            "recentWarnings": {"dataType":"double","required":true},
+            "problems": {"dataType":"array","array":{"dataType":"refObject","ref":"LoggedProblemDto"},"required":true},
             "sampleIntervalSeconds": {"dataType":"double","required":true},
             "metricScope": {"ref":"MetricScope","required":true},
             "history": {"dataType":"array","array":{"dataType":"refObject","ref":"MetricSampleDto"},"required":true},
@@ -1350,11 +1367,6 @@ const models: TsoaRoute.Models = {
             "confirmation": {"dataType":"string","required":true,"validators":{"maxLength":{"value":100}}},
         },
         "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ServerLogLevel": {
-        "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["trace"]},{"dataType":"enum","enums":["debug"]},{"dataType":"enum","enums":["info"]},{"dataType":"enum","enums":["warn"]},{"dataType":"enum","enums":["error"]},{"dataType":"enum","enums":["fatal"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ServerLogEntryDto": {

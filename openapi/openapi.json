@@ -2353,6 +2353,45 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ServerLogLevel": {
+				"type": "string",
+				"enum": [
+					"trace",
+					"debug",
+					"info",
+					"warn",
+					"error",
+					"fatal"
+				]
+			},
+			"LoggedProblemDto": {
+				"description": "A stored warning or error, sanitized like the server log.",
+				"properties": {
+					"time": {
+						"type": "string",
+						"nullable": true
+					},
+					"level": {
+						"$ref": "#/components/schemas/ServerLogLevel"
+					},
+					"message": {
+						"type": "string"
+					},
+					"details": {
+						"type": "string",
+						"nullable": true,
+						"description": "Structured fields as JSON, or null."
+					}
+				},
+				"required": [
+					"time",
+					"level",
+					"message",
+					"details"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"MetricScope": {
 				"type": "string",
 				"enum": [
@@ -2468,25 +2507,18 @@
 					"recentErrors": {
 						"type": "number",
 						"format": "double",
-						"description": "Error log lines among Core's recent log lines from the last 24 hours."
+						"description": "Errors (including fatal) logged in the last 24 hours, also before a restart."
 					},
-					"lastError": {
-						"properties": {
-							"message": {
-								"type": "string"
-							},
-							"time": {
-								"type": "string",
-								"nullable": true
-							}
+					"recentWarnings": {
+						"type": "number",
+						"format": "double"
+					},
+					"problems": {
+						"items": {
+							"$ref": "#/components/schemas/LoggedProblemDto"
 						},
-						"required": [
-							"message",
-							"time"
-						],
-						"type": "object",
-						"nullable": true,
-						"description": "Time and message of the newest of those errors."
+						"type": "array",
+						"description": "Stored warnings and errors of the last seven days, newest first, at most 100."
 					},
 					"sampleIntervalSeconds": {
 						"type": "number",
@@ -2517,7 +2549,8 @@
 					"takConnections",
 					"activeEvents",
 					"recentErrors",
-					"lastError",
+					"recentWarnings",
+					"problems",
 					"sampleIntervalSeconds",
 					"metricScope",
 					"history"
@@ -3536,17 +3569,6 @@
 				],
 				"type": "object",
 				"additionalProperties": false
-			},
-			"ServerLogLevel": {
-				"type": "string",
-				"enum": [
-					"trace",
-					"debug",
-					"info",
-					"warn",
-					"error",
-					"fatal"
-				]
 			},
 			"ServerLogEntryDto": {
 				"properties": {

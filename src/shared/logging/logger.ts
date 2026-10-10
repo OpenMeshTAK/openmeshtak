@@ -5,19 +5,22 @@ import {
   sanitizeLogMetadataOrFallback,
   type LogMetadata,
 } from "./sanitize.js";
+import { problemLogDestination } from "./problem-log.js";
 import { recentLogDestination } from "./recent-logs.js";
 
 type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
 export type Logger = Readonly<Record<LogLevel, (metadata: LogMetadata, message: string) => void>>;
 
 /**
- * Production output goes to stdout and, for the live server log, to the in-memory buffer. Both
- * receive the same already-sanitized lines; the logger's level does the filtering.
+ * Production output goes to stdout, to the in-memory buffer for the live server log and, for
+ * warnings and errors only, to a file that survives restarts. All receive the same
+ * already-sanitized lines; the logger's level does the filtering.
  */
 function defaultDestination(): DestinationStream {
   return pino.multistream([
     { level: "trace", stream: pino.destination(1) },
     { level: "trace", stream: recentLogDestination() },
+    { level: "warn", stream: problemLogDestination() },
   ]);
 }
 

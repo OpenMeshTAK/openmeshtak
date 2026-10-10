@@ -3,14 +3,14 @@ import { requirePermission } from "../../shared/auth/permission-check.js";
 import type { Principal } from "../../shared/auth/principal.js";
 import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
-import { RECENT_LOG_CAPACITY, recentLogs, type RecentLogBuffer } from "../../shared/logging/recent-logs.js";
+import { problemLog, type ProblemLog } from "../../shared/logging/problem-log.js";
 import { coreVersion } from "../health/core-version.js";
 import { toServerLogEntry } from "../server-logs/server-logs.service.js";
 import { cotRouter } from "../tak-server/streaming/cot-router.js";
 import { takListeners } from "../tak-server/tak-listeners.js";
 import { loadTakServerSettings } from "../tak-server/tak-server-settings.js";
 import { metricHistory, SAMPLE_INTERVAL_MS, type MetricHistory } from "./system-metrics.js";
-import type { SystemCheckDto, SystemStatusDto } from "./system-status.dto.js";
+import type { LoggedProblemDto, SystemCheckDto, SystemStatusDto } from "./system-status.dto.js";
 
 const startedAt = new Date();
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -87,13 +87,23 @@ async function takChecks(now: Date): Promise<SystemCheckDto[]> {
   return checks;
 }
 
-/** Error and fatal lines among the recent log lines of the last 24 hours, newest last. */
-function recentErrorLines(buffer: RecentLogBuffer, now: Date) {
-  const since = now.getTime() - DAY_MS;
-  return buffer
-    .tail(RECENT_LOG_CAPACITY)
-    .map(toServerLogEntry)
-    .filter(({ level, time }) => (level === "error" || level === "fatal") && (time === null || Date.parse(time) >= since));
+const PROBLEM_DAYS = 7;
+const MAX_PROBLEMS = 100;
+
+/** Stored warnings and errors of the last week, newest first, also from before a restart. */
+function storedProblems(log: ProblemLog, now: Date): LoggedProblemDto[] {
+  const since = now.getTime() - PROBLEM_DAYS * DAY_MS;
+  return log
+    .read()
+    .map((line, index) => toServerLogEntry({ sequence: index + 1, line }))
+    .filter(({ time }) => time === null || Date.parse(time) >= since)
+    .reverse()
+    .slice(0, MAX_PROBLEMS)
+    .map(({ time, level, message, details }) => ({ time, level, message, details }));
+}
+
+function inLastDay(now: Date) {
+  return ({ time }: LoggedProblemDto): boolean => time !== null && Date.parse(time) >= now.getTime() - DAY_MS;
 }
 
 /**
@@ -103,7 +113,7 @@ function recentErrorLines(buffer: RecentLogBuffer, now: Date) {
  */
 export async function systemStatus(
   principal: Principal,
-  buffer: RecentLogBuffer = recentLogs,
+  log: ProblemLog = problemLog,
   now = new Date(),
   metrics: MetricHistory = metricHistory,
 ): Promise<SystemStatusDto> {
@@ -115,17 +125,19 @@ export async function systemStatus(
     database.storageBlob.aggregate({ _sum: { size: true } }).catch(() => null),
     database.event.count({ where: { status: "active" } }).catch(() => 0),
   ]);
-  const errors = recentErrorLines(buffer, now);
-  const last = errors.at(-1);
+  const problems = storedProblems(log, now);
+  const lastDay = problems.filter(inLastDay(now));
+  const errors = lastDay.filter(({ level }) => level === "error" || level === "fatal").length;
+  const warnings = lastDay.length - errors;
   const checks: SystemCheckDto[] = [
     latency === null
       ? { id: "database", state: "error", detail: "The database does not answer." }
       : { id: "database", state: "ok", detail: `The database answers in ${String(latency)} ms.` },
     diskCheck(space),
     ...(latency === null ? [] : await takChecks(now)),
-    errors.length === 0
-      ? { id: "errors", state: "ok", detail: "No errors logged in the last 24 hours." }
-      : { id: "errors", state: "warning", detail: `${String(errors.length)} error${errors.length === 1 ? "" : "s"} logged in the last 24 hours.` },
+    errors === 0
+      ? { id: "errors", state: "ok", detail: `No errors in the last 24 hours${warnings === 0 ? "" : `, ${String(warnings)} warning${warnings === 1 ? "" : "s"}`}.` }
+      : { id: "errors", state: "warning", detail: `${String(errors)} error${errors === 1 ? "" : "s"} and ${String(warnings)} warning${warnings === 1 ? "" : "s"} in the last 24 hours.` },
   ];
   return {
     version: coreVersion,
@@ -139,8 +151,9 @@ export async function systemStatus(
     memoryBytes: process.memoryUsage.rss(),
     takConnections: cotRouter.size(),
     activeEvents,
-    recentErrors: errors.length,
-    lastError: last === undefined ? null : { time: last.time, message: last.message },
+    recentErrors: errors,
+    recentWarnings: warnings,
+    problems,
     sampleIntervalSeconds: SAMPLE_INTERVAL_MS / 1000,
     metricScope: metrics.scope(),
     history: metrics.history(),

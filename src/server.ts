@@ -23,6 +23,11 @@ import { logger } from "./shared/logging/logger.js";
 import { createRealtimeServer } from "./shared/realtime/realtime-server.js";
 import { writeBootstrapOperatorNotice } from "./shared/logging/operator-output.js";
 
+// Record a crash before Node exits, so the stored warnings and errors show why Core stopped.
+process.on("uncaughtExceptionMonitor", (error, origin) => {
+  logger.fatal({ error, event: "process_crashed", origin }, "Core crashed");
+});
+
 async function startServer(): Promise<void> {
   // Fail at boot rather than on the first secret write when the root key is missing or invalid.
   getRootKey();

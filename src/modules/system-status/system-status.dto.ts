@@ -1,3 +1,5 @@
+import type { ServerLogLevel } from "../server-logs/server-logs.dto.js";
+
 /** `off` marks a part that is switched off on purpose, such as a disabled TAK server. */
 export type SystemCheckState = "ok" | "warning" | "error" | "off";
 
@@ -26,6 +28,15 @@ export interface MetricSampleDto {
   takConnections: number;
 }
 
+/** A stored warning or error, sanitized like the server log. */
+export interface LoggedProblemDto {
+  time: string | null;
+  level: ServerLogLevel;
+  message: string;
+  /** Structured fields as JSON, or null. */
+  details: string | null;
+}
+
 export interface SystemStatusDto {
   /** Core release version. */
   version: string;
@@ -45,10 +56,11 @@ export interface SystemStatusDto {
   /** Open TAK connections (streaming) right now. */
   takConnections: number;
   activeEvents: number;
-  /** Error log lines among Core's recent log lines from the last 24 hours. */
+  /** Errors (including fatal) logged in the last 24 hours, also before a restart. */
   recentErrors: number;
-  /** Time and message of the newest of those errors. */
-  lastError: { time: string | null; message: string } | null;
+  recentWarnings: number;
+  /** Stored warnings and errors of the last seven days, newest first, at most 100. */
+  problems: LoggedProblemDto[];
   /** Seconds between two samples of `history`. */
   sampleIntervalSeconds: number;
   metricScope: MetricScope;
