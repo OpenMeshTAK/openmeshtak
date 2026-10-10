@@ -9,6 +9,7 @@ import { cotScopeFor } from "../streaming/cot-scope.js";
 import { loadTakServerSettings } from "../tak-server-settings.js";
 import { registerMissionRoutes } from "../../missions/marti-missions.js";
 import { missionFileByHash } from "../../missions/mission-files.js";
+import { knowsUpload, missionUpload, syncUpload } from "../../missions/marti-uploads.js";
 import { cotHistory, latestCot } from "./cot-history.js";
 import { allGroups, setActiveGroups } from "./server-groups.js";
 import { sendDeviceProfile } from "./profile-response.js";
@@ -129,9 +130,12 @@ async function content(request: Request, response: Response<unknown, Locals>): P
   response.attachment(artifact.fileName).type("application/zip").send(Buffer.from(artifact.bytes));
 }
 
+/** Whether the server already has this package or file, so the app can skip uploading it. */
 async function missionQuery(request: Request, response: Response<unknown, Locals>): Promise<void> {
-  const item = await findByHash(response.locals.client, request.query.hash);
-  response.status(item === null ? 404 : 200).end();
+  const { client } = response.locals;
+  const hash = request.query.hash;
+  const known = (await findByHash(client, hash)) !== null || (typeof hash === "string" && (await knowsUpload(client, hash.toLowerCase())));
+  response.status(known ? 200 : 404).end();
 }
 
 /**
@@ -180,7 +184,7 @@ function wrap(handler: (request: Request, response: Response<unknown, Locals>) =
 /**
  * The Marti API subset Core offers TAK apps: server information, read-only access to published
  * Data Packages, device profiles, the recorded CoT history of events that record their traffic
- * the TAK groups of the advanced group mode and the read side of the Mission API (Data Sync). Uploads and missions are not offered, so their endpoints answer 403 or 404.
+ * the TAK groups of the advanced group mode and the Mission API (Data Sync), including files TAK apps upload into missions they may change.
  */
 export function createMartiApp(): Express {
   const app = express();
@@ -200,9 +204,9 @@ export function createMartiApp(): Express {
   // Express also routes HEAD here; the handler answers it without a body.
   app.get("/Marti/sync/content", wrap(content));
   app.get("/Marti/sync/missionquery", wrap(missionQuery));
-  app.post("/Marti/sync/missionupload", (_request, response) => {
-    response.status(403).end();
-  });
+  app.post("/Marti/sync/missionupload", wrap(missionUpload));
+  app.put("/Marti/sync/missionupload", wrap(missionUpload));
+  app.post("/Marti/sync/upload", wrap(syncUpload));
   app.use((_request, response) => {
     response.status(404).end();
   });

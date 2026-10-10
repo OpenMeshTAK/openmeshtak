@@ -106,34 +106,10 @@ export async function writeMissionItem(found: VisibleMission, author: MissionAut
         snapshot.objects.splice(after + 1, 0, item);
       }
     }
-    await clearDraftHash(transaction, missionId);
-
-    const createdAt = new Date();
-    const revision = await transaction.packageRevision.create({
-      data: {
-        id: randomUUID(),
-        packageId: missionId,
-        number: latest.number + 1,
-        snapshot: snapshot as unknown as Prisma.InputJsonObject,
-        snapshotHash: hashPackageSnapshot(snapshot),
-        exportSize: estimateAtakExportSize(snapshot, createdAt),
-        createdAt,
-        // The TAK app made this revision; mission changes report its device UID as creator.
-        createdByType: "tak-client",
-        createdById: author.clientUid,
-      },
+    await saveTakRevision(transaction, found, author, latest.number, snapshot, {
+      action: candidate === null ? "mission.item-removed" : "mission.item-changed",
+      metadata: { uid },
     });
-    await recordAudit(
-      {
-        actor: { type: "user", id: author.userId },
-        action: candidate === null ? "mission.item-removed" : "mission.item-changed",
-        targetType: "data-package",
-        targetId: missionId,
-        result: "success",
-        metadata: { eventId: found.mission.eventId, uid, revision: revision.number, clientUid: author.clientUid },
-      },
-      transaction,
-    );
     return { createdId };
   });
   if (outcome === null) {
@@ -154,8 +130,51 @@ export async function writeMissionItem(found: VisibleMission, author: MissionAut
   return "applied";
 }
 
+/**
+ * Stores a change from a TAK app as the mission's next revision: the latest synced revision plus
+ * that one change, so the planner's unsynced draft stays private. The draft changed as well, so
+ * its hash is cleared.
+ */
+export async function saveTakRevision(
+  transaction: Prisma.TransactionClient,
+  found: VisibleMission,
+  author: MissionAuthor,
+  latestNumber: number,
+  snapshot: PackageSnapshot,
+  audit: { action: string; metadata: Record<string, unknown> },
+): Promise<void> {
+  const missionId = found.mission.id;
+  await clearDraftHash(transaction, missionId);
+  const createdAt = new Date();
+  const revision = await transaction.packageRevision.create({
+    data: {
+      id: randomUUID(),
+      packageId: missionId,
+      number: latestNumber + 1,
+      snapshot: snapshot as unknown as Prisma.InputJsonObject,
+      snapshotHash: hashPackageSnapshot(snapshot),
+      exportSize: estimateAtakExportSize(snapshot, createdAt),
+      createdAt,
+      // The TAK app made this revision; mission changes report its device UID as creator.
+      createdByType: "tak-client",
+      createdById: author.clientUid,
+    },
+  });
+  await recordAudit(
+    {
+      actor: { type: "user", id: author.userId },
+      action: audit.action,
+      targetType: "data-package",
+      targetId: missionId,
+      result: "success",
+      metadata: { eventId: found.mission.eventId, ...audit.metadata, revision: revision.number, clientUid: author.clientUid },
+    },
+    transaction,
+  );
+}
+
 /** The mission's layer for items from TAK apps, created in the draft and the revision when needed. */
-async function takLayerId(transaction: Prisma.TransactionClient, missionId: string, snapshot: PackageSnapshot): Promise<string> {
+export async function takLayerId(transaction: Prisma.TransactionClient, missionId: string, snapshot: PackageSnapshot): Promise<string> {
   const known = await transaction.packageLayer.findFirst({ where: { packageId: missionId, name: TAK_LAYER_NAME } });
   const layer =
     known ??

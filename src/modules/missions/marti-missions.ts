@@ -10,7 +10,10 @@ import { cotRouter } from "../tak-server/streaming/cot-router.js";
 import { findVisibleMission, visibleMissionsFor, type VisibleMission } from "./mission-access.js";
 import { apiResponse, missionChangeJson, missionFileChangeJson, missionHistory, missionJson, missionSubscriptionJson } from "./mission-format.js";
 import "./mission-sync.js";
+import { addMissionFile, removeMissionFile } from "./mission-file-writes.js";
+import { missionFileByHash } from "./mission-files.js";
 import { writeMissionItem } from "./mission-writes.js";
+import { forgetUpload, pendingUpload, type UploadedFile } from "./tak-uploads.js";
 
 type Locals = { client: AuthenticatedTakClient };
 type Handler = (request: Request, response: Response<unknown, Locals>) => Promise<void>;
@@ -135,9 +138,27 @@ async function answerWithMission(response: Response<unknown, Locals>, missionId:
   response.json(apiResponse("Mission", updated === null ? [] : [await missionJson(updated.mission, updated.latest, updated.canWrite, null)]));
 }
 
+function stringsOf(value: unknown, limit: number): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").slice(0, limit) : [];
+}
+
+/**
+ * The file a hash names for this user: their own pending upload, or a file of a mission they see
+ * (a file can be added to another mission without uploading it again).
+ */
+async function uploadedFileOf(response: Response<unknown, Locals>, hash: string): Promise<UploadedFile | null> {
+  const { client } = response.locals;
+  const pending = pendingUpload(client.userId, hash);
+  if (pending !== null) {
+    return pending;
+  }
+  const known = await missionFileByHash(client.userId, client.access, hash);
+  return known === null ? null : { sha256: hash, fileName: known.file.archivePath.split("/").pop() ?? known.file.name, bytes: known.bytes, uploadedAt: new Date() };
+}
+
 /**
  * `PUT …/contents`: adds items already on the map (`{"uids": [...]}`) to the mission, using the
- * newest CoT the server has for each. Files (`hashes`) are not supported yet and are ignored.
+ * newest CoT the server has for each, and files uploaded before (`{"hashes": [...]}`, SHA-256).
  */
 const addContents: Handler = async (request, response) => {
   const found = await missionOf(request, response);
@@ -148,19 +169,25 @@ const addContents: Handler = async (request, response) => {
     response.status(403).end();
     return;
   }
-  const body = request.body as { uids?: unknown };
-  const uids = Array.isArray(body.uids) ? body.uids.filter((uid): uid is string => typeof uid === "string").slice(0, 500) : [];
+  const body = (request.body ?? {}) as { uids?: unknown; hashes?: unknown };
   const author = { userId: response.locals.client.userId, clientUid: creatorUidOf(request) };
-  for (const uid of uids) {
+  for (const uid of stringsOf(body.uids, 500)) {
     const xml = cotRouter.currentXml(uid);
     if (xml !== null) {
       await writeMissionItem(found, author, { kind: "upsert", xml });
     }
   }
+  for (const hash of stringsOf(body.hashes, 50).map((value) => value.toLowerCase())) {
+    const file = /^[0-9a-f]{64}$/.test(hash) ? await uploadedFileOf(response, hash) : null;
+    if (file !== null) {
+      await addMissionFile(found, author, file);
+      forgetUpload(author.userId, hash);
+    }
+  }
   await answerWithMission(response, found.mission.id);
 };
 
-/** `DELETE …/contents?uid=`: removes an item from the mission. */
+/** `DELETE …/contents?uid=` or `?hash=`: removes an item or a file from the mission. */
 const removeContent: Handler = async (request, response) => {
   const found = await missionOf(request, response);
   if (found === null) {
@@ -170,9 +197,13 @@ const removeContent: Handler = async (request, response) => {
     response.status(403).end();
     return;
   }
-  const uid = request.query.uid;
+  const { uid, hash } = request.query;
+  const author = { userId: response.locals.client.userId, clientUid: creatorUidOf(request) };
   if (typeof uid === "string") {
-    await writeMissionItem(found, { userId: response.locals.client.userId, clientUid: creatorUidOf(request) }, { kind: "remove", uid });
+    await writeMissionItem(found, author, { kind: "remove", uid });
+  }
+  if (typeof hash === "string" && /^[0-9a-f]{64}$/i.test(hash)) {
+    await removeMissionFile(found, author, hash.toLowerCase());
   }
   await answerWithMission(response, found.mission.id);
 };
@@ -220,7 +251,7 @@ const getChanges: Handler = async (request, response) => {
 
 /**
  * The parts of TAK Server's Mission API that ATAK's Data Sync uses: list, open, subscribe, load
- * the items as CoT, catch up on changes, and add or remove items for members who may write. Every mission is addressed by name or GUID.
+ * the items as CoT, catch up on changes, and add or remove items and files for members who may write. Every mission is addressed by name or GUID.
  * Specific paths are registered before `:name`, because mission names are free text.
  */
 export function registerMissionRoutes(app: Express, wrap: (handler: Handler) => (request: Request, response: Response<unknown, Locals>) => void): void {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createServer, request as httpsRequest, type Server } from "node:https";
 import type { AddressInfo } from "node:net";
 import { after, afterEach, beforeEach, describe, it } from "node:test";
@@ -53,6 +53,31 @@ function get(client: EnrolledClient | null, path: string, caPems: string[], meth
     );
     outgoing.on("error", reject);
     outgoing.end(json === undefined ? undefined : JSON.stringify(json));
+  });
+}
+
+function send(client: EnrolledClient, method: string, path: string, contentType: string, body: Buffer): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const outgoing = httpsRequest(
+      {
+        host: "127.0.0.1",
+        port,
+        path,
+        method,
+        headers: { "content-type": contentType, "content-length": body.length },
+        servername: "tak.example.org",
+        ca: client.caPems,
+        cert: client.certificatePem,
+        key: client.privateKeyPem,
+      },
+      (incoming) => {
+        const chunks: Buffer[] = [];
+        incoming.on("data", (chunk: Buffer) => chunks.push(chunk));
+        incoming.on("end", () => resolve({ status: incoming.statusCode ?? 0, body: Buffer.concat(chunks) }));
+      },
+    );
+    outgoing.on("error", reject);
+    outgoing.end(body);
   });
 }
 
@@ -442,6 +467,58 @@ void describe("TAK Marti Data Package API", () => {
     await get(bravo, `${missionPath}/subscription?uid=ANDROID-PETER`, bravo.caPems, "DELETE");
     assert.equal(await database.missionSubscription.count(), 0);
     assert.equal((await get(bravo, "/Marti/api/missions/Unknown", bravo.caPems)).status, 404);
+  });
+
+  void it("adds files TAK apps upload to a mission, serves them by hash and removes them again", async () => {
+    const packagesUrl = `/api/v1/events/${eventId}/data-packages`;
+    const created = (await request(app).post(packagesUrl).set("Cookie", admin.cookie).send({ name: "Lageplan Süd", kind: "mission" }).expect(201))
+      .body as { id: string };
+    await request(app).post(`${packagesUrl}/${created.id}/revisions`).set("Cookie", admin.cookie).expect(200);
+    const reader = await enrollTakClient(app, await memberOf(bravoId, "Peter"));
+    const writer = await enrollTakClient(app, await createUser("Operator", [{ permission: "tak-server.admin-access" }]));
+    const bytes = Buffer.from("photo bytes from the field");
+    const hash = createHash("sha256").update(bytes).digest("hex");
+    const boundary = "----openmeshtak-test";
+    const multipart = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="assetfile"; filename="../../photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
+      bytes,
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]);
+    const upload = (client: EnrolledClient, query: string): Promise<Response> =>
+      send(client, "POST", `/Marti/sync/missionupload?${query}`, `multipart/form-data; boundary=${boundary}`, multipart);
+
+    assert.equal((await upload(reader, `hash=${hash}&filename=photo.jpg&creatorUid=ANDROID-PETER`)).status, 403, "readers may not upload");
+    assert.equal((await upload(writer, `hash=${"0".repeat(64)}&filename=photo.jpg`)).status, 400, "the hash must match the file");
+    assert.equal((await get(writer, `/Marti/sync/missionquery?hash=${hash}`, writer.caPems)).status, 404);
+    const uploaded = await upload(writer, `hash=${hash}&filename=photo.jpg&creatorUid=ANDROID-OPS`);
+    assert.equal(uploaded.status, 200);
+    assert.match(uploaded.body.toString("utf8"), new RegExp(`/Marti/sync/content\\?hash=${hash}$`));
+    assert.equal((await get(writer, `/Marti/sync/missionquery?hash=${hash}`, writer.caPems)).status, 200);
+    assert.equal(await database.packageContent.count(), 0, "an upload waits until it is added to a mission");
+
+    const missionPath = `/Marti/api/missions/${encodeURIComponent("Lageplan Süd")}`;
+    await get(writer, `${missionPath}/contents?creatorUid=ANDROID-OPS`, writer.caPems, "PUT", { hashes: [hash] });
+    const mission = JSON.parse((await get(reader, missionPath, reader.caPems)).body.toString("utf8")) as {
+      data: Array<{ contents: Array<{ data: { filename: string; hash: string; size: number; creatorUid: string } }> }>;
+    };
+    assert.deepEqual(mission.data[0]?.contents.map(({ data }) => [data.filename, data.hash, data.size, data.creatorUid]), [
+      ["photo.jpg", hash, bytes.length, "ANDROID-OPS"],
+    ]);
+    const download = await get(reader, `/Marti/sync/content?hash=${hash}`, reader.caPems);
+    assert.equal(download.status, 200);
+    assert.deepEqual(download.body, bytes);
+    const draft = await database.packageContent.findFirstOrThrow({ include: { layer: true } });
+    assert.equal(draft.kind, "file");
+    assert.equal(draft.layer.name, "From TAK apps");
+
+    await get(writer, `${missionPath}/contents?hash=${hash}&creatorUid=ANDROID-OPS`, writer.caPems, "DELETE");
+    const after = JSON.parse((await get(reader, missionPath, reader.caPems)).body.toString("utf8")) as { data: Array<{ contents: unknown[] }> };
+    assert.deepEqual(after.data[0]?.contents, []);
+    assert.equal(await database.packageContent.count(), 0);
+    assert.deepEqual(
+      (await database.auditEvent.findMany({ where: { action: { startsWith: "mission.file-" } }, orderBy: { occurredAt: "asc" } })).map(({ action }) => action),
+      ["mission.file-added", "mission.file-downloaded", "mission.file-removed"],
+    );
   });
 
   void it("refuses clients without a certificate and revoked certificates", async () => {

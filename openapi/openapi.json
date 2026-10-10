@@ -9645,7 +9645,7 @@
 				"additionalProperties": false
 			},
 			"PackageContentDto": {
-				"description": "Imported map content (exported unchanged), or an operator-provided editor-only icon library.",
+				"description": "Imported map content and files from TAK apps (exported unchanged), or an editor-only icon library.",
 				"properties": {
 					"id": {
 						"$ref": "#/components/schemas/Uuid"
@@ -9659,7 +9659,8 @@
 							"offline-map",
 							"nested-data-package",
 							"rubber-sheet",
-							"icon-library"
+							"icon-library",
+							"file"
 						]
 					},
 					"name": {

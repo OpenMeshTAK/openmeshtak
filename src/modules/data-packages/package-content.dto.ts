@@ -17,11 +17,11 @@ export interface OfflineMapDto {
   tiles: number;
 }
 
-/** Imported map content (exported unchanged), or an operator-provided editor-only icon library. */
+/** Imported map content and files from TAK apps (exported unchanged), or an editor-only icon library. */
 export interface PackageContentDto {
   id: Uuid;
   layerId: Uuid;
-  kind: "offline-map" | "nested-data-package" | "rubber-sheet" | "icon-library";
+  kind: "offline-map" | "nested-data-package" | "rubber-sheet" | "icon-library" | "file";
   name: string;
   /** Size of the stored file in bytes. */
   size: number;

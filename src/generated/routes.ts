@@ -3490,7 +3490,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "id": {"ref":"Uuid","required":true},
             "layerId": {"ref":"Uuid","required":true},
-            "kind": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["offline-map"]},{"dataType":"enum","enums":["nested-data-package"]},{"dataType":"enum","enums":["rubber-sheet"]},{"dataType":"enum","enums":["icon-library"]}],"required":true},
+            "kind": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["offline-map"]},{"dataType":"enum","enums":["nested-data-package"]},{"dataType":"enum","enums":["rubber-sheet"]},{"dataType":"enum","enums":["icon-library"]},{"dataType":"enum","enums":["file"]}],"required":true},
             "name": {"dataType":"string","required":true},
             "size": {"dataType":"double","required":true},
             "rubberSheet": {"dataType":"union","subSchemas":[{"ref":"RubberSheetDto"},{"dataType":"enum","enums":[null]}],"required":true},
