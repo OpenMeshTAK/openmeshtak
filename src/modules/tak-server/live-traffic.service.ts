@@ -12,16 +12,23 @@ import { cotRouter, type CotRouter } from "./streaming/cot-router.js";
 export async function getLiveTakTraffic(principal: Principal, eventId: string, router: CotRouter = cotRouter): Promise<LiveTakTrafficDto> {
   await requireEventPermission(principal, eventId, "tak-traffic.view");
   const { connections, items } = router.snapshot(eventId);
-  const users = await database.domainUser.findMany({
-    where: { id: { in: [...new Set(connections.map(({ userId }) => userId))] } },
-    select: { id: true, displayName: true },
-  });
+  const userIds = [...new Set(connections.map(({ userId }) => userId))];
+  const [users, members] = await Promise.all([
+    database.domainUser.findMany({ where: { id: { in: userIds } }, select: { id: true, displayName: true } }),
+    database.eventMember.findMany({
+      where: { eventId, userId: { in: userIds } },
+      select: { userId: true, eventGroup: { select: { id: true, name: true } }, eventRole: { select: { id: true, name: true } } },
+    }),
+  ]);
   const names = new Map(users.map(({ id, displayName }) => [id, displayName]));
+  const assignments = new Map(members.map((member) => [member.userId, member]));
   return {
     connections: connections.map((connection) => ({
       id: connection.id,
       userId: connection.userId,
       userDisplayName: names.get(connection.userId) ?? "Unknown user",
+      eventGroup: assignments.get(connection.userId)?.eventGroup ?? null,
+      eventRole: assignments.get(connection.userId)?.eventRole ?? null,
       callsign: connection.callsign,
       connectedAt: connection.connectedAt.toISOString(),
       lastSeenAt: connection.lastSeenAt.toISOString(),

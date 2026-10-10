@@ -1,9 +1,19 @@
 import type { Uuid } from "../../shared/http/uuid.js";
 
+/** An event group or role, as far as the live view needs it for grouping and filtering. */
+export interface LiveTakAssignmentDto {
+  id: Uuid;
+  name: string;
+}
+
 export interface LiveTakConnectionDto {
   id: Uuid;
   userId: Uuid;
   userDisplayName: string;
+  /** The user's group in this event, or null when they are not a member, e.g. an administrator. */
+  eventGroup: LiveTakAssignmentDto | null;
+  /** The user's role in this event, or null when they are not a member. */
+  eventRole: LiveTakAssignmentDto | null;
   /** The app's callsign once it reported its position. */
   callsign: string | null;
   /** @format date-time */

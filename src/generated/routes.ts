@@ -545,12 +545,23 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LiveTakAssignmentDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "name": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "LiveTakConnectionDto": {
         "dataType": "refObject",
         "properties": {
             "id": {"ref":"Uuid","required":true},
             "userId": {"ref":"Uuid","required":true},
             "userDisplayName": {"dataType":"string","required":true},
+            "eventGroup": {"dataType":"union","subSchemas":[{"ref":"LiveTakAssignmentDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "eventRole": {"dataType":"union","subSchemas":[{"ref":"LiveTakAssignmentDto"},{"dataType":"enum","enums":[null]}],"required":true},
             "callsign": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "connectedAt": {"dataType":"string","required":true},
             "lastSeenAt": {"dataType":"string","required":true},

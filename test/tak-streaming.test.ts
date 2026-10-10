@@ -418,10 +418,13 @@ void describe("TAK CoT streaming", () => {
 
     const viewer = await createUser("Viewer", [{ permission: "tak-traffic.view", eventId: bravo.eventId }]);
     const live = (await request(app).get(`/api/v1/events/${bravo.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(200)).body as {
-      connections: Array<{ callsign: string | null; userDisplayName: string }>;
+      connections: Array<{ callsign: string | null; userDisplayName: string; eventGroup: { name: string } | null; eventRole: { name: string } | null }>;
       items: Array<{ uid: string; lat: number; callsign: string | null }>;
     };
-    assert.deepEqual(live.connections.map(({ callsign, userDisplayName }) => [callsign, userDisplayName]), [["ALPHA-LIVE", "Alpha"]]);
+    assert.deepEqual(
+      live.connections.map(({ callsign, userDisplayName, eventGroup, eventRole }) => [callsign, userDisplayName, eventGroup?.name, eventRole?.name]),
+      [["ALPHA-LIVE", "Alpha", "Bravo", "Participant"]],
+    );
     assert.deepEqual(live.items.map(({ uid, lat }) => [uid, lat]), [["ALPHA-LIVE", 52.4]]);
 
     await request(app).get(`/api/v1/events/${other.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(404);
