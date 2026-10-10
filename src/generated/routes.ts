@@ -42,6 +42,8 @@ import { AtakPreferencesController } from './../modules/tak-configuration/atak-p
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { AtakPreferenceCatalogController } from './../modules/tak-configuration/atak-preferences.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { SystemStatusController } from './../modules/system-status/system-status.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SetupController } from './../modules/setup/setup.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PresetLibraryController } from './../modules/settings-presets/preset-library.controller.js';
@@ -945,6 +947,41 @@ const models: TsoaRoute.Models = {
             "topics": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakCatalogTopicDto"},"required":true},
             "screenItems": {"dataType":"array","array":{"dataType":"refObject","ref":"AtakScreenItemDto"},"required":true},
             "blockedKeys": {"dataType":"array","array":{"dataType":"nestedObjectLiteral","nestedProperties":{"reason":{"dataType":"string","required":true},"key":{"dataType":"string","required":true}}},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SystemCheckState": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["ok"]},{"dataType":"enum","enums":["warning"]},{"dataType":"enum","enums":["error"]},{"dataType":"enum","enums":["off"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SystemCheckDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["database"]},{"dataType":"enum","enums":["storage"]},{"dataType":"enum","enums":["tak-server"]},{"dataType":"enum","enums":["tak-certificate"]},{"dataType":"enum","enums":["errors"]}],"required":true},
+            "state": {"ref":"SystemCheckState","required":true},
+            "detail": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SystemStatusDto": {
+        "dataType": "refObject",
+        "properties": {
+            "version": {"dataType":"string","required":true},
+            "startedAt": {"dataType":"string","required":true},
+            "checks": {"dataType":"array","array":{"dataType":"refObject","ref":"SystemCheckDto"},"required":true},
+            "databaseLatencyMs": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "databaseBytes": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "storedFileBytes": {"dataType":"double","required":true},
+            "diskFreeBytes": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "diskTotalBytes": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "memoryBytes": {"dataType":"double","required":true},
+            "takConnections": {"dataType":"double","required":true},
+            "activeEvents": {"dataType":"double","required":true},
+            "recentErrors": {"dataType":"double","required":true},
+            "lastError": {"dataType":"union","subSchemas":[{"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true},"time":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true}}},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -5621,6 +5658,37 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getAtakPreferenceCatalog',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSystemStatusController_getSystemStatus: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+        };
+        app.get('/api/v1/system-status',
+            authenticateMiddleware([{"sessionCookie":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(SystemStatusController)),
+            ...(fetchMiddlewares<RequestHandler>(SystemStatusController.prototype.getSystemStatus)),
+
+            async function SystemStatusController_getSystemStatus(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSystemStatusController_getSystemStatus, request, response });
+
+                const controller = new SystemStatusController();
+
+              await templateService.apiHandler({
+                methodName: 'getSystemStatus',
                 controller,
                 response,
                 next,

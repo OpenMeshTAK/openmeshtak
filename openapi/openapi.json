@@ -2315,6 +2315,143 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"SystemCheckState": {
+				"type": "string",
+				"enum": [
+					"ok",
+					"warning",
+					"error",
+					"off"
+				],
+				"description": "`off` marks a part that is switched off on purpose, such as a disabled TAK server."
+			},
+			"SystemCheckDto": {
+				"properties": {
+					"id": {
+						"type": "string",
+						"enum": [
+							"database",
+							"storage",
+							"tak-server",
+							"tak-certificate",
+							"errors"
+						]
+					},
+					"state": {
+						"$ref": "#/components/schemas/SystemCheckState"
+					},
+					"detail": {
+						"type": "string",
+						"description": "One plain sentence for operators; never contains secrets."
+					}
+				},
+				"required": [
+					"id",
+					"state",
+					"detail"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SystemStatusDto": {
+				"properties": {
+					"version": {
+						"type": "string",
+						"description": "Core release version."
+					},
+					"startedAt": {
+						"type": "string"
+					},
+					"checks": {
+						"items": {
+							"$ref": "#/components/schemas/SystemCheckDto"
+						},
+						"type": "array"
+					},
+					"databaseLatencyMs": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Database round trip of a trivial query in milliseconds; null when it failed."
+					},
+					"databaseBytes": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Size of the SQLite database file in bytes; null when unknown."
+					},
+					"storedFileBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "Bytes of stored files (Data Package content, icon sets)."
+					},
+					"diskFreeBytes": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Free and total bytes on the disk that holds the data directory; null when unknown."
+					},
+					"diskTotalBytes": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"memoryBytes": {
+						"type": "number",
+						"format": "double",
+						"description": "Resident memory of the Core process in bytes."
+					},
+					"takConnections": {
+						"type": "number",
+						"format": "double",
+						"description": "Open TAK connections (streaming) right now."
+					},
+					"activeEvents": {
+						"type": "number",
+						"format": "double"
+					},
+					"recentErrors": {
+						"type": "number",
+						"format": "double",
+						"description": "Error log lines among Core's recent log lines from the last 24 hours."
+					},
+					"lastError": {
+						"properties": {
+							"message": {
+								"type": "string"
+							},
+							"time": {
+								"type": "string",
+								"nullable": true
+							}
+						},
+						"required": [
+							"message",
+							"time"
+						],
+						"type": "object",
+						"nullable": true,
+						"description": "Time and message of the newest of those errors."
+					}
+				},
+				"required": [
+					"version",
+					"startedAt",
+					"checks",
+					"databaseLatencyMs",
+					"databaseBytes",
+					"storedFileBytes",
+					"diskFreeBytes",
+					"diskTotalBytes",
+					"memoryBytes",
+					"takConnections",
+					"activeEvents",
+					"recentErrors",
+					"lastError"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"SetupStatusResponse": {
 				"properties": {
 					"configured": {
@@ -14521,6 +14658,53 @@
 					},
 					{
 						"apiClientBearer": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/system-status": {
+			"get": {
+				"operationId": "GetSystemStatus",
+				"responses": {
+					"200": {
+						"description": "System status",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SystemStatusDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Health overview for operators: database, data disk, TAK server, its certificate and recent\nerrors, with a few numbers. Requires instance-wide `server-logs.read`.",
+				"tags": [
+					"Operations"
+				],
+				"security": [
+					{
+						"sessionCookie": []
 					}
 				],
 				"parameters": []

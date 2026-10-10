@@ -51,6 +51,11 @@ class TakListeners {
     return this.restarting;
   }
 
+  /** Whether the listeners are bound in this process. */
+  isListening(): boolean {
+    return this.servers.length > 0;
+  }
+
   async stop(): Promise<void> {
     this.running = false;
     await this.closeAll();

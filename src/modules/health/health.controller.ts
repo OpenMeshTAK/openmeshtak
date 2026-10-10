@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
 import { Controller, Get, NoSecurity, Route, SuccessResponse, Tags } from "@tsoa/runtime";
+import { coreVersion } from "./core-version.js";
 
 export interface HealthResponse {
   status: "ok";
@@ -13,9 +13,6 @@ export interface HealthResponse {
   timestamp: string;
 }
 
-// package.json sits three levels above this file both in src/ and in the built dist/.
-const { version } = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8")) as { version: string };
-
 @Route("health")
 @Tags("Operations")
 @NoSecurity()
@@ -27,7 +24,7 @@ export class HealthController extends Controller {
     return {
       status: "ok",
       service: "openmeshtak",
-      version,
+      version: coreVersion,
       timestamp: new Date().toISOString(),
     };
   }
