@@ -172,6 +172,8 @@ async function admit(socket: TLSSocket, router: CotRouter): Promise<void> {
         callsign: event.callsign,
         lat: event.lat,
         lon: event.lon,
+        course: event.course,
+        speed: event.speed,
         time: event.time,
         stale: event.stale,
       };

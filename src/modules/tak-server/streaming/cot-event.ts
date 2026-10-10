@@ -35,6 +35,10 @@ export interface CotEvent {
   how: string | null;
   /** Circular error of the point in metres, or null when the sender marks it as unknown. */
   ce: number | null;
+  /** Direction of travel from `detail/track`, degrees clockwise from true north, or null when not sent. */
+  course: number | null;
+  /** Ground speed from `detail/track` in metres per second, or null when not sent. */
+  speed: number | null;
   /** Display name from `detail/contact` for positions, or from `detail/contact` of markers when set. */
   callsign: string | null;
   /** The sending app's own description from `detail/takv`, present in its position beacon. */
@@ -134,6 +138,17 @@ function circularErrorOf(value: string | null): number | null {
   return Number.isFinite(number) && number >= 0 && number < UNKNOWN_CE_METRES ? number : null;
 }
 
+/** `detail/track` as sent; values outside their range count as missing. */
+function trackOf(detail: XmlNode | null): { course: number | null; speed: number | null } {
+  const track = detail === null ? undefined : nodes(detail.track)[0];
+  const course = Number((track === undefined ? null : attribute(track, "course")) ?? Number.NaN);
+  const speed = Number((track === undefined ? null : attribute(track, "speed")) ?? Number.NaN);
+  return {
+    course: Number.isFinite(course) && course >= 0 && course <= 360 ? course % 360 : null,
+    speed: Number.isFinite(speed) && speed >= 0 ? speed : null,
+  };
+}
+
 function isCoordinate(value: string | null, limit: number): boolean {
   const number = value === null ? Number.NaN : Number(value);
   return Number.isFinite(number) && Math.abs(number) <= limit;
@@ -191,6 +206,7 @@ export function parseCotEvent(xml: string): CotEvent | null {
     lon: Number(attribute(point, "lon")),
     how: attribute(event, "how")?.slice(0, 20) ?? null,
     ce: circularErrorOf(attribute(point, "ce")),
+    ...trackOf(detail),
     callsign: hasContact ? (attribute(contact, "callsign")?.slice(0, 100) ?? null) : null,
     software: softwareOf(detail),
     time: new Date(attribute(event, "time") ?? ""),

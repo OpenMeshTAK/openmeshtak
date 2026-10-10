@@ -1158,6 +1158,18 @@
 						"type": "number",
 						"format": "double"
 					},
+					"course": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Direction of travel in degrees clockwise from true north (CoT `track/course`), or null when not sent."
+					},
+					"speed": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Ground speed in metres per second (CoT `track/speed`), or null when not sent."
+					},
 					"time": {
 						"type": "string",
 						"format": "date-time"
@@ -1173,6 +1185,8 @@
 					"callsign",
 					"lat",
 					"lon",
+					"course",
+					"speed",
 					"time",
 					"stale"
 				],

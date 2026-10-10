@@ -564,6 +564,8 @@ const models: TsoaRoute.Models = {
             "callsign": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "lat": {"dataType":"double","required":true},
             "lon": {"dataType":"double","required":true},
+            "course": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "speed": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
             "time": {"dataType":"string","required":true},
             "stale": {"dataType":"string","required":true},
         },

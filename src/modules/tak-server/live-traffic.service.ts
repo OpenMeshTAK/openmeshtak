@@ -32,6 +32,8 @@ export async function getLiveTakTraffic(principal: Principal, eventId: string, r
       callsign: item.callsign,
       lat: item.lat,
       lon: item.lon,
+      course: item.course,
+      speed: item.speed,
       time: item.time.toISOString(),
       stale: item.stale.toISOString(),
     })),

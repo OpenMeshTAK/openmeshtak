@@ -20,6 +20,10 @@ export interface LiveTakItemDto {
   callsign: string | null;
   lat: number;
   lon: number;
+  /** Direction of travel in degrees clockwise from true north (CoT `track/course`), or null when not sent. */
+  course: number | null;
+  /** Ground speed in metres per second (CoT `track/speed`), or null when not sent. */
+  speed: number | null;
   /** @format date-time */
   time: string;
   /** @format date-time */

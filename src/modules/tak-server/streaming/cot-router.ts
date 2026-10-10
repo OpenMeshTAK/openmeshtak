@@ -8,6 +8,10 @@ export interface LiveItem {
   callsign: string | null;
   lat: number;
   lon: number;
+  /** Direction of travel in degrees from true north, as the sender reported it. */
+  course: number | null;
+  /** Ground speed in metres per second, as the sender reported it. */
+  speed: number | null;
   time: Date;
   stale: Date;
 }

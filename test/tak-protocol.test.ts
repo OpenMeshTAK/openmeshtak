@@ -88,6 +88,25 @@ void describe("TAK Protocol version 1", () => {
     assert.match(xml, /<__group name="Cyan" role="Team Member"\/>/);
   });
 
+  void it("reads the direction of travel from the typed track message", () => {
+    const writer = new BinaryWriter();
+    writer.tag(2, WireType.LengthDelimited).fork();
+    writer.tag(1, WireType.LengthDelimited).string("a-f-G-U-C");
+    writer.tag(5, WireType.LengthDelimited).string("ANDROID-3");
+    writer.tag(6, WireType.Varint).uint64(Date.parse("2026-10-09T10:00:00.000Z"));
+    writer.tag(7, WireType.Varint).uint64(Date.parse("2026-10-09T10:00:00.000Z"));
+    writer.tag(8, WireType.Varint).uint64(Date.parse("2026-10-09T10:02:00.000Z"));
+    writer.tag(9, WireType.LengthDelimited).string("m-g");
+    writer.tag(15, WireType.LengthDelimited).fork();
+    writer.tag(7, WireType.LengthDelimited).fork().tag(1, WireType.Bit64).double(1.4).tag(2, WireType.Bit64).double(271.5).join();
+    writer.join();
+    writer.join();
+    const event = parseCotEvent(takMessageToXml(writer.finish()) ?? "");
+    assert.ok(event);
+    assert.deepEqual([event.course, event.speed], [271.5, 1.4]);
+    assert.deepEqual([parseCotEvent(marker)?.course, parseCotEvent(marker)?.speed], [null, null], "no track, no direction");
+  });
+
   void it("rejects xmlDetail that would break out of its detail element", () => {
     assert.equal(takMessageToXml(positionPayload('</detail></event><event uid="X" type="a-f-G"><detail>')), null);
     assert.equal(takMessageToXml(positionPayload('<!DOCTYPE x [<!ENTITY a "b">]><remarks>&a;</remarks>')), null);
