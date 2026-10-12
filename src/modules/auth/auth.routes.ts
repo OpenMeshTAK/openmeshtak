@@ -1,4 +1,4 @@
-import type { Express, NextFunction, Request, Response } from "express";
+import type { Express, Request, Response } from "express";
 import { toNodeHandler } from "better-auth/node";
 import { AUTH_BASE_PATH, auth } from "./auth.js";
 import { sendProblem } from "../../shared/errors/problem.js";
@@ -14,7 +14,7 @@ const handler = toNodeHandler(auth);
 const BLOCKED_PATHS = new Set([`${AUTH_BASE_PATH}/sign-up/email`, `${AUTH_BASE_PATH}/is-username-available`]);
 
 export function mountAuthRoutes(app: Express): void {
-  app.all(`${AUTH_BASE_PATH}/*`, (request: Request, response: Response, next: NextFunction) => {
+  app.all(`${AUTH_BASE_PATH}/{*path}`, async (request: Request, response: Response) => {
     if (BLOCKED_PATHS.has(request.path)) {
       sendProblem(response, {
         type: "urn:openmeshtak:problem:not-found",
@@ -27,6 +27,6 @@ export function mountAuthRoutes(app: Express): void {
       return;
     }
 
-    Promise.resolve(handler(request, response)).catch(next);
+    await handler(request, response);
   });
 }
