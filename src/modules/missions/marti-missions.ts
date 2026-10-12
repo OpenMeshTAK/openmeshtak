@@ -29,7 +29,12 @@ function clientUidOf(request: Request): string | null {
 async function missionOf(request: Request, response: Response<unknown, Locals>): Promise<VisibleMission | null> {
   const { client } = response.locals;
   const { name, guid } = request.params;
-  const found = await findVisibleMission(client.userId, client.access, guid === undefined ? { name: String(name) } : { guid });
+  const selector = typeof guid === "string" ? { guid } : typeof name === "string" ? { name } : null;
+  if (selector === null) {
+    response.status(404).end();
+    return null;
+  }
+  const found = await findVisibleMission(client.userId, client.access, selector);
   if (found === null) {
     response.status(404).end();
   }
