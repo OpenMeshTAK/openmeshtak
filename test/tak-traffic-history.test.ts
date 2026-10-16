@@ -24,6 +24,10 @@ function position(uid: string, secondsAfterStart: number, overrides: Partial<Rec
     ce: 10,
     selfReported: true,
     userId: "user",
+    source: "tak",
+    meshNodeId: null,
+    meshHqId: null,
+    meshHqName: null,
     ...overrides,
   };
 }

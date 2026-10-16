@@ -58,10 +58,41 @@ export interface KnownDevice {
   uid: string;
   callsign: string;
   scope: CotScope;
+  /** The OpenMeshTak user whose app it is. */
+  userId: string;
   lastEventTime: Date;
   /** The connection it currently uses, or `null` once it disconnected. */
   peerId: string | null;
 }
+
+/** Where an uplinked mesh position came from, for display in the live view. */
+export interface MeshProvenance {
+  nodeId: string;
+  shortName: string | null;
+  longName: string | null;
+  /** The member the node is bound to, or null for a node no member is bound to. */
+  memberId: string | null;
+  hqId: string;
+  hqName: string | null;
+  /** When the HQ radio received the packet. */
+  receivedAt: Date;
+  batteryLevel: number | null;
+  snr: number | null;
+  rssi: number | null;
+  hopsAway: number | null;
+  channel: { index: number; name: string | null } | null;
+}
+
+/** A current mesh position of one event, with the user of the bound member (null when unbound). */
+export interface LiveMeshItem {
+  item: LiveItem;
+  eventId: string;
+  userId: string | null;
+  mesh: MeshProvenance;
+}
+
+/** At most this many mesh positions in total; one per node and event. */
+const MAX_MESH_ITEMS = 5_000;
 
 /** The current state of an item and where it may be replayed. */
 interface RetainedItem {
@@ -98,6 +129,12 @@ export class CotRouter {
   private readonly peerItems = new Map<string, Set<string>>();
   /** Devices by UID, least recently heard first; kept after they disconnect. */
   private readonly devices = new Map<string, KnownDevice>();
+  /**
+   * Mesh positions an HQ uploaded, by event and UID. They are kept apart from `retained` on
+   * purpose: they appear in the live view only and are never published or replayed to TAK apps,
+   * which see the mesh themselves through the Meshtastic app and would show duplicates.
+   */
+  private readonly meshItems = new Map<string, LiveMeshItem>();
   private readonly listeners = new Set<(eventIds: CotScope) => void>();
 
   /** Calls `listener` with the affected events whenever connections or their items change. */
@@ -209,7 +246,14 @@ export class CotRouter {
       return;
     }
     this.devices.delete(peer.deviceUid);
-    this.devices.set(peer.deviceUid, { uid: peer.deviceUid, callsign: peer.callsign, scope: peer.scope, lastEventTime: now, peerId: peer.id });
+    this.devices.set(peer.deviceUid, {
+      uid: peer.deviceUid,
+      callsign: peer.callsign,
+      scope: peer.scope,
+      userId: peer.userId,
+      lastEventTime: now,
+      peerId: peer.id,
+    });
     if (this.devices.size > MAX_KNOWN_DEVICES) {
       const oldest = this.devices.keys().next().value;
       if (oldest !== undefined) {
@@ -223,6 +267,42 @@ export class CotRouter {
     return [...this.devices.values()].filter(({ scope }) => canReach(scope, viewer)).reverse();
   }
 
+  /** The user's TAK app in the event that reported its own position most recently, if any. */
+  latestDevice(eventId: string, userId: string): KnownDevice | null {
+    let latest: KnownDevice | null = null;
+    for (const device of this.devices.values()) {
+      if (device.userId === userId && device.scope.has(eventId) && (latest === null || device.lastEventTime >= latest.lastEventTime)) {
+        latest = device;
+      }
+    }
+    return latest;
+  }
+
+  /**
+   * Keeps an uplinked mesh position for the live view of its event. An older position than the
+   * one already shown, e.g. from a late upload, does not replace it. Returns whether it is shown.
+   */
+  rememberMesh(entry: LiveMeshItem, now = new Date()): boolean {
+    const key = `${entry.eventId}:${entry.item.uid}`;
+    const current = this.meshItems.get(key);
+    if (entry.item.stale <= now || (current !== undefined && current.item.time > entry.item.time)) {
+      return false;
+    }
+    this.meshItems.delete(key);
+    this.meshItems.set(key, entry);
+    if (this.meshItems.size > MAX_MESH_ITEMS) {
+      this.dropStaleMesh(now);
+    }
+    if (this.meshItems.size > MAX_MESH_ITEMS) {
+      const oldest = this.meshItems.keys().next().value;
+      if (oldest !== undefined) {
+        this.meshItems.delete(oldest);
+      }
+    }
+    this.changed(new Map([[entry.eventId, { groupId: null, seesAll: true, receives: null, sends: null }]]));
+    return true;
+  }
+
   /** Removes items a client deleted, so they are not replayed to later joiners. */
   forget(peer: CotPeer, uids: string[]): void {
     for (const uid of uids) {
@@ -234,14 +314,21 @@ export class CotRouter {
     this.changed(peer.scope);
   }
 
-  /** What is happening in one event right now: its connected apps and its current, not yet stale items. */
-  snapshot(eventId: string, now = new Date()): { connections: LiveConnection[]; items: LiveItemWithSender[] } {
+  /**
+   * What is happening in one event right now: its connected apps, its current, not yet stale TAK
+   * items and the uplinked mesh positions. A TAK item wins over a mesh position with the same UID.
+   */
+  snapshot(eventId: string, now = new Date()): { connections: LiveConnection[]; items: LiveItemWithSender[]; meshItems: LiveMeshItem[] } {
     const peers = [...this.peers.values()].filter(({ scope }) => scope.has(eventId));
+    const items = this.current(now)
+      .filter(({ scope }) => scope.has(eventId))
+      .map(({ item, peerId, userId }) => ({ ...item, connectionId: peerId, userId }));
+    const takUids = new Set(items.map(({ uid }) => uid));
+    this.dropStaleMesh(now);
     return {
       connections: peers.map(({ id, userId, callsign, connectedAt, lastSeenAt }) => ({ id, userId, callsign, connectedAt, lastSeenAt })),
-      items: this.current(now)
-        .filter(({ scope }) => scope.has(eventId))
-        .map(({ item, peerId, userId }) => ({ ...item, connectionId: peerId, userId })),
+      items,
+      meshItems: [...this.meshItems.values()].filter((entry) => entry.eventId === eventId && !takUids.has(entry.item.uid)),
     };
   }
 
@@ -252,6 +339,14 @@ export class CotRouter {
   private current(now: Date): RetainedItem[] {
     this.dropStale(now);
     return [...this.retained.values()];
+  }
+
+  private dropStaleMesh(now: Date): void {
+    for (const [key, entry] of this.meshItems) {
+      if (entry.item.stale <= now) {
+        this.meshItems.delete(key);
+      }
+    }
   }
 
   private dropStale(now: Date): void {

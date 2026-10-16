@@ -73,7 +73,23 @@ async function loadPositions(eventId: string, range: Range, query: TakTrafficHis
     },
     orderBy: [{ time: "asc" }, { id: "asc" }],
     take: limit,
-    select: { uid: true, type: true, callsign: true, lat: true, lon: true, time: true, receivedAt: true, how: true, ce: true, selfReported: true, userId: true },
+    select: {
+      uid: true,
+      type: true,
+      callsign: true,
+      lat: true,
+      lon: true,
+      time: true,
+      receivedAt: true,
+      how: true,
+      ce: true,
+      selfReported: true,
+      userId: true,
+      source: true,
+      meshNodeId: true,
+      meshHqId: true,
+      meshHqName: true,
+    },
   });
 }
 
@@ -85,7 +101,7 @@ interface Sender {
 
 /** Names the senders; users who left the event keep their name but lose the group. */
 async function sendersOf(eventId: string, tracks: readonly Track[]): Promise<Map<string, Sender>> {
-  const userIds = [...new Set(tracks.map(({ userId }) => userId))];
+  const userIds = [...new Set(tracks.flatMap(({ userId }) => (userId === null ? [] : [userId])))];
   const [users, members] = await Promise.all([
     database.domainUser.findMany({ where: { id: { in: userIds } }, select: { id: true, displayName: true } }),
     database.eventMember.findMany({
@@ -144,16 +160,18 @@ export async function getTakTrafficHistory(actor: ActorContext, eventId: string,
     maxPoints: HISTORY_MAX_POINTS,
     groups,
     tracks: tracks.map((track) => {
-      const sender = senders.get(track.userId) as Sender;
+      const sender = track.userId === null ? undefined : senders.get(track.userId);
       return {
         uid: track.uid,
         type: track.type,
         callsign: track.callsign,
         selfReported: track.selfReported,
-        sender: { userId: track.userId, ...sender },
+        sender: track.userId === null || sender === undefined ? null : { userId: track.userId, ...sender },
         pointCount: track.pointCount,
         duplicatesDropped: track.duplicatesDropped,
-        segments: track.segments.map((segment) => segment.map((point) => ({ ...point, time: point.time.toISOString() }))),
+        segments: track.segments.map((segment) =>
+          segment.map(({ mesh, ...point }) => ({ ...point, time: point.time.toISOString(), ...(mesh === null ? {} : { mesh }) })),
+        ),
       };
     }),
   };
@@ -178,8 +196,8 @@ export async function exportTakTracks(
   const tracks = buildTracks(positions, gapOf(query));
   const senders = await sendersOf(eventId, tracks);
   const exported: ExportTrack[] = tracks.map((track) => {
-    const sender = senders.get(track.userId) as Sender;
-    return { ...track, senderName: sender.displayName, groupName: sender.eventGroupName };
+    const sender = track.userId === null ? undefined : senders.get(track.userId);
+    return { ...track, senderName: sender?.displayName ?? "Unbound mesh node", groupName: sender?.eventGroupName ?? null };
   });
   await recordAudit({
     actor: actor.principal,

@@ -653,6 +653,36 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TakTrackPointSource": {
+				"type": "string",
+				"enum": [
+					"tak",
+					"mesh"
+				]
+			},
+			"TakTrackPointMeshDto": {
+				"description": "The Meshtastic node and HQ behind an uplinked position.",
+				"properties": {
+					"nodeId": {
+						"type": "string",
+						"description": "Node number as Meshtastic shows it, e.g. `!a1b2c3d4`."
+					},
+					"hqId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"hqName": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"nodeId",
+					"hqId",
+					"hqName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"TakTrackPointDto": {
 				"description": "One recorded position on a track.",
 				"properties": {
@@ -686,6 +716,14 @@
 					"estimated": {
 						"type": "boolean",
 						"description": "The sender marked the position as estimated (CoT `how` `h-e`); drawn as a dashed line."
+					},
+					"source": {
+						"$ref": "#/components/schemas/TakTrackPointSource",
+						"description": "`tak` from a connected TAK app, `mesh` from a Meshtastic node an HQ uplinked."
+					},
+					"mesh": {
+						"$ref": "#/components/schemas/TakTrackPointMeshDto",
+						"description": "Present on mesh positions only."
 					}
 				},
 				"required": [
@@ -695,7 +733,8 @@
 					"ce",
 					"delayed",
 					"approximate",
-					"estimated"
+					"estimated",
+					"source"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -719,7 +758,13 @@
 						"description": "At least one position was the app's own beacon rather than a marker it placed."
 					},
 					"sender": {
-						"$ref": "#/components/schemas/TakTrackSenderDto"
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TakTrackSenderDto"
+							}
+						],
+						"nullable": true,
+						"description": "Who sent the newest position: the TAK app's user or the member a mesh node is bound to. Null\nfor a mesh node no member is bound to (UID `meshtastic-<node>`)."
 					},
 					"pointCount": {
 						"type": "number",
@@ -1180,12 +1225,25 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"LiveTakItemSource": {
+				"type": "string",
+				"enum": [
+					"tak",
+					"mesh"
+				],
+				"description": "Where an item reached Core: from a connected TAK app or from a Meshtastic node through an HQ uplink."
+			},
 			"LiveTakSenderDto": {
-				"description": "The TAK app that sent an item: for a position the app itself, for a marker the app that placed\nit. The connection may have ended since; Core keeps current items after their app disconnects.",
+				"description": "The TAK app that sent an item: for a position the app itself, for a marker the app that placed\nit. The connection may have ended since; Core keeps current items after their app disconnects.\nFor a mesh position of a bound node it is the bound member, without a connection.",
 				"properties": {
 					"connectionId": {
-						"$ref": "#/components/schemas/Uuid",
-						"description": "The sending connection; matches a `LiveTakConnectionDto.id` while that app is connected."
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "The sending connection; matches a `LiveTakConnectionDto.id` while that app is connected. Null\nfor mesh positions, which reach Core through an HQ uplink instead of a TAK connection."
 					},
 					"userId": {
 						"$ref": "#/components/schemas/Uuid"
@@ -1208,6 +1266,129 @@
 					"userId",
 					"userDisplayName",
 					"eventGroup"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LiveMeshHqDto": {
+				"description": "The HQ that uploaded a mesh position, as it named itself.",
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"name": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshChannelDto": {
+				"description": "Meshtastic channel the packet arrived on; only index and name, never key material.",
+				"properties": {
+					"index": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 7
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 12
+					}
+				},
+				"required": [
+					"index"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LiveMeshDetailsDto": {
+				"description": "Provenance of an uplinked mesh position.",
+				"properties": {
+					"nodeNum": {
+						"type": "number",
+						"format": "double",
+						"description": "Unsigned 32-bit Meshtastic node number."
+					},
+					"nodeId": {
+						"type": "string",
+						"description": "The node number as Meshtastic shows it, e.g. `!a1b2c3d4`."
+					},
+					"shortName": {
+						"type": "string",
+						"nullable": true,
+						"description": "Names the node announced; untrusted display text."
+					},
+					"longName": {
+						"type": "string",
+						"nullable": true
+					},
+					"memberId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uuid"
+							}
+						],
+						"nullable": true,
+						"description": "The member the node is bound to; null shows the node as unknown."
+					},
+					"hq": {
+						"$ref": "#/components/schemas/LiveMeshHqDto"
+					},
+					"receivedAt": {
+						"type": "string",
+						"description": "When the HQ radio received the packet.",
+						"format": "date-time"
+					},
+					"batteryLevel": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Battery level in percent; 101 means powered."
+					},
+					"snr": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"rssi": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"hopsAway": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"channel": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/MeshChannelDto"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"required": [
+					"nodeNum",
+					"nodeId",
+					"shortName",
+					"longName",
+					"memberId",
+					"hq",
+					"receivedAt",
+					"batteryLevel",
+					"snr",
+					"rssi",
+					"hopsAway",
+					"channel"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -1254,8 +1435,21 @@
 						"type": "string",
 						"format": "date-time"
 					},
+					"source": {
+						"$ref": "#/components/schemas/LiveTakItemSource"
+					},
 					"placedBy": {
-						"$ref": "#/components/schemas/LiveTakSenderDto"
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/LiveTakSenderDto"
+							}
+						],
+						"nullable": true,
+						"description": "The app or member that sent the item. Null only for mesh positions of nodes no member is bound\nto; those carry a node-derived UID such as `meshtastic-a1b2c3d4` and the CoT type `a-u-G`."
+					},
+					"mesh": {
+						"$ref": "#/components/schemas/LiveMeshDetailsDto",
+						"description": "Present on mesh positions only."
 					}
 				},
 				"required": [
@@ -1268,6 +1462,7 @@
 					"speed",
 					"time",
 					"stale",
+					"source",
 					"placedBy"
 				],
 				"type": "object",
@@ -6579,6 +6774,237 @@
 				"required": [
 					"memberId",
 					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationStatus": {
+				"type": "string",
+				"enum": [
+					"accepted",
+					"duplicate",
+					"tak-preferred",
+					"rejected"
+				],
+				"description": "What Core did with one observation. Every status is final: the HQ removes the observation from\nits outbox whatever the status, and a retry of the same packet answers `duplicate`.\n- `accepted`: shown in the live view and, when the event records, recorded.\n- `duplicate`: this packet was already received, from this or another HQ.\n- `tak-preferred`: the bound member's TAK app sent a position within the event's position interval.\n- `rejected`: unusable; `code` says why."
+			},
+			"MeshObservationResultDto": {
+				"properties": {
+					"status": {
+						"$ref": "#/components/schemas/MeshObservationStatus"
+					},
+					"code": {
+						"type": "string",
+						"description": "Present for `rejected`: `INVALID_TIME`, `RECEIVED_IN_FUTURE`, `TOO_OLD` (older than the\nseven-day deduplication window), `NO_POSITION` or `NO_FIX` (0,0)."
+					}
+				},
+				"required": [
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationBatchResultDto": {
+				"properties": {
+					"accepted": {
+						"type": "number",
+						"format": "double"
+					},
+					"duplicates": {
+						"type": "number",
+						"format": "double"
+					},
+					"takPreferred": {
+						"type": "number",
+						"format": "double"
+					},
+					"rejected": {
+						"type": "number",
+						"format": "double"
+					},
+					"recorded": {
+						"type": "number",
+						"format": "double",
+						"description": "Positions written to the event's recording; 0 while the event does not record."
+					},
+					"results": {
+						"items": {
+							"$ref": "#/components/schemas/MeshObservationResultDto"
+						},
+						"type": "array",
+						"description": "One result per observation, in request order."
+					}
+				},
+				"required": [
+					"accepted",
+					"duplicates",
+					"takPreferred",
+					"rejected",
+					"recorded",
+					"results"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationKind": {
+				"type": "string",
+				"enum": [
+					"position",
+					"nodeinfo"
+				],
+				"description": "`position` for a decoded `POSITION_APP` packet, `nodeinfo` for a decoded `NODEINFO_APP` packet."
+			},
+			"MeshPositionDto": {
+				"description": "A decoded Meshtastic position, normalized by the HQ.",
+				"properties": {
+					"lat": {
+						"type": "number",
+						"format": "double",
+						"description": "Degrees, WGS 84.",
+						"minimum": -90,
+						"maximum": 90
+					},
+					"lon": {
+						"type": "number",
+						"format": "double",
+						"description": "Degrees, WGS 84.",
+						"minimum": -180,
+						"maximum": 180
+					},
+					"precisionBits": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Meshtastic `precision_bits`; fewer bits mean a deliberately coarser position. 32, 0 or absent\nmean full precision.",
+						"minimum": 0,
+						"maximum": 32
+					},
+					"groundSpeed": {
+						"type": "number",
+						"format": "double",
+						"description": "Ground speed in metres per second.",
+						"minimum": 0,
+						"maximum": 1000
+					},
+					"groundTrack": {
+						"type": "number",
+						"format": "double",
+						"description": "Direction of travel in degrees clockwise from true north.",
+						"minimum": 0,
+						"maximum": 360
+					}
+				},
+				"required": [
+					"lat",
+					"lon"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationDto": {
+				"description": "One packet the HQ radio received, decoded and normalized. Node database entries from the radio\nare not observations: only packets heard live, with their packet ID, may be sent.",
+				"properties": {
+					"kind": {
+						"$ref": "#/components/schemas/MeshObservationKind"
+					},
+					"nodeNum": {
+						"type": "integer",
+						"format": "int32",
+						"description": "The sending node's number (`from`).",
+						"minimum": 1,
+						"maximum": 4294967294
+					},
+					"packetId": {
+						"type": "integer",
+						"format": "int32",
+						"description": "The Meshtastic packet ID; with `nodeNum` it identifies the packet across retries and HQs.",
+						"minimum": 1,
+						"maximum": 4294967295
+					},
+					"receivedAt": {
+						"type": "string",
+						"description": "When the HQ radio received the packet, RFC 3339 with offset. Authoritative for ordering.",
+						"maxLength": 40
+					},
+					"packetTime": {
+						"type": "string",
+						"description": "The position time the node reported, if any; used only when plausible.",
+						"maxLength": 40
+					},
+					"position": {
+						"$ref": "#/components/schemas/MeshPositionDto",
+						"description": "Required for `position`, ignored for `nodeinfo`."
+					},
+					"shortName": {
+						"type": "string",
+						"maxLength": 8
+					},
+					"longName": {
+						"type": "string",
+						"maxLength": 40
+					},
+					"batteryLevel": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Percent; 101 means powered.",
+						"minimum": 0,
+						"maximum": 101
+					},
+					"snr": {
+						"type": "number",
+						"format": "double",
+						"minimum": -50,
+						"maximum": 50
+					},
+					"rssi": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": -200,
+						"maximum": 0
+					},
+					"hopsAway": {
+						"type": "integer",
+						"format": "int32",
+						"minimum": 0,
+						"maximum": 7
+					},
+					"channel": {
+						"$ref": "#/components/schemas/MeshChannelDto",
+						"description": "Channel index and name only; never key material."
+					}
+				},
+				"required": [
+					"kind",
+					"nodeNum",
+					"packetId",
+					"receivedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshObservationBatchRequest": {
+				"properties": {
+					"hqId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "A random UUID the HQ keeps for itself, so viewers can tell HQs apart."
+					},
+					"hqName": {
+						"type": "string",
+						"description": "Display name of the HQ, e.g. `HQ North`.",
+						"maxLength": 60
+					},
+					"observations": {
+						"items": {
+							"$ref": "#/components/schemas/MeshObservationDto"
+						},
+						"type": "array",
+						"description": "Observations in the order the HQ received them.",
+						"minItems": 1,
+						"maxItems": 200
+					}
+				},
+				"required": [
+					"hqId",
+					"observations"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -18999,6 +19425,115 @@
 						}
 					}
 				]
+			}
+		},
+		"/events/{eventId}/mesh-observations": {
+			"post": {
+				"operationId": "UploadMeshObservations",
+				"responses": {
+					"200": {
+						"description": "Batch processed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshObservationBatchResultDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event not active or Meshtastic off",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many uploads",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Accepts up to 200 decoded `POSITION_APP` and `NODEINFO_APP` observations. Every observation\ngets a final result in request order, so the HQ can delete the whole batch from its outbox:\npackets already received (by retry or another HQ) answer `duplicate`, unusable ones\n`rejected` with a code. Accepted positions appear in the event's live view and, when the event\nrecords, in its history; they are never sent to TAK apps.",
+				"tags": [
+					"Mesh uplink"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MeshObservationBatchRequest"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/events/{eventId}/members/{memberId}/data-packages": {

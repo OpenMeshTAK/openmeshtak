@@ -82,6 +82,8 @@ import { DeviceProfileController } from './../modules/meshtastic-artifacts/devic
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MeshtasticNodesController } from './../modules/mesh-uplink/meshtastic-nodes.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MeshObservationsController } from './../modules/mesh-uplink/mesh-observations.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberDataPackagesController } from './../modules/member-data-packages/member-data-packages.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
@@ -403,6 +405,21 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrackPointSource": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["tak"]},{"dataType":"enum","enums":["mesh"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakTrackPointMeshDto": {
+        "dataType": "refObject",
+        "properties": {
+            "nodeId": {"dataType":"string","required":true},
+            "hqId": {"ref":"Uuid","required":true},
+            "hqName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TakTrackPointDto": {
         "dataType": "refObject",
         "properties": {
@@ -413,6 +430,8 @@ const models: TsoaRoute.Models = {
             "delayed": {"dataType":"boolean","required":true},
             "approximate": {"dataType":"boolean","required":true},
             "estimated": {"dataType":"boolean","required":true},
+            "source": {"ref":"TakTrackPointSource","required":true},
+            "mesh": {"ref":"TakTrackPointMeshDto"},
         },
         "additionalProperties": false,
     },
@@ -424,7 +443,7 @@ const models: TsoaRoute.Models = {
             "type": {"dataType":"string","required":true},
             "callsign": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "selfReported": {"dataType":"boolean","required":true},
-            "sender": {"ref":"TakTrackSenderDto","required":true},
+            "sender": {"dataType":"union","subSchemas":[{"ref":"TakTrackSenderDto"},{"dataType":"enum","enums":[null]}],"required":true},
             "pointCount": {"dataType":"double","required":true},
             "duplicatesDropped": {"dataType":"double","required":true},
             "segments": {"dataType":"array","array":{"dataType":"array","array":{"dataType":"refObject","ref":"TakTrackPointDto"}},"required":true},
@@ -576,13 +595,55 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LiveTakItemSource": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["tak"]},{"dataType":"enum","enums":["mesh"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "LiveTakSenderDto": {
         "dataType": "refObject",
         "properties": {
-            "connectionId": {"ref":"Uuid","required":true},
+            "connectionId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
             "userId": {"ref":"Uuid","required":true},
             "userDisplayName": {"dataType":"string","required":true},
             "eventGroup": {"dataType":"union","subSchemas":[{"ref":"LiveTakAssignmentDto"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LiveMeshHqDto": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"Uuid","required":true},
+            "name": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshChannelDto": {
+        "dataType": "refObject",
+        "properties": {
+            "index": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0},"maximum":{"value":7}}},
+            "name": {"dataType":"string","validators":{"maxLength":{"value":12}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LiveMeshDetailsDto": {
+        "dataType": "refObject",
+        "properties": {
+            "nodeNum": {"dataType":"double","required":true},
+            "nodeId": {"dataType":"string","required":true},
+            "shortName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "longName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "memberId": {"dataType":"union","subSchemas":[{"ref":"Uuid"},{"dataType":"enum","enums":[null]}],"required":true},
+            "hq": {"ref":"LiveMeshHqDto","required":true},
+            "receivedAt": {"dataType":"string","required":true},
+            "batteryLevel": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "snr": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "rssi": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "hopsAway": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
+            "channel": {"dataType":"union","subSchemas":[{"ref":"MeshChannelDto"},{"dataType":"enum","enums":[null]}],"required":true},
         },
         "additionalProperties": false,
     },
@@ -599,7 +660,9 @@ const models: TsoaRoute.Models = {
             "speed": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
             "time": {"dataType":"string","required":true},
             "stale": {"dataType":"string","required":true},
-            "placedBy": {"ref":"LiveTakSenderDto","required":true},
+            "source": {"ref":"LiveTakItemSource","required":true},
+            "placedBy": {"dataType":"union","subSchemas":[{"ref":"LiveTakSenderDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "mesh": {"ref":"LiveMeshDetailsDto"},
         },
         "additionalProperties": false,
     },
@@ -2388,6 +2451,80 @@ const models: TsoaRoute.Models = {
         "properties": {
             "memberId": {"ref":"Uuid","required":true},
             "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshObservationStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["accepted"]},{"dataType":"enum","enums":["duplicate"]},{"dataType":"enum","enums":["tak-preferred"]},{"dataType":"enum","enums":["rejected"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshObservationResultDto": {
+        "dataType": "refObject",
+        "properties": {
+            "status": {"ref":"MeshObservationStatus","required":true},
+            "code": {"dataType":"string"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshObservationBatchResultDto": {
+        "dataType": "refObject",
+        "properties": {
+            "accepted": {"dataType":"double","required":true},
+            "duplicates": {"dataType":"double","required":true},
+            "takPreferred": {"dataType":"double","required":true},
+            "rejected": {"dataType":"double","required":true},
+            "recorded": {"dataType":"double","required":true},
+            "results": {"dataType":"array","array":{"dataType":"refObject","ref":"MeshObservationResultDto"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshObservationKind": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["position"]},{"dataType":"enum","enums":["nodeinfo"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshPositionDto": {
+        "dataType": "refObject",
+        "properties": {
+            "lat": {"dataType":"double","required":true,"validators":{"minimum":{"value":-90},"maximum":{"value":90}}},
+            "lon": {"dataType":"double","required":true,"validators":{"minimum":{"value":-180},"maximum":{"value":180}}},
+            "precisionBits": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":32}}},
+            "groundSpeed": {"dataType":"double","validators":{"minimum":{"value":0},"maximum":{"value":1000}}},
+            "groundTrack": {"dataType":"double","validators":{"minimum":{"value":0},"maximum":{"value":360}}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshObservationDto": {
+        "dataType": "refObject",
+        "properties": {
+            "kind": {"ref":"MeshObservationKind","required":true},
+            "nodeNum": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":4294967294}}},
+            "packetId": {"dataType":"integer","required":true,"validators":{"minimum":{"value":1},"maximum":{"value":4294967295}}},
+            "receivedAt": {"dataType":"string","required":true,"validators":{"maxLength":{"value":40}}},
+            "packetTime": {"dataType":"string","validators":{"maxLength":{"value":40}}},
+            "position": {"ref":"MeshPositionDto"},
+            "shortName": {"dataType":"string","validators":{"maxLength":{"value":8}}},
+            "longName": {"dataType":"string","validators":{"maxLength":{"value":40}}},
+            "batteryLevel": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":101}}},
+            "snr": {"dataType":"double","validators":{"minimum":{"value":-50},"maximum":{"value":50}}},
+            "rssi": {"dataType":"integer","validators":{"minimum":{"value":-200},"maximum":{"value":0}}},
+            "hopsAway": {"dataType":"integer","validators":{"minimum":{"value":0},"maximum":{"value":7}}},
+            "channel": {"ref":"MeshChannelDto"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshObservationBatchRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "hqId": {"ref":"Uuid","required":true},
+            "hqName": {"dataType":"string","validators":{"maxLength":{"value":60}}},
+            "observations": {"dataType":"array","array":{"dataType":"refObject","ref":"MeshObservationDto"},"required":true,"validators":{"minItems":{"value":1},"maxItems":{"value":200}}},
         },
         "additionalProperties": false,
     },
@@ -7490,6 +7627,39 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 204,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshObservationsController_uploadMeshObservations: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                body: {"in":"body","name":"body","required":true,"ref":"MeshObservationBatchRequest"},
+        };
+        app.post('/api/v1/events/:eventId/mesh-observations',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshObservationsController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshObservationsController.prototype.uploadMeshObservations)),
+
+            async function MeshObservationsController_uploadMeshObservations(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshObservationsController_uploadMeshObservations, request, response });
+
+                const controller = new MeshObservationsController();
+
+              await templateService.apiHandler({
+                methodName: 'uploadMeshObservations',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);

@@ -1,6 +1,7 @@
 /**
  * Turns recorded positions into movement tracks without inventing movement. Recorded traffic
- * comes from TAK apps and, through them, from Meshtastic nodes, so positions may arrive late, twice,
+ * comes from TAK apps, through them from Meshtastic nodes, and from Meshtastic nodes an HQ uplinked,
+ * so positions may arrive late, twice,
  * out of order or only roughly placed. A track is therefore split into segments, and a line is
  * drawn only between two consecutive precise positions that are close in time and plausibly reachable.
  */
@@ -19,7 +20,19 @@ export interface RecordedPosition {
   how: string | null;
   ce: number | null;
   selfReported: boolean;
-  userId: string;
+  /** Null for mesh nodes no member is bound to. */
+  userId: string | null;
+  source: string;
+  meshNodeId: string | null;
+  meshHqId: string | null;
+  meshHqName: string | null;
+}
+
+/** Where a mesh position came from: the node and the HQ that heard it. */
+export interface TrackPointMesh {
+  nodeId: string;
+  hqId: string;
+  hqName: string | null;
 }
 
 export interface TrackPoint {
@@ -31,6 +44,9 @@ export interface TrackPoint {
   approximate: boolean;
   /** The sender marked the position as estimated (`how` `h-e`), e.g. a PC without GPS. */
   estimated: boolean;
+  source: "tak" | "mesh";
+  /** Mesh positions only. */
+  mesh: TrackPointMesh | null;
 }
 
 export interface Track {
@@ -40,8 +56,8 @@ export interface Track {
   callsign: string | null;
   /** At least one position was the app's own beacon rather than a marker it placed. */
   selfReported: boolean;
-  /** The user whose TAK app sent the newest position. */
-  userId: string;
+  /** The user whose TAK app sent the newest position, or null for an unbound mesh node. */
+  userId: string | null;
   pointCount: number;
   duplicatesDropped: number;
   /**
@@ -95,6 +111,11 @@ function toPoint(position: RecordedPosition): TrackPoint {
     delayed: position.receivedAt.getTime() - position.time.getTime() > DELAYED_AFTER_MS,
     approximate: isApproximate(position),
     estimated: isEstimated(position),
+    source: position.source === "mesh" ? "mesh" : "tak",
+    mesh:
+      position.source === "mesh" && position.meshNodeId !== null && position.meshHqId !== null
+        ? { nodeId: position.meshNodeId, hqId: position.meshHqId, hqName: position.meshHqName }
+        : null,
   };
 }
 

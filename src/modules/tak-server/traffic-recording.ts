@@ -18,6 +18,19 @@ export interface RecordedDetails {
   selfReported: boolean;
 }
 
+/** A mesh position an HQ uploaded, as the recording keeps it. */
+export interface RecordedMeshPosition {
+  item: LiveItem;
+  ce: number | null;
+  /** The bound member's user, or null for a node no member is bound to. */
+  userId: string | null;
+  nodeId: string;
+  hqId: string;
+  hqName: string | null;
+  /** When the HQ radio received it. */
+  receivedAt: Date;
+}
+
 /**
  * Stores the TAK traffic of events that opted in. Writes happen in the background so the stream
  * never waits for the database, and failures are logged without the traffic itself.
@@ -37,6 +50,45 @@ class TrafficRecorder {
     void this.recordNow(userId, scope, item, details).catch((error: unknown) => {
       logger.error({ error, event: "tak_traffic_record_failed" }, "TAK traffic could not be recorded");
     });
+  }
+
+  /** Whether the event currently records its traffic, with the same short-lived cache as the stream. */
+  async isRecording(eventId: string): Promise<boolean> {
+    return (await this.recordingEvents()).has(eventId);
+  }
+
+  /**
+   * Stores uplinked mesh positions of an event that records. Unlike TAK traffic this is awaited:
+   * the HQ deletes its outbox entry once Core acknowledges, so the write must have happened. Mesh
+   * positions are already sparse and deduplicated by packet, so they are not thinned out.
+   */
+  async recordMesh(eventId: string, positions: readonly RecordedMeshPosition[]): Promise<number> {
+    if (positions.length === 0 || !(await this.isRecording(eventId))) {
+      return 0;
+    }
+    await database.takTrafficItem.createMany({
+      data: positions.map(({ item, ce, userId, nodeId, hqId, hqName, receivedAt }) => ({
+        id: randomUUID(),
+        eventId,
+        uid: item.uid,
+        type: item.type,
+        callsign: item.callsign,
+        lat: item.lat,
+        lon: item.lon,
+        time: item.time,
+        stale: item.stale,
+        how: "m-g",
+        ce,
+        selfReported: true,
+        userId,
+        source: "mesh",
+        meshNodeId: nodeId,
+        meshHqId: hqId,
+        meshHqName: hqName,
+        receivedAt,
+      })),
+    });
+    return positions.length;
   }
 
   private async recordingEvents(): Promise<Set<string>> {

@@ -16,6 +16,7 @@ import { attachTakServerStream } from "./modules/tak-server/tak-server.realtime.
 import { metricHistory } from "./modules/system-status/system-metrics.js";
 import { takListeners } from "./modules/tak-server/tak-listeners.js";
 import { scheduleTrafficCleanup } from "./modules/tak-server/traffic-recording.js";
+import { schedulePacketReceiptCleanup } from "./modules/mesh-uplink/mesh-packet-receipts.js";
 import { scheduleUnusedPackageCleanup } from "./modules/tak-server/unused-packages.js";
 import { takAcmeManager } from "./modules/tak-server/acme-manager.js";
 import { connectDatabase, disconnectDatabase } from "./shared/database/database.js";
@@ -68,6 +69,7 @@ async function startServer(): Promise<void> {
   attachTakServerStream(realtime);
 
   scheduleTrafficCleanup();
+  schedulePacketReceiptCleanup();
   scheduleUnusedPackageCleanup();
   takAcmeManager.start();
   metricHistory.start();

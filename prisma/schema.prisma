@@ -49,6 +49,7 @@ model Event {
   atakPreferenceList      AtakPreferenceList?
   atakPreferences         AtakPreferenceEntry[]
   meshtasticNodes         MeshtasticNode[]
+  meshPacketReceipts      MeshPacketReceipt[]
   /// Event accounts; archiving the event deletes them.
   accounts                DomainUser[]                 @relation("EventAccounts")
 }
@@ -1010,8 +1011,16 @@ model TakTrafficItem {
   ce           Float?
   /// The sending app's own position beacon rather than a marker it placed; false for older items.
   selfReported Boolean  @default(false)
-  /// The OpenMeshTak user whose TAK app sent it.
-  userId       String
+  /// The OpenMeshTak user whose TAK app sent it, or the member a mesh node is bound to; null for
+  /// positions of mesh nodes no member is bound to.
+  userId       String?
+  /// `tak` for traffic of a connected TAK app, `mesh` for a Meshtastic position an HQ uploaded.
+  source       String   @default("tak")
+  /// Mesh positions only: the node as `!xxxxxxxx` and the HQ that heard it (ID and display name).
+  meshNodeId   String?
+  meshHqId     String?
+  meshHqName   String?
+  /// When Core received it; for mesh positions when the HQ radio received it.
   receivedAt   DateTime @default(now())
   event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
@@ -1184,4 +1193,18 @@ model MeshtasticNode {
 
   @@unique([eventId, nodeId])
   @@index([eventId, createdAt, id])
+}
+
+/// A mesh packet an HQ uploaded, kept for a bounded window so retried uploads and the same packet
+/// heard by several HQs are processed once. Holds no position.
+model MeshPacketReceipt {
+  eventId   String
+  nodeId    String
+  /// Meshtastic packet ID, an unsigned 32-bit number.
+  packetId  BigInt
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, nodeId, packetId])
+  @@index([createdAt])
 }

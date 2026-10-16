@@ -41,7 +41,7 @@ async function recordingEventIds(client: AuthenticatedTakClient): Promise<string
  * Which recorded items the caller may read: everything of events it sees completely, and in events
  * that separate TAK groups only items it would have received live: from its own event group (simple
  * mode) or from members sending into a group it receives from (advanced mode), and from roles that
- * see every group.
+ * see every group. Mesh positions an HQ uplinked are never returned to TAK apps.
  */
 async function visibleItems(client: AuthenticatedTakClient, eventIds: string[]): Promise<Prisma.TakTrafficItemWhereInput> {
   const conditions = await Promise.all(
@@ -62,7 +62,8 @@ async function visibleItems(client: AuthenticatedTakClient, eventIds: string[]):
       return { eventId, userId: { notIn: hidden.map(({ userId }) => userId) } };
     }),
   );
-  return { OR: conditions };
+  // Uplinked mesh positions are for the Web only; TAK apps see the mesh through the Meshtastic app.
+  return { source: "tak", OR: conditions };
 }
 
 function requestedUid(request: Request): string | null {

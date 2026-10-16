@@ -17,6 +17,20 @@ export interface TakTrackPointDto {
   approximate: boolean;
   /** The sender marked the position as estimated (CoT `how` `h-e`); drawn as a dashed line. */
   estimated: boolean;
+  /** `tak` from a connected TAK app, `mesh` from a Meshtastic node an HQ uplinked. */
+  source: TakTrackPointSource;
+  /** Present on mesh positions only. */
+  mesh?: TakTrackPointMeshDto;
+}
+
+export type TakTrackPointSource = "tak" | "mesh";
+
+/** The Meshtastic node and HQ behind an uplinked position. */
+export interface TakTrackPointMeshDto {
+  /** Node number as Meshtastic shows it, e.g. `!a1b2c3d4`. */
+  nodeId: string;
+  hqId: Uuid;
+  hqName: string | null;
 }
 
 /** The OpenMeshTak user whose TAK app sent a track, with their event group when still a member. */
@@ -35,7 +49,11 @@ export interface TakTrackDto {
   callsign: string | null;
   /** At least one position was the app's own beacon rather than a marker it placed. */
   selfReported: boolean;
-  sender: TakTrackSenderDto;
+  /**
+   * Who sent the newest position: the TAK app's user or the member a mesh node is bound to. Null
+   * for a mesh node no member is bound to (UID `meshtastic-<node>`).
+   */
+  sender: TakTrackSenderDto | null;
   pointCount: number;
   /** Positions dropped because another position of the same UID carried the same time. */
   duplicatesDropped: number;
