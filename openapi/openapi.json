@@ -394,6 +394,8 @@
 					"tak-traffic.export",
 					"tak-traffic.delete",
 					"tak-traffic.recording",
+					"mesh-uplink.send",
+					"mesh-bindings.manage",
 					"api-clients.manage",
 					"tak-server.manage",
 					"tak-server.admin-access",
@@ -6422,6 +6424,161 @@
 					"kind",
 					"version",
 					"psk"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticNodeMemberDto": {
+				"description": "The event member a node is bound to or suggested for, with the names the radio was provisioned with.",
+				"properties": {
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"displayName": {
+						"type": "string"
+					},
+					"callsign": {
+						"type": "string"
+					},
+					"shortName": {
+						"type": "string",
+						"nullable": true,
+						"description": "The member's provisioned Meshtastic short name, e.g. `B1`; null while the group has no prefix."
+					}
+				},
+				"required": [
+					"memberId",
+					"userId",
+					"displayName",
+					"callsign",
+					"shortName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticNodeBindingDto": {
+				"properties": {
+					"member": {
+						"$ref": "#/components/schemas/MeshtasticNodeMemberDto"
+					},
+					"boundAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"member",
+					"boundAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticNodeDto": {
+				"description": "A Meshtastic node of the event: heard by an HQ uplink, or bound by an operator in advance. A bound\nnode's positions join the member's track under the member's CoT UID; unbound nodes appear as\nunknown under `meshtastic-<node>`.",
+				"properties": {
+					"nodeNum": {
+						"type": "number",
+						"format": "double",
+						"description": "Unsigned 32-bit node number."
+					},
+					"nodeId": {
+						"type": "string",
+						"description": "As Meshtastic shows it, e.g. `!a1b2c3d4`."
+					},
+					"shortName": {
+						"type": "string",
+						"nullable": true,
+						"description": "Names the node announced; untrusted display text."
+					},
+					"longName": {
+						"type": "string",
+						"nullable": true
+					},
+					"lastHeardAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "HQ receive time of the newest packet from the node; null when only bound in advance.",
+						"format": "date-time"
+					},
+					"lastPositionAt": {
+						"type": "string",
+						"nullable": true,
+						"format": "date-time"
+					},
+					"binding": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/MeshtasticNodeBindingDto"
+							}
+						],
+						"nullable": true
+					},
+					"suggestion": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/MeshtasticNodeMemberDto"
+							}
+						],
+						"nullable": true,
+						"description": "For an unbound node whose short and long name equal exactly one unbound member's provisioned\nshort name and callsign (ignoring case and surrounding spaces): that member. An operator\nconfirms it by binding; Core never binds on its own."
+					},
+					"version": {
+						"type": "number",
+						"format": "double",
+						"description": "Optimistic-concurrency version; send it back unchanged when binding."
+					}
+				},
+				"required": [
+					"nodeNum",
+					"nodeId",
+					"shortName",
+					"longName",
+					"lastHeardAt",
+					"lastPositionAt",
+					"binding",
+					"suggestion",
+					"version"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MeshtasticNodePage": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/MeshtasticNodeDto"
+						},
+						"type": "array"
+					},
+					"page": {
+						"$ref": "#/components/schemas/PageInfo"
+					}
+				},
+				"required": [
+					"items",
+					"page"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BindMeshtasticNodeRequest": {
+				"properties": {
+					"memberId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"version": {
+						"type": "integer",
+						"format": "int32",
+						"description": "Version the client last read; 0 for a node Core has not stored yet (binding in advance).",
+						"minimum": 0
+					}
+				},
+				"required": [
+					"memberId",
+					"version"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -18548,6 +18705,297 @@
 						"required": true,
 						"schema": {
 							"$ref": "#/components/schemas/Uuid"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic-nodes": {
+			"get": {
+				"operationId": "ListMeshtasticNodes",
+				"responses": {
+					"200": {
+						"description": "Meshtastic nodes",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticNodePage"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid cursor",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Lists the nodes the event's HQs heard or an operator bound, oldest first, each with its binding\nor, when unbound, a suggested member whose provisioned short name and callsign match.",
+				"tags": [
+					"Mesh uplink"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"in": "query",
+						"name": "cursor",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/events/{eventId}/meshtastic-nodes/{nodeNum}/binding": {
+			"put": {
+				"operationId": "BindMeshtasticNode",
+				"responses": {
+					"200": {
+						"description": "Node bound",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MeshtasticNodeDto"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Version conflict, member already bound or event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation failed",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Binds the node to a member, confirming a suggestion or changing the binding; works before the\nnode was heard. A member has at most one node. Already recorded positions are not rewritten.",
+				"tags": [
+					"Mesh uplink"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Unsigned 32-bit node number.",
+						"in": "path",
+						"name": "nodeNum",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 4294967294
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BindMeshtasticNodeRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "UnbindMeshtasticNode",
+				"responses": {
+					"204": {
+						"description": "Binding removed"
+					},
+					"401": {
+						"description": "Authentication required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Access denied",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Event archived",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				},
+				"description": "Removes the node's binding; its later positions show as unknown again.",
+				"tags": [
+					"Mesh uplink"
+				],
+				"security": [
+					{
+						"sessionCookie": []
+					},
+					{
+						"apiClientBearer": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "eventId",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/Uuid"
+						}
+					},
+					{
+						"description": "Unsigned 32-bit node number.",
+						"in": "path",
+						"name": "nodeNum",
+						"required": true,
+						"schema": {
+							"format": "int32",
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 4294967294
 						}
 					}
 				]

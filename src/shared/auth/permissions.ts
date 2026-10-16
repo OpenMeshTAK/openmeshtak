@@ -45,6 +45,8 @@ export const PERMISSIONS = [
   "tak-traffic.export",
   "tak-traffic.delete",
   "tak-traffic.recording",
+  "mesh-uplink.send",
+  "mesh-bindings.manage",
   "api-clients.manage",
   "tak-server.manage",
   "tak-server.admin-access",

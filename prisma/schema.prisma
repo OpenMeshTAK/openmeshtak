@@ -48,6 +48,7 @@ model Event {
   takGroups               TakGroup[]
   atakPreferenceList      AtakPreferenceList?
   atakPreferences         AtakPreferenceEntry[]
+  meshtasticNodes         MeshtasticNode[]
   /// Event accounts; archiving the event deletes them.
   accounts                DomainUser[]                 @relation("EventAccounts")
 }
@@ -398,6 +399,7 @@ model EventMember {
   missionWriterSelections DataPackageWriter[]
   takGroups         TakGroupMembership[]
   atakPreferences   AtakPreferenceEntry[]
+  meshtasticNode    MeshtasticNode?
   createdAt         DateTime                    @default(now())
   updatedAt         DateTime                    @updatedAt
 
@@ -1156,4 +1158,30 @@ model SettingsPreset {
 
   @@index([kind, createdAt, id])
   @@index([createdAt, id])
+}
+
+/// A Meshtastic node of an event: heard by an HQ uplink or bound by an operator in advance. A
+/// binding to a member puts the node's positions on that member's track; one node per member.
+model MeshtasticNode {
+  id             String       @id
+  eventId        String
+  /// Node number as Meshtastic shows it: `!` and eight lowercase hex digits.
+  nodeId         String
+  /// Names the node itself announced; untrusted display data.
+  shortName      String?
+  longName       String?
+  /// HQ receive time of the newest packet and position heard from the node.
+  lastHeardAt    DateTime?
+  lastPositionAt DateTime?
+  memberId       String?      @unique
+  boundAt        DateTime?
+  version        Int          @default(1)
+  event          Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  /// Removing the member removes the binding, not the node.
+  member         EventMember? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([eventId, nodeId])
+  @@index([eventId, createdAt, id])
 }

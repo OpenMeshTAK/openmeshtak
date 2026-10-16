@@ -80,6 +80,8 @@ import { MeshtasticChannelsController } from './../modules/meshtastic-channels/m
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { DeviceProfileController } from './../modules/meshtastic-artifacts/device-profile.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { MeshtasticNodesController } from './../modules/mesh-uplink/meshtastic-nodes.controller.js';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberDataPackagesController } from './../modules/member-data-packages/member-data-packages.controller.js';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { MemberClaimsController } from './../modules/member-claims/member-claims.controller.js';
@@ -306,7 +308,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Permission": {
         "dataType": "refAlias",
-        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.create"]},{"dataType":"enum","enums":["users.edit"]},{"dataType":"enum","enums":["users.set-email"]},{"dataType":"enum","enums":["users.disable"]},{"dataType":"enum","enums":["users.sign-out"]},{"dataType":"enum","enums":["users.password-reset"]},{"dataType":"enum","enums":["users.setup-links"]},{"dataType":"enum","enums":["registration.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["user-group-members.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["configuration.publish"]},{"dataType":"enum","enums":["event-groups.manage"]},{"dataType":"enum","enums":["event-roles.manage"]},{"dataType":"enum","enums":["tak-settings.manage"]},{"dataType":"enum","enums":["tak-groups.manage"]},{"dataType":"enum","enums":["meshtastic-settings.manage"]},{"dataType":"enum","enums":["meshtastic-channels.manage"]},{"dataType":"enum","enums":["presets.read"]},{"dataType":"enum","enums":["presets.manage"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-accounts.create"]},{"dataType":"enum","enums":["event-accounts.manage"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["missions.read"]},{"dataType":"enum","enums":["missions.edit"]},{"dataType":"enum","enums":["missions.publish"]},{"dataType":"enum","enums":["offline-snapshots.prepare"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["tak-traffic.view"]},{"dataType":"enum","enums":["tak-traffic.history"]},{"dataType":"enum","enums":["tak-traffic.export"]},{"dataType":"enum","enums":["tak-traffic.delete"]},{"dataType":"enum","enums":["tak-traffic.recording"]},{"dataType":"enum","enums":["api-clients.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["settings.manage"]},{"dataType":"enum","enums":["audit.read"]},{"dataType":"enum","enums":["server-logs.read"]}],"validators":{}},
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["users.read"]},{"dataType":"enum","enums":["users.create"]},{"dataType":"enum","enums":["users.edit"]},{"dataType":"enum","enums":["users.set-email"]},{"dataType":"enum","enums":["users.disable"]},{"dataType":"enum","enums":["users.sign-out"]},{"dataType":"enum","enums":["users.password-reset"]},{"dataType":"enum","enums":["users.setup-links"]},{"dataType":"enum","enums":["registration.manage"]},{"dataType":"enum","enums":["user-groups.read"]},{"dataType":"enum","enums":["user-groups.manage"]},{"dataType":"enum","enums":["user-group-members.manage"]},{"dataType":"enum","enums":["events.read"]},{"dataType":"enum","enums":["events.manage"]},{"dataType":"enum","enums":["events.reactivate"]},{"dataType":"enum","enums":["configuration.publish"]},{"dataType":"enum","enums":["event-groups.manage"]},{"dataType":"enum","enums":["event-roles.manage"]},{"dataType":"enum","enums":["tak-settings.manage"]},{"dataType":"enum","enums":["tak-groups.manage"]},{"dataType":"enum","enums":["meshtastic-settings.manage"]},{"dataType":"enum","enums":["meshtastic-channels.manage"]},{"dataType":"enum","enums":["presets.read"]},{"dataType":"enum","enums":["presets.manage"]},{"dataType":"enum","enums":["members.read"]},{"dataType":"enum","enums":["members.manage"]},{"dataType":"enum","enums":["members.sync"]},{"dataType":"enum","enums":["member-accounts.create"]},{"dataType":"enum","enums":["event-accounts.manage"]},{"dataType":"enum","enums":["member-claims.create"]},{"dataType":"enum","enums":["channel-keys.reveal"]},{"dataType":"enum","enums":["data-packages.read"]},{"dataType":"enum","enums":["data-packages.edit"]},{"dataType":"enum","enums":["data-packages.publish"]},{"dataType":"enum","enums":["missions.read"]},{"dataType":"enum","enums":["missions.edit"]},{"dataType":"enum","enums":["missions.publish"]},{"dataType":"enum","enums":["offline-snapshots.prepare"]},{"dataType":"enum","enums":["artifacts.generate"]},{"dataType":"enum","enums":["artifacts.download"]},{"dataType":"enum","enums":["member-artifacts.download"]},{"dataType":"enum","enums":["tak-traffic.view"]},{"dataType":"enum","enums":["tak-traffic.history"]},{"dataType":"enum","enums":["tak-traffic.export"]},{"dataType":"enum","enums":["tak-traffic.delete"]},{"dataType":"enum","enums":["tak-traffic.recording"]},{"dataType":"enum","enums":["mesh-uplink.send"]},{"dataType":"enum","enums":["mesh-bindings.manage"]},{"dataType":"enum","enums":["api-clients.manage"]},{"dataType":"enum","enums":["tak-server.manage"]},{"dataType":"enum","enums":["tak-server.admin-access"]},{"dataType":"enum","enums":["email.manage"]},{"dataType":"enum","enums":["settings.manage"]},{"dataType":"enum","enums":["audit.read"]},{"dataType":"enum","enums":["server-logs.read"]}],"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PermissionGrantDto": {
@@ -2331,6 +2333,61 @@ const models: TsoaRoute.Models = {
             "kind": {"ref":"ChannelPskKind","required":true},
             "version": {"dataType":"double","required":true},
             "psk": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticNodeMemberDto": {
+        "dataType": "refObject",
+        "properties": {
+            "memberId": {"ref":"Uuid","required":true},
+            "userId": {"ref":"Uuid","required":true},
+            "displayName": {"dataType":"string","required":true},
+            "callsign": {"dataType":"string","required":true},
+            "shortName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticNodeBindingDto": {
+        "dataType": "refObject",
+        "properties": {
+            "member": {"ref":"MeshtasticNodeMemberDto","required":true},
+            "boundAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticNodeDto": {
+        "dataType": "refObject",
+        "properties": {
+            "nodeNum": {"dataType":"double","required":true},
+            "nodeId": {"dataType":"string","required":true},
+            "shortName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "longName": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "lastHeardAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "lastPositionAt": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "binding": {"dataType":"union","subSchemas":[{"ref":"MeshtasticNodeBindingDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "suggestion": {"dataType":"union","subSchemas":[{"ref":"MeshtasticNodeMemberDto"},{"dataType":"enum","enums":[null]}],"required":true},
+            "version": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "MeshtasticNodePage": {
+        "dataType": "refObject",
+        "properties": {
+            "items": {"dataType":"array","array":{"dataType":"refObject","ref":"MeshtasticNodeDto"},"required":true},
+            "page": {"ref":"PageInfo","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "BindMeshtasticNodeRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "memberId": {"ref":"Uuid","required":true},
+            "version": {"dataType":"integer","required":true,"validators":{"minimum":{"value":0}}},
         },
         "additionalProperties": false,
     },
@@ -7332,6 +7389,107 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticNodesController_listMeshtasticNodes: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                limit: {"in":"query","name":"limit","dataType":"integer","validators":{"isInt":{"errorMsg":"limit"},"minimum":{"value":1},"maximum":{"value":100}}},
+                cursor: {"in":"query","name":"cursor","dataType":"string"},
+        };
+        app.get('/api/v1/events/:eventId/meshtastic-nodes',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticNodesController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticNodesController.prototype.listMeshtasticNodes)),
+
+            async function MeshtasticNodesController_listMeshtasticNodes(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticNodesController_listMeshtasticNodes, request, response });
+
+                const controller = new MeshtasticNodesController();
+
+              await templateService.apiHandler({
+                methodName: 'listMeshtasticNodes',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticNodesController_bindMeshtasticNode: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                nodeNum: {"in":"path","name":"nodeNum","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"nodeNum"},"minimum":{"value":1},"maximum":{"value":4294967294}}},
+                body: {"in":"body","name":"body","required":true,"ref":"BindMeshtasticNodeRequest"},
+        };
+        app.put('/api/v1/events/:eventId/meshtastic-nodes/:nodeNum/binding',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticNodesController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticNodesController.prototype.bindMeshtasticNode)),
+
+            async function MeshtasticNodesController_bindMeshtasticNode(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticNodesController_bindMeshtasticNode, request, response });
+
+                const controller = new MeshtasticNodesController();
+
+              await templateService.apiHandler({
+                methodName: 'bindMeshtasticNode',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsMeshtasticNodesController_unbindMeshtasticNode: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
+                eventId: {"in":"path","name":"eventId","required":true,"ref":"Uuid"},
+                nodeNum: {"in":"path","name":"nodeNum","required":true,"dataType":"integer","validators":{"isInt":{"errorMsg":"nodeNum"},"minimum":{"value":1},"maximum":{"value":4294967294}}},
+        };
+        app.delete('/api/v1/events/:eventId/meshtastic-nodes/:nodeNum/binding',
+            authenticateMiddleware([{"sessionCookie":[]},{"apiClientBearer":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticNodesController)),
+            ...(fetchMiddlewares<RequestHandler>(MeshtasticNodesController.prototype.unbindMeshtasticNode)),
+
+            async function MeshtasticNodesController_unbindMeshtasticNode(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsMeshtasticNodesController_unbindMeshtasticNode, request, response });
+
+                const controller = new MeshtasticNodesController();
+
+              await templateService.apiHandler({
+                methodName: 'unbindMeshtasticNode',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 204,
               });
             } catch (err) {
                 return next(err);
