@@ -574,6 +574,17 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "LiveTakSenderDto": {
+        "dataType": "refObject",
+        "properties": {
+            "connectionId": {"ref":"Uuid","required":true},
+            "userId": {"ref":"Uuid","required":true},
+            "userDisplayName": {"dataType":"string","required":true},
+            "eventGroup": {"dataType":"union","subSchemas":[{"ref":"LiveTakAssignmentDto"},{"dataType":"enum","enums":[null]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "LiveTakItemDto": {
         "dataType": "refObject",
         "properties": {
@@ -586,6 +597,7 @@ const models: TsoaRoute.Models = {
             "speed": {"dataType":"union","subSchemas":[{"dataType":"double"},{"dataType":"enum","enums":[null]}],"required":true},
             "time": {"dataType":"string","required":true},
             "stale": {"dataType":"string","required":true},
+            "placedBy": {"ref":"LiveTakSenderDto","required":true},
         },
         "additionalProperties": false,
     },

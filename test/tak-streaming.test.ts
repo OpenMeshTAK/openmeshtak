@@ -414,18 +414,36 @@ void describe("TAK CoT streaming", () => {
     const other = await activeEvent();
     const alpha = await open(await enrollTakClient(app, await member(bravo.eventId, bravo.groupId, bravo.roleId, "Alpha")));
     alpha.socket.write(positionEvent("ALPHA-LIVE"));
+    alpha.socket.write(markerEvent("ALPHA-MARKER"));
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     const viewer = await createUser("Viewer", [{ permission: "tak-traffic.view", eventId: bravo.eventId }]);
-    const live = (await request(app).get(`/api/v1/events/${bravo.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(200)).body as {
-      connections: Array<{ callsign: string | null; userDisplayName: string; eventGroup: { name: string } | null; eventRole: { name: string } | null }>;
-      items: Array<{ uid: string; lat: number; callsign: string | null }>;
+    type Live = {
+      connections: Array<{ id: string; callsign: string | null; userDisplayName: string; eventGroup: { name: string } | null; eventRole: { name: string } | null }>;
+      items: Array<{ uid: string; lat: number; callsign: string | null; placedBy: { connectionId: string; userDisplayName: string; eventGroup: { name: string } | null } }>;
     };
+    const live = (await request(app).get(`/api/v1/events/${bravo.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(200)).body as Live;
     assert.deepEqual(
       live.connections.map(({ callsign, userDisplayName, eventGroup, eventRole }) => [callsign, userDisplayName, eventGroup?.name, eventRole?.name]),
       [["ALPHA-LIVE", "Alpha", "Bravo", "Participant"]],
     );
-    assert.deepEqual(live.items.map(({ uid, lat }) => [uid, lat]), [["ALPHA-LIVE", 52.4]]);
+    assert.deepEqual(live.items.map(({ uid, lat }) => [uid, lat]).sort(), [["ALPHA-LIVE", 52.4], ["ALPHA-MARKER", 52.4]]);
+    const connectionId = live.connections[0]?.id;
+    assert.deepEqual(
+      live.items.map(({ placedBy }) => [placedBy.connectionId, placedBy.userDisplayName, placedBy.eventGroup?.name]),
+      [[connectionId, "Alpha", "Bravo"], [connectionId, "Alpha", "Bravo"]],
+      "every item names the app and member that placed it",
+    );
+
+    alpha.socket.destroy();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const afterLeaving = (await request(app).get(`/api/v1/events/${bravo.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(200)).body as Live;
+    assert.deepEqual(afterLeaving.connections, []);
+    assert.deepEqual(
+      afterLeaving.items.map(({ uid, placedBy }) => [uid, placedBy.connectionId, placedBy.eventGroup?.name]).sort(),
+      [["ALPHA-LIVE", connectionId, "Bravo"], ["ALPHA-MARKER", connectionId, "Bravo"]],
+      "markers keep their sender after the app disconnected",
+    );
 
     await request(app).get(`/api/v1/events/${other.eventId}/tak-traffic`).set("Cookie", viewer.cookie).expect(404);
     const reader = await createUser("Reader", [{ permission: "events.read", eventId: bravo.eventId }]);

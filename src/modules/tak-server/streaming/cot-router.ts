@@ -36,6 +36,12 @@ export interface CotPeer {
   lastSeenAt: Date;
 }
 
+/** A current item with the connection and user that sent it, for the live view. */
+export interface LiveItemWithSender extends LiveItem {
+  connectionId: string;
+  userId: string;
+}
+
 export interface LiveConnection {
   id: string;
   userId: string;
@@ -64,6 +70,7 @@ interface RetainedItem {
   /** The sender's events when it sent the item. */
   scope: CotScope;
   peerId: string;
+  userId: string;
   certificateId: string;
 }
 
@@ -169,7 +176,7 @@ export class CotRouter {
   /** Keeps the newest version of an item for replay and the live view. */
   remember(peer: CotPeer, item: LiveItem, xml: string, now = new Date()): void {
     this.retained.delete(item.uid);
-    this.retained.set(item.uid, { item, xml, scope: peer.scope, peerId: peer.id, certificateId: peer.certificateId });
+    this.retained.set(item.uid, { item, xml, scope: peer.scope, peerId: peer.id, userId: peer.userId, certificateId: peer.certificateId });
 
     const owned = this.peerItems.get(peer.id) ?? new Set<string>();
     owned.delete(item.uid);
@@ -228,13 +235,13 @@ export class CotRouter {
   }
 
   /** What is happening in one event right now: its connected apps and its current, not yet stale items. */
-  snapshot(eventId: string, now = new Date()): { connections: LiveConnection[]; items: LiveItem[] } {
+  snapshot(eventId: string, now = new Date()): { connections: LiveConnection[]; items: LiveItemWithSender[] } {
     const peers = [...this.peers.values()].filter(({ scope }) => scope.has(eventId));
     return {
       connections: peers.map(({ id, userId, callsign, connectedAt, lastSeenAt }) => ({ id, userId, callsign, connectedAt, lastSeenAt })),
       items: this.current(now)
         .filter(({ scope }) => scope.has(eventId))
-        .map(({ item }) => item),
+        .map(({ item, peerId, userId }) => ({ ...item, connectionId: peerId, userId })),
     };
   }
 

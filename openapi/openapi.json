@@ -1178,6 +1178,38 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"LiveTakSenderDto": {
+				"description": "The TAK app that sent an item: for a position the app itself, for a marker the app that placed\nit. The connection may have ended since; Core keeps current items after their app disconnects.",
+				"properties": {
+					"connectionId": {
+						"$ref": "#/components/schemas/Uuid",
+						"description": "The sending connection; matches a `LiveTakConnectionDto.id` while that app is connected."
+					},
+					"userId": {
+						"$ref": "#/components/schemas/Uuid"
+					},
+					"userDisplayName": {
+						"type": "string"
+					},
+					"eventGroup": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/LiveTakAssignmentDto"
+							}
+						],
+						"nullable": true,
+						"description": "The sender's group in this event, or null when they are not a member, e.g. an administrator."
+					}
+				},
+				"required": [
+					"connectionId",
+					"userId",
+					"userDisplayName",
+					"eventGroup"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"LiveTakItemDto": {
 				"description": "The newest state of one CoT item, such as a member's position or a marker they placed.",
 				"properties": {
@@ -1219,6 +1251,9 @@
 					"stale": {
 						"type": "string",
 						"format": "date-time"
+					},
+					"placedBy": {
+						"$ref": "#/components/schemas/LiveTakSenderDto"
 					}
 				},
 				"required": [
@@ -1230,7 +1265,8 @@
 					"course",
 					"speed",
 					"time",
-					"stale"
+					"stale",
+					"placedBy"
 				],
 				"type": "object",
 				"additionalProperties": false

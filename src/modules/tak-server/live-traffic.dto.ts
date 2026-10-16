@@ -22,6 +22,19 @@ export interface LiveTakConnectionDto {
   lastSeenAt: string;
 }
 
+/**
+ * The TAK app that sent an item: for a position the app itself, for a marker the app that placed
+ * it. The connection may have ended since; Core keeps current items after their app disconnects.
+ */
+export interface LiveTakSenderDto {
+  /** The sending connection; matches a `LiveTakConnectionDto.id` while that app is connected. */
+  connectionId: Uuid;
+  userId: Uuid;
+  userDisplayName: string;
+  /** The sender's group in this event, or null when they are not a member, e.g. an administrator. */
+  eventGroup: LiveTakAssignmentDto | null;
+}
+
 /** The newest state of one CoT item, such as a member's position or a marker they placed. */
 export interface LiveTakItemDto {
   uid: string;
@@ -38,6 +51,7 @@ export interface LiveTakItemDto {
   time: string;
   /** @format date-time */
   stale: string;
+  placedBy: LiveTakSenderDto;
 }
 
 /**
