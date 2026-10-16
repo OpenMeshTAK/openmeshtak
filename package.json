@@ -43,6 +43,7 @@
     "smoke:clean-install": "pnpm build && tsx scripts/smoke-clean-install.ts",
     "start": "node dist/server.js",
     "test": "pnpm generate && tsx scripts/run-tests.ts",
+    "test:changed": "pnpm generate && tsx scripts/run-tests.ts --changed",
     "typecheck": "pnpm generate && tsc --noEmit"
   },
   "dependencies": {

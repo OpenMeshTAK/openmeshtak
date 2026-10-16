@@ -4,6 +4,8 @@ import { mkdirSync, readdirSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { availableParallelism } from "node:os";
 
+import { describeSelection, normalizePath, selectChangedTests } from "./changed-tests.js";
+
 function findTestFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
@@ -30,6 +32,14 @@ function selectTestFiles(requestedPaths: string[]): string[] {
   }))];
 }
 
+// Local development only (`pnpm test:changed`); `pnpm test`, `pnpm check` and CI run every file.
+function selectChangedTestFiles(): string[] {
+  const files = findTestFiles("test").map(normalizePath);
+  const selection = selectChangedTests(process.cwd(), files);
+  process.stdout.write(describeSelection(selection, files.length));
+  return selection.kind === "full" ? files : selection.kind === "selected" ? [...selection.tests.keys()] : [];
+}
+
 function run(command: string, args: string[], environment: NodeJS.ProcessEnv): void {
   const result = spawnSync(command, args, {
     env: environment,
@@ -49,7 +59,10 @@ function run(command: string, args: string[], environment: NodeJS.ProcessEnv): v
 }
 
 // Validate selection before creating a database; a typo must never run the whole suite.
-const testFiles = selectTestFiles(process.argv.slice(2));
+const testFiles = process.argv[2] === "--changed" ? selectChangedTestFiles() : selectTestFiles(process.argv.slice(2));
+if (testFiles.length === 0) {
+  process.exit(0);
+}
 const testDatabaseFile = `openmeshtak-test-${randomUUID()}.sqlite`;
 const testDatabasePath = resolve("server/data/db", testDatabaseFile);
 const testRunId = testDatabaseFile.slice(0, -".sqlite".length);
