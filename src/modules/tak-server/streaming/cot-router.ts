@@ -303,6 +303,26 @@ export class CotRouter {
     return true;
   }
 
+  /**
+   * Removes the mesh position a node shows in an event's live view, under whatever UID it was
+   * shown: its unbound UID or a member's. Called when the node's binding changes, so the live view
+   * does not keep the old identity until it goes stale; the node's next position appears under
+   * the new one. Returns whether a position was removed.
+   */
+  forgetMeshNode(eventId: string, nodeId: string): boolean {
+    let removed = false;
+    for (const [key, entry] of this.meshItems) {
+      if (entry.eventId === eventId && entry.mesh.nodeId === nodeId) {
+        this.meshItems.delete(key);
+        removed = true;
+      }
+    }
+    if (removed) {
+      this.changed(new Map([[eventId, { groupId: null, seesAll: true, receives: null, sends: null }]]));
+    }
+    return removed;
+  }
+
   /** Removes items a client deleted, so they are not replayed to later joiners. */
   forget(peer: CotPeer, uids: string[]): void {
     for (const uid of uids) {

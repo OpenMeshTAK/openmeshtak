@@ -8,6 +8,7 @@ import { notFoundProblem, ProblemError, validationProblem, versionConflictProble
 import { afterCursor, CURSOR_ORDER, DEFAULT_PAGE_LIMIT, decodeCursor, toPage } from "../../shared/pagination/cursor.js";
 import { shortNameFor } from "../event-members/member-identity.js";
 import { requireAnyEventPermission, requireMutableEvent } from "../events/event-access.js";
+import { cotRouter, type CotRouter } from "../tak-server/streaming/cot-router.js";
 import { nodeIdOf, nodeNumOf } from "./mesh-node-id.js";
 import type { BindMeshtasticNodeRequest, MeshtasticNodeDto, MeshtasticNodeMemberDto, MeshtasticNodePage } from "./meshtastic-node.dto.js";
 
@@ -134,9 +135,16 @@ function audit(actor: ActorContext, action: string, eventId: string, nodeId: str
 /**
  * Binds a node to a member: confirming a suggestion, correcting a binding or binding a radio before
  * it was heard. Requires `mesh-bindings.manage`. One node per member; positions already recorded
- * keep the UID they were recorded under.
+ * keep the UID they were recorded under. The node's live position under its previous identity
+ * leaves the live view at once; its next position appears under the member.
  */
-export async function bindMeshtasticNode(actor: ActorContext, eventId: string, nodeNum: number, input: BindMeshtasticNodeRequest): Promise<MeshtasticNodeDto> {
+export async function bindMeshtasticNode(
+  actor: ActorContext,
+  eventId: string,
+  nodeNum: number,
+  input: BindMeshtasticNodeRequest,
+  router: CotRouter = cotRouter,
+): Promise<MeshtasticNodeDto> {
   await requireMutableEvent(actor.principal, eventId, "mesh-bindings.manage");
   const nodeId = nodeIdOf(nodeNum);
   const member = await database.eventMember.findFirst({ where: { id: input.memberId, eventId }, select: { id: true } });
@@ -171,11 +179,17 @@ export async function bindMeshtasticNode(actor: ActorContext, eventId: string, n
     }
     throw error;
   }
+  if (current?.member?.id !== member.id) {
+    router.forgetMeshNode(eventId, nodeId);
+  }
   return toDto((await findNode(eventId, nodeId)) as NodeRow, null);
 }
 
-/** Removes a node's binding; its later positions show as unknown again. Requires `mesh-bindings.manage`. */
-export async function unbindMeshtasticNode(actor: ActorContext, eventId: string, nodeNum: number): Promise<void> {
+/**
+ * Removes a node's binding; its later positions show as unknown again, and its live position under
+ * the member leaves the live view at once. Requires `mesh-bindings.manage`.
+ */
+export async function unbindMeshtasticNode(actor: ActorContext, eventId: string, nodeNum: number, router: CotRouter = cotRouter): Promise<void> {
   await requireMutableEvent(actor.principal, eventId, "mesh-bindings.manage");
   const nodeId = nodeIdOf(nodeNum);
   const current = await findNode(eventId, nodeId);
@@ -187,4 +201,5 @@ export async function unbindMeshtasticNode(actor: ActorContext, eventId: string,
     await transaction.meshtasticNode.update({ where: { id: current.id }, data: { memberId: null, boundAt: null, version: { increment: 1 } } });
     await recordAudit(audit(actor, "meshtastic-node.unbound", eventId, nodeId, memberId), transaction);
   });
+  router.forgetMeshNode(eventId, nodeId);
 }

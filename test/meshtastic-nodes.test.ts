@@ -4,10 +4,34 @@ import { after, beforeEach, describe, it } from "node:test";
 import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../src/app.js";
+import { cotRouter, type LiveMeshItem } from "../src/modules/tak-server/streaming/cot-router.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
 import { clearDatabase, createEvent, createUser } from "./support/identity.js";
 
 const NODE = 0xa1b2c3d4;
+
+function meshPosition(eventId: string, uid: string, nodeId: string, memberId: string | null, userId: string | null): LiveMeshItem {
+  const time = new Date();
+  return {
+    item: { uid, type: memberId === null ? "a-u-G" : "a-f-G-U-C", callsign: uid, lat: 52.5, lon: 13.4, course: null, speed: null, time, stale: new Date(time.getTime() + 600_000) },
+    eventId,
+    userId,
+    mesh: {
+      nodeId,
+      shortName: null,
+      longName: null,
+      memberId,
+      hqId: "hq-1",
+      hqName: null,
+      receivedAt: time,
+      batteryLevel: null,
+      snr: null,
+      rssi: null,
+      hopsAway: null,
+      channel: null,
+    },
+  };
+}
 
 void describe("Meshtastic node bindings", () => {
   let app: Express;
@@ -86,5 +110,38 @@ void describe("Meshtastic node bindings", () => {
     await request(app).delete(`/api/v1/events/${eventId}/meshtastic-nodes/${String(NODE)}/binding`).set("Cookie", operator.cookie).expect(404);
     const actions = (await database.auditEvent.findMany({ where: { targetType: "meshtastic-node" }, orderBy: { occurredAt: "asc" } })).map(({ action }) => action);
     assert.deepEqual(actions, ["meshtastic-node.bound", "meshtastic-node.bound", "meshtastic-node.bound", "meshtastic-node.unbound"]);
+  });
+
+  void it("removes the node's live position under its previous identity when the binding changes", async () => {
+    const operator = await createUser("Operator", [
+      { permission: "mesh-bindings.manage", eventId },
+      { permission: "events.read", eventId },
+    ]);
+    const binding = `/api/v1/events/${eventId}/meshtastic-nodes/${String(NODE)}/binding`;
+    const liveUids = (): string[] => cotRouter.snapshot(eventId).meshItems.map(({ item }) => item.uid);
+    const peter = (await database.eventMember.findUniqueOrThrow({ where: { id: memberId } })).userId;
+    let changes = 0;
+    const unsubscribe = cotRouter.onChange((eventIds) => {
+      if (eventIds.has(eventId)) changes += 1;
+    });
+    try {
+      cotRouter.rememberMesh(meshPosition(eventId, "meshtastic-a1b2c3d4", "!a1b2c3d4", null, null));
+      cotRouter.rememberMesh(meshPosition(eventId, "meshtastic-0000beef", "!0000beef", null, null));
+      changes = 0;
+
+      const bound = (await request(app).put(binding).set("Cookie", operator.cookie).send({ memberId, version: 1 }).expect(200)).body as { version: number };
+      assert.deepEqual(liveUids(), ["meshtastic-0000beef"]);
+      assert.equal(changes, 1, "viewers are told the unbound position is gone");
+
+      cotRouter.rememberMesh(meshPosition(eventId, "peter-device", "!a1b2c3d4", memberId, peter));
+      await request(app).put(binding).set("Cookie", operator.cookie).send({ memberId, version: bound.version }).expect(200);
+      assert.deepEqual(liveUids(), ["meshtastic-0000beef", "peter-device"], "binding the same member again keeps the position");
+
+      await request(app).delete(binding).set("Cookie", operator.cookie).expect(204);
+      assert.deepEqual(liveUids(), ["meshtastic-0000beef"]);
+    } finally {
+      unsubscribe();
+      cotRouter.forgetMeshNode(eventId, "!0000beef");
+    }
   });
 });
