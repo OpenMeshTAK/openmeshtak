@@ -1,10 +1,55 @@
-# OpenMeshTak Core
+# OpenMeshTak
+
+**Self-hosted TAK server with Meshtastic for events.** Set up an event once, and every participant gets their own ATAK, iTAK or WinTAK connection, Meshtastic radio settings and map data. One Docker container, open source.
 
 [![License](https://img.shields.io/github/license/OpenMeshTAK/openmeshtak)](LICENSE) [![Release](https://img.shields.io/github/v/release/OpenMeshTAK/openmeshtak)](https://github.com/OpenMeshTAK/openmeshtak/releases) [![CI](https://github.com/OpenMeshTAK/openmeshtak/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenMeshTAK/openmeshtak/actions/workflows/ci.yml)
 
-📖 Documentation: https://openmeshtak.github.io/openmeshtak-docs/
+**[Documentation](https://openmeshtak.github.io/openmeshtak-docs/)** · [Install with Docker](https://openmeshtak.github.io/openmeshtak-docs/installation/) · [Self-hosted TAK server](https://openmeshtak.github.io/openmeshtak-docs/tak-server) · [ATAK with Meshtastic](https://openmeshtak.github.io/openmeshtak-docs/atak-meshtastic)
 
-OpenMeshTak Core is the authoritative API and backend for the OpenMeshTak ecosystem. It owns identity, authorization, events, memberships, mission content, provisioning, artifact generation, storage, integrations and the built-in TAK services.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/readme/event-live-dark.webp">
+  <img src=".github/readme/event-live-light.webp" alt="Live view of an event: TAK apps and Meshtastic nodes on the event map, grouped by team">
+</picture>
+
+- **Built-in TAK server:** certificate enrollment, live CoT and Data Packages for ATAK, iTAK and WinTAK. No separate TAK server to run.
+- **Meshtastic radios:** one settings file per participant with name, LoRa settings and exactly their channels, including secret channels.
+- **Events, roles and groups:** callsigns, TAK teams and radio names follow from each participant's role and group.
+- **Participants connect themselves:** QR code, connection package or login from their own dashboard.
+- **Mission data:** edit map content in the browser and deliver it to the TAK apps as Data Packages.
+- **Live view and history:** follow every TAK app and radio on the event map and replay tracks afterwards.
+- **REST API and SDK:** everything the Web app does, for example to add members from a Discord bot.
+
+<table>
+  <tr>
+    <td width="33%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/readme/participant-connect-tak-dark.webp">
+        <img src=".github/readme/participant-connect-tak-light.webp" alt="Participant dashboard dialog to connect ATAK, iTAK or WinTAK">
+      </picture>
+      <p align="center">Connect a TAK app</p>
+    </td>
+    <td width="33%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/readme/event-meshtastic-dark.webp">
+        <img src=".github/readme/event-meshtastic-light.webp" alt="Meshtastic settings of an event: the chosen firmware with its tested version and the radio settings">
+      </picture>
+      <p align="center">Meshtastic radio settings</p>
+    </td>
+    <td width="33%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/readme/package-editor-dark.webp">
+        <img src=".github/readme/package-editor-light.webp" alt="Map editor for a Data Package with areas, routes and markers">
+      </picture>
+      <p align="center">Map data for TAK apps</p>
+    </td>
+  </tr>
+</table>
+
+The screenshots show a fictional demo event.
+
+## Core
+
+This repository is OpenMeshTak Core, the authoritative API and backend for the OpenMeshTak ecosystem. The Web app lives in [openmeshtak-web](https://github.com/OpenMeshTAK/openmeshtak-web) and is served by the same container. Core owns identity, authorization, events, memberships, mission content, provisioning, artifact generation, storage, integrations and the built-in TAK services.
 
 OpenMeshTak is under active development. Client and firmware compatibility is published only after the corresponding real-client test has passed; the presence of a generator or protocol implementation is not by itself a compatibility claim.
 
