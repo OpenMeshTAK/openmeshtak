@@ -50,17 +50,28 @@ function boxCorners(box: unknown): Array<[number, number]> | null {
   return corners.every(validCorner) && n > s ? corners : null;
 }
 
-/** Reads a rubber sheet from KMZ bytes, or returns null when the file is not one. */
+/**
+ * Reads a rubber sheet from KMZ bytes, or returns null when the file is not one. The KMZ is
+ * untrusted and may hold any number of entries, so only the first KML and then the one image it
+ * names are decompressed; at most `MAX_KML_BYTES + MAX_IMAGE_BYTES` per KMZ.
+ */
 export function readRubberSheet(kmz: Uint8Array): RubberSheet | null {
-  let files: Record<string, Uint8Array>;
+  let kmlEntry: [string, Uint8Array] | undefined;
   try {
-    files = unzipSync(kmz, {
-      filter: (file) => file.originalSize <= MAX_IMAGE_BYTES && !file.name.includes(".."),
+    let kmlPath: string | null = null;
+    const files = unzipSync(kmz, {
+      filter: (file) => {
+        if (kmlPath !== null || !file.name.toLowerCase().endsWith(".kml")) {
+          return false;
+        }
+        kmlPath = file.name;
+        return file.originalSize <= MAX_KML_BYTES;
+      },
     });
+    kmlEntry = Object.entries(files)[0];
   } catch {
     return null;
   }
-  const kmlEntry = Object.entries(files).find(([path]) => path.toLowerCase().endsWith(".kml"));
   if (kmlEntry === undefined || kmlEntry[1].length > MAX_KML_BYTES) {
     return null;
   }
@@ -80,7 +91,7 @@ export function readRubberSheet(kmz: Uint8Array): RubberSheet | null {
   }
 
   const href = (overlay.Icon as { href?: unknown } | undefined)?.href;
-  const image = typeof href === "string" ? files[href.trim()] : undefined;
+  const image = typeof href === "string" && !href.includes("..") ? rubberSheetImage(kmz, href.trim()) ?? undefined : undefined;
   const mediaType = image === undefined ? null : imageMediaType(image);
   const corners = quadCorners((overlay.LatLonQuad as { coordinates?: unknown } | undefined)?.coordinates) ?? boxCorners(overlay.LatLonBox);
   if (typeof href !== "string" || mediaType === null || corners === null) {
