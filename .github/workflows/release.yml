@@ -64,10 +64,11 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+          check-latest: true
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --engine-strict
 
       - name: Apply database migrations
         run: pnpm db:deploy
@@ -114,10 +115,11 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+          check-latest: true
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --engine-strict
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=moderate
@@ -198,6 +200,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
+          pull: true
           build-contexts: web=./openmeshtak-web
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -207,6 +210,18 @@ jobs:
           cache-from: type=registry,ref=${{ env.IMAGE }}-buildcache:${{ matrix.artifact }}
           cache-to: type=registry,ref=${{ env.IMAGE }}-buildcache:${{ matrix.artifact }},mode=max,image-manifest=true,oci-mediatypes=true
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true,oci-mediatypes=true
+
+      # Each native runner executes its own image before it can be published under a release tag.
+      # Node backports the fix without changing process.versions.brotli, so check the new constant.
+      - name: Verify patched Brotli decoder in the image
+        env:
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          docker run --rm --entrypoint node "${IMAGE}@${IMAGE_DIGEST}" --eval '
+            const assert = require("node:assert/strict");
+            assert.equal(typeof require("node:zlib").constants.BROTLI_DECODER_ERROR_FORMAT_BLOCK_SWITCH, "number");
+            console.log(`Patched Brotli decoder: Node.js ${process.version}, ${process.platform}/${process.arch}`);
+          '
 
       - name: Export image digest
         shell: bash
@@ -338,6 +353,7 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+          check-latest: true
           cache: pnpm
           cache-dependency-path: |
             pnpm-lock.yaml
@@ -345,10 +361,10 @@ jobs:
 
       - name: Write release notices and SBOMs
         run: |
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --engine-strict
           pnpm release:notices
           cd openmeshtak-web
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --engine-strict
           mkdir -p dist
           pnpm release:notices
 

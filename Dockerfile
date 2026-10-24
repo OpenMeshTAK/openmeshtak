@@ -10,7 +10,7 @@ FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS web-build
 RUN corepack enable
 WORKDIR /web
 COPY --from=web package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --engine-strict
 COPY --from=web . .
 RUN pnpm build
 # Third-party notices and the CycloneDX SBOM of the Web app, served next to it.
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
 RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --engine-strict
 COPY . .
 RUN pnpm build
 # Only production dependencies ship; the Prisma CLI and tsx are among them because migrations run
@@ -32,6 +32,8 @@ RUN pnpm prune --prod
 RUN pnpm release:notices
 
 FROM node:24-bookworm-slim
+# Keep following Node.js 24 updates, but refuse a runtime older than the Brotli security fix.
+RUN dpkg --compare-versions "$(node -p process.versions.node)" ge 24.22.1
 LABEL org.opencontainers.image.title="OpenMeshTak" \
       org.opencontainers.image.licenses="AGPL-3.0-only" \
       org.opencontainers.image.source="https://github.com/OpenMeshTAK/openmeshtak"

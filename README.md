@@ -67,7 +67,7 @@ OpenMeshTak is under active development. Client and firmware compatibility is pu
 
 ## Requirements
 
-- Node.js 24 or newer
+- Node.js 24.22.1 or newer in the 24.x line, or 26.12.1 or newer (includes the Brotli security fix for CVE-2026-111497)
 - pnpm 10.12 or newer
 
 ## Local development
