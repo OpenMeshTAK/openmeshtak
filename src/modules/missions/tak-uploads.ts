@@ -143,7 +143,7 @@ function readMultipart(request: Request): Promise<{ bytes: Uint8Array; fileName:
         if (truncated) {
           throw new UploadTooLargeError();
         }
-        return { bytes, fileName: info.filename };
+        return { bytes, fileName: info.filename ?? null };
       });
     });
     parser.on("close", () => {

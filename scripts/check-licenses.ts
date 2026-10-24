@@ -27,7 +27,8 @@ const reviewedExceptions = new Map<string, Set<string>>([
       "path-scurry@1.11.1",
     ]),
   ],
-  ["CC-BY-4.0", new Set(["caniuse-lite@1.0.30001814"])],
+  // Reviewed 2026-10-24: the distributed license is unchanged from 1.0.30001814.
+  ["CC-BY-4.0", new Set(["caniuse-lite@1.0.30001819"])],
   ["0BSD", new Set(["tslib@1.14.1", "tslib@2.8.1"])],
   // MIT without the attribution clause; more permissive than MIT. Approved by the owner on 2026-10-06.
   ["MIT-0", new Set(["nodemailer@10.2.1"])],
