@@ -65,11 +65,6 @@ async function consumeClaim(token: string, traceId: string): Promise<ConsumedCla
     if (claim === null) {
       return null;
     }
-    // Checked before consuming, so the claim stays unused and grants nothing.
-    if (await hasOwnSignIn(transaction, claim.member.user.authSubjectId)) {
-      return { claim, consumed: false, signInRequired: true };
-    }
-
     // A disabled account fails like any invalid claim; the session hook cannot catch the first
     // claim, whose Better Auth user does not exist yet.
     const usable =
@@ -78,6 +73,12 @@ async function consumeClaim(token: string, traceId: string): Promise<ConsumedCla
       claim.revokedAt === null &&
       claim.expiresAt > now &&
       claim.event.status === "active";
+    // Only a usable claim may tell that its account has its own sign-in; an expired or revoked
+    // link must not reveal anything about the account. Checked before consuming, so the claim
+    // stays unused and grants nothing.
+    if (usable && (await hasOwnSignIn(transaction, claim.member.user.authSubjectId))) {
+      return { claim, consumed: false, signInRequired: true };
+    }
     const consumed =
       usable &&
       (
