@@ -6,7 +6,7 @@ import { after, describe, it } from "node:test";
 import express from "express";
 import request from "supertest";
 import { notFoundHandler } from "../src/shared/errors/problem.js";
-import { mountWebApp } from "../src/shared/http/web-app.js";
+import { mountWebApp, WEB_CONTENT_SECURITY_POLICY } from "../src/shared/http/web-app.js";
 
 const webRoot = mkdtempSync(join(tmpdir(), "openmeshtak-web-"));
 mkdirSync(join(webRoot, "assets"));
@@ -51,5 +51,18 @@ void describe("Web app served by Core", () => {
       assert.match(response.headers["content-type"] ?? "", /^application\/problem\+json/);
     }
     await request(createWebApp()).post("/events").expect(404);
+  });
+
+  void it("sends a restrictive Content Security Policy with the app, but not on API paths", async () => {
+    for (const path of ["/", "/events/123/members", "/assets/index-abc123.js", "/sw.js"]) {
+      const response = await request(createWebApp()).get(path).expect(200);
+      assert.equal(response.headers["content-security-policy"], WEB_CONTENT_SECURITY_POLICY);
+    }
+    assert.match(WEB_CONTENT_SECURITY_POLICY, /script-src 'self';/);
+    assert.match(WEB_CONTENT_SECURITY_POLICY, /frame-ancestors 'none'/);
+    assert.doesNotMatch(WEB_CONTENT_SECURITY_POLICY, /unsafe-eval/);
+
+    const unknownApi = await request(createWebApp()).get("/api/v1/unknown").expect(404);
+    assert.equal(unknownApi.headers["content-security-policy"], undefined);
   });
 });

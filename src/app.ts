@@ -24,7 +24,7 @@ export function createApp(): Express {
 
   app.disable("x-powered-by");
   app.set("trust proxy", trustProxySetting(config.trustProxy));
-  // The Web app is never framed; API responses add their own strict CSP.
+  // The Web app is never framed. API responses and the Web app each set their own CSP.
   app.use(helmet({ contentSecurityPolicy: false, frameguard: { action: "deny" } }));
   app.use(requestLogging);
   // Let's Encrypt fetches HTTP-01 challenges here through the reverse proxy of the Web address.
