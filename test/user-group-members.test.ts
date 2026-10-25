@@ -77,6 +77,13 @@ void describe("user-group members", () => {
     await member(adminGroupId, manager.id, "put", manager).expect(403);
   });
 
+  void it("refuses removing members from groups whose grants the actor does not hold", async () => {
+    const manager = await createUser("Manager", [{ permission: "user-group-members.manage" }]);
+    const response = await member(adminGroupId, admin.id, "delete", manager).expect(403);
+    assert.equal((response.body as ProblemBody).code, "FORBIDDEN");
+    assert.equal(await database.userGroupMembership.count({ where: { userGroupId: adminGroupId } }), 1);
+  });
+
   void it("keeps at least one member in the Admin system group", async () => {
     const second = await createUser("Second admin", []);
     await member(adminGroupId, second.id, "put").expect(204);

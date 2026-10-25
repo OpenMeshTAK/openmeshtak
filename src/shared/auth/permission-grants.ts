@@ -85,3 +85,22 @@ export async function requireDelegableGrants(
     }
   }
 }
+
+/**
+ * Prevents taking over or locking out a more privileged account. Changing where password resets
+ * go, issuing setup links, ending sessions and disabling an account can hand over or end all of
+ * the target's access, so the actor must hold every grant of the target at the same or a wider
+ * scope, exactly as if it were granting them.
+ */
+export async function requireAuthorityOver(actor: Principal, userId: string): Promise<void> {
+  const grants = await database.permissionGrant.findMany({
+    where: { userGroup: { memberships: { some: { userId } } } },
+    select: { permission: true, eventId: true, scopeKey: true },
+    distinct: ["permission", "scopeKey"],
+  });
+  await requireDelegableGrants(
+    actor,
+    // Stored names were validated against the catalog when the grant was written.
+    grants.map(({ permission, eventId, scopeKey }) => ({ permission: permission as Permission, eventId, scopeKey })),
+  );
+}

@@ -5,6 +5,7 @@ import { isPlaceholderEmail, placeholderEmailFor } from "../auth/claim-session.p
 import { config } from "../../shared/config/config.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
+import { requireAuthorityOver } from "../../shared/auth/permission-grants.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
 import { logger } from "../../shared/logging/logger.js";
@@ -222,6 +223,8 @@ async function checkEmailChange(
     return null;
   }
   await requirePermission(actor.principal, "users.set-email");
+  // A confirmed address can reset the password, so this hands over the account.
+  await requireAuthorityOver(actor.principal, current.id);
   const address = email === null || email.trim() === "" ? null : email.trim().toLowerCase();
   if (current.authSubjectId === null) {
     throw validationProblem([{ field: "email", code: "NO_LOGIN", message: "This user has no local login yet." }]);
@@ -246,6 +249,7 @@ async function checkEmailChange(
 export async function revokeUserSessions(actor: ActorContext, id: string): Promise<void> {
   await requirePermission(actor.principal, "users.sign-out");
   const user = await findForUpdate(id);
+  await requireAuthorityOver(actor.principal, id);
   await database.$transaction(async (transaction) => {
     const deleted =
       user.authSubjectId === null ? { count: 0 } : await transaction.session.deleteMany({ where: { userId: user.authSubjectId } });
@@ -274,6 +278,7 @@ export async function setUserDisabled(actor: ActorContext, id: string, disabled:
     throw cannotDisableSelf();
   }
   const user = await findForUpdate(id);
+  await requireAuthorityOver(actor.principal, id);
   await database.$transaction(async (transaction) => {
     await transaction.domainUser.update({
       where: { id },
@@ -300,6 +305,7 @@ export const PASSWORD_RESET_PAGE = new URL("/reset-password", config.publicOrigi
 export async function sendUserPasswordReset(actor: ActorContext, id: string): Promise<void> {
   await requirePermission(actor.principal, "users.password-reset");
   const user = await findForUpdate(id);
+  await requireAuthorityOver(actor.principal, id);
   const email = user.authSubject?.email;
   if (email !== undefined && !isPlaceholderEmail(email)) {
     await auth.api.requestPasswordReset({ body: { email, redirectTo: PASSWORD_RESET_PAGE } });

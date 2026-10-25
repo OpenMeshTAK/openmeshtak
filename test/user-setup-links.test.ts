@@ -99,6 +99,18 @@ void describe("administrator-created users", () => {
     assert.equal((refused.body as { code: string }).code, "ACCOUNT_ALREADY_SET_UP");
   });
 
+  void it("refuses setup links for users with rights the actor does not hold", async () => {
+    const created = await createPeter();
+    const issuer = await createUser("Issuer", [{ permission: "users.setup-links" }]);
+    await request(app).post(`/api/v1/users/${created.user.id}/setup-link`).set("Cookie", issuer.cookie).expect(201);
+
+    await database.userGroupMembership.create({
+      data: { userId: created.user.id, userGroupId: (await database.userGroupMembership.findFirstOrThrow({ where: { userId: admin.id } })).userGroupId },
+    });
+    const refused = await request(app).post(`/api/v1/users/${created.user.id}/setup-link`).set("Cookie", issuer.cookie).expect(403);
+    assert.equal((refused.body as { code: string }).code, "FORBIDDEN");
+  });
+
   void it("does not sign in disabled users", async () => {
     const created = await createPeter();
     await request(app).post(`/api/v1/users/${created.user.id}/disable`).set("Cookie", admin.cookie).expect(200);
