@@ -22,6 +22,8 @@ export type SecretPurpose =
 
 const ENVELOPE_VERSION = "v1";
 const IV_BYTES = 12;
+/** A shorter GCM tag is a prefix of the full one and would verify with far fewer guesses. */
+const TAG_BYTES = 16;
 
 export class SecretDecryptionError extends Error {
   constructor(reason: string) {
@@ -85,6 +87,7 @@ export function decryptSecret(envelope: string, purpose: SecretPurpose, context:
       "aes-256-gcm",
       purposeKey(purpose),
       Buffer.from(iv, "base64url"),
+      { authTagLength: TAG_BYTES },
     );
     decipher.setAAD(additionalData(purpose, context));
     decipher.setAuthTag(Buffer.from(tag, "base64url"));
