@@ -104,6 +104,8 @@ export const auth = betterAuth({
     enabled: true,
   },
   advanced: {
+    // The auth routes overwrite this header with the address Express resolved (see auth.routes).
+    ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
     cookiePrefix: "openmeshtak",
     database: {
       generateId: "uuid",

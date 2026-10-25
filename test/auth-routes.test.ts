@@ -43,6 +43,21 @@ void describe("Better Auth HTTP routes", () => {
     await request(app).get("/api/v1/principal").set("Cookie", cookie).expect(401);
   });
 
+  void it("rate-limits sign-in by the resolved client address, not by a client-sent X-Forwarded-For", async () => {
+    const { email } = await database.user.findUniqueOrThrow({ where: { id: user.authSubjectId } });
+    const statuses: number[] = [];
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      const response = await request(app)
+        .post("/api/auth/sign-in/email")
+        .set("Origin", config.publicOrigin)
+        .set("X-Forwarded-For", `203.0.113.${String(attempt)}`)
+        .send({ email, password: "a-wrong-password-guess" });
+      statuses.push(response.status);
+    }
+    assert.equal(statuses.at(-1), 429);
+    assert.ok(statuses.slice(0, 2).every((status) => status === 401));
+  });
+
   void it("keeps direct sign-up and username enumeration blocked", async () => {
     for (const path of ["/api/auth/sign-up/email", "/api/auth/is-username-available"]) {
       const response = await request(app).post(path).send({}).expect(404);
