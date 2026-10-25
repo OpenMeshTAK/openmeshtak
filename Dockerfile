@@ -48,7 +48,6 @@ ENV NODE_ENV=production \
     DATABASE_URL=file:/server/data/db/openmeshtak.sqlite \
     ROOT_ENCRYPTION_KEY_FILE=/run/secrets/root_encryption_key \
     TAK_CERTIFICATE_DIRECTORY=/server/certs \
-    TRUST_PROXY=true \
     WEB_ROOT=/app/web
 WORKDIR /app
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
