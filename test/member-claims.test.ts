@@ -112,6 +112,19 @@ void describe("participant claims", () => {
     assert.equal(await database.auditEvent.count({ where: { action: "member-claim.sign-in-required" } }), 1);
   });
 
+  void it("reveals nothing about the account behind an expired claim", async () => {
+    await exchange((await issueClaim()).token).expect(200);
+    const peter = await database.domainUser.findUniqueOrThrow({ where: { id: peterUserId } });
+    assert.ok(peter.authSubjectId);
+    await database.account.create({
+      data: { id: crypto.randomUUID(), accountId: peter.authSubjectId, providerId: "credential", userId: peter.authSubjectId, password: "not-a-real-hash" },
+    });
+
+    const expired = await issueClaim();
+    await database.memberClaim.update({ where: { id: expired.claim.id }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    await expectInvalid(expired.token);
+  });
+
   void it("requires sign-in once a claimed participant registered a passkey", async () => {
     await exchange((await issueClaim()).token).expect(200);
     const peter = await database.domainUser.findUniqueOrThrow({ where: { id: peterUserId } });

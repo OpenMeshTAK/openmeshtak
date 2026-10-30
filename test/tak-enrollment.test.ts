@@ -9,6 +9,7 @@ import { unzipSync, strFromU8 } from "fflate";
 import forge from "node-forge";
 import { activeCertificateAuthority } from "../src/modules/tak-server/certificate-authority.js";
 import { createEnrollmentApp } from "../src/modules/tak-server/enrollment-app.js";
+import { authenticateProfileRequest, clearEnrollmentFailures } from "../src/modules/tak-server/enrollment.service.js";
 import { revokeUnusedPackageCertificates } from "../src/modules/tak-server/unused-packages.js";
 import { generateRsaKeyPair, RSA_SIGNING, x509 } from "../src/modules/tak-server/x509.js";
 import { database, disconnectDatabase } from "../src/shared/database/database.js";
@@ -93,6 +94,7 @@ function signClient(credentials: { username: string; token: string }, csr: strin
 void describe("TAK certificate enrollment", () => {
   beforeEach(async () => {
     await clearDatabase();
+    clearEnrollmentFailures();
     app = createApp();
     enrollment = createEnrollmentApp();
     admin = await createUser("Admin", [{ permission: "tak-server.manage" }]);
@@ -213,6 +215,19 @@ void describe("TAK certificate enrollment", () => {
     await signClient({ ...credentials, username: "outsider" }, await csrFor("outsider")).expect(401);
     await signClient({ username: "peter", token: "wrong-password" }, await csrFor("peter")).expect(401);
     await signClient({ username: "nobody", token: PASSWORD }, await csrFor("nobody")).expect(401);
+  });
+
+  void it("refuses a username for a while after repeated wrong passwords, from any address", async () => {
+    await enableServer();
+    const basic = (password: string) => `Basic ${Buffer.from(`peter:${password}`).toString("base64")}`;
+    const now = new Date();
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      assert.equal(await authenticateProfileRequest(basic(`wrong-${String(attempt)}`), undefined, now), null);
+    }
+    assert.equal(await authenticateProfileRequest(basic(PASSWORD), undefined, now), null);
+
+    const later = new Date(now.getTime() + 16 * 60_000);
+    assert.equal(await authenticateProfileRequest(basic(PASSWORD), undefined, later), member.id);
   });
 
   void it("revokes unused QR tokens when a new QR code is created, but keeps used ones", async () => {

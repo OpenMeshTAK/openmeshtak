@@ -146,10 +146,52 @@ interface EnrollmentLogin {
   tokenId: string | null;
 }
 
+/**
+ * Enrollment passwords can be guessed from many addresses, which the per-address limit of the
+ * enrollment app cannot stop. After this many failures in the window, a username is refused even
+ * with the right credentials until the window ends. Only existing accounts are counted, so the map
+ * stays bounded by the number of users.
+ */
+const MAX_FAILURES_PER_USERNAME = 10;
+const FAILURE_WINDOW_MS = 15 * 60_000;
+const failuresByUsername = new Map<string, { count: number; windowStartedAt: number }>();
+
+function isThrottled(username: string, now: Date): boolean {
+  const failures = failuresByUsername.get(username);
+  return failures !== undefined && now.getTime() - failures.windowStartedAt < FAILURE_WINDOW_MS && failures.count >= MAX_FAILURES_PER_USERNAME;
+}
+
+function noteFailure(username: string, now: Date): void {
+  const failures = failuresByUsername.get(username);
+  if (failures === undefined || now.getTime() - failures.windowStartedAt >= FAILURE_WINDOW_MS) {
+    failuresByUsername.set(username, { count: 1, windowStartedAt: now.getTime() });
+  } else {
+    failures.count += 1;
+  }
+}
+
+/** Forgets every recorded failure; tests use it to start from a clean state. */
+export function clearEnrollmentFailures(): void {
+  failuresByUsername.clear();
+}
+
+let dummyHash: Promise<string> | undefined;
+
+/** Hashes against a throwaway hash, so unknown usernames take as long as wrong passwords. */
+async function verifyDummyPassword(password: string): Promise<void> {
+  const context = await auth.$context;
+  dummyHash ??= context.password.hash(randomBytes(16).toString("base64url"));
+  await context.password.verify({ hash: await dummyHash, password });
+}
+
 async function passwordMatches(authSubjectId: string, password: string): Promise<boolean> {
   const context = await auth.$context;
   const account = await context.internalAdapter.findCredentialAccount(authSubjectId);
-  return typeof account?.password === "string" && (await context.password.verify({ hash: account.password, password }));
+  if (typeof account?.password !== "string") {
+    await verifyDummyPassword(password);
+    return false;
+  }
+  return context.password.verify({ hash: account.password, password });
 }
 
 /**
@@ -167,16 +209,24 @@ async function authenticateEnrollmentLogin(authorization: string | undefined, no
   });
   const domainUser = user?.domainUser;
   if (user === null || user.username === null || domainUser === null || domainUser === undefined || domainUser.disabledAt !== null) {
+    await verifyDummyPassword(credentials.password);
+    return null;
+  }
+  if (isThrottled(user.username, now)) {
     return null;
   }
 
   const token = await database.takEnrollmentToken.findUnique({ where: { tokenHash: hashToken(credentials.password) } });
   if (token !== null && token.userId === domainUser.id && (token.expiresAt === null || token.expiresAt > now)) {
+    failuresByUsername.delete(user.username);
     return { userId: domainUser.id, username: user.username, tokenId: token.id };
   }
-  return (await passwordMatches(user.id, credentials.password))
-    ? { userId: domainUser.id, username: user.username, tokenId: null }
-    : null;
+  if (!(await passwordMatches(user.id, credentials.password))) {
+    noteFailure(user.username, now);
+    return null;
+  }
+  failuresByUsername.delete(user.username);
+  return { userId: domainUser.id, username: user.username, tokenId: null };
 }
 
 export interface SignedEnrollment {

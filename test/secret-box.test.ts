@@ -39,4 +39,11 @@ void describe("secret box", () => {
     assert.throws(() => decryptSecret(foreignKey.join("."), PURPOSE, "channel-1"), SecretDecryptionError);
     assert.throws(() => decryptSecret("v0.x.y.z.w", PURPOSE, "channel-1"), SecretDecryptionError);
   });
+
+  void it("refuses a truncated authentication tag", () => {
+    const parts = encryptSecret(Buffer.from("secret"), PURPOSE, "channel-1").split(".");
+    // A prefix of the correct tag would verify if the tag length were not fixed.
+    parts[4] = Buffer.from(parts[4]!, "base64url").subarray(0, 4).toString("base64url");
+    assert.throws(() => decryptSecret(parts.join("."), PURPOSE, "channel-1"), SecretDecryptionError);
+  });
 });

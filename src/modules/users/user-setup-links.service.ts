@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
+import { requireAuthorityOver } from "../../shared/auth/permission-grants.js";
 import type { ActorContext } from "../../shared/auth/principal.js";
 import { config } from "../../shared/config/config.js";
 import { database } from "../../shared/database/database.js";
@@ -126,6 +127,8 @@ export async function createSetupLink(actor: ActorContext, userId: string): Prom
   if (user === null) {
     throw notFoundProblem();
   }
+  // The link signs in as the user, so it must not reach an account with more rights than the actor.
+  await requireAuthorityOver(actor.principal, userId);
   if (await hasOwnSignIn(database, user.authSubjectId)) {
     throw alreadySetUp();
   }

@@ -1,6 +1,6 @@
 import { recordAudit } from "../../shared/audit/audit.js";
 import { requirePermission } from "../../shared/auth/permission-check.js";
-import { requireDelegableGrants } from "../../shared/auth/permission-grants.js";
+import { requireDelegableGrants, type ValidatedGrant } from "../../shared/auth/permission-grants.js";
 import type { Permission } from "../../shared/auth/permissions.js";
 import type { ActorContext, Principal } from "../../shared/auth/principal.js";
 import { database } from "../../shared/database/database.js";
@@ -15,6 +15,15 @@ import {
 import type { UserPage } from "../users/user.dto.js";
 import { toUserDto, userSelection } from "../users/users.service.js";
 import { findUserGroupRow, systemGroupProtected } from "./user-groups.service.js";
+
+function groupGrants(group: Awaited<ReturnType<typeof findUserGroupRow>>): ValidatedGrant[] {
+  return group.permissionGrants.map(({ permission, eventId, scopeKey }) => ({
+    // Stored names were validated against the catalog when the grant was written.
+    permission: permission as Permission,
+    eventId,
+    scopeKey,
+  }));
+}
 
 async function requireUser(userId: string): Promise<void> {
   const user = await database.domainUser.findUnique({ where: { id: userId }, select: { id: true } });
@@ -55,15 +64,7 @@ export async function addUserGroupMember(
   await requirePermission(actor.principal, "user-group-members.manage");
   const group = await findUserGroupRow(userGroupId);
   await requireUser(userId);
-  await requireDelegableGrants(
-    actor.principal,
-    group.permissionGrants.map(({ permission, eventId, scopeKey }) => ({
-      // Stored names were validated against the catalog when the grant was written.
-      permission: permission as Permission,
-      eventId,
-      scopeKey,
-    })),
-  );
+  await requireDelegableGrants(actor.principal, groupGrants(group));
 
   await database.$transaction(async (transaction) => {
     const existing = await transaction.userGroupMembership.findUnique({
@@ -89,7 +90,10 @@ export async function addUserGroupMember(
   });
 }
 
-/** Removing the last member of a system group is refused so nobody locks out administration. */
+/**
+ * Removing the last member of a system group is refused so nobody locks out administration. Like
+ * adding, removing needs every grant of the group, so nobody demotes members with more rights.
+ */
 export async function removeUserGroupMember(
   actor: ActorContext,
   userGroupId: string,
@@ -97,6 +101,7 @@ export async function removeUserGroupMember(
 ): Promise<void> {
   await requirePermission(actor.principal, "user-group-members.manage");
   const group = await findUserGroupRow(userGroupId);
+  await requireDelegableGrants(actor.principal, groupGrants(group));
 
   await database.$transaction(async (transaction) => {
     const removed = await transaction.userGroupMembership.deleteMany({

@@ -105,4 +105,29 @@ void describe("user administration", () => {
     await request(app).get("/api/v1/principal").set("Cookie", peter.cookie).expect(401);
     await request(app).post(`/api/v1/users/${admin.id}/disable`).set("Cookie", peter.cookie).expect(401);
   });
+
+  void it("refuses takeover and lockout actions against users with more rights", async () => {
+    const operator = await createUser("Operator", [{ permission: "users.edit" }, { permission: "users.set-email" }, { permission: "users.disable" }, { permission: "users.sign-out" }, { permission: "users.password-reset" }]);
+
+    const moved = await request(app)
+      .put(`/api/v1/users/${admin.id}`)
+      .set("Cookie", operator.cookie)
+      .send({ version: 1, displayName: "Admin", email: "attacker@example.test" })
+      .expect(403);
+    assert.equal((moved.body as { code: string }).code, "FORBIDDEN");
+    assert.notEqual(await emailOf(admin), "attacker@example.test");
+    await request(app).post(`/api/v1/users/${admin.id}/disable`).set("Cookie", operator.cookie).expect(403);
+    await request(app).post(`/api/v1/users/${admin.id}/revoke-sessions`).set("Cookie", operator.cookie).expect(403);
+    await request(app).post(`/api/v1/users/${admin.id}/password-reset`).set("Cookie", operator.cookie).expect(403);
+    await request(app).get("/api/v1/principal").set("Cookie", admin.cookie).expect(200);
+
+    // Users without rights the operator lacks stay manageable.
+    const participant = await createUser("Participant", []);
+    await request(app)
+      .put(`/api/v1/users/${participant.id}`)
+      .set("Cookie", operator.cookie)
+      .send({ version: 1, displayName: "Participant", email: "participant@example.test" })
+      .expect(200);
+    await request(app).post(`/api/v1/users/${participant.id}/disable`).set("Cookie", operator.cookie).expect(200);
+  });
 });

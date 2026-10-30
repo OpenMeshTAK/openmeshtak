@@ -27,6 +27,21 @@ export function mountAuthRoutes(app: Express): void {
       return;
     }
 
+    useClientAddress(request);
     await handler(request, response);
   });
+}
+
+/**
+ * Better Auth rate-limits sign-in per client address, which it reads from `X-Forwarded-For` and
+ * not from the socket or Express's `trust proxy`. Left alone, a client reaching Core directly
+ * could send a new made-up address with every attempt. Replacing the header with the address
+ * Express resolved under `TRUST_PROXY` gives Better Auth the same, trustworthy address.
+ */
+function useClientAddress(request: Request): void {
+  if (request.ip === undefined) {
+    delete request.headers["x-forwarded-for"];
+  } else {
+    request.headers["x-forwarded-for"] = request.ip;
+  }
 }
