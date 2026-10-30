@@ -19,6 +19,9 @@ updates:
       # Node.js 24 is the supported runtime, so its types stay on 24.x.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # Comes from JSR, which Dependabot cannot query; the protobufs follow the supported
+      # Meshtastic firmware and are upgraded deliberately.
+      - dependency-name: "@meshtastic/protobufs"
   - package-ecosystem: github-actions
     directory: /
     schedule:
