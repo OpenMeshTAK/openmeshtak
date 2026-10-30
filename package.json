@@ -47,8 +47,8 @@
     "typecheck": "pnpm generate && tsc --noEmit"
   },
   "dependencies": {
-    "@better-auth/passkey": "1.7.11",
-    "@better-auth/prisma-adapter": "1.7.11",
+    "@better-auth/passkey": "1.7.12",
+    "@better-auth/prisma-adapter": "1.7.12",
     "@bufbuild/protobuf": "2.16.0",
     "@meshtastic/protobufs": "jsr:2.8.1",
     "@peculiar/x509": "2.2.0",
@@ -62,10 +62,10 @@
     "@turf/kinks": "7.4.0",
     "@turf/sector": "7.4.0",
     "acme-client": "5.4.0",
-    "better-auth": "1.7.11",
+    "better-auth": "1.7.12",
     "better-sqlite3": "13.0.3",
     "busboy": "1.6.0",
-    "dotenv": "18.0.8",
+    "dotenv": "18.0.9",
     "express": "5.3.0",
     "express-rate-limit": "8.7.1",
     "fast-xml-parser": "5.11.2",
@@ -92,12 +92,12 @@
     "@types/nodemailer": "8.0.2",
     "@types/supertest": "7.2.1",
     "@types/swagger-ui-express": "4.1.8",
-    "auth": "1.7.11",
+    "auth": "1.7.12",
     "eslint": "10.13.0",
     "socket.io-client": "4.8.4",
     "supertest": "7.3.1",
     "tsoa": "6.6.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.2"
+    "typescript-eslint": "8.72.0"
   }
 }
