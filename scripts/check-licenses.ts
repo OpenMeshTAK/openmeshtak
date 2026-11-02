@@ -20,11 +20,12 @@ const reviewedExceptions = new Map<string, Set<string>>([
   [
     "BlueOak-1.0.0",
     new Set([
-      "jackspeak@3.4.3",
-      "minimatch@10.2.6",
+      "@isaacs/nonrecursive-glob-match@1.0.3",
+      "glob@14.0.3",
+      "lru-cache@11.5.3",
+      "minimatch@11.0.3",
       "minipass@7.1.3",
-      "package-json-from-dist@1.0.1",
-      "path-scurry@1.11.1",
+      "path-scurry@3.0.0",
     ]),
   ],
   // Reviewed 2026-10-24: the distributed license is unchanged from 1.0.30001814.
